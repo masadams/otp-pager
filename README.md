@@ -4,6 +4,16 @@ Experimental, open-source, physically paired text messenger. Android, including 
 
 > **Security status: NOT AUDITED. NOT READY FOR SENSITIVE COMMUNICATIONS.** This repository begins with specifications and testable scaffolding, not a claim of secure or Jericho-compatible messaging.
 
+## First field release: 0.7.0
+
+[Download the APK and deployment files](https://github.com/masadams/otp-pager/releases/tag/v0.7.0).
+Install the same `otp-pager-0.7.0-debug.apk` on both devices. Server image:
+`ghcr.io/masadams/otp-pager-relay:0.7.0` (amd64/arm64).
+Portainer: `refs/heads/main`, compose path `deploy/portainer-stack.yml`.
+See [deployment instructions](docs/DEPLOYMENT.md) and [security review](docs/SECURITY_REVIEW.md).
+This is the first integrated field-test prerelease; owner-controlled stable signing
+and independent security review remain unfinished.
+
 ## Goals
 - No phone-number account or remote contact enrollment.
 - In-person, authenticated key exchange only.
