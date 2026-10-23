@@ -24,7 +24,7 @@ sync; this can take several polling cycles. A normal restart with its volume int
 does not change the relay epoch or trigger recovery.
 
 For a manual check, use **Link → Retry undelivered messages**, or tap the status panel
-and choose **Retry delivery**. This starts a sync even with automatic polling off.
+and choose **Retry**. This starts a sync even with automatic polling off.
 It rechecks retained relay receipts and reposts existing encrypted packets. The relay
 deduplicates them. The app never re-encrypts a retry, allocates another pad slot, changes
 the message ID, or resets the receive replay window. A full local queue limits each

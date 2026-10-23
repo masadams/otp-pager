@@ -118,5 +118,5 @@ hardware testing. See [security code review](docs/SECURITY_REVIEW.md).
 
 After a complete USB pairing (or completed manual pad/device verification), Messages
 becomes the main view and the setup tabs are hidden. Open the chat picker → **Chat
-settings**, or tap status → **Chat settings**, to reach Link, Pad and Device. Returning
+settings**, or tap status → **Settings**, to reach Link, Pad and Device. Returning
 to Messages hides those tabs again. Unpaired chats keep their setup navigation.

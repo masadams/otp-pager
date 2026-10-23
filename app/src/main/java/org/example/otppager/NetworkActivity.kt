@@ -120,7 +120,12 @@ class NetworkActivity : Activity() {
     private fun button(label: String, primary: Boolean = false, action: () -> Unit) = Button(this).apply {
         text = label; isAllCaps = false; textSize = 13f; typeface = Typeface.MONOSPACE
         minHeight = dp(44); minimumHeight = dp(44); setTextColor(if (primary) Color.WHITE else ink)
-        backgroundTintList = ColorStateList.valueOf(if (primary) green else Color.TRANSPARENT)
+        stateListAnimator = null; elevation = 0f; setPadding(dp(8), 0, dp(8), 0)
+        background = android.graphics.drawable.StateListDrawable().apply {
+            addState(intArrayOf(-android.R.attr.state_enabled), surface(paper, 2, lineColor))
+            addState(intArrayOf(), surface(if (primary) ink else paper, 2, if (primary) ink else lineColor))
+        }
+        setTextColor(ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf()), intArrayOf(muted, if (primary) Color.WHITE else ink)))
         filterTouchesWhenObscured = true
         setOnClickListener { if (!busy) action() }
     }
@@ -195,7 +200,7 @@ class NetworkActivity : Activity() {
         chatButton = button("Chats ▾") { showChats() }.apply {
             textSize = if (compact) 15f else 18f; typeface = Typeface.create("monospace", Typeface.BOLD)
             maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.START or Gravity.CENTER_VERTICAL
-            setPadding(0, 0, dp(6), 0)
+            setPadding(0, 0, dp(6), 0); background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
         }
         header.addView(chatButton, LinearLayout.LayoutParams(0, -2, 1f))
         stationLabel = text("STATION —", 11f, green, true); header.addView(stationLabel); chrome.addView(header)
@@ -559,6 +564,9 @@ class NetworkActivity : Activity() {
         openDialogs.removeAll { !it.isShowing }
         dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         openDialogs.add(dialog); dialog.show()
+        for (which in listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)) {
+            dialog.getButton(which)?.apply { setTextColor(ink); isAllCaps = false; filterTouchesWhenObscured = true }
+        }
     }
     private fun confirm(title: String, detail: String, action: () -> Unit) {
         AlertDialog.Builder(this).setTitle(title).setMessage(detail).setNegativeButton("Cancel", null)
@@ -624,11 +632,12 @@ class NetworkActivity : Activity() {
             val summary = checkNotNull(book).summary(chat.id)
             "${if (chat.id == book?.active()?.id) "● " else ""}${chat.name}" +
                 if (summary.problem) " · CHECK LINK" else " · ${summary.unread} new / ${summary.queued} queued"
-        }.toMutableList().apply { add("Chat settings") }.toTypedArray()
+        }.toMutableList().apply { add("Chat settings"); add("Rename chat") }.toTypedArray()
         AlertDialog.Builder(this).setTitle("Chats · two devices each")
-            .setItems(rows) { _, which -> if (which == chats.size) selectTab(1) else switchChat(chats[which].id) }
-            .setNeutralButton("New chat") { _, _ -> editChatName(create = true) }
-            .setPositiveButton("Rename") { _, _ -> editChatName(create = false) }
+            .setItems(rows) { _, which ->
+                when (which) { chats.size -> selectTab(1); chats.size + 1 -> editChatName(create = false); else -> switchChat(chats[which].id) }
+            }
+            .setPositiveButton("New chat") { _, _ -> editChatName(create = true) }
             .setNegativeButton("Close", null).create().also(::secureShow)
     }
     private fun editChatName(create: Boolean) {
@@ -676,9 +685,9 @@ class NetworkActivity : Activity() {
         }
         AlertDialog.Builder(this).setTitle("Station ${v.role} · status")
             .setMessage("$contact\n${if (connectionFailed) "Latest relay check failed" else "Connection is checked only while the app is open"}\n\n${v.pending} packets queued locally\n${v.awaitingReceipt} messages awaiting a saved receipt\n${v.unread} new messages\n\n${v.padRemaining?.let { "$it outgoing pad slots remaining" } ?: "AES-GCM test mode"}\n${if (v.peerDevice != null) "Peer device key pinned" else if (v.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "Device identity not bound"}\n\nPeer saved means the other device stored the message; it does not mean a person read it. Retrying uses the same encrypted packets and no new pad slots.\n\n${status.text}")
-            .setPositiveButton("Chat settings") { _, _ -> selectTab(1) }
+            .setPositiveButton("Settings") { _, _ -> selectTab(1) }
             .setNegativeButton("Close", null)
-            .setNeutralButton("Retry delivery") { _, _ ->
+            .setNeutralButton("Retry") { _, _ ->
                 runTask(onSuccess = { runTask(network = true) { syncChats() } }) {
                     val n = checkNotNull(engine).retryDelivery()
                     "$n SAVED MESSAGES REQUEUED · checking existing receipts"
@@ -757,7 +766,7 @@ class NetworkActivity : Activity() {
                 note = action(); success = true; if (network) backoff = 15000L
                 book?.refresh(); view = engine?.view(); if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
             } catch (e: Exception) {
-                relayFailure = network
+                relayFailure = network && (e is java.io.IOException || e is RelayHttpException)
                 note = if (load && engine != null && e is java.io.IOException) {
                     if (qrTransfer) "QR IMAGE COULD NOT BE READ // no settings changed"
                     else if (publicTransfer) "PUBLIC CARD TRANSFER FAILED // identity retained; retry the file transfer"

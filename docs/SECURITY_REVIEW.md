@@ -74,7 +74,10 @@ slot burn before encryption, restart/retirement/exhaustion, signed transcript bi
 physical-pairing proofs, malformed QR and scanner runtime, vault faults, separate
 friend delivery, cross-chat key reuse rejection, bounded index/queue and exact delivery
 recovery. Native screenshots and keyboard checks cover a 480 × 800 pixel viewport
-at 240 dpi (320 dp width), alongside normal phone dimensions. CI targets Android
+at 240 dpi (320 dp width), alongside normal phone dimensions. The keyboard-visible
+Android 12 capture copies the app window surface; the IME itself is not included
+in that image. A separate assertion verifies the keyboard is shown and Send/traffic
+remain visible. CI targets Android
 API 29, Android 12/API 31 and API 35. Successful execution is reported in the PR/CI;
 the presence of test source alone is not a passing test result.
 

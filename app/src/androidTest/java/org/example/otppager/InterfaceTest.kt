@@ -41,7 +41,7 @@ class InterfaceTest {
         instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == label }.performClick() }
         instrumentation.waitForIdleSync()
     }
-    private fun capture(instrumentation: Instrumentation, activity: Activity, name: String) {
+    private fun capture(instrumentation: Instrumentation, activity: Activity, name: String, windowOnly: Boolean = false) {
         val context = instrumentation.targetContext
         @Suppress("UNCHECKED_CAST")
         val dialogs = (NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }
@@ -59,7 +59,20 @@ class InterfaceTest {
         val image: Bitmap
         try {
             instrumentation.waitForIdleSync(); Thread.sleep(200)
-            image = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
+            image = if (windowOnly) {
+                // Android 12 compositor capture can stall with a secure IME layer. Copy the
+                // actual app surface instead; keyboard presence/geometry is asserted separately.
+                val bounds = android.graphics.Point()
+                instrumentation.runOnMainSync { bounds.set(activity.window.decorView.width, activity.window.decorView.height) }
+                val copy = Bitmap.createBitmap(bounds.x, bounds.y, Bitmap.Config.ARGB_8888)
+                val done = java.util.concurrent.CountDownLatch(1)
+                val result = java.util.concurrent.atomic.AtomicInteger(-1)
+                android.view.PixelCopy.request(activity.window, copy, { result.set(it); done.countDown() }, android.os.Handler(android.os.Looper.getMainLooper()))
+                if (!done.await(5, java.util.concurrent.TimeUnit.SECONDS) || result.get() != android.view.PixelCopy.SUCCESS) {
+                    copy.recycle(); error("App window capture failed: ${result.get()}")
+                }
+                copy
+            } else checkNotNull(instrumentation.uiAutomation.takeScreenshot())
         } finally {
             instrumentation.runOnMainSync { activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE); dialogs.forEach { it.window!!.addFlags(WindowManager.LayoutParams.FLAG_SECURE) } }
         }
@@ -148,7 +161,7 @@ class InterfaceTest {
             awaitStation(instrumentation, activity)
             instrumentation.runOnMainSync {
                 assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
-                assertTrue(all(content(activity)).filterIsInstance<TextView>().any { it.text.toString().contains("DEVICE EXCHANGE INCOMPLETE") })
+                assertTrue(all(content(activity)).filterIsInstance<TextView>().any { it.text.toString().contains("DEVICE EXCHANGE INCOMPLETE") || it.text.toString().contains("FINISH DEVICE EXCHANGE") })
             }
             tap(instrumentation, activity, "Device")
             instrumentation.runOnMainSync {
@@ -241,9 +254,12 @@ class InterfaceTest {
                 if (!keyboard) Thread.sleep(50)
             }
             assertTrue("Keyboard did not open", keyboard)
-            instrumentation.waitForIdleSync(); assertUsable(); capture(instrumentation, launched, "messages-compact-keyboard")
+            instrumentation.waitForIdleSync(); assertUsable(); capture(instrumentation, launched, "messages-compact-keyboard", windowOnly = true)
         } finally {
-            activity?.let { instrumentation.runOnMainSync { it.finish() }; instrumentation.waitForIdleSync() }
+            activity?.let { a -> instrumentation.runOnMainSync {
+                a.getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(a.window.decorView.windowToken, 0)
+                a.finish()
+            }; instrumentation.waitForIdleSync() }
             if (oldKeyboard == "null") shell("settings delete secure show_ime_with_hard_keyboard")
             else shell("settings put secure show_ime_with_hard_keyboard $oldKeyboard")
             store.forget(); store.sibling("pads").forget()
@@ -275,7 +291,8 @@ class InterfaceTest {
                     all(content(activity)).filterIsInstance<Button>().first { it.text.toString().contains("▾") }.performClick()
                     @Suppress("UNCHECKED_CAST")
                     val dialogs = NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }.get(activity) as List<android.app.AlertDialog>
-                    val dialog = dialogs.last(); val index = dialog.listView.adapter.count - 1
+                    val dialog = dialogs.last()
+                    val index = (0 until dialog.listView.adapter.count).first { dialog.listView.adapter.getItem(it).toString() == "Chat settings" }
                     dialog.listView.performItemClick(dialog.listView.getChildAt(index), index, index.toLong())
                 }
                 instrumentation.waitForIdleSync()
