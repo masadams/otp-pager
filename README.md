@@ -157,3 +157,8 @@ replay state and pad allocation; wrong-signature and downgrade installs must fai
 The one-time switch from existing temporary debug keys still requires fresh pairings.
 The release key is not configured until the owner runs setup on their phone or PC.
 Android/Termux setup includes a compact Bitwarden Secure Note backup and tested restore.
+
+During temporary development, unsigned CI review APKs can instead be signed privately
+with the owner's authorized temporary signer and delivered as test APKs. No signing key
+is stored in the public repository or Actions artifacts. Production custody and the
+initial signature transition remain explicit; see the update instructions.

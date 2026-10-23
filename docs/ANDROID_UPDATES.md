@@ -5,6 +5,28 @@ chat storage and pad ledger locations unchanged. Android installs a higher-versi
 with the same signer over the app and preserves its data/UID. No pad export, vault
 backup/restore, uninstall or re-pairing is part of a normal update.
 
+## Temporary development signer without owner setup
+
+For the current development period, the owner may authorize a temporary signer generated
+and retained privately by the development assistant. This is separate from the owner-key
+GitHub signing workflow: no repository secret setup, Termux or PC is needed for this route.
+The key/password backup is private, never committed or uploaded as a public Actions artifact.
+It is retained as a private recovery backup so later development builds can use the same key.
+
+Android CI uploads `otp-pager-unsigned-review-apk`: an **unsigned** non-debuggable release
+APK at the normal source versionCode, build/source-tree metadata, hashes, and public Android
+SDK verification tools. It contains no signing credentials and must never be installed as a
+signed field release. The assistant verifies the successful workflow's source commit and
+source tree, signs privately using the saved development key, verifies package/version/signer
+and APK digest, and supplies the signed test APK. The public CI artifact is not a key backup.
+
+This is intentionally temporary custody. The first move from existing debug APKs to this
+key still requires fresh pairing, and a later switch to an independently generated production
+key also requires a deliberate fresh-install/fresh-pairing transition. Normal development
+updates using this same saved key and increasing versionCodes preserve app state. The
+production publisher's main-only pinned-owner-key requirements remain in place; privately
+signed development downloads are not presented as completed production releases.
+
 ## One-time owner setup from an Android phone
 
 Install Termux from its official F-Droid distribution:
