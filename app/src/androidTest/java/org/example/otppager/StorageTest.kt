@@ -54,4 +54,13 @@ class StorageTest {
         } finally { store.forget() }
     }
 
+    @Test fun missingVaultWithExistingKeyCannotResetReservations() {
+        val store = SecureStore(context, "test-missing"); store.forget()
+        try {
+            store.save(JSONObject().put("version", 2).put("counter", 12))
+            File(context.noBackupFilesDir, "test-missing.bin").delete()
+            try { store.load(); fail("Missing vault silently reset") } catch (_: IllegalStateException) {}
+        } finally { store.forget() }
+    }
+
 }

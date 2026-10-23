@@ -284,7 +284,7 @@ class NetworkActivity : Activity() {
     private fun setBusy(value: Boolean) {
         busy = value
         for (view in listOf(sendButton, saveButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
-        sendButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && !errorLoading
+        sendButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && latest?.padRemaining != 0 && !errorLoading
     }
     private fun updateIndicators() {
         if (!::indicators.isInitialized) return
@@ -331,18 +331,20 @@ class NetworkActivity : Activity() {
     private fun runTask(load: Boolean = false, clearComposer: Boolean = false, action: () -> String) {
         if (busy || !active || !unlocked || isFinishing) return
         val taskGeneration = generation
+        val readingMessages = tab == 0
         setBusy(true); handler.removeCallbacks(poll)
         worker.execute {
             var note: String; var view: StationEngine.View? = null
             var config: org.json.JSONObject? = null; var success = false; var relayFailure = false
             try {
                 note = action(); success = true; backoff = 15000L
-                if (tab == 0) engine?.markRead()
+                if (readingMessages) engine?.markRead()
                 view = engine?.view(); if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
             } catch (e: Exception) {
                 relayFailure = e is java.io.IOException || e is RelayHttpException
                 note = friendly(e); backoff = (backoff * 2).coerceAtMost(60000L)
-                if (load) errorLoading = true
+                if (load && engine == null) errorLoading = true
+                if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
                 try { view = engine?.view() } catch (_: Exception) { errorLoading = true }
             }
             runOnUiThread {

@@ -29,7 +29,7 @@ No project-wide code license has been selected yet. Do not copy Jericho source i
 
 See [Docker / Portainer + Nginx setup](docs/DEPLOYMENT.md) and
 [two-device testing](docs/TWO_DEVICE_TEST.md). The Android field terminal currently
-uses experimental AES-GCM; true OTP and Jericho compatibility remain future work.
+offers experimental AES-GCM test mode and a finite-pad mode described below; validated physical entropy, information-theoretic authentication, and Jericho compatibility remain future work.
 
 ## Android v0.2 hardening
 

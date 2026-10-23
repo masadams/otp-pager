@@ -92,14 +92,23 @@ class DeliveryTest {
             relay.packets.add(++relay.seq to original); b.sync(); assertEquals(1, b.view().messages.size)
             assertEquals(126, b.view().padRemaining) // Replay does not consume another receipt slot.
             b.clearHistory(); b = StationEngine(bStore, relay); assertEquals(126, b.view().padRemaining)
-            b.forget(); b.configure("https://pager.example.com", "t".repeat(43), secret, "B")
-            try { b.installPad(bundle); fail("Re-imported retired pad") } catch (_: IllegalArgumentException) {}
             // Exhaust all remaining A slots without emitting a ciphertext. Never fall back to AES.
             val ledger = PadLedger(aStore.sibling("pads"))
             while (ledger.high(id) < PadProtocol.SLOTS) ledger.reserve(id)
             a = StationEngine(aStore, relay)
             try { a.send("must fail"); fail("Exhausted pad sent a message") } catch (_: IllegalStateException) {}
             assertEquals(0, a.view().padRemaining)
+            b.send("Still receive when exhausted"); b.sync(); a.sync()
+            assertTrue(a.view().messages.any { it.incoming && it.text == "Still receive when exhausted" })
+            assertEquals(0, a.view().padRemaining)
+            val savedLedger = aStore.sibling("pads").load()!!
+            val laggingLedger = JSONObject(savedLedger.toString())
+            laggingLedger.getJSONObject("pads").put(id, 0)
+            aStore.sibling("pads").save(laggingLedger)
+            try { StationEngine(aStore, relay); fail("Lagging ledger was accepted") } catch (_: IllegalStateException) {}
+            aStore.sibling("pads").save(savedLedger)
+            b.forget(); b.configure("https://pager.example.com", "t".repeat(43), secret, "B")
+            try { b.installPad(bundle); fail("Re-imported retired pad") } catch (_: IllegalArgumentException) {}
             bundle.fill(0)
         } finally { aStore.forget(); bStore.forget(); aStore.sibling("pads").forget(); bStore.sibling("pads").forget() }
     }
