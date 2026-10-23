@@ -52,6 +52,7 @@ class NetworkActivity : Activity() {
     private lateinit var scanIdentityQrButton: Button
     private var pendingScan: String? = null
     private var pairingDialog: AlertDialog? = null
+    private val openDialogs = mutableListOf<AlertDialog>()
     private lateinit var showQrButton: Button
     private lateinit var scanQrButton: Button
     private lateinit var imageQrButton: Button
@@ -90,6 +91,7 @@ class NetworkActivity : Activity() {
     private lateinit var saveButton: Button
     private lateinit var saveRelayButton: Button
     private lateinit var syncButton: Button
+    private lateinit var navigation: LinearLayout
     private lateinit var trafficTab: Button
     private lateinit var linkTab: Button
     private val paper = Color.WHITE
@@ -205,6 +207,7 @@ class NetworkActivity : Activity() {
         }
         chrome.addView(indicators, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (compact) 6 else 10) })
         val tabs = row().apply { setPadding(0, dp(if (compact) 4 else 8), 0, dp(2)) }
+        navigation = tabs
         trafficTab = button("Messages") { selectTab(0) }; linkTab = button("Link") { selectTab(1) }
         padTab = button("Pad") { selectTab(2) }; deviceTab = button("Device") { selectTab(3) }
         if (compact) for (item in listOf(trafficTab, linkTab, padTab, deviceTab)) {
@@ -402,13 +405,13 @@ class NetworkActivity : Activity() {
                 IdentityProtocol.publicKey(card); importedDeviceCard = card
                 "IDENTITY SCANNED · compare the full fingerprint before pinning"
             } else if (scanned != null) {
-                check(engine?.state == null) { "Existing pairing preserved. Forget it only when arranging a fresh secret and pad." }
+                checkNotNull(engine).requireCableEligible()
                 loadedInvite = PairingInvite.decode(scanned)
                 "QR READ · review settings before saving"
             } else if (document == null) "STATION READY" else {
                 val (operation, uri) = document
                 if (operation == 85) {
-                    check(engine?.state == null) { "Existing pairing preserved; QR import requires a new station" }
+                    checkNotNull(engine).requireCableEligible()
                     val scannedImage = contentResolver.openInputStream(uri)!!.use { PairingQr.readImage(it) }
                     loadedInvite = PairingInvite.decode(scannedImage)
                     "QR READ · review settings before saving"
@@ -447,7 +450,7 @@ class NetworkActivity : Activity() {
     private fun selectTab(value: Int) {
         root.requestFocus()
         getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(root.windowToken, 0)
-        tab = value; traffic.visibility = if (value == 0) View.VISIBLE else View.GONE; linkScroll.visibility = if (value == 1) View.VISIBLE else View.GONE
+        tab = value; updateNavigation(); traffic.visibility = if (value == 0) View.VISIBLE else View.GONE; linkScroll.visibility = if (value == 1) View.VISIBLE else View.GONE
         padScroll.visibility = if (value == 2) View.VISIBLE else View.GONE
         deviceScroll.visibility = if (value == 3) View.VISIBLE else View.GONE
         for ((index, button) in listOf(trafficTab, linkTab, padTab, deviceTab).withIndex()) {
@@ -498,28 +501,27 @@ class NetworkActivity : Activity() {
         val expire = Runnable { dialog.dismiss() }
         pairingDialog = dialog; handler.removeCallbacks(poll)
         dialog.setOnDismissListener { handler.removeCallbacks(expire); image.setImageDrawable(null); bitmap.recycle(); pairingDialog = null; schedule() }
-        dialog.show(); dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        secureShow(dialog)
         handler.postDelayed(expire, 60000)
     }
     private fun previewSetupQr(invite: PairingInvite) {
         val master = Protocol.master(invite.secret)
         val fingerprint = try { Protocol.fingerprint(master) } finally { master.fill(0) }
         val dialog = AlertDialog.Builder(this).setTitle("Review scanned setup")
-            .setMessage("Relay: ${invite.endpoint}\nThis device: Station ${invite.role}\nRelay token: included (hidden)\nPairing secret: included (hidden)\nPair check: $fingerprint\n\nOnly continue if this came from your other physical station. The pad and device identity are not included. Use this setup to save the link without typing. Pad and identity setup remain separate in this QR fallback.")
+            .setMessage("Relay: ${invite.endpoint}\nThis device: Station ${invite.role}\nRelay token: included (hidden)\nPairing secret: included (hidden)\nPair check: $fingerprint\n\nOnly continue if this came from your other physical station. This replaces unused link settings in this chat only. The pad and device identity are not included. Use this setup to save the link without typing. Pad and identity setup remain separate in this QR fallback.")
             .setNegativeButton("Cancel", null).setPositiveButton("Use this setup") { _, _ ->
-                if (latest?.role == "—" && !busy) {
+                if (latest?.cableEligible == true && !busy) {
                     urlField.setText(invite.endpoint); tokenField.setText(invite.token); secretField.setText(invite.secret)
                     roleGroup.check(if (invite.role == "A") R.id.station_a else R.id.station_b)
                     runTask {
-                        check(checkNotNull(engine).state == null) { "Existing pairing preserved" }
-                        checkNotNull(engine).configure(invite.endpoint, invite.token, invite.secret, invite.role)
+                        checkNotNull(engine).acceptInvite(invite)
                         "LINK SAVED · continue pad setup or start fresh cable pairing"
                     }
                 } else report("Existing pairing preserved")
             }.create()
         pairingDialog = dialog; handler.removeCallbacks(poll)
         dialog.setOnDismissListener { pairingDialog = null; schedule() }
-        dialog.show(); dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        secureShow(dialog)
     }
     private fun showDeviceVerification() {
         val card = peerCardField.text.toString().trim()
@@ -535,7 +537,7 @@ class NetworkActivity : Activity() {
                 else { dialog.dismiss(); runTask { checkNotNull(engine).pinDevice(card, suffix); "DEVICE PINNED · repeat exchange on other station" } }
             }
         }
-        handler.removeCallbacks(poll); dialog.setOnDismissListener { schedule() }; dialog.show()
+        handler.removeCallbacks(poll); dialog.setOnDismissListener { schedule() }; secureShow(dialog)
     }
     private fun showPadVerification() {
         val input = field("Last 8 characters from OTHER station").apply { inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS }
@@ -551,13 +553,25 @@ class NetworkActivity : Activity() {
         }
         handler.removeCallbacks(poll)
         dialog.setOnDismissListener { schedule() }
-        dialog.show()
+        secureShow(dialog)
+    }
+    private fun secureShow(dialog: AlertDialog) {
+        openDialogs.removeAll { !it.isShowing }
+        dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        openDialogs.add(dialog); dialog.show()
     }
     private fun confirm(title: String, detail: String, action: () -> Unit) {
         AlertDialog.Builder(this).setTitle(title).setMessage(detail).setNegativeButton("Cancel", null)
-            .setPositiveButton("Continue") { _, _ -> if (!busy) action() }.show()
+            .setPositiveButton("Continue") { _, _ -> if (!busy) action() }.create().also(::secureShow)
     }
-    private fun report(message: String) { if (active && unlocked && ::status.isInitialized && status.text.toString() != message) status.text = message }
+    private fun report(message: String) {
+        if (!active || !unlocked || !::status.isInitialized) return
+        if (status.text.toString() != message) status.text = message
+        status.visibility = if (latest?.setupComplete == true && message in listOf("STATION READY", "LATEST MESSAGES", "Connected")) View.GONE else View.VISIBLE
+    }
+    private fun updateNavigation() {
+        if (::navigation.isInitialized) navigation.visibility = if (latest?.setupComplete == true && tab == 0) View.GONE else View.VISIBLE
+    }
     private fun setBusy(value: Boolean) {
         busy = value
         chatButton.isEnabled = !value && book != null
@@ -565,7 +579,7 @@ class NetworkActivity : Activity() {
         syncButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && latest?.pairingComplete == true && !errorLoading
         sendButton.isEnabled = !value && latest?.canSend == true && !errorLoading
         showQrButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && !errorLoading
-        scanQrButton.isEnabled = !value && latest?.role == "—" && !errorLoading
+        scanQrButton.isEnabled = !value && latest?.cableEligible == true && !errorLoading
         imageQrButton.isEnabled = scanQrButton.isEnabled
         showIdentityQrButton.isEnabled = !value && latest?.ownDevice != null
         scanIdentityQrButton.isEnabled = !value && latest?.ownDevice != null && latest?.peerDevice == null
@@ -610,12 +624,12 @@ class NetworkActivity : Activity() {
             val summary = checkNotNull(book).summary(chat.id)
             "${if (chat.id == book?.active()?.id) "● " else ""}${chat.name}" +
                 if (summary.problem) " · CHECK LINK" else " · ${summary.unread} new / ${summary.queued} queued"
-        }.toTypedArray()
+        }.toMutableList().apply { add("Chat settings") }.toTypedArray()
         AlertDialog.Builder(this).setTitle("Chats · two devices each")
-            .setItems(rows) { _, which -> switchChat(chats[which].id) }
+            .setItems(rows) { _, which -> if (which == chats.size) selectTab(1) else switchChat(chats[which].id) }
             .setNeutralButton("New chat") { _, _ -> editChatName(create = true) }
             .setPositiveButton("Rename") { _, _ -> editChatName(create = false) }
-            .setNegativeButton("Close", null).show()
+            .setNegativeButton("Close", null).create().also(::secureShow)
     }
     private fun editChatName(create: Boolean) {
         val input = field("Friend's name").apply {
@@ -638,7 +652,7 @@ class NetworkActivity : Activity() {
                 }
             }
         } }
-        dialog.show(); dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        secureShow(dialog)
     }
     private fun discardDraftThen(action: () -> Unit) {
         if (composer.text.isNotEmpty()) confirm("Discard unsent draft?", "Queued messages stay in their original chat. This only clears what you are typing.", action)
@@ -662,16 +676,17 @@ class NetworkActivity : Activity() {
         }
         AlertDialog.Builder(this).setTitle("Station ${v.role} · status")
             .setMessage("$contact\n${if (connectionFailed) "Latest relay check failed" else "Connection is checked only while the app is open"}\n\n${v.pending} packets queued locally\n${v.awaitingReceipt} messages awaiting a saved receipt\n${v.unread} new messages\n\n${v.padRemaining?.let { "$it outgoing pad slots remaining" } ?: "AES-GCM test mode"}\n${if (v.peerDevice != null) "Peer device key pinned" else if (v.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "Device identity not bound"}\n\nPeer saved means the other device stored the message; it does not mean a person read it. Retrying uses the same encrypted packets and no new pad slots.\n\n${status.text}")
-            .setPositiveButton("Close", null)
+            .setPositiveButton("Chat settings") { _, _ -> selectTab(1) }
+            .setNegativeButton("Close", null)
             .setNeutralButton("Retry delivery") { _, _ ->
                 runTask(onSuccess = { runTask(network = true) { syncChats() } }) {
                     val n = checkNotNull(engine).retryDelivery()
                     "$n SAVED MESSAGES REQUEUED · checking existing receipts"
                 }
-            }.show()
+            }.create().also(::secureShow)
     }
     private fun render(view: StationEngine.View) {
-        latest = view
+        latest = view; updateNavigation()
         val current = book?.active()
         val elsewhere = book?.unreadElsewhere() ?: 0
         val chatLabel = "${current?.name ?: "Chats"} ▾${if (elsewhere > 0) " · $elsewhere new" else ""}"
@@ -791,10 +806,12 @@ class NetworkActivity : Activity() {
         if (active && unlocked && !isFinishing && !errorLoading) handler.postDelayed(poll, delay)
     }
     override fun onStop() {
+        openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
         pairingDialog?.dismiss(); pairingDialog = null
         generation++; active = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
         if (::composer.isInitialized) composer.text.clear()
         if (::messages.isInitialized) messages.removeAllViews()
+        if (::chatButton.isInitialized) chatButton.text = "Chats"
         if (::tokenField.isInitialized) { tokenField.text.clear(); secretField.text.clear() }
         latest = null; rendered = null; importedDeviceCard = null
         if (::peerCardField.isInitialized) peerCardField.text.clear()

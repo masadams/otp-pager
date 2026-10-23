@@ -57,6 +57,19 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         claims?.room(secret, store.namespace, existing = previous != null)
         store.save(next); state = next; cachedView = null
     }
+    /** Explicit QR review may replace unused link settings, never pads, counters or traffic. */
+    fun acceptInvite(invite: PairingInvite) {
+        requireCableEligible()
+        val old = state
+        if (old?.getString("secret") == invite.secret && old.getString("role") == invite.role) {
+            configure(invite.endpoint, invite.token, invite.secret, invite.role); return
+        }
+        val next = JSONObject().put("version", 2).put("endpoint", invite.endpoint).put("token", invite.token)
+            .put("secret", invite.secret).put("role", invite.role).put("counter", 0L).put("cursor", 0L)
+            .put("high", 0L).put("seen", JSONArray()).put("outbox", JSONArray()).put("inbox", JSONArray()).put("epoch", "")
+        claims?.room(invite.secret, store.namespace, existing = false)
+        validate(next); store.save(next); state = next; cachedView = null
+    }
     private var stagedCable: JSONObject? = null
     /** Only after the user explicitly approves replacing the current conversation. */
     fun resetForCable() {
@@ -380,6 +393,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     }
     data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false)
     data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true, val cableEligible: Boolean = true, val awaitingReceipt: Int = 0) {
+        val setupComplete: Boolean get() = pairingComplete && padCheck != null && padVerified && peerReady && peerDevice != null
         val canSend: Boolean get() = pairingComplete && role != "—" && padRemaining != 0 && (padCheck == null || (padVerified && peerReady)) && (ownDevice == null || peerDevice != null)
     }
     fun view(): View {

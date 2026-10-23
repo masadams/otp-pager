@@ -13,6 +13,7 @@ certification or verification of the live Nginx/Portainer configuration.
 | Reusing a pad in two local chat vaults would reset its directional allocation | High, key reuse could expose plaintext | Persistent cross-chat pad claims, seeded from legacy retirement records; reject a pad claimed by another chat even if its bundle is rewrapped with a different setup binding |
 | Reusing a mailbox secret across friends could mix traffic and weaken identity boundaries | High, friend isolation fails | Persistent mailbox claims; new chats generate fresh secrets and copy only server URL/token; forgetting a configured chat does not make its secret reusable |
 | Relay storage loss left accepted messages and lost receipts stranded | Medium, availability and misleading delivery state | Recover retained original ciphertext/receipts; preserve replay state, original expiry and pad reservations; authenticate device signatures before replay-triggered receipt recovery |
+| Sensitive dialogs relied on the activity window rather than an explicit dialog-window policy | Low, possible screenshot exposure of dialog contents on differing window behavior | Apply FLAG_SECURE before showing every dialog and dismiss all dialogs when the activity stops |
 | Android 12 and older implicitly exported the dynamically registered USB receiver | Low, another app could spoof disconnect/permission events to disrupt pairing; actual USB permissions still checked | Register the receiver as not exported through AndroidX across supported API levels |
 | Local operations changed network backoff and some storage/file failures looked like network failures | Low, misleading connection/retry indicators | Explicit network-task classification; local operations preserve network backoff; monotonic elapsed time for contact age |
 
@@ -59,8 +60,8 @@ components; user-entered names never form filenames. Duplicate names and hidden
 format/control characters are rejected. Missing/damaged index state fails closed.
 
 The cross-chat claims registry retains pad IDs and derived mailbox IDs after Forget
-pairing. Keys/pads are not copied when a new friend is added. Existing paired chats
-cannot silently change role/secret or pinned peer key. USB pairing is explicitly
+pairing. Keys/pads are not copied when a new friend is added. QR review can replace only unused server-only setup; installed pads or any send/receive
+activity blocks replacement. Existing paired chats cannot silently change role/secret or pinned peer key. USB pairing is explicitly
 bound to the selected chat ID. A packet moved between independently paired friends
 fails authentication. These are independent two-device chats, not group encryption.
 A friend deliberately copying shared material to another device remains outside
@@ -82,3 +83,8 @@ owner server exposure and signing-key custody have not been verified by this rev
 
 Platform reference: https://developer.android.com/privacy-and-security/keystore
 Mudita specifications: https://store.mudita.com/store/mudita-kompakt-global
+
+
+Completed pairings hide administrative navigation from the normal conversation.
+Chat settings remains available through the picker/status panel; this is a layout
+choice, not an authorization boundary. Tests verify both hiding and access to settings.

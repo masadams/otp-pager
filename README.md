@@ -65,8 +65,8 @@ starting. Integrated WireGuard is still a design, not implemented.
 
 Link → Show setup QR shares a configured station's relay URL, token and pairing
 secret with the opposite station role. A new station can Scan setup QR (embedded,
-offline camera scanner) or Import QR image, review, then save. Existing pairings
-cannot be overwritten by scans. The QR is secret, screenshot-protected and closes
+offline camera scanner) or Import QR image, review, then save. Used chats and installed pads
+cannot be overwritten by scans. Explicit review can replace unused server-only setup. The QR is secret, screenshot-protected and closes
 after one minute; photographed credentials remain valid. Pad transfer and device
 identity verification remain separate. See [setup and security details](docs/QR_PAIRING.md).
 
@@ -114,3 +114,9 @@ The compact layout targets Mudita Kompakt's 480 × 800 screen as well as regular
 Android phones. Android 12/API 31 emulator coverage exercises the platform family;
 actual Kompakt USB host/AOA, keyboard, ghosting and battery behavior still require
 hardware testing. See [security code review](docs/SECURITY_REVIEW.md).
+
+
+After a complete USB pairing (or completed manual pad/device verification), Messages
+becomes the main view and the setup tabs are hidden. Open the chat picker → **Chat
+settings**, or tap status → **Chat settings**, to reach Link, Pad and Device. Returning
+to Messages hides those tabs again. Unpaired chats keep their setup navigation.

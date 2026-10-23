@@ -137,4 +137,21 @@ class ChatBookTest {
             SecureStore(context, index).forget(); SecureStore(context, "$index-claims").forget()
         }
     }
+    @Test fun reviewedQrCanReplaceOnlyUnusedFriendSetup() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val store = SecureStore(context, "invite-unused")
+        store.forget(); store.sibling("pads").forget()
+        try {
+            val engine = StationEngine(store)
+            engine.configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "A")
+            val invite = PairingInvite("https://other.example.com", "u".repeat(43), Protocol.randomSecret(), "B")
+            engine.acceptInvite(invite)
+            assertEquals(invite.secret, engine.state!!.getString("secret")); assertEquals("B", engine.view().role)
+            engine.send("Existing traffic")
+            val before = engine.state.toString()
+            try { engine.acceptInvite(PairingInvite(invite.endpoint, invite.token, Protocol.randomSecret(), "A")); fail("QR overwrote a used chat") } catch (_: IllegalStateException) {}
+            assertEquals(before, engine.state.toString())
+        } finally { store.forget(); store.sibling("pads").forget() }
+    }
+
 }

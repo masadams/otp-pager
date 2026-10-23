@@ -15,7 +15,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        api: [29, 31, 35]
+        include:
+          - api: 29
+            profile: pixel_2
+          - api: 31
+            profile: Nexus S # 480x800, 240 dpi: Kompakt-sized AOSP 12 viewport
+          - api: 35
+            profile: pixel_2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -47,7 +53,9 @@ jobs:
         with:
           api-level: ${{ matrix.api }}
           arch: x86_64
-          profile: pixel_2
+          profile: ${{ matrix.profile }}
+          ram-size: 2048M
+          heap-size: 256M
           disable-animations: true
           script: |
             gradle --no-daemon :app:connectedDebugAndroidTest

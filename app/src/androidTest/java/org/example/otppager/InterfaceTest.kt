@@ -43,18 +43,25 @@ class InterfaceTest {
     }
     private fun capture(instrumentation: Instrumentation, activity: Activity, name: String) {
         val context = instrumentation.targetContext
+        @Suppress("UNCHECKED_CAST")
+        val dialogs = (NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }
+            .get(activity) as List<android.app.AlertDialog>).filter { it.isShowing }
         // Only this test's fictional profile is present. Check the production flag before
         // temporarily permitting compositor capture; restore it even if capture fails.
         instrumentation.runOnMainSync {
             assertTrue(activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_SECURE != 0)
             activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            dialogs.forEach { dialog ->
+                assertTrue(dialog.window!!.attributes.flags and WindowManager.LayoutParams.FLAG_SECURE != 0)
+                dialog.window!!.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
         }
         val image: Bitmap
         try {
             instrumentation.waitForIdleSync(); Thread.sleep(200)
             image = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
         } finally {
-            instrumentation.runOnMainSync { activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+            instrumentation.runOnMainSync { activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE); dialogs.forEach { it.window!!.addFlags(WindowManager.LayoutParams.FLAG_SECURE) } }
         }
         try {
             if (android.os.Build.VERSION.SDK_INT >= 29) {
@@ -104,6 +111,16 @@ class InterfaceTest {
                 fields.forEach { assertTrue("Credential field must be masked", it.transformationMethod is PasswordTransformationMethod) }
             }
             capture(instrumentation, activity, "messages")
+            instrumentation.runOnMainSync {
+                all(content(activity)).filterIsInstance<Button>().first { it.text.toString().contains("▾") }.performClick()
+            }
+            capture(instrumentation, activity, "chats")
+            instrumentation.runOnMainSync {
+                @Suppress("UNCHECKED_CAST")
+                val dialogs = NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }.get(activity) as List<android.app.AlertDialog>
+                assertTrue(dialogs.last().isShowing)
+                dialogs.last().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick()
+            }
             tap(instrumentation, activity, "Link"); capture(instrumentation, activity, "link")
             tap(instrumentation, activity, "Pad"); capture(instrumentation, activity, "pad")
             instrumentation.runOnMainSync {
@@ -178,13 +195,11 @@ class InterfaceTest {
         fun shell(command: String): String = instrumentation.uiAutomation.executeShellCommand(command).use {
             android.os.ParcelFileDescriptor.AutoCloseInputStream(it).bufferedReader().readText().trim()
         }
-        val oldSize = shell("wm size").lineSequence().firstOrNull { it.startsWith("Override size:") }?.substringAfter(": ")
-        val oldDensity = shell("wm density").lineSequence().firstOrNull { it.startsWith("Override density:") }?.substringAfter(": ")
+        org.junit.Assume.assumeTrue("Kompakt viewport runs on the native API 31 AVD", android.os.Build.VERSION.SDK_INT == 31)
         val oldKeyboard = shell("settings get secure show_ime_with_hard_keyboard")
         val store = SecureStore(context); store.forget(); store.sibling("pads").forget()
         var activity: Activity? = null
         try {
-            shell("wm size 480x800"); shell("wm density 240")
             shell("settings put secure show_ime_with_hard_keyboard 1")
             val engine = StationEngine(store)
             engine.configure("https://pager.example.com", "x".repeat(43), Protocol.randomSecret(), "A")
@@ -209,6 +224,7 @@ class InterfaceTest {
             }
             assertUsable(); capture(instrumentation, launched, "messages-compact")
             instrumentation.runOnMainSync {
+                assertEquals(480, launched.resources.displayMetrics.widthPixels)
                 assertEquals(320, launched.resources.configuration.screenWidthDp)
                 val input = all(content(launched)).filterIsInstance<EditText>().first { it.hint.toString() == "Write a message…" }
                 input.requestFocus(); input.setText("Keyboard remains usable")
@@ -228,11 +244,50 @@ class InterfaceTest {
             instrumentation.waitForIdleSync(); assertUsable(); capture(instrumentation, launched, "messages-compact-keyboard")
         } finally {
             activity?.let { instrumentation.runOnMainSync { it.finish() }; instrumentation.waitForIdleSync() }
-            shell("wm size ${oldSize ?: "reset"}"); shell("wm density ${oldDensity ?: "reset"}")
             if (oldKeyboard == "null") shell("settings delete secure show_ime_with_hard_keyboard")
             else shell("settings put secure show_ime_with_hard_keyboard $oldKeyboard")
             store.forget(); store.sibling("pads").forget()
         }
+    }
+
+    @Test fun completedPairingHidesSetupAndSettingsRemainReachable() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation(); val context = instrumentation.targetContext
+        val store = SecureStore(context); store.forget(); store.sibling("pads").forget()
+        val peer = DeviceIdentity("ui-complete-peer"); peer.forget()
+        try {
+            val station = StationEngine(store)
+            station.configure("https://pager.example.com", "x".repeat(43), Protocol.randomSecret(), "A")
+            station.generatePad().fill(0); station.confirmPad(station.view().padCheck!!.takeLast(8))
+            val ready = JSONObject(station.state.toString()).put("peerReady", true)
+            ready.getJSONArray("outbox").getJSONObject(0).put("status", "relayed"); store.save(ready)
+            val bound = StationEngine(store); bound.prepareIdentity()
+            val card = peer.card(create = true); bound.pinDevice(card, IdentityProtocol.fingerprint(card).takeLast(8))
+            val activity = instrumentation.startActivitySync(Intent(context, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            try {
+                awaitStation(instrumentation, activity)
+                instrumentation.runOnMainSync {
+                    val views = all(content(activity))
+                    for (label in listOf("Link", "Pad", "Device")) assertFalse("Setup tab remained visible", views.filterIsInstance<Button>().first { it.text.toString() == label }.isShown)
+                    assertTrue(views.filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
+                }
+                capture(instrumentation, activity, "messages-paired")
+                instrumentation.runOnMainSync {
+                    all(content(activity)).filterIsInstance<Button>().first { it.text.toString().contains("▾") }.performClick()
+                    @Suppress("UNCHECKED_CAST")
+                    val dialogs = NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }.get(activity) as List<android.app.AlertDialog>
+                    val dialog = dialogs.last(); val index = dialog.listView.adapter.count - 1
+                    dialog.listView.performItemClick(dialog.listView.getChildAt(index), index, index.toLong())
+                }
+                instrumentation.waitForIdleSync()
+                instrumentation.runOnMainSync {
+                    assertTrue(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Link" }.isShown)
+                }
+                tap(instrumentation, activity, "Messages")
+                instrumentation.runOnMainSync {
+                    assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Link" }.isShown)
+                }
+            } finally { instrumentation.runOnMainSync { activity.finish() }; instrumentation.waitForIdleSync() }
+        } finally { store.forget(); store.sibling("pads").forget(); peer.forget() }
     }
 
 }
