@@ -152,7 +152,7 @@ class NetworkActivity : Activity() {
         needsTerminal = false
         generation++
         latest = null; rendered = null; busy = false; errorLoading = false
-        root = column().apply { setBackgroundColor(paper); setPadding(dp(20), dp(10), dp(20), dp(8)) }
+        root = column().apply { isFocusableInTouchMode = true; setBackgroundColor(paper); setPadding(dp(20), dp(10), dp(20), dp(8)) }
         root.setOnApplyWindowInsetsListener { view, insets ->
             view.setPadding(dp(20), insets.systemWindowInsetTop + dp(10), dp(20), insets.systemWindowInsetBottom + dp(8)); insets
         }
@@ -297,6 +297,8 @@ class NetworkActivity : Activity() {
         }
     }
     private fun selectTab(value: Int) {
+        root.requestFocus()
+        getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(root.windowToken, 0)
         tab = value; traffic.visibility = if (value == 0) View.VISIBLE else View.GONE; linkScroll.visibility = if (value == 1) View.VISIBLE else View.GONE
         padScroll.visibility = if (value == 2) View.VISIBLE else View.GONE
         for ((index, button) in listOf(trafficTab, linkTab, padTab).withIndex()) {

@@ -80,14 +80,33 @@ class InterfaceTest {
                 }
                 capture("messages")
                 all(content).filterIsInstance<Button>().first { it.text.toString() == "Link" }.performClick()
-                content.measure(View.MeasureSpec.makeMeasureSpec(content.width, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(content.height, View.MeasureSpec.EXACTLY))
-                content.layout(0, 0, content.width, content.height)
-                capture("link")
+            }
+            instrumentation.waitForIdleSync()
+            Thread.sleep(150) // Let the real window finish a traversal before recording another tab.
+            fun captureTab(name: String) {
+                instrumentation.runOnMainSync {
+                    val image = Bitmap.createBitmap(content.width, content.height, Bitmap.Config.ARGB_8888)
+                    content.draw(Canvas(image))
+                    val values = android.content.ContentValues().apply {
+                        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "$name.png")
+                        put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                        put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/otp-pager-preview")
+                    }
+                    if (android.os.Build.VERSION.SDK_INT >= 29) {
+                        val uri = context.contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)!!
+                        context.contentResolver.openOutputStream(uri)!!.use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                    }
+                    image.recycle()
+                }
+            }
+            captureTab("link")
+            instrumentation.runOnMainSync {
                 all(content).filterIsInstance<Button>().first { it.text.toString() == "Pad" }.performClick()
-                content.measure(View.MeasureSpec.makeMeasureSpec(content.width, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(content.height, View.MeasureSpec.EXACTLY))
-                content.layout(0, 0, content.width, content.height)
+            }
+            instrumentation.waitForIdleSync(); Thread.sleep(150)
+            captureTab("pad")
+            instrumentation.runOnMainSync {
                 assertTrue(all(content).filterIsInstance<Button>().any { it.text.toString() == "Send readiness again" })
-                capture("pad")
             }
         } finally {
             instrumentation.runOnMainSync { activity.finish() }
