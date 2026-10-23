@@ -1,13 +1,15 @@
 package org.example.otppager
 
+import android.app.Activity
+import android.app.Instrumentation
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.Canvas
+import android.text.method.PasswordTransformationMethod
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.text.method.PasswordTransformationMethod
+import android.view.WindowManager
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Switch
 import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -20,24 +22,71 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class InterfaceTest {
+    private fun all(v: View): List<View> = listOf(v) + if (v is ViewGroup) (0 until v.childCount).flatMap { all(v.getChildAt(it)) } else emptyList()
+    private fun content(activity: Activity) = activity.findViewById<ViewGroup>(android.R.id.content)
+    private fun awaitStation(instrumentation: Instrumentation, activity: Activity) {
+        var ready = false; val deadline = System.currentTimeMillis() + 10000
+        while (!ready && System.currentTimeMillis() < deadline) {
+            instrumentation.runOnMainSync {
+                val views = all(content(activity))
+                ready = views.filterIsInstance<TextView>().any { it.text.toString() == "STATION A" } &&
+                    views.filterIsInstance<Button>().any { it.text.toString() == "Save & connect" && it.isEnabled }
+            }
+            if (!ready) Thread.sleep(50)
+        }
+        assertTrue("Station did not finish loading", ready)
+        instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Switch>().forEach { it.isChecked = false } }
+    }
+    private fun tap(instrumentation: Instrumentation, activity: Activity, label: String) {
+        instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == label }.performClick() }
+        instrumentation.waitForIdleSync()
+    }
+    private fun capture(instrumentation: Instrumentation, activity: Activity, name: String) {
+        val context = instrumentation.targetContext
+        // Only this test's fictional profile is present. Check the production flag before
+        // temporarily permitting compositor capture; restore it even if capture fails.
+        instrumentation.runOnMainSync {
+            assertTrue(activity.window.attributes.flags and WindowManager.LayoutParams.FLAG_SECURE != 0)
+            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+        val image: Bitmap
+        try {
+            instrumentation.waitForIdleSync(); Thread.sleep(200)
+            image = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
+        } finally {
+            instrumentation.runOnMainSync { activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) }
+        }
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 29) {
+                val values = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "$name.png")
+                    put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                    put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/otp-pager-preview")
+                }
+                val uri = context.contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)!!
+                context.contentResolver.openOutputStream(uri)!!.use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            }
+        } finally { image.recycle() }
+    }
     @Test fun capturesActualEinkInterfaceWithFictionalTraffic() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val store = SecureStore(context); store.forget(); store.sibling("pads").forget()
-        val masterSecret = Protocol.randomSecret()
+        val secret = Protocol.randomSecret()
         val engine = StationEngine(store)
-        engine.configure("https://pager.example.com", "x".repeat(43), masterSecret, "A")
+        engine.configure("https://pager.example.com", "x".repeat(43), secret, "A")
         val bundle = engine.generatePad()
         engine.confirmPad(engine.view().padCheck!!.takeLast(8))
-        // Fictional authenticated peer readiness, without making network requests.
+        // Fictional readiness without making a network request.
         store.save(JSONObject(engine.state.toString()).put("peerReady", true))
         val readyEngine = StationEngine(store)
         readyEngine.send("The north gate is clear. Meet at 22:00.")
         val state = JSONObject(readyEngine.state.toString())
         for (i in 0 until state.getJSONArray("outbox").length()) {
-            val entry = state.getJSONArray("outbox").getJSONObject(i); entry.put("status", if (entry.getString("kind") == "text") "delivered" else "relayed")
+            val entry = state.getJSONArray("outbox").getJSONObject(i)
+            entry.put("status", if (entry.getString("kind") == "text") "delivered" else "relayed")
         }
-        val master = Protocol.master(masterSecret)
+        val master = Protocol.master(secret)
         val pad = PadProtocol.material(bundle, PadProtocol.binding(master))
         val incoming = PadProtocol.seal(pad, 'B', 1, JSONObject().put("kind", "text").put("text", "Understood. Bringing the maps.").toString())
         master.fill(0); pad.fill(0); bundle.fill(0)
@@ -46,71 +95,22 @@ class InterfaceTest {
         store.save(state)
         val activity = instrumentation.startActivitySync(Intent(context, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         try {
-            val content = activity.findViewById<ViewGroup>(android.R.id.content)
-            fun all(view: View): List<View> = listOf(view) + if (view is ViewGroup) (0 until view.childCount).flatMap { all(view.getChildAt(it)) } else emptyList()
-            var ready = false
-            val deadline = System.currentTimeMillis() + 10000
-            while (!ready && System.currentTimeMillis() < deadline) {
-                instrumentation.runOnMainSync { ready = all(content).filterIsInstance<TextView>().any { it.text.toString() == "STATION A" } }
-                if (!ready) Thread.sleep(50)
-            }
-            assertTrue("Station UI did not load", ready)
+            awaitStation(instrumentation, activity)
             instrumentation.runOnMainSync {
-                all(content).filterIsInstance<Switch>().forEach { it.isChecked = false }
-                val credentialFields = all(content).filterIsInstance<EditText>().filter {
+                val fields = all(content(activity)).filterIsInstance<EditText>().filter {
                     it.hint.toString() == "Relay access token" || it.hint.toString() == "43-character pairing secret"
                 }
-                assertEquals(2, credentialFields.size)
-                credentialFields.forEach { assertTrue("Credential field must be masked", it.transformationMethod is PasswordTransformationMethod) }
-                fun capture(name: String) {
-                    // Draw our own view tree, keeping FLAG_SECURE enabled. No real pairing data.
-                    val image = Bitmap.createBitmap(content.width, content.height, Bitmap.Config.ARGB_8888)
-                    content.draw(Canvas(image))
-                    // MediaStore downloads survive the test runner uninstalling the target APK.
-                    if (android.os.Build.VERSION.SDK_INT >= 29) {
-                        val values = android.content.ContentValues().apply {
-                            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "$name.png")
-                            put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/otp-pager-preview")
-                        }
-                        val uri = context.contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)!!
-                        context.contentResolver.openOutputStream(uri)!!.use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
-                    }
-                    image.recycle()
-                }
-                capture("messages")
-                all(content).filterIsInstance<Button>().first { it.text.toString() == "Link" }.performClick()
+                assertEquals(2, fields.size)
+                fields.forEach { assertTrue("Credential field must be masked", it.transformationMethod is PasswordTransformationMethod) }
             }
-            instrumentation.waitForIdleSync()
-            Thread.sleep(150) // Let the real window finish a traversal before recording another tab.
-            fun captureTab(name: String) {
-                instrumentation.runOnMainSync {
-                    val image = Bitmap.createBitmap(content.width, content.height, Bitmap.Config.ARGB_8888)
-                    content.draw(Canvas(image))
-                    val values = android.content.ContentValues().apply {
-                        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "$name.png")
-                        put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/png")
-                        put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/otp-pager-preview")
-                    }
-                    if (android.os.Build.VERSION.SDK_INT >= 29) {
-                        val uri = context.contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)!!
-                        context.contentResolver.openOutputStream(uri)!!.use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
-                    }
-                    image.recycle()
-                }
-            }
-            captureTab("link")
+            capture(instrumentation, activity, "messages")
+            tap(instrumentation, activity, "Link"); capture(instrumentation, activity, "link")
+            tap(instrumentation, activity, "Pad"); capture(instrumentation, activity, "pad")
             instrumentation.runOnMainSync {
-                all(content).filterIsInstance<Button>().first { it.text.toString() == "Pad" }.performClick()
-            }
-            instrumentation.waitForIdleSync(); Thread.sleep(150)
-            captureTab("pad")
-            instrumentation.runOnMainSync {
-                assertTrue(all(content).filterIsInstance<Button>().any { it.text.toString() == "Send readiness again" })
+                assertTrue(all(content(activity)).filterIsInstance<Button>().any { it.text.toString() == "Send readiness again" })
             }
         } finally {
-            instrumentation.runOnMainSync { activity.finish() }
-            instrumentation.waitForIdleSync()
+            instrumentation.runOnMainSync { activity.finish() }; instrumentation.waitForIdleSync()
             store.forget(); store.sibling("pads").forget()
         }
     }
@@ -123,26 +123,21 @@ class InterfaceTest {
         engine.generatePad().fill(0)
         val activity = instrumentation.startActivitySync(Intent(context, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         try {
-            val content = activity.findViewById<ViewGroup>(android.R.id.content)
-            fun all(v: View): List<View> = listOf(v) + if (v is ViewGroup) (0 until v.childCount).flatMap { all(v.getChildAt(it)) } else emptyList()
-            var ready = false; val deadline = System.currentTimeMillis() + 10000
-            while (!ready && System.currentTimeMillis() < deadline) {
-                instrumentation.runOnMainSync { ready = all(content).filterIsInstance<TextView>().any { it.text.toString() == "STATION A" } }
-                if (!ready) Thread.sleep(50)
-            }
-            assertTrue(ready)
+            awaitStation(instrumentation, activity)
             instrumentation.runOnMainSync {
-                all(content).filterIsInstance<Switch>().forEach { it.isChecked = false }
-                assertFalse(all(content).filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
-                assertTrue(all(content).filterIsInstance<TextView>().any { it.text.toString().contains("COMPARE CODES IN PERSON") })
-                all(content).filterIsInstance<Button>().first { it.text.toString() == "Pad" }.performClick()
-                assertTrue(all(content).filterIsInstance<Button>().first { it.text.toString() == "Verify codes & announce" }.isEnabled)
-                assertFalse(all(content).filterIsInstance<Button>().first { it.text.toString() == "A · Create & export pad file" }.isEnabled)
+                val views = all(content(activity))
+                assertFalse(views.filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
+                assertTrue(views.filterIsInstance<TextView>().any { it.text.toString().contains("COMPARE CODES IN PERSON") })
+            }
+            tap(instrumentation, activity, "Pad")
+            instrumentation.runOnMainSync {
+                val views = all(content(activity))
+                assertTrue(views.filterIsInstance<Button>().first { it.text.toString() == "Verify codes & announce" }.isEnabled)
+                assertFalse(views.filterIsInstance<Button>().first { it.text.toString() == "A · Create & export pad file" }.isEnabled)
             }
         } finally {
             instrumentation.runOnMainSync { activity.finish() }; instrumentation.waitForIdleSync()
             store.forget(); store.sibling("pads").forget()
         }
     }
-
 }
