@@ -194,13 +194,13 @@ installed app and its state.
 CI builds two non-debuggable release APKs with successive test-only versionCodes and the
 same disposable key. It installs the first, creates two chat profiles, a verified/pinned
 identity, queued signed ciphertext, nonzero replay state and reserved pad slots, then uses
-`adb install -r` for the second. The fixture verifies vault/index/claims/ledger hashes,
+`adb install -r` for the second. The fixture verifies index/claims/ledger hashes, migrated message history,
 active chat, peer pin, the old private key's ability to sign, exact queued message state
 and a new send above the previous pad high-water mark. Android must also reject an older
 APK and a differently signed APK while retaining the fixture. Test versionCodes and key
-material never enter production artifacts. Both test APKs use current source; this proves
-Android replacement/state retention, not migration from an unavailable historical signer
-or arbitrary future storage formats. Existing migration/fault tests remain required.
+material never enter production artifacts. The baseline APK uses the actual v0.8 source; the replacement uses current source.
+This covers that storage migration with a disposable signer, not arbitrary future formats
+or an in-place update from the earlier debug signer. Existing migration/fault tests remain required.
 
 References:
 - https://developer.android.com/studio/publish/app-signing

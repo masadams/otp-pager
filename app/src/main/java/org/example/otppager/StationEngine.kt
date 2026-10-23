@@ -31,7 +31,13 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         window(s)
         if (s.has("pad")) {
             val pad = java.util.Base64.getDecoder().decode(s.getString("pad"))
-            try { check(pad.size == PadProtocol.MATERIAL_BYTES); check(Regex("[a-f0-9]{32}").matches(s.getString("padId"))); if (s.getInt("version") < 5) check(PadProtocol.hex(PadProtocol.id(pad)) == s.getString("padId")); check(padLedger.high(s.getString("padId")) >= s.getLong("counter")) }
+            try {
+                check(pad.size == PadProtocol.MATERIAL_BYTES)
+                check(Regex("[a-f0-9]{32}").matches(s.getString("padId")))
+                // Schema 5's original ID is authenticated by the vault; retired material no longer hashes to it.
+                if (s.getInt("version") < 5) check(PadProtocol.hex(PadProtocol.id(pad)) == s.getString("padId"))
+                check(padLedger.high(s.getString("padId")) >= s.getLong("counter"))
+            }
             finally { pad.fill(0) }
         }
         check(s.getJSONArray("outbox").length() <= 150 && s.getJSONArray("inbox").length() <= 100)
