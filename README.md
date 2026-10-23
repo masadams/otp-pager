@@ -60,3 +60,20 @@ identity verdict is involved. This experimental signed-message profile creates
 verifiable attribution and does **not** provide deniability. Read
 [setup, upgrade rules, signed bytes and limits](docs/DEVICE_IDENTITY.md) before
 starting. Integrated WireGuard is still a design, not implemented.
+
+### Android 0.6: scan setup instead of typing secrets
+
+Link → Show setup QR shares a configured station's relay URL, token and pairing
+secret with the opposite station role. A new station can Scan setup QR (embedded,
+offline camera scanner) or Import QR image, review, then save. Existing pairings
+cannot be overwritten by scans. The QR is secret, screenshot-protected and closes
+after one minute; photographed credentials remain valid. Pad transfer and device
+identity verification remain separate. See [setup and security details](docs/QR_PAIRING.md).
+
+The same iteration adds **Pair devices · USB cable**, an automatic physical-pairing
+wizard: relay settings can be on either device; it creates a fresh secret/pad,
+assigns roles, exchanges identities and uses one confirmation code on both screens.
+Android USB host/AOA support and a data cable are required. The exchange is tested
+with virtual duplex streams; actual USB negotiation and target e-ink hardware still
+need physical validation. Operational pairings are never copied or overwritten.
+Device identity cards also have Show/Scan QR controls for the fallback setup path.

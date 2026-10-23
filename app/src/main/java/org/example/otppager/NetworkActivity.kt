@@ -43,6 +43,15 @@ class NetworkActivity : Activity() {
     private var importedDeviceCard: String? = null
     private lateinit var exportDeviceButton: Button
     private lateinit var importDeviceButton: Button
+    private var identityScan = false
+    private var pendingDeviceScan: String? = null
+    private lateinit var showIdentityQrButton: Button
+    private lateinit var scanIdentityQrButton: Button
+    private var pendingScan: String? = null
+    private var pairingDialog: AlertDialog? = null
+    private lateinit var showQrButton: Button
+    private lateinit var scanQrButton: Button
+    private lateinit var imageQrButton: Button
     private var pendingDocument: Pair<Int, android.net.Uri>? = null
     private lateinit var indicators: TextView
     private lateinit var padStatus: TextView
@@ -142,7 +151,7 @@ class NetworkActivity : Activity() {
     private fun showUnlock() {
         busy = false
         val lock = column().apply { setBackgroundColor(paper); setPadding(dp(28), dp(80), dp(28), dp(24)) }
-        lock.addView(text("FIELD / 05", 28f, ink, true))
+        lock.addView(text("FIELD / 06", 28f, ink, true))
         lock.addView(text("Your station is locked.", 18f).apply { setPadding(0, dp(20), 0, dp(20)) })
         lock.addView(button("Unlock station", true) {
             val guard = getSystemService(KeyguardManager::class.java)
@@ -153,9 +162,17 @@ class NetworkActivity : Activity() {
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode in listOf(81, 82, 83, 84) && resultCode == RESULT_OK && data?.data != null) {
+        if (requestCode == com.google.zxing.integration.android.IntentIntegrator.REQUEST_CODE) {
+            val result = com.google.zxing.integration.android.IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
+            val contents = result?.contents?.takeIf { it.length <= 1024 }
+            if (identityScan) pendingDeviceScan = contents else pendingScan = contents
+            unlocked = true; needsTerminal = true; tab = if (identityScan) 3 else 1
+            identityScan = false
+        }
+        if (requestCode in listOf(81, 82, 83, 84, 85) && resultCode == RESULT_OK && data?.data != null) {
             pendingDocument = requestCode to data.data!!; unlocked = true; needsTerminal = true
             if (requestCode in listOf(83, 84)) tab = 3
+            if (requestCode == 85) tab = 1
         }
         if (requestCode == 71 && resultCode == RESULT_OK) { unlocked = true; needsTerminal = true }
     }
@@ -216,6 +233,25 @@ class NetworkActivity : Activity() {
         val settings = column().apply { setPadding(0, 0, 0, dp(24)) }
         settings.addView(text("Station settings", 22f))
         settings.addView(text("Exchange the pairing secret in person. Give each device a different station letter.", 14f, muted))
+        settings.addView(button("Pair devices · USB cable", true) {
+            runTask(onSuccess = { startActivity(Intent(this, CablePairActivity::class.java)) }) { checkNotNull(engine).requireCableEligible(); "OPENING PHYSICAL PAIRING" }
+        })
+        settings.addView(text("Recommended: save the relay settings on one device, then open Pair devices on both and connect a USB data cable. The wizard creates the secret, transfers the pad and binds identities together. Existing operational pairings are preserved.", 12f, muted))
+        val qrActions = row()
+        showQrButton = button("Show setup QR") {
+            confirm("Share this station's setup?", "This QR contains your relay token and pairing secret. Show it only to your other physical station. Anyone photographing it gets those secrets. It does not include the pad or private device key. Never use it to clone an existing paired device; replacement devices need a fresh secret and pad.") {
+                var invite: PairingInvite? = null
+                runTask(onSuccess = { invite?.let(::displaySetupQr) }) { invite = checkNotNull(engine).pairingInvite(); "SETUP QR · expires after 60 seconds" }
+            }
+        }
+        scanQrButton = button("Scan setup QR") {
+            launchQrScanner(false)
+        }
+        qrActions.addView(showQrButton, LinearLayout.LayoutParams(0, -2, 1f)); qrActions.addView(scanQrButton, LinearLayout.LayoutParams(0, -2, 1f)); settings.addView(qrActions)
+        imageQrButton = button("Import QR image · no camera") {
+            startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply { addCategory(Intent.CATEGORY_OPENABLE); type = "image/*" }, 85)
+        }; settings.addView(imageQrButton)
+        settings.addView(text("On the first station, save the link and show its setup QR. On the new station, scan it and review before saving. This shares secrets: keep any QR photos offline and delete them after use. Pad transfer and device identity verification remain separate.", 12f, muted))
         urlField = field("https://pager.example.com"); section(settings, "RELAY ADDRESS", urlField)
         tokenField = field("Relay access token", true); section(settings, "RELAY ACCESS", tokenField)
         secretField = field("43-character pairing secret", true); section(settings, "PAIRING SECRET", secretField)
@@ -276,6 +312,10 @@ class NetworkActivity : Activity() {
             }
         }; deviceSettings.addView(prepareDeviceButton)
         identityCard = text("", 12f, ink, true).apply { setTextIsSelectable(true); setPadding(0, dp(12), 0, dp(12)) }; deviceSettings.addView(identityCard)
+        showIdentityQrButton = button("Show identity QR") {
+            latest?.ownDevice?.let { displayQr("FIELDDEVICE1:$it", "PUBLIC DEVICE IDENTITY", "Scan on the other device, then compare its full fingerprint before pinning.") }
+        }; deviceSettings.addView(showIdentityQrButton)
+        scanIdentityQrButton = button("Scan other device identity") { launchQrScanner(true) }; deviceSettings.addView(scanIdentityQrButton)
         exportDeviceButton = button("Export public identity card") {
             startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE); type = "text/plain"; putExtra(Intent.EXTRA_TITLE, "field-public-device.txt")
@@ -306,12 +346,30 @@ class NetworkActivity : Activity() {
         linkScroll = ScrollView(this).apply { isVerticalScrollBarEnabled = false; addView(settings) }
         root.addView(traffic, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(linkScroll, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(padScroll, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(deviceScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root); root.requestApplyInsets(); selectTab(tab)
-        runTask(load = true, publicTransfer = pendingDocument?.first in listOf(83, 84)) {
+        var loadedInvite: PairingInvite? = null
+        val scanResult = pendingScan; pendingScan = null
+        val deviceScanResult = pendingDeviceScan; pendingDeviceScan = null
+        runTask(load = true, onSuccess = { loadedInvite?.let(::previewSetupQr) }, publicTransfer = pendingDocument?.first in listOf(83, 84), qrTransfer = pendingDocument?.first == 85) {
             engine = StationEngine(SecureStore(this))
+            val scanned = scanResult
             val document = pendingDocument; pendingDocument = null
-            if (document == null) "STATION READY" else {
+            if (deviceScanResult != null) {
+                require(deviceScanResult.startsWith("FIELDDEVICE1:")) { "This is not a Field device identity QR" }
+                val card = deviceScanResult.removePrefix("FIELDDEVICE1:")
+                IdentityProtocol.publicKey(card); importedDeviceCard = card
+                "IDENTITY SCANNED · compare the full fingerprint before pinning"
+            } else if (scanned != null) {
+                check(engine?.state == null) { "Existing pairing preserved. Forget it only when arranging a fresh secret and pad." }
+                loadedInvite = PairingInvite.decode(scanned)
+                "QR READ · review settings before saving"
+            } else if (document == null) "STATION READY" else {
                 val (operation, uri) = document
-                if (operation == 83) {
+                if (operation == 85) {
+                    check(engine?.state == null) { "Existing pairing preserved; QR import requires a new station" }
+                    val scannedImage = contentResolver.openInputStream(uri)!!.use { PairingQr.readImage(it) }
+                    loadedInvite = PairingInvite.decode(scannedImage)
+                    "QR READ · review settings before saving"
+                } else if (operation == 83) {
                     val card = checkNotNull(engine).view().ownDevice ?: error("Create this device identity first")
                     contentResolver.openOutputStream(uri, "wt")!!.use { it.write(card.toByteArray(Charsets.US_ASCII)); it.flush() }
                     "PUBLIC CARD EXPORTED · transfer to other station"
@@ -365,6 +423,50 @@ class NetworkActivity : Activity() {
     }
     private fun atBottom() = !::messageScroll.isInitialized || messageScroll.getChildAt(0) == null ||
         messageScroll.getChildAt(0).height - (messageScroll.scrollY + messageScroll.height) < dp(24)
+    private fun launchQrScanner(deviceIdentity: Boolean) {
+        if (!packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_CAMERA_ANY)) { report("No camera available · use file import or enter settings"); return }
+        identityScan = deviceIdentity
+        com.google.zxing.integration.android.IntentIntegrator(this)
+            .setCaptureActivity(PairingScannerActivity::class.java)
+            .setDesiredBarcodeFormats(com.google.zxing.integration.android.IntentIntegrator.QR_CODE)
+            .setBeepEnabled(false).setBarcodeImageEnabled(false).setOrientationLocked(false)
+            .setPrompt(if (deviceIdentity) "Scan the other station's public identity QR" else "Scan the setup QR on your other physical station").initiateScan()
+    }
+    private fun displaySetupQr(invite: PairingInvite) = displayQr(invite.encode(), "SECRET SETUP · Station ${invite.role}",
+        "Scan from your other physical device. Contains token + pairing secret. Closes in 60 seconds.")
+    private fun displayQr(payload: String, title: String, detail: String) {
+        val edge = (resources.displayMetrics.widthPixels - dp(96)).coerceIn(200, 1200)
+        val bitmap = try { PairingQr.bitmap(payload, edge) } catch (_: Exception) { report("Setup is too large for a QR code"); return }
+        val image = ImageView(this).apply {
+            setImageBitmap(bitmap); contentDescription = "Pairing QR for the other station"
+            (drawable as? android.graphics.drawable.BitmapDrawable)?.paint?.isFilterBitmap = false
+        }
+        val box = column().apply { gravity = Gravity.CENTER; addView(image, LinearLayout.LayoutParams(edge, edge)) }
+        val dialog = AlertDialog.Builder(this).setTitle(title)
+            .setMessage(detail)
+            .setView(box).setPositiveButton("Close", null).create()
+        val expire = Runnable { dialog.dismiss() }
+        pairingDialog = dialog; handler.removeCallbacks(poll)
+        dialog.setOnDismissListener { handler.removeCallbacks(expire); image.setImageDrawable(null); bitmap.recycle(); pairingDialog = null; schedule() }
+        dialog.show(); dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        handler.postDelayed(expire, 60000)
+    }
+    private fun previewSetupQr(invite: PairingInvite) {
+        val master = Protocol.master(invite.secret)
+        val fingerprint = try { Protocol.fingerprint(master) } finally { master.fill(0) }
+        val dialog = AlertDialog.Builder(this).setTitle("Review scanned setup")
+            .setMessage("Relay: ${invite.endpoint}\nThis device: Station ${invite.role}\nRelay token: included (hidden)\nPairing secret: included (hidden)\nPair check: $fingerprint\n\nOnly continue if this came from your other physical station. The pad and device identity are not included. Filling these fields does not save or connect.")
+            .setNegativeButton("Cancel", null).setPositiveButton("Fill settings") { _, _ ->
+                if (latest?.role == "—" && !busy) {
+                    urlField.setText(invite.endpoint); tokenField.setText(invite.token); secretField.setText(invite.secret)
+                    roleGroup.check(if (invite.role == "A") R.id.station_a else R.id.station_b)
+                    report("SCANNED SETTINGS · review, then Save & connect")
+                } else report("Existing pairing preserved")
+            }.create()
+        pairingDialog = dialog; handler.removeCallbacks(poll)
+        dialog.setOnDismissListener { pairingDialog = null; schedule() }
+        dialog.show(); dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
     private fun showDeviceVerification() {
         val card = peerCardField.text.toString().trim()
         val fingerprint = try { IdentityProtocol.fingerprint(card) } catch (_: Exception) { report("Invalid public identity card"); return }
@@ -406,6 +508,11 @@ class NetworkActivity : Activity() {
         busy = value
         for (view in listOf(sendButton, saveButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
         sendButton.isEnabled = !value && latest?.canSend == true && !errorLoading
+        showQrButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && !errorLoading
+        scanQrButton.isEnabled = !value && latest?.role == "—" && !errorLoading
+        imageQrButton.isEnabled = scanQrButton.isEnabled
+        showIdentityQrButton.isEnabled = !value && latest?.ownDevice != null
+        scanIdentityQrButton.isEnabled = !value && latest?.ownDevice != null && latest?.peerDevice == null
         exportDeviceButton.isEnabled = !value && latest?.ownDevice != null
         importDeviceButton.isEnabled = !value && latest?.ownDevice != null && latest?.peerDevice == null
         prepareDeviceButton.isEnabled = !value && latest?.ownDevice == null && latest?.padVerified == true && latest?.peerReady == true && latest?.pending == 0
@@ -437,6 +544,7 @@ class NetworkActivity : Activity() {
         newMessagesButton.text = "${view.unread} new · Jump to latest"
         val hint = when {
             view.role == "—" -> "SET UP YOUR STATION → Link"
+            !view.pairingComplete -> "PAIRING INCOMPLETE · arrange a fresh physical pairing on both devices"
             view.padCheck == null -> "AES TEST MODE · Set up a physical pad → Pad"
             view.padRemaining == 0 -> "SEND PAD EXHAUSTED · Receiving and queued retries remain available"
             !view.padVerified -> "COMPARE CODES IN PERSON → Pad"
@@ -484,7 +592,7 @@ class NetworkActivity : Activity() {
         }
         if (wasAtBottom) messageScroll.post { messageScroll.fullScroll(View.FOCUS_DOWN) }
     }
-    private fun runTask(load: Boolean = false, clearComposer: Boolean = false, publicTransfer: Boolean = false, action: () -> String) {
+    private fun runTask(load: Boolean = false, clearComposer: Boolean = false, publicTransfer: Boolean = false, qrTransfer: Boolean = false, onSuccess: (() -> Unit)? = null, action: () -> String) {
         if (busy || !active || !unlocked || isFinishing) return
         val taskGeneration = generation
         setBusy(true); handler.removeCallbacks(poll)
@@ -497,7 +605,8 @@ class NetworkActivity : Activity() {
             } catch (e: Exception) {
                 relayFailure = !load && (e is java.io.IOException || e is RelayHttpException)
                 note = if (load && engine != null && e is java.io.IOException) {
-                    if (publicTransfer) "PUBLIC CARD TRANSFER FAILED // identity retained; retry the file transfer"
+                    if (qrTransfer) "QR IMAGE COULD NOT BE READ // no settings changed"
+                    else if (publicTransfer) "PUBLIC CARD TRANSFER FAILED // identity retained; retry the file transfer"
                     else "PAD FILE TRANSFER FAILED // after failed export use a fresh pairing and pad"
                 } else friendly(e); backoff = (backoff * 2).coerceAtMost(60000L)
                 if (load && engine == null) errorLoading = true
@@ -516,6 +625,7 @@ class NetworkActivity : Activity() {
                 if (clearComposer && success) composer.text.clear()
                 if (errorLoading) note = "VAULT UNAVAILABLE // data preserved; see Link → Forget pairing to reset"
                 report(note); setBusy(false); schedule(if (clearComposer && success) 100 else backoff)
+                if (success) onSuccess?.invoke()
                 // Check current visibility AFTER rendering/network completion, not before a slow sync.
                 messageScroll.post {
                     if (success && !errorLoading && active && unlocked && taskGeneration == generation && tab == 0 && !busy && (latest?.unread ?: 0) > 0 && atBottom()) ackVisibleMessages()
@@ -532,6 +642,7 @@ class NetworkActivity : Activity() {
             else -> "RELAY ERROR ${e.status} // queued traffic is retained"
         }
         is javax.net.ssl.SSLException -> "TLS ERROR // check the server certificate and device clock"
+        is com.google.zxing.ReaderException -> "No readable pairing QR found; try a clear, upright image"
         is java.io.IOException -> "OFFLINE // queued traffic is retained; retrying"
         is IllegalArgumentException, is IllegalStateException -> e.message ?: "INVALID SETTINGS"
         else -> "STATION ERROR // saved data retained"
@@ -541,6 +652,7 @@ class NetworkActivity : Activity() {
         if (active && unlocked && !isFinishing && !errorLoading) handler.postDelayed(poll, delay)
     }
     override fun onStop() {
+        pairingDialog?.dismiss(); pairingDialog = null
         generation++; active = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
         if (::composer.isInitialized) composer.text.clear()
         if (::messages.isInitialized) messages.removeAllViews()

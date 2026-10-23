@@ -56,6 +56,45 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         next.put("endpoint", url).put("token", access)
         store.save(next); state = next; cachedView = null
     }
+    private var stagedCable: JSONObject? = null
+    fun requireCableEligible() {
+        val s = state ?: return
+        check(!s.has("pad") && s.getLong("counter") == 0L && s.getLong("high") == 0L &&
+            s.getJSONArray("outbox").length() == 0 && s.getJSONArray("inbox").length() == 0) {
+            "This station already has a pairing or traffic. Preserve it; start a fresh pairing on both devices before replacing it."
+        }
+    }
+    fun cableIdentity(): String { requireCableEligible(); return identity.card(create = true) }
+    fun signCable(bytes: ByteArray) = identity.sign(bytes)
+    fun stageCable(setup: JSONObject, role: String, peer: String) {
+        requireCableEligible(); check(stagedCable == null)
+        val endpoint = Protocol.endpoint(setup.getString("endpoint")); val token = Protocol.token(setup.getString("token"))
+        val secret = setup.getString("secret"); val master = Protocol.master(secret)
+        require(setup.getString("pad").length <= 1400000)
+        val bundle = java.util.Base64.getDecoder().decode(setup.getString("pad"))
+        val pad = try { PadProtocol.material(bundle, PadProtocol.binding(master)) } finally { master.fill(0); bundle.fill(0) }
+        try {
+            require(role in listOf("A", "B")); IdentityProtocol.publicKey(peer)
+            val own = identity.card(); require(peer != own)
+            val id = PadProtocol.hex(PadProtocol.id(pad)); padLedger.register(id)
+            stagedCable = JSONObject().put("version", 4).put("endpoint", endpoint).put("token", token).put("secret", secret)
+                .put("role", role).put("counter", 0L).put("cursor", 0L).put("high", 0L).put("seen", JSONArray())
+                .put("outbox", JSONArray()).put("inbox", JSONArray()).put("epoch", "")
+                .put("pad", java.util.Base64.getEncoder().encodeToString(pad)).put("padId", id)
+                .put("ownDevice", own).put("peerDevice", peer).put("padVerified", true).put("peerReady", true)
+                .put("cableComplete", false)
+        } finally { pad.fill(0) }
+    }
+    fun commitCable(complete: Boolean) {
+        requireCableEligible()
+        val next = checkNotNull(stagedCable) { "No staged pairing" }.put("cableComplete", complete)
+        validate(next); store.save(next); state = next; stagedCable = null; cachedView = null
+    }
+    fun finishCable() = transaction { it.put("cableComplete", true) }
+    fun pairingInvite(): PairingInvite {
+        val s = checkNotNull(state) { "Save this station's link first" }
+        return PairingInvite(s.getString("endpoint"), s.getString("token"), s.getString("secret"), if (s.getString("role") == "A") "B" else "A")
+    }
     fun installPad(bundle: ByteArray) {
         val current = checkNotNull(state) { "Save the link settings first" }
         check(!current.has("pad")) { "Forget pairing before installing a fresh pad" }
@@ -196,6 +235,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     fun send(text: String) {
         require(text.toByteArray(Charsets.UTF_8).size in 1..2048) { "Message must be 1–2048 UTF-8 bytes" }
         transaction { s ->
+            check(s.optBoolean("cableComplete", true)) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }
             check(!s.has("pad") || (s.optBoolean("padVerified") && s.optBoolean("peerReady"))) { "Open Pad: compare codes and wait for the other station to verify and sync" }
             check(!s.has("ownDevice") || s.has("peerDevice")) { "Finish physical device verification before sending" }
             prune(s)
@@ -208,6 +248,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         // Do not clear the counter or replay window when removing message history.
     }
     fun sync(): String {
+        check(state?.optBoolean("cableComplete", true) != false) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }
         if (state != null) transaction(::prune)
         val s = checkNotNull(state) { "Save your link settings first" }
         val master = Protocol.master(s.getString("secret"))
@@ -273,8 +314,8 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         } finally { master.fill(0) }
     }
     data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false)
-    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null) {
-        val canSend: Boolean get() = role != "—" && padRemaining != 0 && (padCheck == null || (padVerified && peerReady)) && (ownDevice == null || peerDevice != null)
+    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true) {
+        val canSend: Boolean get() = pairingComplete && role != "—" && padRemaining != 0 && (padCheck == null || (padVerified && peerReady)) && (ownDevice == null || peerDevice != null)
     }
     fun view(): View {
         cachedView?.let { if (System.currentTimeMillis() < cacheExpiry) return it }
@@ -302,7 +343,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
                 if (s.has("pad")) PadProtocol.SLOTS - padLedger.high(s.getString("padId")).toInt() else null,
                 s.optString("padId").takeIf { it.isNotEmpty() }, s.optBoolean("padVerified"), s.optBoolean("peerReady"),
                 s.optString("ownDevice").takeIf { it.isNotEmpty() }, s.optString("peerDevice").takeIf { it.isNotEmpty() },
-                if (s.has("ownDevice")) identity.protection() else null).also { cachedView = it }
+                if (s.has("ownDevice")) identity.protection() else null, s.optBoolean("cableComplete", true)).also { cachedView = it }
         } finally { master.fill(0) }
     }
 }
