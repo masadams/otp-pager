@@ -40,6 +40,11 @@ class CablePairActivity : Activity() {
     private fun note(value: String) { runOnUiThread { if (active && !cancelled.get()) status.text = value } }
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action in listOf(UsbManager.ACTION_USB_DEVICE_DETACHED, UsbManager.ACTION_USB_ACCESSORY_DETACHED) && channel != null) {
+                channel?.close(); confirmation?.countDown()
+                note("USB disconnected · pairing stopped")
+                return
+            }
             if (intent.action == permissionAction) {
                 awaitingPermission = false
                 if (!intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
@@ -65,8 +70,9 @@ class CablePairActivity : Activity() {
         finish = Button(this).apply { text = "Cancel"; setOnClickListener { finish() } }; root.addView(finish)
         root.addView(label("A data-capable cable and compatible USB host/accessory modes are required. No USB debugging. Cancel if the full confirmation codes differ.", 13f))
         setContentView(root)
-        if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(receiver, IntentFilter(permissionAction), RECEIVER_NOT_EXPORTED)
-        else registerReceiver(receiver, IntentFilter(permissionAction))
+        val events = IntentFilter(permissionAction).apply { addAction(UsbManager.ACTION_USB_DEVICE_DETACHED); addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED) }
+        if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(receiver, events, RECEIVER_NOT_EXPORTED)
+        else registerReceiver(receiver, events)
         expireAt = android.os.SystemClock.elapsedRealtime() + 180000
     }
     override fun onResume() { super.onResume(); active = true; handler.post(poll) }
