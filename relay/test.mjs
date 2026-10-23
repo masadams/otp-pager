@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from 'node:crypto';
+import { createCipheriv, createDecipheriv, randomBytes, createHash, createHmac } from 'node:crypto';
 import { makeServer } from './server.mjs';
 
 const token = 'x'.repeat(43);
@@ -149,5 +149,32 @@ test('shared protocol-v2 fixture decrypts after relay round trip', async () => {
     decipher.setAAD(wire.subarray(0,38)); decipher.setAuthTag(wire.subarray(-16));
     assert.equal(Buffer.concat([decipher.update(wire.subarray(38,-16)),decipher.final()]).toString(),fixture.payload);
     assert.equal(Number(wire.readBigInt64BE(2)),7);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});
+
+
+test('finite-pad v3 reference frame survives relay persistence and exact retries', async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-pad-'));
+  let { server, base } = await launch({ dataDir });
+  try {
+    // Independent Node implementation of the Kotlin/Python known-answer frame.
+    const pad = Buffer.alloc(1048576);
+    for (let i = 0; i < pad.length; i++) pad[i] = (i * 37 + Math.floor(i / 255)) & 255;
+    const header = Buffer.alloc(26); header[0] = 3; header[1] = 65; header.writeBigInt64BE(1n, 2);
+    createHash('sha256').update(pad).digest().copy(header, 10, 0, 16);
+    const clear = Buffer.alloc(4096); const text = Buffer.from('Hello 世界');
+    clear.writeUInt16BE(text.length); text.copy(clear, 2);
+    const cipher = Buffer.from(clear.map((b, i) => b ^ pad[i]));
+    const body = Buffer.concat([header, cipher]);
+    const tag = createHmac('sha256', pad.subarray(4096, 4128)).update(body).digest();
+    const bytes = Buffer.concat([body, tag]);
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), 'cb826c251bc79df335b2f00f4dbd81e35a1df011f552315040a8e9e56dc4ea5a');
+    const packet = bytes.toString('base64');
+    assert.equal((await post(base, packet)).status, 201);
+    await stop(server); ({ server, base } = await launch({ dataDir }));
+    assert.equal((await post(base, packet)).status, 200);
+    const received = (await get(base)).messages;
+    assert.equal(received.length, 1); assert.equal(received[0].packet, packet);
+    pad.fill(0); clear.fill(0);
   } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
 });

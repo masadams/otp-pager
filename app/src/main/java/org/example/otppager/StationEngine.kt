@@ -63,7 +63,8 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         val bundle = try { PadProtocol.generate(PadProtocol.binding(master)) } finally { master.fill(0) }
         try { installPad(bundle); return bundle } catch (e: Exception) { bundle.fill(0); throw e }
     }
-    fun markRead() { if (state != null) transaction { s -> items(s.getJSONArray("inbox")).forEach { it.put("read", true) } } }
+    fun markRead() { if (state?.let { items(it.getJSONArray("inbox")).any { entry -> !entry.optBoolean("read", false) } } == true)
+        transaction { s -> items(s.getJSONArray("inbox")).forEach { it.put("read", true) } } }
     private fun packetRole(s: JSONObject, wire: String) = if (s.has("pad")) PadProtocol.role(wire) else Protocol.role(wire)
     private fun open(s: JSONObject, master: ByteArray, wire: String, role: Char): Protocol.Opened {
         if (!s.has("pad")) return Protocol.open(master, wire, role)

@@ -301,9 +301,11 @@ class NetworkActivity : Activity() {
     }
     private fun render(view: StationEngine.View) {
         latest = view
-        trafficTab.text = if (view.unread > 0) "Messages (${view.unread})" else "Messages"
+        val tabLabel = if (view.unread > 0) "Messages (${view.unread})" else "Messages"
+        if (trafficTab.text.toString() != tabLabel) trafficTab.text = tabLabel
         updateIndicators()
-        padStatus.text = view.padCheck?.let { "PAD CHECK\n${it.chunked(4).joinToString(" ")}\n${view.padRemaining} outgoing slots remaining" } ?: "AES-GCM · no pad installed"
+        val padLabel = view.padCheck?.let { "PAD CHECK\n${it.chunked(4).joinToString(" ")}\n${view.padRemaining} outgoing slots remaining" } ?: "AES-GCM · no pad installed"
+        if (padStatus.text.toString() != padLabel) padStatus.text = padLabel
         if (stationLabel.text.toString() != "STATION ${view.role}") stationLabel.text = "STATION ${view.role}"
         if (pairingCode.text.toString() != "PAIR CHECK\n${view.fingerprint}") pairingCode.text = "PAIR CHECK\n${view.fingerprint}"
         if (view.messages == rendered) return
