@@ -235,7 +235,8 @@ class NetworkActivity : Activity() {
         settings.addView(text("Station settings", 22f))
         settings.addView(text("Save server details on one device, then pair by cable. QR is available as a fallback.", 14f, muted))
         settings.addView(button("Pair devices · USB cable", true) {
-            runTask(onSuccess = { startActivity(Intent(this, CablePairActivity::class.java)) }) { checkNotNull(engine).requireCableEligible(); "OPENING PHYSICAL PAIRING" }
+            if (latest?.cableEligible == false) confirm("Replace this pairing?", "This removes the current conversation and queued messages on THIS station. The server address and token stay saved. A fresh secret and pad will be created; the old pad cannot be reused. Start the new pairing on both intended devices.") { beginCablePairing(true) }
+            else beginCablePairing(false)
         })
         settings.addView(text("Open Pair devices on both and connect a USB data cable. Setup, pad transfer and identity verification happen together.", 12f, muted))
         val qrActions = row()
@@ -435,6 +436,13 @@ class NetworkActivity : Activity() {
     }
     private fun atBottom() = !::messageScroll.isInitialized || messageScroll.getChildAt(0) == null ||
         messageScroll.getChildAt(0).height - (messageScroll.scrollY + messageScroll.height) < dp(24)
+    private fun beginCablePairing(replace: Boolean) {
+        runTask(onSuccess = { startActivity(Intent(this, CablePairActivity::class.java)) }) {
+            val station = checkNotNull(engine)
+            if (replace) station.resetForCable()
+            station.requireCableEligible(); "OPENING PHYSICAL PAIRING"
+        }
+    }
     private fun launchQrScanner(deviceIdentity: Boolean) {
         if (!packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_CAMERA_ANY)) { report("No camera available · use file import or enter settings"); return }
         identityScan = deviceIdentity

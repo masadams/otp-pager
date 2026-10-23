@@ -118,6 +118,14 @@ class CablePairTest {
             try { pending.send("blocked"); fail("Partial pairing sent traffic") } catch (_: IllegalStateException) {}
             try { pending.sync(); fail("Partial pairing contacted relay") } catch (_: IllegalStateException) {}
             assertEquals(127, pending.view().padRemaining)
+            val previousSecret = pending.state!!.getString("secret")
+            val retired = store.sibling("pads").load()!!.toString()
+            pending.resetForCable()
+            assertEquals("https://pager.example.com", pending.state!!.getString("endpoint"))
+            assertEquals("t".repeat(43), pending.state!!.getString("token"))
+            assertNotEquals(previousSecret, pending.state!!.getString("secret"))
+            assertEquals(retired, store.sibling("pads").load()!!.toString())
+            assertTrue(pending.view().cableEligible); assertFalse(pending.state!!.has("pad"))
         } finally { other.forget(); store.forget(); store.sibling("pads").forget() }
     }
 }

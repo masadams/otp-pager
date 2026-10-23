@@ -62,9 +62,14 @@ checks signed confirmations. No pad export/import, station-role entry, repeated
 fingerprint entry, or separate readiness exchange is required. All 127 slots are
 available afterward. The relay is never involved in this physical exchange.
 
-The wizard preserves operational pairings: it only accepts an empty station or
-saved relay settings with no pad, counters or traffic. A replacement device needs
-a fresh pairing on BOTH stations. It does not copy an existing operational pad.
+The wizard only exchanges data from an empty station or saved relay settings with
+no pad/counters/traffic. If the current station is already paired, Pair devices
+first asks explicitly whether to replace its conversation and queued messages.
+Approving keeps the relay address/token, creates a fresh setup secret and clears
+the old conversation; the pad retirement ledger and device key remain intact.
+Cancelling preserves the old pairing. This avoids retyping server details while
+ensuring the old operational pad is never cloned or reused. A replacement device
+still requires a fresh pairing on BOTH intended stations.
 
 Android Open Accessory (AOA) is used through standard UsbManager host/accessory
 APIs, without root or ADB. One device must negotiate USB host/OTG and power the bus;

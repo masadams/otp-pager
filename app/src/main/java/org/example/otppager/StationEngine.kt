@@ -57,6 +57,17 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         store.save(next); state = next; cachedView = null
     }
     private var stagedCable: JSONObject? = null
+    /** Only after the user explicitly approves replacing the current conversation. */
+    fun resetForCable() {
+        val previous = checkNotNull(state)
+        var secret: String
+        do { secret = Protocol.randomSecret() } while (secret == previous.getString("secret"))
+        val next = JSONObject().put("version", 2).put("endpoint", previous.getString("endpoint")).put("token", previous.getString("token"))
+            .put("secret", secret).put("role", "A").put("counter", 0L).put("cursor", 0L).put("high", 0L)
+            .put("seen", JSONArray()).put("outbox", JSONArray()).put("inbox", JSONArray()).put("epoch", "")
+        validate(next); store.save(next); state = next; stagedCable = null; cachedView = null
+        // The separate retirement/reservation ledger and non-exportable device key remain intact.
+    }
     fun requireCableEligible() {
         val s = state ?: return
         check(!s.has("pad") && s.getLong("counter") == 0L && s.getLong("high") == 0L &&
@@ -314,7 +325,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         } finally { master.fill(0) }
     }
     data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false)
-    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true) {
+    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true, val cableEligible: Boolean = true) {
         val canSend: Boolean get() = pairingComplete && role != "—" && padRemaining != 0 && (padCheck == null || (padVerified && peerReady)) && (ownDevice == null || peerDevice != null)
     }
     fun view(): View {
@@ -343,7 +354,8 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
                 if (s.has("pad")) PadProtocol.SLOTS - padLedger.high(s.getString("padId")).toInt() else null,
                 s.optString("padId").takeIf { it.isNotEmpty() }, s.optBoolean("padVerified"), s.optBoolean("peerReady"),
                 s.optString("ownDevice").takeIf { it.isNotEmpty() }, s.optString("peerDevice").takeIf { it.isNotEmpty() },
-                if (s.has("ownDevice")) identity.protection() else null, s.optBoolean("cableComplete", true)).also { cachedView = it }
+                if (s.has("ownDevice")) identity.protection() else null, s.optBoolean("cableComplete", true),
+                !s.has("pad") && s.getLong("counter") == 0L && s.getLong("high") == 0L && s.getJSONArray("outbox").length() == 0 && s.getJSONArray("inbox").length() == 0).also { cachedView = it }
         } finally { master.fill(0) }
     }
 }
