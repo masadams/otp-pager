@@ -27,10 +27,10 @@ class NetworkActivity : Activity() {
     private val worker = stationWorker
     private val handler = Handler(Looper.getMainLooper())
     private var engine: StationEngine? = null // worker-thread owned
-    private var generation = 0
+    @Volatile private var generation = 0
     private var busy = false
-    private var active = false
-    private var unlocked = false
+    @Volatile private var active = false
+    @Volatile private var unlocked = false
     private var needsTerminal = true
     private var backoff = 15000L
     private var tab = 0
@@ -338,11 +338,11 @@ class NetworkActivity : Activity() {
             var config: org.json.JSONObject? = null; var success = false; var relayFailure = false
             try {
                 note = action(); success = true; backoff = 15000L
-                if (readingMessages) engine?.markRead()
+                if (readingMessages && active && unlocked && taskGeneration == generation) engine?.markRead()
                 view = engine?.view(); if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
             } catch (e: Exception) {
-                relayFailure = e is java.io.IOException || e is RelayHttpException
-                note = friendly(e); backoff = (backoff * 2).coerceAtMost(60000L)
+                relayFailure = !load && (e is java.io.IOException || e is RelayHttpException)
+                note = if (load && engine != null && e is java.io.IOException) "PAD FILE TRANSFER FAILED // after failed export use a fresh pairing and pad" else friendly(e); backoff = (backoff * 2).coerceAtMost(60000L)
                 if (load && engine == null) errorLoading = true
                 if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
                 try { view = engine?.view() } catch (_: Exception) { errorLoading = true }
