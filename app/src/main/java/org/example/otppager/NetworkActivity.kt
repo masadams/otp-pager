@@ -85,6 +85,7 @@ class NetworkActivity : Activity() {
     private lateinit var roleGroup: RadioGroup
     private lateinit var sendButton: Button
     private lateinit var saveButton: Button
+    private lateinit var saveRelayButton: Button
     private lateinit var syncButton: Button
     private lateinit var trafficTab: Button
     private lateinit var linkTab: Button
@@ -232,11 +233,11 @@ class NetworkActivity : Activity() {
         })
         val settings = column().apply { setPadding(0, 0, 0, dp(24)) }
         settings.addView(text("Station settings", 22f))
-        settings.addView(text("Exchange the pairing secret in person. Give each device a different station letter.", 14f, muted))
+        settings.addView(text("Save server details on one device, then pair by cable. QR is available as a fallback.", 14f, muted))
         settings.addView(button("Pair devices · USB cable", true) {
             runTask(onSuccess = { startActivity(Intent(this, CablePairActivity::class.java)) }) { checkNotNull(engine).requireCableEligible(); "OPENING PHYSICAL PAIRING" }
         })
-        settings.addView(text("Recommended: save the relay settings on one device, then open Pair devices on both and connect a USB data cable. The wizard creates the secret, transfers the pad and binds identities together. Existing operational pairings are preserved.", 12f, muted))
+        settings.addView(text("Open Pair devices on both and connect a USB data cable. Setup, pad transfer and identity verification happen together.", 12f, muted))
         val qrActions = row()
         showQrButton = button("Show setup QR") {
             confirm("Share this station's setup?", "This QR contains your relay token and pairing secret. Show it only to your other physical station. Anyone photographing it gets those secrets. It does not include the pad or private device key. Never use it to clone an existing paired device; replacement devices need a fresh secret and pad.") {
@@ -251,10 +252,21 @@ class NetworkActivity : Activity() {
         imageQrButton = button("Import QR image · no camera") {
             startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply { addCategory(Intent.CATEGORY_OPENABLE); type = "image/*" }, 85)
         }; settings.addView(imageQrButton)
-        settings.addView(text("On the first station, save the link and show its setup QR. On the new station, scan it and review before saving. This shares secrets: keep any QR photos offline and delete them after use. Pad transfer and device identity verification remain separate.", 12f, muted))
+        settings.addView(text("QR fallback: show on one station, scan on the other. The QR contains secrets. Pad and identity setup remain separate in this fallback.", 12f, muted))
         urlField = field("https://pager.example.com"); section(settings, "RELAY ADDRESS", urlField)
         tokenField = field("Relay access token", true); section(settings, "RELAY ACCESS", tokenField)
-        secretField = field("43-character pairing secret", true); section(settings, "PAIRING SECRET", secretField)
+        saveRelayButton = button("Save server settings", true) {
+            val endpoint = urlField.text.toString(); val token = tokenField.text.toString().trim()
+            runTask(load = true) {
+                val station = checkNotNull(engine); val current = station.state
+                station.configure(endpoint, token, current?.getString("secret") ?: Protocol.randomSecret(), current?.getString("role") ?: "A")
+                "SERVER SAVED · open Pair devices on both stations"
+            }
+        }; settings.addView(saveRelayButton)
+        val manual = column().apply { visibility = View.GONE }
+        settings.addView(button("Advanced · manual pairing") { manual.visibility = if (manual.visibility == View.GONE) View.VISIBLE else View.GONE })
+        settings.addView(manual)
+        secretField = field("43-character pairing secret", true); section(manual, "PAIRING SECRET", secretField)
         val secrets = row()
         secrets.addView(button("Show / hide") {
             secretField.inputType = InputType.TYPE_CLASS_TEXT or if ((secretField.inputType and InputType.TYPE_MASK_VARIATION) == InputType.TYPE_TEXT_VARIATION_PASSWORD)
@@ -264,17 +276,17 @@ class NetworkActivity : Activity() {
         secrets.addView(button("Generate new") {
             if (latest?.role != "—") report("Forget your existing pairing before generating a new one")
             else secretField.setText(Protocol.randomSecret())
-        }, LinearLayout.LayoutParams(0, -2, 1f)); settings.addView(secrets)
+        }, LinearLayout.LayoutParams(0, -2, 1f)); manual.addView(secrets)
         roleGroup = RadioGroup(this).apply { orientation = RadioGroup.HORIZONTAL }
         for ((index, label) in listOf("Station A", "Station B").withIndex()) roleGroup.addView(RadioButton(this).apply {
             id = if (index == 0) R.id.station_a else R.id.station_b; text = label; setTextColor(ink); buttonTintList = ColorStateList.valueOf(green)
         }, RadioGroup.LayoutParams(0, dp(48), 1f))
-        roleGroup.check(R.id.station_a); section(settings, "THIS DEVICE", roleGroup)
+        roleGroup.check(R.id.station_a); section(manual, "THIS DEVICE", roleGroup)
         saveButton = button("Save & connect", true) {
             val endpoint = urlField.text.toString(); val token = tokenField.text.toString().trim()
             val secret = secretField.text.toString().trim(); val role = if (roleGroup.checkedRadioButtonId == R.id.station_a) "A" else "B"
             runTask { checkNotNull(engine).configure(endpoint, token, secret, role); checkNotNull(engine).sync() }
-        }; settings.addView(saveButton)
+        }; manual.addView(saveButton)
         pairingCode = text("NOT PAIRED", 12f, green, true).apply { setPadding(0, dp(20), 0, dp(12)) }; settings.addView(pairingCode)
         settings.addView(text("Compare this pair-check code on both devices in person. Matching codes confirm the same secret; they do not confirm the server is honest.", 12f, muted))
         val padSettings = column().apply { setPadding(0, 0, 0, dp(24)) }
@@ -455,12 +467,16 @@ class NetworkActivity : Activity() {
         val master = Protocol.master(invite.secret)
         val fingerprint = try { Protocol.fingerprint(master) } finally { master.fill(0) }
         val dialog = AlertDialog.Builder(this).setTitle("Review scanned setup")
-            .setMessage("Relay: ${invite.endpoint}\nThis device: Station ${invite.role}\nRelay token: included (hidden)\nPairing secret: included (hidden)\nPair check: $fingerprint\n\nOnly continue if this came from your other physical station. The pad and device identity are not included. Filling these fields does not save or connect.")
-            .setNegativeButton("Cancel", null).setPositiveButton("Fill settings") { _, _ ->
+            .setMessage("Relay: ${invite.endpoint}\nThis device: Station ${invite.role}\nRelay token: included (hidden)\nPairing secret: included (hidden)\nPair check: $fingerprint\n\nOnly continue if this came from your other physical station. The pad and device identity are not included. Use this setup to save the link without typing. Pad and identity setup remain separate in this QR fallback.")
+            .setNegativeButton("Cancel", null).setPositiveButton("Use this setup") { _, _ ->
                 if (latest?.role == "—" && !busy) {
                     urlField.setText(invite.endpoint); tokenField.setText(invite.token); secretField.setText(invite.secret)
                     roleGroup.check(if (invite.role == "A") R.id.station_a else R.id.station_b)
-                    report("SCANNED SETTINGS · review, then Save & connect")
+                    runTask {
+                        check(checkNotNull(engine).state == null) { "Existing pairing preserved" }
+                        checkNotNull(engine).configure(invite.endpoint, invite.token, invite.secret, invite.role)
+                        "LINK SAVED · continue pad setup or start fresh cable pairing"
+                    }
                 } else report("Existing pairing preserved")
             }.create()
         pairingDialog = dialog; handler.removeCallbacks(poll)
@@ -506,7 +522,7 @@ class NetworkActivity : Activity() {
     private fun report(message: String) { if (active && unlocked && ::status.isInitialized && status.text.toString() != message) status.text = message }
     private fun setBusy(value: Boolean) {
         busy = value
-        for (view in listOf(sendButton, saveButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
+        for (view in listOf(sendButton, saveButton, saveRelayButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
         sendButton.isEnabled = !value && latest?.canSend == true && !errorLoading
         showQrButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && !errorLoading
         scanQrButton.isEnabled = !value && latest?.role == "—" && !errorLoading

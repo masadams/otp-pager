@@ -1,17 +1,17 @@
 # Android 0.6: setup QR
 
-On the first station, enter the relay address and access token once, generate a
-pairing secret, choose Station A and Save & connect. Link → Show setup QR displays
+On the first station, enter the relay address and access token once and tap Save server settings.
+The app creates the setup secret automatically. Link → Show setup QR displays
 a black-and-white QR for the opposite station. Confirm before showing it; the
 screen closes after 60 seconds or when the app leaves the foreground.
 
 On a NEW other station, Link → Scan setup QR opens the embedded scanner. Camera
 permission is requested only when scanning. No separate scanner app, Google Play
 Services, online QR generator, or relay upload is needed. Review the relay host,
-recipient role and pair-check fingerprint, then Fill settings and Save & connect.
+recipient role and pair-check fingerprint, then Use this setup to save the link.
 Credentials stay masked. Receiving from A assigns B, and receiving from B assigns A.
-Scanning or cancelling does not save settings, connect, reset counters, or change
-an existing pairing. QR import is disabled once a pairing has been saved.
+Scanning alone or cancelling does not save settings or reset counters. Confirming
+Use this setup saves the link; it cannot change an existing pairing. QR import is disabled once a pairing has been saved.
 
 Devices without cameras can use Import QR image through Android's document picker,
 or keep entering settings manually. Photos must show an upright, clear QR. Image
@@ -53,7 +53,7 @@ trips, opposite-role export, unchanged vault/counters and review-before-save UI.
 
 ## Automatic pairing over USB (experimental hardware support)
 
-Link → Pair devices opens a single cable wizard. Save relay address and token on
+Link → Pair devices opens a single cable wizard. Tap Save server settings on
 at least one unused station, open the wizard on both, connect a USB DATA cable,
 approve Android's USB permissions, and compare/confirm one complete code on BOTH
 screens. The USB host automatically creates a fresh pairing secret and pad,

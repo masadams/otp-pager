@@ -40,6 +40,24 @@ class CablePairTest {
                 a.send("CABLE PAIRED")
                 val wire = a.state!!.getJSONArray("outbox").getJSONObject(0).getString("packet")
                 assertTrue(IdentityProtocol.isSigned(PadProtocol.open(pad, wire, 'A').payload)); pad.fill(0)
+                val packets = mutableListOf<String>()
+                val relay = object : RelayTransport {
+                    override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String {
+                        if (method == "POST") {
+                            val packet = org.json.JSONObject(body!!).getString("packet"); if (packet !in packets) packets.add(packet)
+                            return "{}"
+                        }
+                        return org.json.JSONObject().put("protocol", 2).put("epoch", "cable-test")
+                            .put("messages", org.json.JSONArray(packets.mapIndexedNotNull { i, packet ->
+                                if (i + 1 > cursor) org.json.JSONObject().put("seq", i + 1).put("packet", packet) else null
+                            })).toString()
+                    }
+                }
+                val sender = StationEngine(sa, relay); val recipient = StationEngine(sb, relay)
+                sender.sync(); recipient.sync(); sender.sync()
+                assertEquals("CABLE PAIRED", recipient.view().messages.single().text)
+                assertTrue(recipient.view().messages.single().deviceVerified)
+                assertEquals("delivered", sender.view().messages.single().status)
                 try { a.requireCableEligible(); fail("Operational pairing was replaceable") } catch (_: IllegalStateException) {}
             } finally {
                 listOf(ain, bin, aout, bout).forEach { try { it.close() } catch (_: Exception) {} }

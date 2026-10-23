@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.EditText
 import android.widget.RadioGroup
+import android.widget.TextView
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
@@ -17,7 +18,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PairingInterfaceTest {
     private fun all(v: View): List<View> = listOf(v) + if (v is ViewGroup) (0 until v.childCount).flatMap { all(v.getChildAt(it)) } else emptyList()
-    @Test fun scanRequiresReviewAndFillsOppositeRoleWithoutSavingOrConnecting() {
+    @Test fun scanRequiresReviewThenSavesOppositeRoleWithoutAnotherManualStep() {
         val instrumentation = InstrumentationRegistry.getInstrumentation(); val context = instrumentation.targetContext
         val store = SecureStore(context); store.forget(); store.sibling("pads").forget()
         val invite = PairingInvite("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "B")
@@ -47,17 +48,28 @@ class PairingInterfaceTest {
                 assertTrue(fields.first { it.hint.toString() == "Relay access token" }.text.isEmpty())
                 first.getButton(AlertDialog.BUTTON_NEGATIVE).performClick()
             }
+            instrumentation.waitForIdleSync()
             assertNull(store.load())
             val second = scan()
+            instrumentation.runOnMainSync { second.getButton(AlertDialog.BUTTON_POSITIVE).performClick() }
+            instrumentation.waitForIdleSync()
+            val deadline = System.currentTimeMillis() + 10000
+            var ready = false
+            while (!ready && System.currentTimeMillis() < deadline) {
+                instrumentation.runOnMainSync { ready = all(activity.findViewById(android.R.id.content)).filterIsInstance<TextView>().any { it.text.toString() == "STATION B" } }
+                if (!ready) Thread.sleep(40)
+            }
+            assertTrue("Scanned setup was not saved", ready)
             instrumentation.runOnMainSync {
-                second.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
                 val fields = all(activity.findViewById(android.R.id.content)).filterIsInstance<EditText>()
                 assertEquals(invite.endpoint, fields.first { it.hint.toString() == "https://pager.example.com" }.text.toString())
                 assertEquals(invite.token, fields.first { it.hint.toString() == "Relay access token" }.text.toString())
                 assertEquals(invite.secret, fields.first { it.hint.toString() == "43-character pairing secret" }.text.toString())
                 assertTrue(all(activity.findViewById(android.R.id.content)).filterIsInstance<RadioGroup>().any { it.checkedRadioButtonId == R.id.station_b })
             }
-            assertNull(store.load())
+            val saved = checkNotNull(store.load())
+            assertEquals(invite.secret, saved.getString("secret")); assertEquals("B", saved.getString("role"))
+            assertEquals(0L, saved.getLong("counter"))
         } finally {
             instrumentation.runOnMainSync { activity.finish() }; instrumentation.waitForIdleSync()
             store.forget(); store.sibling("pads").forget()

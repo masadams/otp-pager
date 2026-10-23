@@ -21,6 +21,18 @@ class PairingQrTest {
         try { PairingQr.readImage(ByteArray(4 * 1024 * 1024 + 1).inputStream()); fail("Oversized image accepted") } catch (_: IllegalArgumentException) {}
         try { PairingQr.readImage("not an image".byteInputStream()); fail("Invalid image accepted") } catch (_: IllegalArgumentException) {}
     }
+    @Test fun embeddedScannerInflatesWithSecureWindow() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation(); val context = instrumentation.targetContext
+        instrumentation.uiAutomation.grantRuntimePermission(context.packageName, android.Manifest.permission.CAMERA)
+        val activity = instrumentation.startActivitySync(android.content.Intent(context, PairingScannerActivity::class.java)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("BEEP_ENABLED", false).putExtra("BARCODE_IMAGE_ENABLED", false))
+        try {
+            instrumentation.runOnMainSync {
+                assertTrue(activity.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_SECURE != 0)
+                assertNotNull(activity.findViewById<android.view.View>(com.google.zxing.client.android.R.id.zxing_barcode_scanner))
+            }
+        } finally { instrumentation.runOnMainSync { activity.finish() }; instrumentation.waitForIdleSync() }
+    }
     @Test fun exportGivesOppositeRoleWithoutChangingVaultOrCounters() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val store = SecureStore(context, "qr-pair"); store.forget()

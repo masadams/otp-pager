@@ -16,23 +16,24 @@ import java.util.concurrent.atomic.AtomicBoolean
 class UsbPairChannel private constructor(private val receive: (ByteArray, Int, Int) -> Int,
     private val transmit: (ByteArray, Int, Int) -> Int, private val release: () -> Unit) : Closeable {
     private val closed = AtomicBoolean(false)
-    val input = object : InputStream() {
+    private val expires = SystemClock.elapsedRealtime() + 180000
+    val input: InputStream = java.io.BufferedInputStream(object : InputStream() {
         override fun read(): Int { val b = ByteArray(1); return if (read(b, 0, 1) < 0) -1 else b[0].toInt() and 255 }
         override fun read(b: ByteArray, off: Int, len: Int): Int {
             if (len == 0) return 0
-            val deadline = SystemClock.elapsedRealtime() + 120000
+            val deadline = minOf(expires, SystemClock.elapsedRealtime() + 120000)
             while (!closed.get() && SystemClock.elapsedRealtime() < deadline) {
                 val n = receive(b, off, minOf(len, 16384)); if (n > 0) return n
             }
             throw IOException("USB disconnected or pairing timed out")
         }
-    }
+    }, 16384) // Read a full USB packet even when DataInputStream asks for one byte.
     val output = object : OutputStream() {
         override fun write(value: Int) = write(byteArrayOf(value.toByte()), 0, 1)
         override fun write(b: ByteArray, off: Int, len: Int) {
             var at = off; val end = off + len
             while (at < end) {
-                check(!closed.get()) { "USB connection closed" }
+                check(!closed.get() && SystemClock.elapsedRealtime() < expires) { "USB connection closed or timed out" }
                 val n = transmit(b, at, minOf(end - at, 16384))
                 if (n <= 0) throw IOException("USB write failed")
                 at += n
