@@ -1,0 +1,17 @@
+# Android/Gradle
+.gradle/
+build/
+**/build/
+local.properties
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# Never commit key material or exported pairing bundles
+*.otpkey
+*.pad
+*.keybundle
+secrets/
+pairing-export/
+.env
