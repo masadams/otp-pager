@@ -74,6 +74,40 @@ def fingerprint(value):
     return value
 
 
+def backup_note(store, password):
+    value = {"format": "otp-pager-signer-v1", "pkcs12_base64": base64.b64encode(store.read_bytes()).decode(),
+             "password": password, "certificate_sha256": certificate(store, password)}
+    note = json.dumps(value, separators=(",", ":"))
+    if len(note) > 6000:
+        raise ValueError("Key backup exceeds the compact note bound; keep the original files instead")
+    return note
+
+
+def restore_backup(source, directory):
+    if source.stat().st_size > 6000:
+        raise ValueError("Signing backup is too large")
+    value = json.loads(source.read_text())
+    if (not isinstance(value, dict) or value.get("format") != "otp-pager-signer-v1"
+            or not isinstance(value.get("password"), str) or len(value["password"]) < 32
+            or not isinstance(value.get("pkcs12_base64"), str) or not isinstance(value.get("certificate_sha256"), str)):
+        raise ValueError("Invalid signing backup")
+    data = base64.b64decode(value["pkcs12_base64"], validate=True)
+    expected = fingerprint(value["certificate_sha256"])
+    # Check before creating the destination; never replace a saved owner key.
+    with tempfile.TemporaryDirectory(prefix="otp-restore-check-") as folder:
+        temporary = Path(folder) / "release.p12"; write_private(temporary, data)
+        if certificate(temporary, value["password"]) != expected:
+            raise ValueError("Backup certificate does not match the key")
+    if directory.exists() and any(directory.iterdir()):
+        raise ValueError("Restore requires an empty private directory; existing material is never overwritten")
+    private_directory(directory)
+    write_private(directory / "release.p12", data)
+    write_private(directory / "password.txt", value["password"].encode())
+    write_private(directory / "bitwarden-backup.txt", source.read_bytes())
+    (directory / "certificate-sha256.txt").write_text(expected + "\n")
+    print(f"Original signer restored to {directory}. Run setup with this directory to verify the repository pin before uploading.")
+
+
 def configure(directory, repo=REPO, build=True):
     if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
         raise ValueError("Invalid repository")
@@ -106,11 +140,18 @@ def configure(directory, repo=REPO, build=True):
     digest = certificate(store, password)
     if pinned and fingerprint(pinned) != digest:
         raise ValueError("Local key differs from the pinned release signer. Nothing uploaded.")
+    note_path = directory / "bitwarden-backup.txt"
+    note = backup_note(store, password)
+    if note_path.exists():
+        if note_path.read_text() != note:
+            raise ValueError("Existing backup differs; keep the originals and inspect the private backup folder")
+    else:
+        write_private(note_path, note.encode())
+    (directory / "certificate-sha256.txt").write_text(digest + "\n")
     # Pin before upload: a partial failure can be resumed only with this exact local key.
     run(["gh", "variable", "set", "ANDROID_SIGNING_CERT_SHA256", "--repo", repo, "--body", digest])
     run(["gh", "secret", "set", "ANDROID_SIGNING_KEYSTORE", "--repo", repo], data=base64.b64encode(store.read_bytes()).decode())
     run(["gh", "secret", "set", "ANDROID_SIGNING_PASSWORD", "--repo", repo], data=password)
-    (directory / "certificate-sha256.txt").write_text(digest + "\n")
     print(f"Release signer configured for {repo}. Certificate SHA-256: {digest}")
     print(f"Keep an offline backup of this entire private folder: {directory}")
     if build:
@@ -189,6 +230,9 @@ def main():
     setup.add_argument("--directory", type=Path, default=default)
     setup.add_argument("--repo", default=REPO)
     setup.add_argument("--no-build", action="store_true")
+    restore = sub.add_parser("restore")
+    restore.add_argument("backup", type=Path)
+    restore.add_argument("--directory", type=Path, default=default)
     sub.add_parser("build")
     compare = sub.add_parser("check-update")
     compare.add_argument("previous", type=Path); compare.add_argument("candidate", type=Path)
@@ -196,6 +240,8 @@ def main():
     args = parser.parse_args()
     if args.action == "setup":
         configure(args.directory, args.repo, not args.no_build)
+    elif args.action == "restore":
+        restore_backup(args.backup, args.directory)
     elif args.action == "build":
         build_release()
     else:

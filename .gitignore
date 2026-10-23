@@ -10,6 +10,7 @@ local.properties
 *.p12
 *.pfx
 password.txt
+bitwarden-backup.txt
 
 # Never commit key material or exported pairing bundles
 *.otpkey

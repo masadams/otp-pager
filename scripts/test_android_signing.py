@@ -29,6 +29,25 @@ class SigningTests(unittest.TestCase):
                 self.assertEqual(0o600, store.stat().st_mode & 0o777)
                 self.assertEqual(0o700, directory.stat().st_mode & 0o777)
 
+    def test_compact_vault_backup_restores_the_exact_key_and_never_overwrites(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            store = root / 'source.p12'; password = 'q' * 43
+            signing.generate(store, password)
+            note = signing.backup_note(store, password)
+            self.assertLessEqual(len(note), 6000)
+            source = root / 'bitwarden-backup.txt'; source.write_text(note)
+            restored = root / 'restored'
+            with contextlib.redirect_stdout(io.StringIO()): signing.restore_backup(source, restored)
+            self.assertEqual(store.read_bytes(), (restored / 'release.p12').read_bytes())
+            self.assertEqual(password, (restored / 'password.txt').read_text())
+            self.assertEqual(signing.certificate(store, password), signing.certificate(restored / 'release.p12', password))
+            with self.assertRaises(ValueError): signing.restore_backup(source, restored)
+            wrong = json.loads(note); wrong['certificate_sha256'] = 'b' * 64
+            source.write_text(json.dumps(wrong))
+            with self.assertRaises(ValueError): signing.restore_backup(source, root / 'wrong')
+            self.assertFalse((root / 'wrong').exists())
+
     def test_missing_or_bad_pin_fails_before_gradle(self):
         with patch.dict(os.environ, {}, clear=True), patch.object(subprocess, 'run') as child:
             with self.assertRaises(ValueError): signing.build_release()

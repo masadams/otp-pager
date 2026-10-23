@@ -5,6 +5,77 @@ chat storage and pad ledger locations unchanged. Android installs a higher-versi
 with the same signer over the app and preserves its data/UID. No pad export, vault
 backup/restore, uninstall or re-pairing is part of a normal update.
 
+## One-time owner setup from an Android phone
+
+Install Termux from its official F-Droid distribution:
+https://f-droid.org/packages/com.termux/ . This setup runs locally on your phone;
+it does not need a PC or root. After the signing PR and its prerequisite PR are merged,
+open Termux and run:
+
+```sh
+pkg update
+pkg install python openjdk-17 gh git
+```
+
+Then sign in to your own GitHub account (the browser flow opens on your phone):
+
+```sh
+gh auth login
+```
+
+Clone the project and run the owner setup:
+
+```sh
+gh repo clone masadams/otp-pager
+cd otp-pager
+python scripts/android_signing.py setup
+```
+
+If you already have a checkout, update that checkout rather than cloning over it. The
+script generates the permanent key in Termux's private app storage, uploads it to GitHub
+Actions secrets and requests a signed main-branch build. It prints only the public
+certificate fingerprint and local backup path. Do not clear Termux's app storage before
+saving and checking your backup. If the phone is lost, the backup is how you retain
+compatible app updates.
+
+### Keep the backup in Bitwarden
+
+Bitwarden stores the backup; `keytool` creates the Android signing key. Setup creates
+`bitwarden-backup.txt` alongside the keystore/password, normally here in Termux:
+
+```
+~/.local/share/OTPPager/signing/bitwarden-backup.txt
+```
+
+The file is a compact JSON text backup (bounded to 6,000 characters) containing the full
+keystore as Base64, its password and public fingerprint. Copy its **entire** contents
+locally into a new Bitwarden **Secure Note**, named e.g. `OTP Pager — release signing`.
+This avoids needing file attachments. Open the local file with an editor or deliberately
+view/copy it in your own terminal; setup never prints it automatically. Do not paste it
+into this chat, a GitHub issue or the repository. Clear any temporary clipboard/download
+copy afterward. The text is a complete signing credential; its Base64 is not encryption.
+The Bitwarden vault protects it. File attachments are another option on plans that
+include them; they are not required for this text route. Check the saved note contains
+the complete JSON before removing any original copy, and keep an additional secure
+offline backup when practical.
+
+To recover later, save that exact note to a local file **outside the checkout**, then:
+
+```sh
+python scripts/android_signing.py restore /path/to/bitwarden-backup.txt
+python scripts/android_signing.py setup
+```
+
+Restore verifies the key against its embedded public certificate and requires an empty
+private destination. Setup then checks it against GitHub's existing signer pin before
+uploading. It cannot rotate an existing app onto a different signing key. No Bitwarden
+login, session token or vault access is requested by our script.
+
+References: https://github.com/termux/termux-app#installation ;
+https://github.com/termux/termux-packages/tree/master/packages/openjdk-17 ;
+https://github.com/termux/termux-packages/tree/master/packages/gh ;
+https://bitwarden.com/help/attachments/
+
 ## One-time owner setup (Windows)
 
 Merge the signing PR and its prerequisite pairing/UI PR first. On your own Windows PC,
@@ -38,14 +109,14 @@ public variable (`ANDROID_SIGNING_CERT_SHA256`). No private key or password is c
 printed, included in APKs, attached to an artifact or sent to this chat.
 
 **Keep a secure offline backup of the entire private folder**, including `release.p12`,
-`password.txt` and the public fingerprint. Do this before relying on the signer. Losing
+`password.txt`, `bitwarden-backup.txt` and the public fingerprint. Do this before relying on the signer. Losing
 the key or password prevents compatible updates. The script is resumable with this same
 folder and refuses to replace an existing remote signer with a different local key.
 Do not delete the folder to fix an error. A partial upload can be retried with the original
 folder. GitHub repo administrators and Actions runners with access to the secrets are
 trusted signing infrastructure; offline/manual signing would be a separate custody model.
 
-This connector cannot configure repository secrets, so this owner-local step is required.
+This connector cannot configure repository secrets, so this owner-local step on your phone or PC is required.
 It is a tooling permission limit, not an app permission prompt or an additional pairing step.
 
 ## The initial debug-to-release transition

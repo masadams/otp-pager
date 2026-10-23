@@ -155,4 +155,5 @@ new debug-signed releases. An emulator job installs a second non-debuggable rele
 over a seeded first one and checks Keystore identity, chat state, queued ciphertext,
 replay state and pad allocation; wrong-signature and downgrade installs must fail.
 The one-time switch from existing temporary debug keys still requires fresh pairings.
-The release key is not configured until the owner runs setup on their PC.
+The release key is not configured until the owner runs setup on their phone or PC.
+Android/Termux setup includes a compact Bitwarden Secure Note backup and tested restore.
