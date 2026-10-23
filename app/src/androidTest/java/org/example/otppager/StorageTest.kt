@@ -44,4 +44,14 @@ class StorageTest {
             assertEquals(3, File(context.noBackupFilesDir, "station-v2.bin").length().toInt())
         } finally { store.forget() }
     }
+    @Test fun unreadableVaultPathIsNotTreatedAsANewPairing() {
+        val store = SecureStore(context, "test-broken"); store.forget()
+        val path = File(context.noBackupFilesDir, "test-broken.bin")
+        try {
+            path.mkdir()
+            try { store.load(); fail("Directory was treated as an empty vault") } catch (_: java.io.IOException) {}
+            assertTrue(path.isDirectory)
+        } finally { store.forget() }
+    }
+
 }

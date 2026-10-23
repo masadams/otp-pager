@@ -13,10 +13,11 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 /** One encrypted, atomic snapshot: pairing, counters, inbox and outbox commit together. */
-class SecureStore(context: Context) {
-    private val base = File(context.noBackupFilesDir, "station-v2.bin")
+class SecureStore(context: Context, namespace: String = "station-v2") {
+    private val slot = namespace.also { require(Regex("[a-z0-9-]{1,40}").matches(it)) }
+    private val base = File(context.noBackupFilesDir, "$slot.bin")
     private val file = AtomicFile(base)
-    private val alias = "otp-pager-station-v2"
+    private val alias = "otp-pager-$slot"
     private val aad = "OTP Pager local vault v2".toByteArray()
     private fun key(create: Boolean): SecretKey {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }

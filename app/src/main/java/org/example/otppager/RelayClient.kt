@@ -4,8 +4,11 @@ import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 class RelayHttpException(val status: Int) : java.io.IOException("HTTP $status")
-object RelayClient {
-    fun request(endpoint: String, room: String, token: String, method: String, body: String? = null, cursor: Long = 0): String {
+interface RelayTransport {
+    fun request(endpoint: String, room: String, token: String, method: String, body: String? = null, cursor: Long = 0): String
+}
+object RelayClient : RelayTransport {
+    override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String {
         val suffix = if (method == "GET") "?after=$cursor&limit=50" else ""
         val conn = URL("$endpoint/v1/mailbox/$room$suffix").openConnection() as HttpsURLConnection
         conn.instanceFollowRedirects = false

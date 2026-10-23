@@ -4,7 +4,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Call only from the single station worker. Save snapshot before publishing it in memory. */
-class StationEngine(private val store: SecureStore) {
+class StationEngine(private val store: SecureStore, private val relay: RelayTransport = RelayClient) {
     var state: JSONObject? = store.load()
         private set
     init { state?.let { validate(it); transaction(::prune) } }
@@ -82,7 +82,7 @@ class StationEngine(private val store: SecureStore) {
         var ignored = 0
         try {
             val room = Protocol.room(master)
-            val response = JSONObject(RelayClient.request(s.getString("endpoint"), room, s.getString("token"), "GET", cursor = s.getLong("cursor")))
+            val response = JSONObject(relay.request(s.getString("endpoint"), room, s.getString("token"), "GET", cursor = s.getLong("cursor")))
             check(response.optInt("protocol") == 2) { "Update the relay container before using this APK" }
             val epoch = response.getString("epoch")
             if (s.getString("epoch").isNotEmpty() && s.getString("epoch") != epoch) {
@@ -124,7 +124,7 @@ class StationEngine(private val store: SecureStore) {
             // Retry the exact durable ciphertext; a timeout never creates a new message ID/counter.
             val pending = items(checkNotNull(state).getJSONArray("outbox")).filter { it.getString("status") == "queued" }.take(10)
             for (entry in pending) {
-                RelayClient.request(s.getString("endpoint"), room, s.getString("token"), "POST", JSONObject().put("packet", entry.getString("packet")).toString())
+                relay.request(s.getString("endpoint"), room, s.getString("token"), "POST", JSONObject().put("packet", entry.getString("packet")).toString())
                 transaction { next ->
                     items(next.getJSONArray("outbox")).firstOrNull { it.getString("id") == entry.getString("id") }?.put("status", "relayed")
                     prune(next)
