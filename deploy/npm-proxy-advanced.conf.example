@@ -1,0 +1,8 @@
+# NPM: paste into ONLY the pager Proxy Host's Advanced tab AFTER installing
+# npm-http-top.conf.example's zones. Test nginx -t before reloading.
+client_max_body_size 16k;
+client_body_timeout 10s;
+client_header_timeout 10s;
+limit_req zone=otp_pager burst=20 nodelay;
+limit_req_status 429;
+limit_conn otp_connections 10;

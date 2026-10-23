@@ -1,0 +1,4 @@
+# Append to /data/nginx/custom/http_top.conf INSIDE Nginx Proxy Manager.
+# Keep existing unrelated configuration. Do not paste these zones into a Proxy Host.
+limit_req_zone $binary_remote_addr zone=otp_pager:10m rate=5r/s;
+limit_conn_zone $binary_remote_addr zone=otp_connections:10m;

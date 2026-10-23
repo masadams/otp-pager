@@ -1,0 +1,103 @@
+name: Relay tests
+on:
+  push:
+    branches: [main, feat/two-device-relay]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+        working-directory: relay
+      - name: Validate stack syntax and build image
+        env:
+          RELAY_TOKEN: CI-placeholder-only-xxxxxxxxxxxxxxxxxxxxxxxxx
+        run: |
+          docker compose config --quiet
+          docker compose -f deploy/portainer-stack.yml config --quiet
+          docker build -t otp-pager-relay:local ./relay
+      - name: Container smoke test with persistent volume
+        shell: bash
+        run: |
+          set -euo pipefail
+          export RELAY_TOKEN="$(node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))")"
+          trap 'docker compose down -v' EXIT
+          docker compose up -d --wait
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const base = 'http://127.0.0.1:8080/v1/mailbox/' + 'a'.repeat(64);
+          const headers = { Authorization: 'Bearer ' + process.env.RELAY_TOKEN, 'Content-Type': 'application/json' };
+          assert.equal((await fetch(base)).status, 401);
+          assert.equal((await fetch(base, { method: 'POST', headers, body: JSON.stringify({packet:'YQ=='}) })).status, 201);
+          JS
+          docker compose restart relay
+          docker compose up -d --wait
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const response = await fetch('http://127.0.0.1:8080/v1/mailbox/' + 'a'.repeat(64), {
+            headers: { Authorization: 'Bearer ' + process.env.RELAY_TOKEN }
+          });
+          assert.deepEqual((await response.json()).messages, [{seq:1, packet:'YQ=='}]);
+          JS
+      - run: docker save -o relay-image.tar otp-pager-relay:local
+      - uses: actions/upload-artifact@v4
+        with:
+          name: otp-pager-relay-image
+          path: relay-image.tar
+          retention-days: 7
+
+  publish:
+    concurrency:
+      group: relay-publish-${{ github.ref_name }}
+      cancel-in-progress: false
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/feat/two-device-relay' || github.ref == 'refs/heads/main')
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and publish tested relay
+        id: image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./relay
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/masadams/otp-pager-relay:edge
+            ghcr.io/masadams/otp-pager-relay:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/masadams/otp-pager
+            org.opencontainers.image.description=Experimental OTP Pager encrypted mailbox relay
+            org.opencontainers.image.revision=${{ github.sha }}
+      - name: Check anonymous pull access
+        env:
+          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          anonymous_config="$(mktemp -d)"
+          trap 'rm -rf "$anonymous_config"' EXIT
+          if docker --config "$anonymous_config" pull "ghcr.io/masadams/otp-pager-relay@$IMAGE_DIGEST"; then
+            echo 'Anonymous image pull verified.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '::warning::Image published, but anonymous pull is blocked. Set the GitHub package visibility to Public before deploying without registry credentials.'
+            echo 'Image published. One-time package visibility setting required: https://github.com/users/masadams/packages/container/otp-pager-relay/settings' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Published digest: $IMAGE_DIGEST" >> "$GITHUB_STEP_SUMMARY"

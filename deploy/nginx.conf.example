@@ -1,0 +1,32 @@
+# Place limit_req_zone in the http {} context (not server/location).
+limit_req_zone $binary_remote_addr zone=otp_pager:10m rate=5r/s;
+limit_conn_zone $binary_remote_addr zone=otp_connections:10m;
+
+server {
+    listen 443 ssl;
+    server_name pager.example.com;
+    ssl_certificate /etc/letsencrypt/live/pager.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pager.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    server_tokens off;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    limit_conn otp_connections 10;
+    client_header_timeout 10s;
+    keepalive_timeout 15s;
+    client_max_body_size 16k;
+    client_body_timeout 10s;
+    # Mailbox IDs are sensitive metadata; avoid normal URI access logging.
+    access_log off;
+    location / {
+        limit_req zone=otp_pager burst=20 nodelay;
+        limit_req_status 429;
+        proxy_pass http://otp-pager-relay:8080;
+        # For host Nginx + compose.yaml use http://127.0.0.1:8080 instead.
+        proxy_set_header Host $host;
+        proxy_set_header Authorization $http_authorization;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 15s;
+        proxy_send_timeout 15s;
+        proxy_redirect off;
+    }
+}
