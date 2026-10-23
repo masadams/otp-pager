@@ -65,6 +65,38 @@ class CablePairTest {
             }
         }
     }
+    @Test fun decliningConfirmationSendsNoCredentialsOrPad() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val sa = SecureStore(context, "cable-decline-a"); val sb = SecureStore(context, "cable-decline-b")
+        val stores = listOf(sa, sb); stores.forEach { it.forget(); it.sibling("pads").forget() }
+        val pool = Executors.newFixedThreadPool(2)
+        val ain = PipedInputStream(16384); val bin = PipedInputStream(16384)
+        val capture = java.io.ByteArrayOutputStream()
+        val aout = object : java.io.FilterOutputStream(PipedOutputStream(bin)) {
+            override fun write(value: Int) { capture.write(value); out.write(value) }
+            override fun write(bytes: ByteArray, offset: Int, count: Int) { capture.write(bytes, offset, count); out.write(bytes, offset, count) }
+        }
+        val bout = PipedOutputStream(ain)
+        try {
+            val a = StationEngine(sa); val b = StationEngine(sb)
+            val secret = Protocol.randomSecret(); val token = "s".repeat(43)
+            a.configure("https://pager.example.com", token, secret, "A")
+            val original = a.state.toString()
+            val reject: (String, String) -> Unit = { _, _ -> error("User declined") }
+            val af = pool.submit { CableProtocol.run(true, ain, aout, a, reject) {} }
+            val bf = pool.submit { CableProtocol.run(false, bin, bout, b, reject) {} }
+            for (future in listOf(af, bf)) {
+                try { future.get(20, TimeUnit.SECONDS); fail("Declined pairing activated") } catch (_: java.util.concurrent.ExecutionException) {}
+            }
+            val wire = capture.toString("UTF-8")
+            assertFalse(wire.contains(token)); assertFalse(wire.contains(secret)); assertFalse(wire.contains("\"pad\""))
+            assertEquals(original, a.state.toString()); assertNull(b.state)
+            assertNull(sa.sibling("pads").load()); assertNull(sb.sibling("pads").load())
+        } finally {
+            listOf(ain, bin, aout, bout).forEach { try { it.close() } catch (_: Exception) {} }
+            pool.shutdownNow(); stores.forEach { it.forget(); it.sibling("pads").forget() }
+        }
+    }
     @Test fun stagedAndInterruptedPairingRetiresPadAndCannotSend() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val store = SecureStore(context, "cable-stage"); store.forget(); store.sibling("pads").forget()

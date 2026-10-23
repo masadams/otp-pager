@@ -77,10 +77,13 @@ Failure to negotiate is reported and the manual/QR path remains available.
 
 The cable carries secrets directly. Use a trusted physical data cable and devices,
 not an untrusted USB hub/computer. The one 128-bit displayed confirmation code is
-SHA-256 of the domain-separated, length-prefixed transcript (both public keys,
-both random nonces, relay credentials, fresh secret and complete pad bundle),
-truncated to 16 bytes and displayed as eight hex groups. Compare every group.
-ECDSA signatures cover the transcript hash and separate setup/accept/saved/complete
+SHA-256 of the domain-separated, length-prefixed identity transcript (both public
+keys, both random nonces and the selected relay endpoint), truncated to 16 bytes
+and displayed as eight hex groups. Compare every group. The relay token, fresh
+secret and pad are sent only AFTER both people confirm and both device acceptance
+signatures verify. A separate signed material transcript binds those verified keys,
+nonces, endpoint, credentials and complete pad bundle; the application verifies
+it automatically. ECDSA signatures use separate accept/server/setup/saved/complete
 labels. This is a project-specific, unaudited physical-exchange protocol, not a
 claim of a reviewed network key-exchange protocol. A malicious cable can observe
 the directly transferred secrets; code comparison does not encrypt the cable.

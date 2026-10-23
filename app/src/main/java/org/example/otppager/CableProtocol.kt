@@ -24,19 +24,29 @@ object CableProtocol {
         val bytes = ByteArray(size); source.readFully(bytes)
         return try { JSONObject(String(bytes, Charsets.UTF_8)) } finally { bytes.fill(0) }
     }
-    private fun hello(engine: StationEngine): JSONObject = JSONObject().put("kind", "hello").put("version", 1)
+    private fun hello(engine: StationEngine): JSONObject = JSONObject().put("kind", "hello").put("version", 2)
         .put("key", engine.cableIdentity()).put("nonce", b64.encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) }))
-        .also { h -> engine.state?.let { h.put("endpoint", it.getString("endpoint")).put("token", it.getString("token")) } }
+        .also { h -> engine.state?.let { h.put("endpoint", it.getString("endpoint")) } }
     private fun checkHello(h: JSONObject) {
-        require(h.getString("kind") == "hello" && h.getInt("version") == 1)
+        require(h.getString("kind") == "hello" && h.getInt("version") == 2)
         IdentityProtocol.publicKey(h.getString("key")); require(decoder.decode(h.getString("nonce")).size == 32)
-        if (h.has("endpoint")) { Protocol.endpoint(h.getString("endpoint")); Protocol.token(h.getString("token")) }
+        if (h.has("endpoint")) { Protocol.endpoint(h.getString("endpoint")) }
+    }
+    private fun identityDigest(a: JSONObject, b: JSONObject, endpoint: String): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        DataOutputStream(out).use { stream ->
+            fun part(bytes: ByteArray) { stream.writeInt(bytes.size); stream.write(bytes) }
+            part("Field cable identity comparison v2".toByteArray(Charsets.US_ASCII))
+            for (h in listOf(a, b)) { part(IdentityProtocol.publicKey(h.getString("key")).encoded); part(decoder.decode(h.getString("nonce"))) }
+            part(endpoint.toByteArray(Charsets.UTF_8))
+        }
+        return hash(out.toByteArray())
     }
     private fun digest(a: JSONObject, b: JSONObject, setup: JSONObject): ByteArray {
         val out = java.io.ByteArrayOutputStream()
         DataOutputStream(out).use { stream ->
             fun part(bytes: ByteArray) { stream.writeInt(bytes.size); stream.write(bytes) }
-            part("Field physical cable pairing v1".toByteArray(Charsets.US_ASCII))
+            part("Field physical cable material v2".toByteArray(Charsets.US_ASCII))
             for (h in listOf(a, b)) { part(IdentityProtocol.publicKey(h.getString("key")).encoded); part(decoder.decode(h.getString("nonce"))) }
             for (name in listOf("endpoint", "token", "secret", "pad")) part(setup.getString(name).toByteArray(Charsets.UTF_8))
         }
@@ -56,39 +66,58 @@ object CableProtocol {
         else { peer = read(input); checkHello(peer); send(output, own) }
         require(own.getString("key") != peer.getString("key"))
         val a = if (host) own else peer; val b = if (host) peer else own
-        val setup: JSONObject
-        val digest: ByteArray
-        progress("Exchanging fresh pairing material…")
-        if (host) {
-            val server = if (own.has("endpoint")) own else peer
-            check(server.has("endpoint")) { "Enter and save relay settings on either device first" }
-            val secret = Protocol.randomSecret(); val master = Protocol.master(secret)
-            val bundle = try { PadProtocol.generate(PadProtocol.binding(master)) } finally { master.fill(0) }
-            setup = try { JSONObject().put("endpoint", server.getString("endpoint")).put("token", server.getString("token"))
-                .put("secret", secret).put("pad", b64.encodeToString(bundle)) } finally { bundle.fill(0) }
-            digest = digest(a, b, setup)
-            engine.stageCable(setup, "A", peer.getString("key")) // Retire before transfer.
-            send(output, JSONObject().put("kind", "setup").put("setup", setup).put("proof", proof(engine, digest, "setup-A")))
-        } else {
-            val packet = read(input); require(packet.getString("kind") == "setup")
-            setup = packet.getJSONObject("setup"); digest = digest(a, b, setup)
-            verify(peer.getString("key"), digest, "setup-A", packet.getString("proof"))
-            engine.stageCable(setup, "B", peer.getString("key"))
-        }
-        val code = PadProtocol.hex(digest.copyOf(16)).chunked(4).joinToString(" ")
-        review(code, setup.getString("endpoint"))
+        val server = if (a.has("endpoint")) a else b
+        check(server.has("endpoint")) { "Enter and save relay settings on either device first" }
+        val endpoint = server.getString("endpoint")
+        val identityDigest = identityDigest(a, b, endpoint)
+        val code = PadProtocol.hex(identityDigest.copyOf(16)).chunked(4).joinToString(" ")
+        // No relay token, pairing secret or pad is sent until BOTH people approve.
+        review(code, endpoint)
         progress("Waiting for confirmation on the other device…")
         val peerKey = peer.getString("key")
         if (host) {
-            send(output, JSONObject().put("kind", "accepted").put("proof", proof(engine, digest, "accept-A")))
+            send(output, JSONObject().put("kind", "accepted").put("proof", proof(engine, identityDigest, "accept-A")))
+            val accepted = read(input); require(accepted.getString("kind") == "accepted")
+            verify(peerKey, identityDigest, "accept-B", accepted.getString("proof"))
+        } else {
+            val accepted = read(input); require(accepted.getString("kind") == "accepted")
+            verify(peerKey, identityDigest, "accept-A", accepted.getString("proof"))
+            send(output, JSONObject().put("kind", "accepted").put("proof", proof(engine, identityDigest, "accept-B")))
+            if (!a.has("endpoint")) {
+                val token = checkNotNull(engine.state).getString("token")
+                send(output, JSONObject().put("kind", "server").put("token", token)
+                    .put("proof", proof(engine, hash(identityDigest + token.toByteArray(Charsets.UTF_8)), "server-B")))
+            }
+        }
+        val setup: JSONObject
+        val digest: ByteArray
+        progress("Both confirmed · exchanging fresh pairing material…")
+        if (host) {
+            val token = if (a.has("endpoint")) checkNotNull(engine.state).getString("token") else {
+                val credentials = read(input); require(credentials.getString("kind") == "server")
+                Protocol.token(credentials.getString("token")).also { verify(peerKey, hash(identityDigest + it.toByteArray(Charsets.UTF_8)), "server-B", credentials.getString("proof")) }
+            }
+            val secret = Protocol.randomSecret(); val master = Protocol.master(secret)
+            val bundle = try { PadProtocol.generate(PadProtocol.binding(master)) } finally { master.fill(0) }
+            setup = try { JSONObject().put("endpoint", endpoint).put("token", token)
+                .put("secret", secret).put("pad", b64.encodeToString(bundle)) } finally { bundle.fill(0) }
+            digest = digest(a, b, setup)
+            engine.stageCable(setup, "A", peerKey)
+            send(output, JSONObject().put("kind", "setup").put("setup", setup).put("proof", proof(engine, digest, "setup-A")))
+        } else {
+            val packet = read(input); require(packet.getString("kind") == "setup")
+            setup = packet.getJSONObject("setup"); require(setup.getString("endpoint") == endpoint)
+            digest = digest(a, b, setup)
+            verify(peerKey, digest, "setup-A", packet.getString("proof"))
+            engine.stageCable(setup, "B", peerKey)
+        }
+        if (host) {
             val accepted = read(input); require(accepted.getString("kind") == "saved")
             verify(peerKey, digest, "saved-B", accepted.getString("proof"))
             engine.commitCable(complete = false)
             send(output, JSONObject().put("kind", "complete").put("proof", proof(engine, digest, "complete-A")))
             engine.finishCable()
         } else {
-            val accepted = read(input); require(accepted.getString("kind") == "accepted")
-            verify(peerKey, digest, "accept-A", accepted.getString("proof"))
             engine.commitCable(complete = false)
             send(output, JSONObject().put("kind", "saved").put("proof", proof(engine, digest, "saved-B")))
             val done = read(input); require(done.getString("kind") == "complete")
