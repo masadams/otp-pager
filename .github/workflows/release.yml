@@ -5,6 +5,7 @@ on:
     paths:
       - release/**
       - scripts/publish-release.py
+      - scripts/android_signing.py
       - .github/workflows/release.yml
   workflow_dispatch:
 permissions:
@@ -31,8 +32,11 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install APK signature verification tools
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "build-tools;35.0.0"'
       - name: Publish the exact verified APK and relay image
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_REPOSITORY: ${{ github.repository }}
+          RELEASE_SIGNER_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
         run: python3 scripts/publish-release.py

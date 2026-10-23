@@ -1,0 +1,40 @@
+name: Signed Android release
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: signed-android-release
+  cancel-in-progress: false
+jobs:
+  sign:
+    # Owner keys are never exposed to PR code or a selected feature branch.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        with:
+          gradle-version: '8.9'
+          cache-disabled: true # Privileged signing build consumes no PR-populated Gradle cache.
+      - name: Install platform and signature verification tools
+        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: Build and verify with the pinned owner key
+        env:
+          OTP_SIGNING_KEYSTORE_B64: ${{ secrets.ANDROID_SIGNING_KEYSTORE }}
+          OTP_SIGNING_PASSWORD: ${{ secrets.ANDROID_SIGNING_PASSWORD }}
+          OTP_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
+        run: python3 scripts/android_signing.py build
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: otp-pager-signed-release
+          path: app/build/field-release/
+          if-no-files-found: error
+          retention-days: 90

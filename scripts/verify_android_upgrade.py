@@ -1,0 +1,64 @@
+"""CI-only: two release APKs, one disposable signer, real install -r, no owner secrets."""
+import base64
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import tempfile
+
+from android_signing import ALIAS, PACKAGE, certificate, generate, inspect_apk, run, sdk_tool, verify_update
+
+
+def instrument(phase):
+    output = run(["adb", "shell", "am", "instrument", "-w", "-e", "class", f"{PACKAGE}.UpgradeStateTest",
+                  "-e", "upgradePhase", phase, f"{PACKAGE}.test/androidx.test.runner.AndroidJUnitRunner"])
+    print(output)
+    if "OK (1 test)" not in output or "FAILURES" in output or "INSTRUMENTATION_FAILED" in output:
+        raise RuntimeError(f"Upgrade fixture {phase} did not pass")
+
+
+def rejected_install(apk, reason):
+    result = subprocess.run(["adb", "install", "-r", str(apk)], capture_output=True, text=True)
+    if result.returncode == 0 or reason not in result.stdout + result.stderr:
+        raise RuntimeError(f"Expected Android to reject installation: {reason}")
+    print(f"Android correctly rejected {reason}")
+
+
+def main():
+    password = base64.urlsafe_b64encode(os.urandom(32)).decode()
+    with tempfile.TemporaryDirectory(prefix="otp-upgrade-test-") as folder:
+        root = Path(folder)
+        store = root / "test.p12"; generate(store, password)
+        signer = certificate(store, password)
+        env = dict(os.environ, OTP_SIGNING_STORE_FILE=str(store), OTP_SIGNING_STORE_PASSWORD=password)
+        apks = []
+        for version in (800001, 800002):
+            subprocess.run(["gradle", "--no-daemon", "-PupgradeVerification=true", f"-PverificationVersionCode={version}",
+                            ":app:assembleRelease", ":app:assembleReleaseAndroidTest"], env=env, check=True)
+            apk = root / f"build-{version}.apk"
+            shutil.copyfile("app/build/outputs/apk/release/app-release.apk", apk)
+            info = inspect_apk(apk)
+            assert info["version_code"] == version and info["certificate_sha256"] == signer
+            apks.append(apk)
+            if version == 800001:
+                run(["adb", "install", apk])
+                run(["adb", "install", "-t", "app/build/outputs/apk/androidTest/release/app-release-androidTest.apk"])
+                instrument("seed")
+        verify_update(apks[0], apks[1], signer)
+        run(["adb", "shell", "am", "force-stop", PACKAGE])
+        run(["adb", "install", "-r", apks[1]])
+        # Negative tests must leave the seeded state intact too.
+        rejected_install(apks[0], "INSTALL_FAILED_VERSION_DOWNGRADE")
+        other = root / "wrong.p12"; generate(other, password)
+        wrong = root / "wrong-signer.apk"
+        sign_env = dict(os.environ, OTP_TEST_PASSWORD=password)
+        run([sdk_tool("apksigner"), "sign", "--ks", other, "--ks-key-alias", ALIAS,
+             "--ks-pass", "env:OTP_TEST_PASSWORD", "--out", wrong, apks[1]], env=sign_env)
+        rejected_install(wrong, "INSTALL_FAILED_UPDATE_INCOMPATIBLE")
+        instrument("verify")
+        target = Path("app/build/upgrade-verification"); target.mkdir(exist_ok=True)
+        (target / "result.txt").write_text("PASS: non-debuggable release install -r preserved chat index, encrypted vaults, Keystore identity, peer pin, replay state, queued ciphertext, pad ledger and claims. Wrong signer and downgrade were rejected. New sends continued above the reserved counter. Disposable CI signer only.\n")
+
+
+if __name__ == "__main__":
+    main()

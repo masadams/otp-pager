@@ -1,0 +1,10 @@
+{
+  "version": "0.8.0",
+  "commit": "REPLACE_WITH_VERIFIED_MAIN_COMMIT",
+  "android_run": 0,
+  "relay_run": 0,
+  "signed_android_run": 0,
+  "artifact": "otp-pager-signed-release",
+  "signing_cert_sha256": "REPLACE_WITH_OWNER_CERTIFICATE_SHA256",
+  "initial_signed_release": true
+}
