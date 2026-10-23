@@ -306,7 +306,7 @@ class NetworkActivity : Activity() {
         linkScroll = ScrollView(this).apply { isVerticalScrollBarEnabled = false; addView(settings) }
         root.addView(traffic, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(linkScroll, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(padScroll, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(deviceScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root); root.requestApplyInsets(); selectTab(tab)
-        runTask(load = true) {
+        runTask(load = true, publicTransfer = pendingDocument?.first in listOf(83, 84)) {
             engine = StationEngine(SecureStore(this))
             val document = pendingDocument; pendingDocument = null
             if (document == null) "STATION READY" else {
@@ -484,7 +484,7 @@ class NetworkActivity : Activity() {
         }
         if (wasAtBottom) messageScroll.post { messageScroll.fullScroll(View.FOCUS_DOWN) }
     }
-    private fun runTask(load: Boolean = false, clearComposer: Boolean = false, action: () -> String) {
+    private fun runTask(load: Boolean = false, clearComposer: Boolean = false, publicTransfer: Boolean = false, action: () -> String) {
         if (busy || !active || !unlocked || isFinishing) return
         val taskGeneration = generation
         setBusy(true); handler.removeCallbacks(poll)
@@ -496,7 +496,10 @@ class NetworkActivity : Activity() {
                 view = engine?.view(); if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
             } catch (e: Exception) {
                 relayFailure = !load && (e is java.io.IOException || e is RelayHttpException)
-                note = if (load && engine != null && e is java.io.IOException) "PAD FILE TRANSFER FAILED // after failed export use a fresh pairing and pad" else friendly(e); backoff = (backoff * 2).coerceAtMost(60000L)
+                note = if (load && engine != null && e is java.io.IOException) {
+                    if (publicTransfer) "PUBLIC CARD TRANSFER FAILED // identity retained; retry the file transfer"
+                    else "PAD FILE TRANSFER FAILED // after failed export use a fresh pairing and pad"
+                } else friendly(e); backoff = (backoff * 2).coerceAtMost(60000L)
                 if (load && engine == null) errorLoading = true
                 if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
                 try { view = engine?.view() } catch (_: Exception) { errorLoading = true }
