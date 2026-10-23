@@ -46,6 +46,9 @@ class DeviceIdentityTest {
             try { a.pinDevice(bc, "wrong"); fail("Wrong fingerprint accepted") } catch (_: IllegalArgumentException) {}
             try { a.pinDevice(ac, IdentityProtocol.fingerprint(ac).takeLast(8)); fail("Own key pinned") } catch (_: IllegalArgumentException) {}
             a.pinDevice(bc, IdentityProtocol.fingerprint(bc).takeLast(8))
+            val beforeOversized = a.view().padRemaining
+            try { a.send("\u0001".repeat(512)); fail("Oversized signed JSON accepted") } catch (_: IllegalArgumentException) {}
+            assertEquals(beforeOversized, a.view().padRemaining)
             // B need not be online or have completed pinning when A sends.
             a.send("OFFLINE SIGNED MESSAGE")
             relay.loseAck = true
@@ -64,6 +67,9 @@ class DeviceIdentityTest {
             relay.packets.add(PadProtocol.seal(pad, 'A', 101, raw.payload).second) // Signature bound to original counter.
             relay.packets.add(original) // Replay valid device frame.
             b.sync(); assertEquals(2, b.view().messages.size); assertEquals(high, b.state!!.getLong("high")); assertEquals(slots, b.view().padRemaining)
+            a.send("VALID AFTER FORGERY"); a.sync(); b.sync()
+            assertEquals("VALID AFTER FORGERY", b.view().messages.last().text)
+            assertTrue(b.view().messages.last().deviceVerified)
             val impostor = DeviceIdentity("identity-test-impostor")
             try {
                 val card = impostor.card(true)

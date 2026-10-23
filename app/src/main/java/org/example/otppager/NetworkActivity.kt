@@ -40,6 +40,9 @@ class NetworkActivity : Activity() {
     private var automatic = true
     private var lastContact = 0L
     private var connectionFailed = false
+    private var importedDeviceCard: String? = null
+    private lateinit var exportDeviceButton: Button
+    private lateinit var importDeviceButton: Button
     private var pendingDocument: Pair<Int, android.net.Uri>? = null
     private lateinit var indicators: TextView
     private lateinit var padStatus: TextView
@@ -150,8 +153,9 @@ class NetworkActivity : Activity() {
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode in listOf(81, 82) && resultCode == RESULT_OK && data?.data != null) {
+        if (requestCode in listOf(81, 82, 83, 84) && resultCode == RESULT_OK && data?.data != null) {
             pendingDocument = requestCode to data.data!!; unlocked = true; needsTerminal = true
+            if (requestCode in listOf(83, 84)) tab = 3
         }
         if (requestCode == 71 && resultCode == RESULT_OK) { unlocked = true; needsTerminal = true }
     }
@@ -272,6 +276,14 @@ class NetworkActivity : Activity() {
             }
         }; deviceSettings.addView(prepareDeviceButton)
         identityCard = text("", 12f, ink, true).apply { setTextIsSelectable(true); setPadding(0, dp(12), 0, dp(12)) }; deviceSettings.addView(identityCard)
+        exportDeviceButton = button("Export public identity card") {
+            startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE); type = "text/plain"; putExtra(Intent.EXTRA_TITLE, "field-public-device.txt")
+            }, 83)
+        }; deviceSettings.addView(exportDeviceButton)
+        importDeviceButton = button("Import other public card") {
+            startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply { addCategory(Intent.CATEGORY_OPENABLE); type = "text/plain" }, 84)
+        }; deviceSettings.addView(importDeviceButton)
         peerCardField = field("Other station's PUBLIC identity card").apply { setSingleLine(false); maxLines = 5 }
         section(deviceSettings, "OTHER DEVICE CARD", peerCardField)
         pinDeviceButton = button("Compare & pin other device", true) { showDeviceVerification() }; deviceSettings.addView(pinDeviceButton)
@@ -299,7 +311,20 @@ class NetworkActivity : Activity() {
             val document = pendingDocument; pendingDocument = null
             if (document == null) "STATION READY" else {
                 val (operation, uri) = document
-                if (operation == 81) {
+                if (operation == 83) {
+                    val card = checkNotNull(engine).view().ownDevice ?: error("Create this device identity first")
+                    contentResolver.openOutputStream(uri, "wt")!!.use { it.write(card.toByteArray(Charsets.US_ASCII)); it.flush() }
+                    "PUBLIC CARD EXPORTED · transfer to other station"
+                } else if (operation == 84) {
+                    val card = contentResolver.openInputStream(uri)!!.use { input ->
+                        val out = java.io.ByteArrayOutputStream()
+                        while (true) { val byte = input.read(); if (byte < 0) break; require(out.size() < 256) { "Public card file too large" }; out.write(byte) }
+                        out.toString("US-ASCII").trim()
+                    }
+                    IdentityProtocol.publicKey(card)
+                    importedDeviceCard = card
+                    "PUBLIC CARD IMPORTED · compare the full fingerprint before pinning"
+                } else if (operation == 81) {
                     val bundle = checkNotNull(engine).generatePad()
                     try { contentResolver.openOutputStream(uri, "wt")!!.use { it.write(bundle); it.flush() } }
                     finally { bundle.fill(0) }
@@ -381,6 +406,8 @@ class NetworkActivity : Activity() {
         busy = value
         for (view in listOf(sendButton, saveButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
         sendButton.isEnabled = !value && latest?.canSend == true && !errorLoading
+        exportDeviceButton.isEnabled = !value && latest?.ownDevice != null
+        importDeviceButton.isEnabled = !value && latest?.ownDevice != null && latest?.peerDevice == null
         prepareDeviceButton.isEnabled = !value && latest?.ownDevice == null && latest?.padVerified == true && latest?.peerReady == true && latest?.pending == 0
         pinDeviceButton.isEnabled = !value && latest?.ownDevice != null && latest?.peerDevice == null
         peerCardField.isEnabled = !value && latest?.ownDevice != null && latest?.peerDevice == null
@@ -426,11 +453,13 @@ class NetworkActivity : Activity() {
         if (padStatus.text.toString() != padLabel) padStatus.text = padLabel
         if (stationLabel.text.toString() != "STATION ${view.role}") stationLabel.text = "STATION ${view.role}"
         if (pairingCode.text.toString() != "PAIR CHECK\n${view.fingerprint}") pairingCode.text = "PAIR CHECK\n${view.fingerprint}"
+        importedDeviceCard?.let { peerCardField.setText(it); importedDeviceCard = null }
         val deviceLabel = if (view.peerDevice != null) "DEVICE KEY PINNED · offline verification enabled" else if (view.ownDevice != null) "WAITING FOR PHYSICAL KEY EXCHANGE" else "DEVICE NOT BOUND · pad possession only"
-        identityStatus.text = deviceLabel
-        identityCard.text = view.ownDevice?.let { "THIS DEVICE · ${view.keyProtection}\nFINGERPRINT\n${IdentityProtocol.fingerprint(it).chunked(4).joinToString(" ")}\n\nPUBLIC CARD (select and copy)\n$it" } ?: ""
+        val ownLabel = view.ownDevice?.let { "THIS DEVICE · ${view.keyProtection}\nFINGERPRINT\n${IdentityProtocol.fingerprint(it).chunked(4).joinToString(" ")}\n\nPUBLIC CARD (select and copy)\n$it" } ?: ""
+        if (identityCard.text.toString() != ownLabel) identityCard.text = ownLabel
+        val fullDeviceLabel = if (view.peerDevice != null) "$deviceLabel\nPEER FINGERPRINT\n${IdentityProtocol.fingerprint(view.peerDevice).chunked(4).joinToString(" ")}" else deviceLabel
+        if (identityStatus.text.toString() != fullDeviceLabel) identityStatus.text = fullDeviceLabel
         if (view.peerDevice != null) {
-            identityStatus.text = "$deviceLabel\nPEER FINGERPRINT\n${IdentityProtocol.fingerprint(view.peerDevice).chunked(4).joinToString(" ")}"
             peerCardField.text.clear()
         }
         if (view.messages == rendered) return
@@ -513,7 +542,8 @@ class NetworkActivity : Activity() {
         if (::composer.isInitialized) composer.text.clear()
         if (::messages.isInitialized) messages.removeAllViews()
         if (::tokenField.isInitialized) { tokenField.text.clear(); secretField.text.clear() }
-        latest = null; rendered = null
+        latest = null; rendered = null; importedDeviceCard = null
+        if (::peerCardField.isInitialized) peerCardField.text.clear()
         worker.execute { engine = null }
         super.onStop()
     }

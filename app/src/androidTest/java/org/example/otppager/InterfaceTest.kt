@@ -114,6 +114,38 @@ class InterfaceTest {
             store.forget(); store.sibling("pads").forget()
         }
     }
+    @Test fun deviceExchangePausesSendingAndShowsHonestKeyStatus() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val store = SecureStore(context); store.forget(); store.sibling("pads").forget()
+        val engine = StationEngine(store)
+        engine.configure("https://pager.example.com", "x".repeat(43), Protocol.randomSecret(), "A")
+        engine.generatePad().fill(0); engine.confirmPad(engine.view().padCheck!!.takeLast(8))
+        val state = JSONObject(engine.state.toString()).put("peerReady", true)
+        state.getJSONArray("outbox").getJSONObject(0).put("status", "relayed")
+        store.save(state)
+        val prepared = StationEngine(store); prepared.prepareIdentity()
+        val card = prepared.view().ownDevice!!
+        val activity = instrumentation.startActivitySync(Intent(context, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        try {
+            awaitStation(instrumentation, activity)
+            instrumentation.runOnMainSync {
+                assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
+                assertTrue(all(content(activity)).filterIsInstance<TextView>().any { it.text.toString().contains("DEVICE EXCHANGE INCOMPLETE") })
+            }
+            tap(instrumentation, activity, "Device")
+            instrumentation.runOnMainSync {
+                val views = all(content(activity))
+                assertTrue(views.filterIsInstance<TextView>().any { it.text.toString().contains(card) && it.text.toString().contains("KEYSTORE") })
+                assertTrue(views.filterIsInstance<Button>().first { it.text.toString() == "Compare & pin other device" }.isEnabled)
+                assertFalse(views.filterIsInstance<Button>().first { it.text.toString() == "Create this device identity" }.isEnabled)
+            }
+            capture(instrumentation, activity, "device")
+        } finally {
+            instrumentation.runOnMainSync { activity.finish() }; instrumentation.waitForIdleSync()
+            store.forget(); store.sibling("pads").forget()
+        }
+    }
     @Test fun unverifiedPadDisablesSendingAndShowsSetup() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext

@@ -15,9 +15,9 @@ and integration are project-specific and need review.
 2. Open Device and create an identity on BOTH stations. This creates a signing-only
    P-256 key in Android Keystore. The UI reports whether that key is hardware or
    software backed. Public card generation/verification uses no pad slots.
-3. Select and copy the PUBLIC CARD text. Transfer it to the other station through
+3. Use Export public identity card (or select and copy the PUBLIC CARD text). Transfer it to the other station through
    physical storage or a trusted local connection; these are public keys, not the
-   secret pad file. Paste the other station's card into its Device tab.
+   secret pad file. Use Import other public card (or paste it) on the other station's Device tab. Importing never pins automatically.
 4. Tap Compare & pin. Compare ALL 64 hexadecimal fingerprint characters against
    the fingerprint displayed on the OTHER physical device. The final eight
    characters entered from that device are only an additional typing check.
