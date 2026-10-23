@@ -64,3 +64,12 @@ validation is a separate requirement before claiming information-theoretic secre
 ### 0.3 finite-pad experiment implemented
 
 See [PAD_PROTOCOL.md](PAD_PROTOCOL.md) for physical setup, exact allocation and limitations. Includes import/export, directional XOR slots, separate HMAC keys, burn-before-encryption reservation ledger, exact retries, receipts, retirement and exhaustion UI. This deliberately uses conventional HMAC and Android-generated material, so the information-theoretic authentication/entropy milestone above remains open. Restored/cloned state is not rollback-proof.
+
+### 0.4 verified setup and unread navigation
+
+- Dedicated Pad tab, physical setup steps, full-code comparison with suffix entry.
+- Local verification and authenticated peer readiness gate new pad sends.
+- Retained readiness ciphertext supports exact retries/reannouncement without new slots.
+- Schema migration preserves pad/replay counters and blocks old APKs reading migrated pad vaults.
+- New-message navigation preserves unread state while reading older traffic.
+- Entropy validation, independent audit, full power-loss testing and stable release signing remain open.

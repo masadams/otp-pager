@@ -41,3 +41,7 @@ the relay and **both** APKs together; legacy v0.1 messages are not imported.
 ### Android 0.3: finite-pad experiment
 
 The e-ink interface shows relay connectivity, unread messages, queued traffic, delivery state and remaining pad slots. Link settings can create a physical pad file on Station A and import it on Station B. Start a fresh pairing on both devices before installing pads. Read [physical setup and security limits](docs/PAD_PROTOCOL.md) first: plaintext pad files require physical transfer; Android-generated pads and HMAC authentication are experimental and do not claim information-theoretic security. Each station has 127 outgoing slots, including receipts. No automatic AES fallback at exhaustion.
+
+### Android 0.4: verify before sending
+
+Messages, Link and Pad now have separate tabs. After importing pads, compare the full pad-check code in person, verify on **both devices**, and sync both. New pad messages unlock only after authenticated peer readiness arrives. This uses one setup slot per station; re-announcing readiness retries identical ciphertext without spending more pad material. Upgrade both APKs. See [0.4 setup and upgrade details](docs/PAD_PROTOCOL.md#android-04-verified-setup-gate). Existing 0.3 pads migrate with their counters intact; old APKs reject the migrated pad vault.

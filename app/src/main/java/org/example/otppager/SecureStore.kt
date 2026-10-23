@@ -46,7 +46,7 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
         cipher.init(Cipher.DECRYPT_MODE, key(false), GCMParameterSpec(128, bytes.copyOfRange(1, 13)))
         cipher.updateAAD(aad)
         val clear = cipher.doFinal(bytes.copyOfRange(13, bytes.size))
-        return try { JSONObject(String(clear, Charsets.UTF_8)).also { check(it.getInt("version") == 2) } }
+        return try { JSONObject(String(clear, Charsets.UTF_8)).also { check(it.getInt("version") in 2..3) } }
         finally { clear.fill(0) }
     }
     fun save(state: JSONObject) {
@@ -54,12 +54,12 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
         cipher.init(Cipher.ENCRYPT_MODE, key(true)); cipher.updateAAD(aad)
         val clear = state.toString().toByteArray(Charsets.UTF_8)
         val encrypted = try { byteArrayOf(2) + cipher.iv + cipher.doFinal(clear) } finally { clear.fill(0) }
-        val stream = file.startWrite()
+        val stream = try { file.startWrite() } catch (e: Exception) { throw IllegalStateException("Local storage write could not start. No new packet will be sent; restart the station before retrying.", e) }
         try { stream.write(encrypted); stream.fd.sync(); file.finishWrite(stream)
             check(base.isFile && !File(base.path + ".bak").exists() && !File(base.path + ".new").exists() && base.readBytes().contentEquals(encrypted)) { "Vault commit could not be verified" }
             val directory = android.system.Os.open(base.parentFile!!.path, android.system.OsConstants.O_RDONLY, 0)
             try { android.system.Os.fsync(directory) } finally { android.system.Os.close(directory) } }
-        catch (e: Exception) { file.failWrite(stream); throw e }
+        catch (e: Exception) { file.failWrite(stream); throw IllegalStateException("Local storage commit failed. No new packet will be sent; restart the station before retrying.", e) }
     }
     fun forget() {
         // Invalidate the key first: if the process dies, old data cannot be reopened.

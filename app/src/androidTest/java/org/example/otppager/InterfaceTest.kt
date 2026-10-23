@@ -28,9 +28,15 @@ class InterfaceTest {
         val engine = StationEngine(store)
         engine.configure("https://pager.example.com", "x".repeat(43), masterSecret, "A")
         val bundle = engine.generatePad()
-        engine.send("The north gate is clear. Meet at 22:00.")
-        val state = JSONObject(engine.state.toString())
-        state.getJSONArray("outbox").getJSONObject(0).put("status", "delivered")
+        engine.confirmPad(engine.view().padCheck!!.takeLast(8))
+        // Fictional authenticated peer readiness, without making network requests.
+        store.save(JSONObject(engine.state.toString()).put("peerReady", true))
+        val readyEngine = StationEngine(store)
+        readyEngine.send("The north gate is clear. Meet at 22:00.")
+        val state = JSONObject(readyEngine.state.toString())
+        for (i in 0 until state.getJSONArray("outbox").length()) {
+            val entry = state.getJSONArray("outbox").getJSONObject(i); entry.put("status", if (entry.getString("kind") == "text") "delivered" else "relayed")
+        }
         val master = Protocol.master(masterSecret)
         val pad = PadProtocol.material(bundle, PadProtocol.binding(master))
         val incoming = PadProtocol.seal(pad, 'B', 1, JSONObject().put("kind", "text").put("text", "Understood. Bringing the maps.").toString())
@@ -77,6 +83,11 @@ class InterfaceTest {
                 content.measure(View.MeasureSpec.makeMeasureSpec(content.width, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(content.height, View.MeasureSpec.EXACTLY))
                 content.layout(0, 0, content.width, content.height)
                 capture("link")
+                all(content).filterIsInstance<Button>().first { it.text.toString() == "Pad" }.performClick()
+                content.measure(View.MeasureSpec.makeMeasureSpec(content.width, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(content.height, View.MeasureSpec.EXACTLY))
+                content.layout(0, 0, content.width, content.height)
+                assertTrue(all(content).filterIsInstance<Button>().any { it.text.toString() == "Send readiness again" })
+                capture("pad")
             }
         } finally {
             instrumentation.runOnMainSync { activity.finish() }
@@ -84,4 +95,35 @@ class InterfaceTest {
             store.forget(); store.sibling("pads").forget()
         }
     }
+    @Test fun unverifiedPadDisablesSendingAndShowsSetup() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val store = SecureStore(context); store.forget(); store.sibling("pads").forget()
+        val engine = StationEngine(store)
+        engine.configure("https://pager.example.com", "x".repeat(43), Protocol.randomSecret(), "A")
+        engine.generatePad().fill(0)
+        val activity = instrumentation.startActivitySync(Intent(context, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        try {
+            val content = activity.findViewById<ViewGroup>(android.R.id.content)
+            fun all(v: View): List<View> = listOf(v) + if (v is ViewGroup) (0 until v.childCount).flatMap { all(v.getChildAt(it)) } else emptyList()
+            var ready = false; val deadline = System.currentTimeMillis() + 10000
+            while (!ready && System.currentTimeMillis() < deadline) {
+                instrumentation.runOnMainSync { ready = all(content).filterIsInstance<TextView>().any { it.text.toString() == "STATION A" } }
+                if (!ready) Thread.sleep(50)
+            }
+            assertTrue(ready)
+            instrumentation.runOnMainSync {
+                all(content).filterIsInstance<Switch>().forEach { it.isChecked = false }
+                assertFalse(all(content).filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
+                assertTrue(all(content).filterIsInstance<TextView>().any { it.text.toString().contains("COMPARE CODES IN PERSON") })
+                all(content).filterIsInstance<Button>().first { it.text.toString() == "Pad" }.performClick()
+                assertTrue(all(content).filterIsInstance<Button>().first { it.text.toString() == "Verify codes & announce" }.isEnabled)
+                assertFalse(all(content).filterIsInstance<Button>().first { it.text.toString() == "A · Create & export pad file" }.isEnabled)
+            }
+        } finally {
+            instrumentation.runOnMainSync { activity.finish() }; instrumentation.waitForIdleSync()
+            store.forget(); store.sibling("pads").forget()
+        }
+    }
+
 }

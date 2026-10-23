@@ -1,7 +1,7 @@
 name: Android debug build
 on:
   push:
-    branches: [main, feat/android-offline-demo, feat/two-device-relay]
+    branches: [main] # Feature branches build on pull_request; avoid duplicate cancellation/restarts.
   workflow_dispatch:
   pull_request:
 concurrency:
