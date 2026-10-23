@@ -108,7 +108,7 @@ class InterfaceTest {
             }
             capture(instrumentation, activity, "unpaired-chat")
             tap(instrumentation, activity, "Set up this chat")
-            instrumentation.runOnMainSync { assertTrue(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Save & connect" }.isShown) }
+            instrumentation.runOnMainSync { assertTrue(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Save server settings" }.isShown) }
         } finally { instrumentation.runOnMainSync { activity.finish() }; store.forget(); store.sibling("pads").forget() }
     }
     @Test fun capturesActualEinkInterfaceWithFictionalTraffic() {

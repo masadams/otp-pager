@@ -25,8 +25,16 @@ object PairingQr {
         require(bitmap.width.toLong() * bitmap.height <= 3000000)
         val pixels = IntArray(bitmap.width * bitmap.height)
         bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
-        return QRCodeReader().decode(BinaryBitmap(HybridBinarizer(RGBLuminanceSource(bitmap.width, bitmap.height, pixels))),
-            mapOf(DecodeHintType.TRY_HARDER to true)).text.also { require(it.length <= 1024) }
+        val image = BinaryBitmap(HybridBinarizer(RGBLuminanceSource(bitmap.width, bitmap.height, pixels)))
+        return try {
+            val result = try { QRCodeReader().decode(image, mapOf(DecodeHintType.TRY_HARDER to true)) }
+            catch (_: com.google.zxing.ReaderException) {
+                // Clean exported QR images can confuse the photographic finder detector for
+                // particular masks. ZXing's pure path samples the unskewed module grid directly.
+                QRCodeReader().decode(image, mapOf(DecodeHintType.PURE_BARCODE to true))
+            }
+            result.text.also { require(it.length <= 1024) }
+        } finally { pixels.fill(0) }
     }
     fun readImage(input: InputStream): String {
         val out = java.io.ByteArrayOutputStream(); val chunk = ByteArray(8192)
