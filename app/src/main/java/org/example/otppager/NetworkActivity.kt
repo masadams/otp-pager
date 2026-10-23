@@ -173,12 +173,12 @@ class NetworkActivity : Activity() {
         setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, ink); setOnClickListener { selectTab(if (latest?.padCheck == null) 1 else 2) } }; traffic.addView(setupHint)
         newMessagesButton = button("New messages · Jump to latest") {
             messageScroll.fullScroll(View.FOCUS_DOWN)
-            runTask { engine?.markRead(); "LATEST MESSAGES" }
+            ackVisibleMessages()
         }; traffic.addView(newMessagesButton)
         messageScroll = ScrollView(this).apply { isFillViewport = true; isVerticalScrollBarEnabled = false }
         messageScroll.setOnScrollChangeListener { _, _, _, _, _ ->
             if (active && tab == 0 && !busy && (latest?.unread ?: 0) > 0 && atBottom())
-                runTask { engine?.markRead(); "LATEST MESSAGES" }
+                ackVisibleMessages()
         }
         messages = column().apply { setPadding(0, dp(8), 0, dp(12)) }; messageScroll.addView(messages)
         traffic.addView(messageScroll, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -303,7 +303,15 @@ class NetworkActivity : Activity() {
             button.setTextColor(if (value == index) Color.WHITE else ink)
             button.backgroundTintList = ColorStateList.valueOf(if (value == index) ink else Color.TRANSPARENT)
         }
-        if (value == 0 && atBottom() && (latest?.unread ?: 0) > 0 && !busy) runTask { engine?.markRead(); "MESSAGES OPEN" }
+        if (value == 0 && atBottom() && (latest?.unread ?: 0) > 0 && !busy) ackVisibleMessages()
+    }
+    private fun ackVisibleMessages() {
+        if (errorLoading) return
+        val visibleGeneration = generation
+        runTask {
+            if (active && unlocked && visibleGeneration == generation) engine?.markRead()
+            "LATEST MESSAGES"
+        }
     }
     private fun atBottom() = !::messageScroll.isInitialized || messageScroll.getChildAt(0) == null ||
         messageScroll.getChildAt(0).height - (messageScroll.scrollY + messageScroll.height) < dp(24)
@@ -318,7 +326,10 @@ class NetworkActivity : Activity() {
                 if (suffix != latest?.padCheck?.takeLast(8)) input.error = "Code does not match"
                 else { dialog.dismiss(); runTask { checkNotNull(engine).confirmPad(suffix); "VERIFIED LOCALLY · sync both stations" } }
             }
-        }; dialog.show()
+        }
+        handler.removeCallbacks(poll)
+        dialog.setOnDismissListener { schedule() }
+        dialog.show()
     }
     private fun confirm(title: String, detail: String, action: () -> Unit) {
         AlertDialog.Builder(this).setTitle(title).setMessage(detail).setNegativeButton("Cancel", null)
@@ -343,7 +354,7 @@ class NetworkActivity : Activity() {
             System.currentTimeMillis() - lastContact > 60000 -> "○ LAST CHECK >1 MIN"
             else -> "● RELAY CONNECTED"
         }
-        val value = "$connection  ·  ${v?.pending ?: 0} QUEUED\n${v?.unread ?: 0} NEW  ·  " + (v?.padRemaining?.let { "${if (!v.padVerified) "PAD CHECK NEEDED" else if (!v.peerReady) "WAITING FOR PEER" else "PEER VERIFIED"} · $it SLOTS" } ?: "AES-GCM · TEST MODE") + if (!automatic) " · AUTO OFF" else ""
+        val value = "$connection  ·  ${v?.pending ?: 0} QUEUED\n${v?.unread ?: 0} NEW  ·  " + (v?.padRemaining?.let { "${if (v?.padVerified != true) "PAD CHECK NEEDED" else if (v?.peerReady != true) "WAITING FOR PEER" else "PEER VERIFIED"} · $it SLOTS" } ?: "AES-GCM · TEST MODE") + if (!automatic) " · AUTO OFF" else ""
         if (indicators.text.toString() != value) indicators.text = value
     }
     private fun render(view: StationEngine.View) {
@@ -395,14 +406,12 @@ class NetworkActivity : Activity() {
     private fun runTask(load: Boolean = false, clearComposer: Boolean = false, action: () -> String) {
         if (busy || !active || !unlocked || isFinishing) return
         val taskGeneration = generation
-        val readingMessages = tab == 0 && atBottom()
         setBusy(true); handler.removeCallbacks(poll)
         worker.execute {
             var note: String; var view: StationEngine.View? = null
             var config: org.json.JSONObject? = null; var success = false; var relayFailure = false
             try {
                 note = action(); success = true; backoff = 15000L
-                if (readingMessages && active && unlocked && taskGeneration == generation) engine?.markRead()
                 view = engine?.view(); if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
             } catch (e: Exception) {
                 relayFailure = !load && (e is java.io.IOException || e is RelayHttpException)
@@ -423,6 +432,10 @@ class NetworkActivity : Activity() {
                 if (clearComposer && success) composer.text.clear()
                 if (errorLoading) note = "VAULT UNAVAILABLE // data preserved; see Link → Forget pairing to reset"
                 report(note); setBusy(false); schedule(if (clearComposer && success) 100 else backoff)
+                // Check current visibility AFTER rendering/network completion, not before a slow sync.
+                messageScroll.post {
+                    if (success && !errorLoading && active && unlocked && taskGeneration == generation && tab == 0 && !busy && (latest?.unread ?: 0) > 0 && atBottom()) ackVisibleMessages()
+                }
             }
         }
     }

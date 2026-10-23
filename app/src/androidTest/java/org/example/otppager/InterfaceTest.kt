@@ -41,7 +41,7 @@ class InterfaceTest {
         val pad = PadProtocol.material(bundle, PadProtocol.binding(master))
         val incoming = PadProtocol.seal(pad, 'B', 1, JSONObject().put("kind", "text").put("text", "Understood. Bringing the maps.").toString())
         master.fill(0); pad.fill(0); bundle.fill(0)
-        state.put("inbox", JSONArray().put(JSONObject().put("id", incoming.first).put("packet", incoming.second).put("time", System.currentTimeMillis())))
+        state.put("inbox", JSONArray().put(JSONObject().put("id", incoming.first).put("read", true).put("packet", incoming.second).put("time", System.currentTimeMillis())))
         state.put("high", 1).put("seen", JSONArray(listOf(1)))
         store.save(state)
         val activity = instrumentation.startActivitySync(Intent(context, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))

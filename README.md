@@ -45,3 +45,5 @@ The e-ink interface shows relay connectivity, unread messages, queued traffic, d
 ### Android 0.4: verify before sending
 
 Messages, Link and Pad now have separate tabs. After importing pads, compare the full pad-check code in person, verify on **both devices**, and sync both. New pad messages unlock only after authenticated peer readiness arrives. This uses one setup slot per station; re-announcing readiness retries identical ciphertext without spending more pad material. Upgrade both APKs. See [0.4 setup and upgrade details](docs/PAD_PROTOCOL.md#android-04-verified-setup-gate). Existing 0.3 pads migrate with their counters intact; old APKs reject the migrated pad vault.
+
+The proposed next networking feature is [integrated, self-hosted WireGuard](docs/PRIVATE_NETWORK.md), including server enrolment, in-app tunnel controls and measured connection indicators. This is a design, not a feature in the current APK.
