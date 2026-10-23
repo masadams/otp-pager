@@ -46,7 +46,8 @@ class UpgradeStateTest {
             book.select(second.id)
             val reference = JSONObject().put("active", second.id).put("first", first)
                 .put("counter", bound.state!!.getLong("counter")).put("ownDevice", bound.view().ownDevice)
-            for (name in listOf(first, "$first-pads", index, "$index-claims", second.id)) {
+                .put("packet", bound.state!!.getJSONArray("outbox").getJSONObject(0).getString("packet"))
+            for (name in listOf("$first-pads", index, "$index-claims", second.id)) {
                 reference.put(name, digest(checkNotNull(SecureStore(context, name).load())))
             }
             marker.writeText(reference.toString()) // Only hashes/public identity/IDs, never pads or credentials.
@@ -56,11 +57,16 @@ class UpgradeStateTest {
             val book = ChatBook(context, index, first)
             assertEquals(reference.getString("active"), book.active().id)
             assertEquals(listOf("First friend", "Second friend"), book.chats().map { it.name })
-            for (name in listOf(first, "$first-pads", index, "$index-claims", book.active().id)) {
+            for (name in listOf("$first-pads", index, "$index-claims", book.active().id)) {
                 assertEquals("Update changed $name", reference.getString(name), digest(checkNotNull(SecureStore(context, name).load())))
             }
             val station = book.engine(first)
             assertTrue(station.view().setupComplete)
+            assertEquals(5, station.state!!.getInt("version"))
+            assertEquals(reference.getString("packet"), station.state!!.getJSONArray("outbox").getJSONObject(0).getString("packet"))
+            val material = java.util.Base64.getDecoder().decode(station.state!!.getString("pad"))
+            assertTrue(material.take(reference.getLong("counter").toInt() * PadProtocol.STRIDE).all { it == 0.toByte() })
+            material.fill(0)
             assertEquals(17L, station.state!!.getLong("high"))
             assertEquals("Queued before the update", station.view().messages.single().text)
             assertEquals("queued", station.view().messages.single().status)

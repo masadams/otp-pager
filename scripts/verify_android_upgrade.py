@@ -42,18 +42,21 @@ def main():
             for key, value in prior_env.items():
                 if value is None: os.environ.pop(key, None)
                 else: os.environ[key] = value
+        # Preserve the newly built release, then install the actual previous v0.8 source
+        # under the same disposable signer. No owner signing material enters CI.
+        second_apk = root / "second.apk"
+        shutil.copyfile("app/build/outputs/apk/release/app-release.apk", second_apk)
+        baseline = root / "baseline"
+        run(["git", "worktree", "add", "--detach", baseline, "758b35e0366204d422dc90c106166226028ed104"])
+        subprocess.run(["gradle", "--no-daemon", "-p", str(baseline), ":app:assembleRelease"], env=env, check=True)
         first_apk = root / "first.apk"
-        shutil.copyfile("app/build/outputs/apk/release/app-release.apk", first_apk)
+        shutil.copyfile(baseline / "app/build/outputs/apk/release/app-release.apk", first_apk)
         initial_version = inspect_apk(first_apk)["version_code"]
         subprocess.run(["gradle", "--no-daemon", "-PupgradeVerification=true", f"-PverificationVersionCode={initial_version}",
                         ":app:assembleReleaseAndroidTest"], env=env, check=True)
         run(["adb", "install", first_apk])
         run(["adb", "install", "-t", "app/build/outputs/apk/androidTest/release/app-release-androidTest.apk"])
         instrument("seed")
-        subprocess.run(["gradle", "--no-daemon", "-PupgradeVerification=true", f"-PverificationVersionCode={initial_version + 1}",
-                        ":app:assembleRelease"], env=env, check=True)
-        second_apk = root / "second.apk"
-        shutil.copyfile("app/build/outputs/apk/release/app-release.apk", second_apk)
         info = inspect_apk(second_apk)
         assert info["version_code"] == initial_version + 1 and info["certificate_sha256"] == signer
         apks = [first_apk, second_apk]

@@ -128,7 +128,8 @@ class DeliveryTest {
             var a = StationEngine(aStore, relay); var b = StationEngine(bStore, relay)
             a.configure("https://pager.example.com", "t".repeat(43), secret, "A")
             b.configure("https://pager.example.com", "t".repeat(43), secret, "B")
-            val bundle = a.generatePad(); b.installPad(bundle); bundle.fill(0)
+            val bundle = a.generatePad(); b.installPad(bundle)
+            val originalPad = java.util.Base64.getEncoder().encodeToString(bundle.copyOfRange(40, bundle.size)); bundle.fill(0)
             assertFalse(a.view().canSend)
             try { a.send("blocked"); fail("Unverified pad sent") } catch (_: IllegalStateException) {}
             val id = a.view().padCheck!!
@@ -147,10 +148,10 @@ class DeliveryTest {
             assertEquals(126, a.view().padRemaining); assertEquals(2, relay.packets.size)
             assertEquals(ready, a.state!!.getString("readyPacket"))
             // A 0.3 vault migrates without resetting pad reservations or receive replay state.
-            val legacy = JSONObject(a.state.toString()).put("version", 2).put("cursor", 200L)
+            val legacy = JSONObject(a.state.toString()).put("version", 2).put("pad", originalPad).put("cursor", 200L)
             legacy.remove("padVerified"); legacy.remove("peerReady"); legacy.remove("readyPacket"); legacy.remove("readyId")
             aStore.save(legacy); a = StationEngine(aStore, relay)
-            assertEquals(3, a.state!!.getInt("version")); assertEquals(0L, a.state!!.getLong("cursor"))
+            assertEquals(5, a.state!!.getInt("version")); assertEquals(0L, a.state!!.getLong("cursor"))
             assertEquals(126, a.view().padRemaining); assertFalse(a.view().canSend)
             assertEquals(legacy.getLong("high"), a.state!!.getLong("high"))
             // An unauthenticated readiness-looking packet cannot open the gate or reserve a slot.
@@ -223,6 +224,51 @@ class DeliveryTest {
             relay.packets.add(++relay.seq to textWire); b.sync()
             assertTrue(b.view().messages.isEmpty()); assertEquals(bReserve, b.view().padRemaining)
         } finally { stores.forEach { it.forget(); it.sibling("pads").forget() } }
+    }
+
+    @Test fun legacyPadMigrationPreservesHistoryAndLateSlotsAndClearsRetainedPayloads() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val store = SecureStore(context, "retirement-migration")
+        store.forget(); store.sibling("pads").forget()
+        val relay = FlakyRelay().apply { loseFirstAck = false }
+        try {
+            val secret = Protocol.randomSecret()
+            val station = StationEngine(store, relay)
+            station.configure("https://pager.example.com", "t".repeat(43), secret, "B")
+            val master = Protocol.master(secret)
+            val bundle = PadProtocol.generate(PadProtocol.binding(master)); master.fill(0)
+            val original = bundle.copyOfRange(40, bundle.size)
+            station.installPad(bundle); bundle.fill(0)
+            val first = PadProtocol.seal(original, 'A', 1, "{\"kind\":\"text\",\"text\":\"saved before migration\"}")
+            val late = PadProtocol.seal(original, 'A', 2, "{\"kind\":\"text\",\"text\":\"arrived later\"}")
+            val id = station.state!!.getString("padId")
+            PadLedger(store.sibling("pads")).reserve(id)
+            val receipt = PadProtocol.seal(original, 'B', 1, JSONObject().put("kind", "receipt").put("for", first.first).toString())
+            val savedReceipt = JSONObject().put("id", receipt.first).put("packet", receipt.second).put("kind", "receipt")
+                .put("status", "relayed").put("time", System.currentTimeMillis())
+            val legacy = JSONObject(station.state.toString()).put("version", 4).put("pad", java.util.Base64.getEncoder().encodeToString(original))
+                .put("counter", 1).put("high", 1).put("seen", JSONArray().put(1)).put("padVerified", true).put("peerReady", true)
+                .put("inbox", JSONArray().put(JSONObject().put("id", first.first).put("packet", first.second).put("read", false)
+                    .put("time", System.currentTimeMillis()).put("receipt", savedReceipt)))
+            legacy.remove("opened")
+            store.save(legacy)
+            var migrated = StationEngine(store, relay)
+            assertEquals("saved before migration", migrated.view().messages.single().text)
+            assertEquals(id, migrated.view().padCheck)
+            val remaining = java.util.Base64.getDecoder().decode(migrated.state!!.getString("pad"))
+            assertTrue(remaining.take(PadProtocol.STRIDE).all { it == 0.toByte() })
+            assertTrue(remaining.copyOfRange(PadProtocol.MATERIAL_BYTES / 2, PadProtocol.MATERIAL_BYTES / 2 + PadProtocol.STRIDE).all { it == 0.toByte() })
+            assertArrayEquals(original.copyOfRange(PadProtocol.STRIDE, 2 * PadProtocol.STRIDE), remaining.copyOfRange(PadProtocol.STRIDE, 2 * PadProtocol.STRIDE))
+            remaining.fill(0); original.fill(0)
+            relay.packets.add(++relay.seq to late.second)
+            migrated.sync(); migrated = StationEngine(store, relay)
+            assertEquals(setOf("saved before migration", "arrived later"), migrated.view().messages.map { it.text }.toSet())
+            assertEquals(2L, migrated.state!!.getLong("high"))
+            migrated.clearHistory(); migrated = StationEngine(store, relay)
+            assertEquals(0, migrated.state!!.getJSONObject("opened").length())
+            relay.packets.add(++relay.seq to first.second); migrated.sync()
+            assertTrue(migrated.view().messages.isEmpty())
+        } finally { store.forget(); store.sibling("pads").forget() }
     }
 
     @Test fun manualRecoveryKeepsExpiryAndQueueBoundAndNeverAllocates() {

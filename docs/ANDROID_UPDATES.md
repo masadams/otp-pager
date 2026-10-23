@@ -207,3 +207,5 @@ References:
 - https://developer.android.com/tools/apksigner
 - https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
 - https://cli.github.com/manual/gh_secret_set
+
+v0.9 migrates v0.8 pad vaults to schema 5 on opening each chat. Retained traffic and queued packet bytes are preserved in the encrypted vault while consumed pad slots are cleared. The signed-update CI fixture now installs the actual v0.8 source (758b35e) before replacing it with the new release using a disposable signer. Schema 5 is intentionally rejected by older apps. Keep the same signing certificate when updating the temporary test installation; a different production certificate requires a fresh installation/pairing.
