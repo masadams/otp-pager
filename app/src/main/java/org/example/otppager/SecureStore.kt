@@ -57,7 +57,7 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
         val stream = file.startWrite()
         try { stream.write(encrypted); stream.fd.sync(); file.finishWrite(stream)
             check(base.isFile && base.readBytes().contentEquals(encrypted)) { "Vault commit could not be verified" }
-            val directory = android.system.Os.open(base.parentFile!!.path, android.system.OsConstants.O_RDONLY or android.system.OsConstants.O_DIRECTORY, 0)
+            val directory = android.system.Os.open(base.parentFile!!.path, android.system.OsConstants.O_RDONLY, 0)
             try { android.system.Os.fsync(directory) } finally { android.system.Os.close(directory) } }
         catch (e: Exception) { file.failWrite(stream); throw e }
     }
