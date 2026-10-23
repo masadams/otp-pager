@@ -28,7 +28,7 @@ class IdentityProtocolTest {
         assertEquals(64, IdentityProtocol.fingerprint(ac).length)
     }
     @Test fun independentPythonSignatureAndTranscriptVector() {
-        val vector = java.util.Properties().apply { load(javaClass.classLoader!!.getResourceAsStream("device-v1.properties")) }
+        val vector = java.util.Properties().apply { load(IdentityProtocolTest::class.java.getResourceAsStream("/device-v1.properties")) }
         val data = IdentityProtocol.transcript(vector.getProperty("room"), vector.getProperty("pad"), 'A', 7,
             vector.getProperty("sender"), vector.getProperty("recipient"), vector.getProperty("body"))
         assertEquals(vector.getProperty("transcript"), Base64.getEncoder().encodeToString(data))
