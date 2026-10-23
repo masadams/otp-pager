@@ -21,12 +21,14 @@ import android.view.WindowManager
 import android.widget.*
 import java.util.concurrent.Executors
 
-/** Single profile, foreground-only delivery. No background service or analytics. */
+/** Isolated two-device chats, foreground-only delivery. No background service or analytics. */
 class NetworkActivity : Activity() {
     companion object { private val stationWorker = Executors.newSingleThreadExecutor() }
     private val worker = stationWorker
     private val handler = Handler(Looper.getMainLooper())
     private var engine: StationEngine? = null // worker-thread owned
+    private var book: ChatBook? = null
+    private lateinit var chatButton: Button
     @Volatile private var generation = 0
     private var busy = false
     @Volatile private var active = false
@@ -40,6 +42,7 @@ class NetworkActivity : Activity() {
     private var automatic = true
     private var lastContact = 0L
     private var connectionFailed = false
+    private val compact: Boolean get() = resources.configuration.screenHeightDp < 600 || resources.configuration.screenWidthDp < 360
     private var importedDeviceCard: String? = null
     private lateinit var exportDeviceButton: Button
     private lateinit var importDeviceButton: Button
@@ -97,7 +100,7 @@ class NetworkActivity : Activity() {
     private val poll = object : Runnable {
         override fun run() {
             if (active && unlocked) updateIndicators()
-            if (active && unlocked && automatic && !busy && !errorLoading && latest != null && latest?.role != "—") runTask { engine?.let { it.sync() } ?: "OPEN LINK TO PAIR" }
+            if (active && unlocked && automatic && !busy && !errorLoading && latest != null && latest?.role != "—" && latest?.pairingComplete == true) runTask(network = true) { syncChats() }
             else if (active && unlocked) handler.postDelayed(this, 5000)
         }
     }
@@ -152,7 +155,7 @@ class NetworkActivity : Activity() {
     private fun showUnlock() {
         busy = false
         val lock = column().apply { setBackgroundColor(paper); setPadding(dp(28), dp(80), dp(28), dp(24)) }
-        lock.addView(text("FIELD / 06", 28f, ink, true))
+        lock.addView(text("FIELD / 07", 28f, ink, true))
         lock.addView(text("Your station is locked.", 18f).apply { setPadding(0, dp(20), 0, dp(20)) })
         lock.addView(button("Unlock station", true) {
             val guard = getSystemService(KeyguardManager::class.java)
@@ -181,23 +184,34 @@ class NetworkActivity : Activity() {
         needsTerminal = false
         generation++
         latest = null; rendered = null; busy = false; errorLoading = false
-        root = column().apply { isFocusableInTouchMode = true; setBackgroundColor(paper); setPadding(dp(20), dp(10), dp(20), dp(8)) }
+        root = column().apply { isFocusableInTouchMode = true; setBackgroundColor(paper); setPadding(dp(if (compact) 12 else 20), dp(8), dp(if (compact) 12 else 20), dp(6)) }
         root.setOnApplyWindowInsetsListener { view, insets ->
-            view.setPadding(dp(20), insets.systemWindowInsetTop + dp(10), dp(20), insets.systemWindowInsetBottom + dp(8)); insets
+            view.setPadding(dp(if (compact) 12 else 20), insets.systemWindowInsetTop + dp(8), dp(if (compact) 12 else 20), insets.systemWindowInsetBottom + dp(6)); insets
         }
+        val chrome = column(); root.addView(chrome)
         val header = row()
-        header.addView(text("FIELD", 24f, ink, true).apply { typeface = Typeface.create("monospace", Typeface.BOLD) }, LinearLayout.LayoutParams(0, -2, 1f))
-        stationLabel = text("STATION —", 11f, green, true); header.addView(stationLabel); root.addView(header)
-        root.addView(text("PRIVATE CHANNEL / EXPERIMENTAL", 10f, muted, true))
-        indicators = text("○ NOT CHECKED", 11f, ink, true).apply {
-            setPadding(dp(12), dp(10), dp(12), dp(10)); background = surface(paper, 2, ink)
+        chatButton = button("Chats ▾") { showChats() }.apply {
+            textSize = if (compact) 15f else 18f; typeface = Typeface.create("monospace", Typeface.BOLD)
+            maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.START or Gravity.CENTER_VERTICAL
+            setPadding(0, 0, dp(6), 0)
         }
-        root.addView(indicators, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
-        val tabs = row().apply { setPadding(0, dp(12), 0, dp(4)) }
+        header.addView(chatButton, LinearLayout.LayoutParams(0, -2, 1f))
+        stationLabel = text("STATION —", 11f, green, true); header.addView(stationLabel); chrome.addView(header)
+        if (!compact) chrome.addView(text("PRIVATE CHANNEL / EXPERIMENTAL", 10f, muted, true))
+        indicators = text("○ NOT CHECKED", 11f, ink, true).apply {
+            setPadding(dp(10), dp(if (compact) 5 else 8), dp(10), dp(if (compact) 5 else 8)); background = surface(paper, 2, ink)
+            contentDescription = "Station status. Tap for connection, delivery and security details."
+            setOnClickListener { showStationStatus() }
+        }
+        chrome.addView(indicators, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(if (compact) 6 else 10) })
+        val tabs = row().apply { setPadding(0, dp(if (compact) 4 else 8), 0, dp(2)) }
         trafficTab = button("Messages") { selectTab(0) }; linkTab = button("Link") { selectTab(1) }
         padTab = button("Pad") { selectTab(2) }; deviceTab = button("Device") { selectTab(3) }
-        tabs.addView(trafficTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(linkTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(padTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(deviceTab, LinearLayout.LayoutParams(0, -2, 1f)); root.addView(tabs)
-        status = text("Opening station…", 11f, muted, true).apply { setPadding(dp(2), dp(4), 0, dp(10)) }; root.addView(status)
+        if (compact) for (item in listOf(trafficTab, linkTab, padTab, deviceTab)) {
+            item.textSize = 11f; item.minWidth = 0; item.minimumWidth = 0; item.setPadding(dp(3), 0, dp(3), 0)
+        }
+        tabs.addView(trafficTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(linkTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(padTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(deviceTab, LinearLayout.LayoutParams(0, -2, 1f)); chrome.addView(tabs)
+        status = text("Opening station…", 11f, muted, true).apply { setPadding(dp(2), dp(2), 0, dp(4)); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setOnClickListener { showStationStatus() } }; chrome.addView(status)
         traffic = column()
         setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, ink); setOnClickListener { selectTab(if (latest?.ownDevice != null && latest?.peerDevice == null) 3 else if (latest?.padCheck == null) 1 else 2) } }; traffic.addView(setupHint)
         newMessagesButton = button("New messages · Jump to latest") {
@@ -213,12 +227,12 @@ class NetworkActivity : Activity() {
         traffic.addView(messageScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         composer = field("Write a message…").apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            setSingleLine(false); maxLines = 4; minLines = 2; gravity = Gravity.TOP
+            setSingleLine(false); maxLines = if (compact) 2 else 4; minLines = if (compact) 1 else 2; gravity = Gravity.TOP
         }
         traffic.addView(composer)
         val composeActions = row()
         count = text("0 / 2048 bytes", 10f, muted, true); composeActions.addView(count, LinearLayout.LayoutParams(0, -2, 1f))
-        syncButton = button("Sync") { runTask { engine?.sync() ?: "Save link settings first" } }; composeActions.addView(syncButton)
+        syncButton = button("Sync") { runTask(network = true) { syncChats() } }; composeActions.addView(syncButton)
         sendButton = button("Send", true) {
             val value = composer.text.toString()
             runTask(clearComposer = true) { checkNotNull(engine).send(value); "QUEUED // saved safely; syncing" }
@@ -286,7 +300,9 @@ class NetworkActivity : Activity() {
         saveButton = button("Save & connect", true) {
             val endpoint = urlField.text.toString(); val token = tokenField.text.toString().trim()
             val secret = secretField.text.toString().trim(); val role = if (roleGroup.checkedRadioButtonId == R.id.station_a) "A" else "B"
-            runTask { checkNotNull(engine).configure(endpoint, token, secret, role); checkNotNull(engine).sync() }
+            runTask(onSuccess = { runTask(network = true) { syncChats() } }) {
+                checkNotNull(engine).configure(endpoint, token, secret, role); "LINK SAVED · checking relay"
+            }
         }; manual.addView(saveButton)
         pairingCode = text("NOT PAIRED", 12f, green, true).apply { setPadding(0, dp(20), 0, dp(12)) }; settings.addView(pairingCode)
         settings.addView(text("Compare this pair-check code on both devices in person. Matching codes confirm the same secret; they do not confirm the server is honest.", 12f, muted))
@@ -346,24 +362,38 @@ class NetworkActivity : Activity() {
             text = "Auto sync every 15 seconds while open"; setTextColor(ink); isChecked = automatic
             setPadding(0, dp(20), 0, dp(12)); setOnCheckedChangeListener { _, checked -> automatic = checked; updateIndicators(); schedule() }
         })
+        settings.addView(button("Retry undelivered messages") {
+            runTask(onSuccess = { runTask(network = true) { syncChats() } }) {
+                val n = checkNotNull(engine).retryDelivery()
+                "$n SAVED MESSAGES REQUEUED · checking existing receipts"
+            }
+        })
         settings.addView(text("Messages stay locally for up to 24 hours. Clear history to remove them sooner. Delivery means the other station saved the packet, not that a person read it.", 12f, muted))
-        settings.addView(button("Clear message history") { confirm("Clear local messages?", "Pending messages stay queued. Replay protection stays active.") {
+        settings.addView(button("Clear message history") { confirm("Clear local messages?", "Pending messages stay queued. Saved receipt recovery is removed with history. Replay protection stays active.") {
             runTask { checkNotNull(engine).clearHistory(); "LOCAL HISTORY CLEARED" }
         } })
         settings.addView(button("Forget pairing") { confirm("Forget this pairing?", "This deletes your saved link and queued messages. Re-pair BOTH devices with a NEW secret; reusing the old one can break replay protection.") {
-            runTask { SecureStore(this).forget(); engine = StationEngine(SecureStore(this)); errorLoading = false; "PAIRING FORGOTTEN // use a fresh secret" }
+            runTask { checkNotNull(book).forgetActive(); engine = checkNotNull(book).engine(); errorLoading = false; "PAIRING FORGOTTEN // use a fresh secret" }
             urlField.setText(""); tokenField.setText(""); secretField.setText(""); roleGroup.check(R.id.station_a)
         } })
         if (!getSystemService(KeyguardManager::class.java).isDeviceSecure)
             settings.addView(text("Set an Android screen lock to enable station unlock protection.", 12f, muted))
         linkScroll = ScrollView(this).apply { isVerticalScrollBarEnabled = false; addView(settings) }
+        root.viewTreeObserver.addOnGlobalLayoutListener {
+            val visible = android.graphics.Rect(); root.getWindowVisibleDisplayFrame(visible)
+            val keyboardVisible = root.rootView.height - visible.bottom > dp(150)
+            val next = if (compact && tab == 0 && keyboardVisible) View.GONE else View.VISIBLE
+            if (chrome.visibility != next) chrome.visibility = next
+        }
         root.addView(traffic, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(linkScroll, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(padScroll, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(deviceScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root); root.requestApplyInsets(); selectTab(tab)
         var loadedInvite: PairingInvite? = null
         val scanResult = pendingScan; pendingScan = null
         val deviceScanResult = pendingDeviceScan; pendingDeviceScan = null
         runTask(load = true, onSuccess = { loadedInvite?.let(::previewSetupQr) }, publicTransfer = pendingDocument?.first in listOf(83, 84), qrTransfer = pendingDocument?.first == 85) {
-            engine = StationEngine(SecureStore(this))
+            book = null; engine = null
+            book = ChatBook(this)
+            engine = checkNotNull(book).engine()
             val scanned = scanResult
             val document = pendingDocument; pendingDocument = null
             if (deviceScanResult != null) {
@@ -437,7 +467,7 @@ class NetworkActivity : Activity() {
     private fun atBottom() = !::messageScroll.isInitialized || messageScroll.getChildAt(0) == null ||
         messageScroll.getChildAt(0).height - (messageScroll.scrollY + messageScroll.height) < dp(24)
     private fun beginCablePairing(replace: Boolean) {
-        runTask(onSuccess = { startActivity(Intent(this, CablePairActivity::class.java)) }) {
+        runTask(onSuccess = { startActivity(Intent(this, CablePairActivity::class.java).putExtra("chat", checkNotNull(book).active().id)) }) {
             val station = checkNotNull(engine)
             if (replace) station.resetForCable()
             station.requireCableEligible(); "OPENING PHYSICAL PAIRING"
@@ -530,7 +560,9 @@ class NetworkActivity : Activity() {
     private fun report(message: String) { if (active && unlocked && ::status.isInitialized && status.text.toString() != message) status.text = message }
     private fun setBusy(value: Boolean) {
         busy = value
+        chatButton.isEnabled = !value && book != null
         for (view in listOf(sendButton, saveButton, saveRelayButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
+        syncButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && latest?.pairingComplete == true && !errorLoading
         sendButton.isEnabled = !value && latest?.canSend == true && !errorLoading
         showQrButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && !errorLoading
         scanQrButton.isEnabled = !value && latest?.role == "—" && !errorLoading
@@ -553,15 +585,98 @@ class NetworkActivity : Activity() {
             v == null || v.role == "—" -> "○ NOT PAIRED"
             connectionFailed -> "! RELAY UNAVAILABLE"
             lastContact == 0L -> "○ NOT CHECKED"
-            System.currentTimeMillis() - lastContact > 60000 -> "○ LAST CHECK >1 MIN"
+            android.os.SystemClock.elapsedRealtime() - lastContact > 60000 -> "○ LAST CHECK >1 MIN"
             else -> "● RELAY CONNECTED"
         }
-        val value = "$connection  ·  ${v?.pending ?: 0} QUEUED\n${v?.unread ?: 0} NEW  ·  " + (v?.padRemaining?.let { "${if (v?.padVerified != true) "PAD CHECK NEEDED" else if (v?.peerReady != true) "WAITING FOR PEER" else "PAD READY"} · $it SLOTS" } ?: "AES-GCM · TEST MODE") + "\n" + (if (v?.peerDevice != null) "DEVICE KEY PINNED" else if (v?.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "DEVICE NOT BOUND") + if (!automatic) " · AUTO OFF" else ""
+        val security = when {
+            v?.ownDevice != null && v.peerDevice == null -> "DEVICE EXCHANGE INCOMPLETE"
+            v?.peerDevice != null -> "DEVICE VERIFIED"
+            v?.padCheck == null -> "AES TEST MODE"
+            v.padVerified && v.peerReady -> "PAD READY"
+            else -> "PAD CHECK NEEDED"
+        }
+        val value = "$connection${if (!automatic) " · AUTO OFF" else ""}\n${v?.unread ?: 0} NEW · ${v?.pending ?: 0} QUEUED · ${v?.awaitingReceipt ?: 0} WAITING" +
+            if (compact) "" else "\n$security${v?.padRemaining?.let { " · $it SLOTS" } ?: ""}"
+        indicators.contentDescription = "$value. $security. Tap for details."
         if (indicators.text.toString() != value) indicators.text = value
+    }
+    private fun syncChats(): String {
+        try { return checkNotNull(engine).sync() }
+        finally { book?.refresh(); book?.syncAnother() }
+    }
+    private fun showChats() {
+        val chats = book?.chats() ?: return
+        val rows = chats.map { chat ->
+            val summary = checkNotNull(book).summary(chat.id)
+            "${if (chat.id == book?.active()?.id) "● " else ""}${chat.name}" +
+                if (summary.problem) " · CHECK LINK" else " · ${summary.unread} new / ${summary.queued} queued"
+        }.toTypedArray()
+        AlertDialog.Builder(this).setTitle("Chats · two devices each")
+            .setItems(rows) { _, which -> switchChat(chats[which].id) }
+            .setNeutralButton("New chat") { _, _ -> editChatName(create = true) }
+            .setPositiveButton("Rename") { _, _ -> editChatName(create = false) }
+            .setNegativeButton("Close", null).show()
+    }
+    private fun editChatName(create: Boolean) {
+        val input = field("Friend's name").apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            filters = arrayOf(android.text.InputFilter.LengthFilter(32))
+            if (!create) setText(book?.active()?.name ?: "")
+        }
+        val dialog = AlertDialog.Builder(this).setTitle(if (create) "New private chat" else "Rename chat")
+            .setMessage(if (create) "Each chat pairs with one friend and gets fresh keys. Only the relay address and access token are copied from this chat." else "This name stays on this device.")
+            .setView(input).setNegativeButton("Cancel", null).setPositiveButton("Save", null).create()
+        dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val value = input.text.toString()
+            if (value.isBlank()) { input.error = "Enter a name"; return@setOnClickListener }
+            dialog.dismiss()
+            discardDraftThen {
+                runTask(onSuccess = { reopenChat() }) {
+                    val contacts = checkNotNull(book)
+                    if (create) contacts.select(contacts.add(value).id) else contacts.rename(value)
+                    "CHAT SAVED"
+                }
+            }
+        } }
+        dialog.show(); dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+    private fun discardDraftThen(action: () -> Unit) {
+        if (composer.text.isNotEmpty()) confirm("Discard unsent draft?", "Queued messages stay in their original chat. This only clears what you are typing.", action)
+        else action()
+    }
+    private fun switchChat(id: String) {
+        if (id == book?.active()?.id) return
+        discardDraftThen {
+            runTask(onSuccess = { reopenChat() }) { checkNotNull(book).select(id); "CHAT SELECTED" }
+        }
+    }
+    private fun reopenChat() {
+        composer.text.clear(); lastContact = 0L; connectionFailed = false; backoff = 15000L; tab = 0
+        showTerminal()
+    }
+    private fun showStationStatus() {
+        val v = latest ?: return
+        val contact = if (lastContact == 0L) "No successful relay check this session" else {
+            val seconds = ((android.os.SystemClock.elapsedRealtime() - lastContact) / 1000).coerceAtLeast(0)
+            "Last successful relay check: ${if (seconds < 60) "$seconds seconds" else "${seconds / 60} minutes"} ago"
+        }
+        AlertDialog.Builder(this).setTitle("Station ${v.role} · status")
+            .setMessage("$contact\n${if (connectionFailed) "Latest relay check failed" else "Connection is checked only while the app is open"}\n\n${v.pending} packets queued locally\n${v.awaitingReceipt} messages awaiting a saved receipt\n${v.unread} new messages\n\n${v.padRemaining?.let { "$it outgoing pad slots remaining" } ?: "AES-GCM test mode"}\n${if (v.peerDevice != null) "Peer device key pinned" else if (v.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "Device identity not bound"}\n\nPeer saved means the other device stored the message; it does not mean a person read it. Retrying uses the same encrypted packets and no new pad slots.\n\n${status.text}")
+            .setPositiveButton("Close", null)
+            .setNeutralButton("Retry delivery") { _, _ ->
+                runTask(onSuccess = { runTask(network = true) { syncChats() } }) {
+                    val n = checkNotNull(engine).retryDelivery()
+                    "$n SAVED MESSAGES REQUEUED · checking existing receipts"
+                }
+            }.show()
     }
     private fun render(view: StationEngine.View) {
         latest = view
-        val tabLabel = if (view.unread > 0) "Messages (${view.unread})" else "Messages"
+        val current = book?.active()
+        val elsewhere = book?.unreadElsewhere() ?: 0
+        val chatLabel = "${current?.name ?: "Chats"} ▾${if (elsewhere > 0) " · $elsewhere new" else ""}"
+        if (chatButton.text.toString() != chatLabel) chatButton.text = chatLabel
+        val tabLabel = if (compact) "Messages" else if (view.unread > 0) "Messages (${view.unread})" else "Messages"
         if (trafficTab.text.toString() != tabLabel) trafficTab.text = tabLabel
         updateIndicators()
         newMessagesButton.visibility = if (view.unread > 0) View.VISIBLE else View.GONE
@@ -616,7 +731,7 @@ class NetworkActivity : Activity() {
         }
         if (wasAtBottom) messageScroll.post { messageScroll.fullScroll(View.FOCUS_DOWN) }
     }
-    private fun runTask(load: Boolean = false, clearComposer: Boolean = false, publicTransfer: Boolean = false, qrTransfer: Boolean = false, onSuccess: (() -> Unit)? = null, action: () -> String) {
+    private fun runTask(network: Boolean = false, load: Boolean = false, clearComposer: Boolean = false, publicTransfer: Boolean = false, qrTransfer: Boolean = false, onSuccess: (() -> Unit)? = null, action: () -> String) {
         if (busy || !active || !unlocked || isFinishing) return
         val taskGeneration = generation
         setBusy(true); handler.removeCallbacks(poll)
@@ -624,15 +739,15 @@ class NetworkActivity : Activity() {
             var note: String; var view: StationEngine.View? = null
             var config: org.json.JSONObject? = null; var success = false; var relayFailure = false
             try {
-                note = action(); success = true; backoff = 15000L
-                view = engine?.view(); if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
+                note = action(); success = true; if (network) backoff = 15000L
+                book?.refresh(); view = engine?.view(); if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
             } catch (e: Exception) {
-                relayFailure = !load && (e is java.io.IOException || e is RelayHttpException)
+                relayFailure = network
                 note = if (load && engine != null && e is java.io.IOException) {
                     if (qrTransfer) "QR IMAGE COULD NOT BE READ // no settings changed"
                     else if (publicTransfer) "PUBLIC CARD TRANSFER FAILED // identity retained; retry the file transfer"
                     else "PAD FILE TRANSFER FAILED // after failed export use a fresh pairing and pad"
-                } else friendly(e); backoff = (backoff * 2).coerceAtMost(60000L)
+                } else friendly(e); if (network) backoff = (backoff * 2).coerceAtMost(60000L)
                 if (load && engine == null) errorLoading = true
                 if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
                 try { view = engine?.view() } catch (_: Exception) { errorLoading = true }
@@ -643,7 +758,7 @@ class NetworkActivity : Activity() {
                     urlField.setText(config!!.getString("endpoint")); tokenField.setText(config!!.getString("token"))
                     secretField.setText(config!!.getString("secret")); roleGroup.check(if (config!!.getString("role") == "A") R.id.station_a else R.id.station_b)
                 }
-                if (note.startsWith("Connected")) { lastContact = System.currentTimeMillis(); connectionFailed = false }
+                if (network && success) { lastContact = android.os.SystemClock.elapsedRealtime(); connectionFailed = false }
                 else if (relayFailure) connectionFailed = true
                 view?.let(::render)
                 if (clearComposer && success) composer.text.clear()
@@ -683,7 +798,7 @@ class NetworkActivity : Activity() {
         if (::tokenField.isInitialized) { tokenField.text.clear(); secretField.text.clear() }
         latest = null; rendered = null; importedDeviceCard = null
         if (::peerCardField.isInitialized) peerCardField.text.clear()
-        worker.execute { engine = null }
+        worker.execute { engine = null; book = null }
         super.onStop()
     }
     override fun onDestroy() { handler.removeCallbacksAndMessages(null); super.onDestroy() }

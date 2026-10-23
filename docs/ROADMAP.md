@@ -1,7 +1,8 @@
 # Roadmap
 
 Android, including Android e-ink readers, is the primary platform. Dedicated
-hardware is optional future work. The current v0.2 transport is AES-GCM, not OTP.
+hardware is optional future work. Current Android 0.7 supports experimental finite-pad
+traffic, device signatures and USB provisioning; AES-GCM remains a labelled test mode.
 
 ## Current baseline: Android hardening
 
@@ -15,9 +16,11 @@ hardware is optional future work. The current v0.2 transport is AES-GCM, not OTP
 - [ ] Measure keyboard, ghosting, refresh and battery behavior on actual Android e-ink hardware
 - [ ] Owner-controlled stable release signing, followed by independent security review
 
-## NEXT: OTP protocol and pad accounting
+## Protocol and pad accounting milestones
 
-Begin after v0.2 verification. This is the next main development milestone.
+Finite-pad mechanics are implemented below. Independent entropy validation,
+information-theoretic authentication and a cryptographic audit remain open. The
+following is the original protocol acceptance plan, not a claim that each step is complete.
 
 1. Pin Jericho upstream source and review its license, packet construction,
    authentication, physical key import and consumption behavior. Build reproducible
@@ -73,3 +76,39 @@ See [PAD_PROTOCOL.md](PAD_PROTOCOL.md) for physical setup, exact allocation and 
 - Schema migration preserves pad/replay counters and blocks old APKs reading migrated pad vaults.
 - New-message navigation preserves unread state while reading older traffic.
 - Entropy validation, independent audit, full power-loss testing and stable release signing remain open.
+
+
+### 0.5–0.6 device identity and physical setup
+
+- Device-bound signed messages and receipts with pinned Keystore public keys.
+- Offline QR setup and public identity scanning with explicit previews.
+- USB host/AOA pairing exchanges server settings, fresh pad/secret and device keys
+  with one public confirmation code and signed approvals on both devices.
+- Owner reports successful physical USB pairing; device models and broader
+  compatibility matrix have not been recorded.
+
+### 0.7 delivery recovery and compact e-ink layout
+
+- Restore retained ciphertext and cached receipts after a relay storage epoch change.
+- Manual delivery recovery, original expiry, unchanged pad reservations and replay state.
+- Separate queued, unread and awaiting-receipt indicators; tap for detailed status.
+- Compact header/navigation and keyboard-aware conversation layout.
+
+## Next practical work
+
+- Target Mudita Kompakt and regular Android phones; verify actual USB pairing,
+  keyboard, e-ink refresh and battery on that hardware.
+- Stable owner-controlled release signing and verified updates.
+- Continue the self-hosted private-network design in [PRIVATE_NETWORK.md](PRIVATE_NETWORK.md)
+  after these reliability changes are validated. There is no built-in VPN in this APK.
+- Independent cryptographic review, actual power-loss fault testing, and operational
+  recovery/key replenishment design before sensitive use.
+
+
+### Multiple friends in 0.7
+
+- Up to 12 named, isolated two-device chats with individual vaults and device identities.
+- Legacy station data stays in place. New chat creation copies only relay settings.
+- Cross-chat pad/mailbox claims prevent local pairing-material reuse after forgetting.
+- Foreground inactive-chat rotation and unread badges; no group-chat protocol.
+- Developer security findings and remaining risks are recorded in [SECURITY_REVIEW.md](SECURITY_REVIEW.md).

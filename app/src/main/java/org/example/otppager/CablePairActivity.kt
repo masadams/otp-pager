@@ -36,6 +36,7 @@ class CablePairActivity : Activity() {
     @Volatile private var confirmation: CountDownLatch? = null
     @Volatile private var approved = false
     private var expireAt = 0L
+    private lateinit var chatId: String
     private val permissionAction get() = "$packageName.USB_PAIR_PERMISSION"
     private fun note(value: String) { runOnUiThread { if (active && !cancelled.get()) status.text = value } }
     private val receiver = object : BroadcastReceiver() {
@@ -58,21 +59,23 @@ class CablePairActivity : Activity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        chatId = intent.getStringExtra("chat") ?: run { finish(); return }
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         manager = getSystemService(UsbManager::class.java)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 48, 32, 24); setBackgroundColor(Color.WHITE) }
         fun label(value: String, size: Float = 17f) = TextView(this).apply { text = value; textSize = size; setTextColor(Color.BLACK); typeface = Typeface.MONOSPACE; setPadding(0, 12, 0, 20) }
         root.addView(label("PAIR DEVICES", 25f))
-        root.addView(label("Open this screen on both devices, then connect a USB data cable. At least one station must have its relay address and access token saved. Approve Android's USB prompts. Roles, fresh secret, pad and identities are exchanged automatically."))
-        status = label("Waiting for the other device…"); root.addView(status, LinearLayout.LayoutParams(-1, 0, 1f))
+        val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val scroll = ScrollView(this).apply { addView(body) }; root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        body.addView(label("Open this screen on both devices, then connect a USB data cable. At least one station must have its relay address and access token saved. Approve Android's USB prompts. Roles, fresh secret, pad and identities are exchanged automatically."))
+        status = label("Waiting for the other device…"); body.addView(status)
         confirm = Button(this).apply { text = "Codes match · Pair devices"; isEnabled = false; filterTouchesWhenObscured = true
             setOnClickListener { approved = true; isEnabled = false; confirmation?.countDown() } }; root.addView(confirm)
         finish = Button(this).apply { text = "Cancel"; setOnClickListener { finish() } }; root.addView(finish)
-        root.addView(label("A data-capable cable and compatible USB host/accessory modes are required. No USB debugging. Cancel if the full confirmation codes differ.", 13f))
+        body.addView(label("A data-capable cable and compatible USB host/accessory modes are required. No USB debugging. Cancel if the full confirmation codes differ.", 13f))
         setContentView(root)
         val events = IntentFilter(permissionAction).apply { addAction(UsbManager.ACTION_USB_DEVICE_DETACHED); addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED) }
-        if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(receiver, events, RECEIVER_NOT_EXPORTED)
-        else registerReceiver(receiver, events)
+        androidx.core.content.ContextCompat.registerReceiver(this, receiver, events, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
         expireAt = android.os.SystemClock.elapsedRealtime() + 180000
     }
     override fun onResume() { super.onResume(); active = true; handler.post(poll) }
@@ -105,7 +108,7 @@ class CablePairActivity : Activity() {
         worker.execute {
             var engine: StationEngine? = null
             try {
-                val station = StationEngine(SecureStore(this)); engine = station
+                val station = ChatBook(this).engine(chatId); engine = station
                 station.requireCableEligible()
                 val link = open(); channel = link
                 if (cancelled.get()) { link.close(); error("Cancelled") }

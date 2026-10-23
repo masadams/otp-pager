@@ -12,6 +12,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [29, 31, 35]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -30,7 +34,7 @@ jobs:
         run: gradle --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: otp-pager-debug-apk
+          name: otp-pager-debug-apk-api-${{ matrix.api }}
           path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: Enable KVM for Android storage verification
@@ -41,7 +45,7 @@ jobs:
       - name: Verify Keystore, atomic storage and offline queue on Android
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29
+          api-level: ${{ matrix.api }}
           arch: x86_64
           profile: pixel_2
           disable-animations: true
@@ -51,7 +55,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: android-test-reports
+          name: android-test-reports-api-${{ matrix.api }}
           path: |
             app/build/reports/tests/
             app/build/reports/androidTests/

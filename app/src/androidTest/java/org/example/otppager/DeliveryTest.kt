@@ -161,4 +161,97 @@ class DeliveryTest {
         } finally { for (store in listOf(aStore, bStore)) { store.forget(); store.sibling("pads").forget() } }
     }
 
+    @Test fun lostRelayAndReceiptRecoverExactSignedPacketsAcrossRestart() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val aStore = SecureStore(context, "recover-a"); val bStore = SecureStore(context, "recover-b")
+        val stores = listOf(aStore, bStore)
+        stores.forEach { it.forget(); it.sibling("pads").forget() }
+        val relay = FlakyRelay().apply { loseFirstAck = false }
+        try {
+            val secret = Protocol.randomSecret()
+            var a = StationEngine(aStore, relay); var b = StationEngine(bStore, relay)
+            a.configure("https://pager.example.com", "t".repeat(43), secret, "A")
+            b.configure("https://pager.example.com", "t".repeat(43), secret, "B")
+            val bundle = a.generatePad(); b.installPad(bundle); bundle.fill(0)
+            val id = a.view().padCheck!!
+            a.confirmPad(id.takeLast(8)); b.confirmPad(id.takeLast(8))
+            a.sync(); b.sync(); a.sync()
+            a.prepareIdentity(); b.prepareIdentity()
+            val aCard = a.view().ownDevice!!; val bCard = b.view().ownDevice!!
+            a.pinDevice(bCard, IdentityProtocol.fingerprint(bCard).takeLast(8))
+            b.pinDevice(aCard, IdentityProtocol.fingerprint(aCard).takeLast(8))
+            a.send("RECOVER WITHOUT REUSING PAD BYTES"); a.sync()
+            assertEquals(1, a.view().awaitingReceipt)
+            val original = a.state!!.getJSONArray("outbox").getJSONObject(0)
+            val textWire = original.getString("packet"); val created = original.getLong("time")
+            val aReserve = a.view().padRemaining
+            // Relay storage disappears before the recipient reads the message.
+            relay.epoch = "replacement-one"; relay.packets.clear(); relay.seq = 0
+            a = StationEngine(aStore, relay)
+            assertTrue(a.sync().contains("STORAGE CHANGED"))
+            assertEquals(1, a.view().pending); assertEquals(aReserve, a.view().padRemaining)
+            a.sync(); b.sync(); b.sync()
+            assertEquals(textWire, relay.packets.first().second)
+            assertEquals(1, b.view().messages.size); assertTrue(b.view().messages.single().deviceVerified)
+            val receiptWire = b.state!!.getJSONArray("inbox").getJSONObject(0).getJSONObject("receipt").getString("packet")
+            val bReserve = b.view().padRemaining
+            // This time the receiver saved the message, but the sender never saw its receipt.
+            relay.epoch = "replacement-two"; relay.packets.clear(); relay.seq = 0
+            a = StationEngine(aStore, relay); b = StationEngine(bStore, relay)
+            a.sync(); b.sync(); a.sync(); b.sync(); a.sync()
+            assertEquals("delivered", a.view().messages.single().status)
+            assertEquals(0, a.view().awaitingReceipt)
+            assertEquals(created, a.state!!.getJSONArray("outbox").getJSONObject(0).getLong("time"))
+            assertEquals(setOf(textWire, receiptWire), relay.packets.map { it.second }.toSet())
+            assertEquals(aReserve, a.view().padRemaining); assertEquals(bReserve, b.view().padRemaining)
+            assertEquals(1, b.view().unread) // Retrying never creates another message or unread alert.
+            // A fresh forged replay must not trigger receipt recovery, even after the throttle expires.
+            val old = JSONObject(b.state.toString())
+            old.getJSONArray("inbox").getJSONObject(0).put("receiptRetryAt", 0L)
+            bStore.save(old); b = StationEngine(bStore, relay)
+            val forged = java.util.Base64.getDecoder().decode(textWire)
+            forged[forged.lastIndex] = (forged.last().toInt() xor 1).toByte()
+            relay.packets.add(++relay.seq to java.util.Base64.getEncoder().encodeToString(forged))
+            b.sync()
+            assertEquals(0L, b.state!!.getJSONArray("inbox").getJSONObject(0).getLong("receiptRetryAt"))
+            relay.packets.add(++relay.seq to textWire); b.sync()
+            val retriedAt = b.state!!.getJSONArray("inbox").getJSONObject(0).getLong("receiptRetryAt")
+            assertTrue(retriedAt > 0)
+            relay.packets.add(++relay.seq to textWire); b.sync()
+            assertEquals(retriedAt, b.state!!.getJSONArray("inbox").getJSONObject(0).getLong("receiptRetryAt"))
+            b.clearHistory(); b = StationEngine(bStore, relay)
+            relay.packets.add(++relay.seq to textWire); b.sync()
+            assertTrue(b.view().messages.isEmpty()); assertEquals(bReserve, b.view().padRemaining)
+        } finally { stores.forEach { it.forget(); it.sibling("pads").forget() } }
+    }
+
+    @Test fun manualRecoveryKeepsExpiryAndQueueBoundAndNeverAllocates() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val store = SecureStore(context, "recover-bound")
+        store.forget()
+        val relay = FlakyRelay().apply { loseFirstAck = false }
+        try {
+            var engine = StationEngine(store, relay)
+            engine.configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "A")
+            engine.send("ORIGINAL")
+            val sample = JSONObject(engine.state!!.getJSONArray("outbox").getJSONObject(0).toString())
+            val out = JSONArray()
+            for (i in 0 until 60) out.put(JSONObject(sample.toString()).put("id", "%032x".format(i))
+                .put("status", "relayed").put("time", sample.getLong("time") - i))
+            store.save(JSONObject(engine.state.toString()).put("outbox", out))
+            engine = StationEngine(store, relay)
+            val counter = engine.state!!.getLong("counter")
+            assertEquals(50, engine.retryDelivery()); assertEquals(50, engine.view().pending)
+            assertEquals(10, engine.view().awaitingReceipt); assertEquals(0, engine.retryDelivery())
+            assertEquals(counter, engine.state!!.getLong("counter"))
+            assertEquals(sample.getLong("time"), engine.state!!.getJSONArray("outbox").getJSONObject(59).getLong("time"))
+            val expired = JSONObject(engine.state.toString())
+            for (i in 0 until expired.getJSONArray("outbox").length())
+                expired.getJSONArray("outbox").getJSONObject(i).put("time", System.currentTimeMillis() - 86400001L)
+            store.save(expired); engine = StationEngine(store, relay)
+            assertEquals(0, engine.retryDelivery()); assertTrue(engine.view().messages.isEmpty())
+            assertEquals(counter, engine.state!!.getLong("counter"))
+        } finally { store.forget() }
+    }
+
 }

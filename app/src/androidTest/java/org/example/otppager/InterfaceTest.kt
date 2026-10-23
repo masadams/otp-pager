@@ -172,4 +172,67 @@ class InterfaceTest {
             store.forget(); store.sibling("pads").forget()
         }
     }
+    @Test fun compactDisplayKeepsTrafficAndComposerVisibleWithKeyboard() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        fun shell(command: String): String = instrumentation.uiAutomation.executeShellCommand(command).use {
+            android.os.ParcelFileDescriptor.AutoCloseInputStream(it).bufferedReader().readText().trim()
+        }
+        val oldSize = shell("wm size").lineSequence().firstOrNull { it.startsWith("Override size:") }?.substringAfter(": ")
+        val oldDensity = shell("wm density").lineSequence().firstOrNull { it.startsWith("Override density:") }?.substringAfter(": ")
+        val oldKeyboard = shell("settings get secure show_ime_with_hard_keyboard")
+        val store = SecureStore(context); store.forget(); store.sibling("pads").forget()
+        var activity: Activity? = null
+        try {
+            shell("wm size 480x800"); shell("wm density 240")
+            shell("settings put secure show_ime_with_hard_keyboard 1")
+            val engine = StationEngine(store)
+            engine.configure("https://pager.example.com", "x".repeat(43), Protocol.randomSecret(), "A")
+            engine.generatePad().fill(0); engine.confirmPad(engine.view().padCheck!!.takeLast(8))
+            val state = JSONObject(engine.state.toString()).put("peerReady", true)
+            state.getJSONArray("outbox").getJSONObject(0).put("status", "relayed")
+            store.save(state)
+            val ready = StationEngine(store); ready.send("Compact screen delivery check")
+            val waiting = JSONObject(ready.state.toString())
+            waiting.getJSONArray("outbox").getJSONObject(0).put("status", "relayed"); store.save(waiting)
+            val launched = instrumentation.startActivitySync(Intent(context, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            activity = launched; awaitStation(instrumentation, launched)
+            fun assertUsable() = instrumentation.runOnMainSync {
+                val views = all(content(launched))
+                val scroll = views.filterIsInstance<android.widget.ScrollView>().first { it.isShown }
+                assertTrue("Traffic area collapsed", scroll.height >= (40 * context.resources.displayMetrics.density).toInt())
+                val send = views.filterIsInstance<Button>().first { it.text.toString() == "Send" }
+                val bounds = android.graphics.Rect()
+                assertTrue("Send clipped", send.getGlobalVisibleRect(bounds))
+                assertEquals(send.height, bounds.height())
+                assertTrue(send.isEnabled)
+            }
+            assertUsable(); capture(instrumentation, launched, "messages-compact")
+            instrumentation.runOnMainSync {
+                assertEquals(320, launched.resources.configuration.screenWidthDp)
+                val input = all(content(launched)).filterIsInstance<EditText>().first { it.hint.toString() == "Write a message…" }
+                input.requestFocus(); input.setText("Keyboard remains usable")
+                launched.getSystemService(android.view.inputmethod.InputMethodManager::class.java)
+                    .showSoftInput(input, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+            }
+            val deadline = System.currentTimeMillis() + 5000
+            var keyboard = false
+            while (!keyboard && System.currentTimeMillis() < deadline) {
+                instrumentation.runOnMainSync {
+                    val root = content(launched); val visible = android.graphics.Rect(); root.getWindowVisibleDisplayFrame(visible)
+                    keyboard = root.rootView.height - visible.bottom > (150 * context.resources.displayMetrics.density).toInt()
+                }
+                if (!keyboard) Thread.sleep(50)
+            }
+            assertTrue("Keyboard did not open", keyboard)
+            instrumentation.waitForIdleSync(); assertUsable(); capture(instrumentation, launched, "messages-compact-keyboard")
+        } finally {
+            activity?.let { instrumentation.runOnMainSync { it.finish() }; instrumentation.waitForIdleSync() }
+            shell("wm size ${oldSize ?: "reset"}"); shell("wm density ${oldDensity ?: "reset"}")
+            if (oldKeyboard == "null") shell("settings delete secure show_ime_with_hard_keyboard")
+            else shell("settings put secure show_ime_with_hard_keyboard $oldKeyboard")
+            store.forget(); store.sibling("pads").forget()
+        }
+    }
+
 }

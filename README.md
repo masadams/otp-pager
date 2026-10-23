@@ -10,7 +10,7 @@ Experimental, open-source, physically paired text messenger. Android, including 
 - Independent, non-overlapping send/receive key pools per contact.
 - Correct one-time-pad consumption, crash recovery, and authenticated message processing.
 - Small, inspectable protocol with a path to native Android and minimal embedded firmware.
-- No telemetry, analytics, third-party SDKs, or automatic cloud backup.
+- No telemetry, analytics, or automatic cloud backup. The offline QR scanner uses the open-source ZXing SDK; see [third-party notices](docs/THIRD_PARTY_NOTICES.md).
 
 ## Documents
 - [Threat model](docs/THREAT_MODEL.md)
@@ -74,6 +74,43 @@ The same iteration adds **Pair devices · USB cable**, an automatic physical-pai
 wizard: relay settings can be on either device; it creates a fresh secret/pad,
 assigns roles, exchanges identities and uses one confirmation code on both screens.
 Android USB host/AOA support and a data cable are required. The exchange is tested
-with virtual duplex streams; actual USB negotiation and target e-ink hardware still
-need physical validation. Operational pads are never copied. Replacing a conversation requires explicit confirmation and retains the server settings.
+with virtual duplex streams, and the owner reports a successful physical USB pairing.
+Device models were not recorded; wider USB compatibility and target e-ink behavior still need validation. Operational pads are never copied. Replacing a conversation requires explicit confirmation and retains the server settings.
 Device identity cards also have Show/Scan QR controls for the fallback setup path.
+
+
+### Android 0.7: delivery recovery and compact screens
+
+A relay storage change now queues retained, unconfirmed messages and cached receipts
+for recovery using their original ciphertext. Link → Retry undelivered messages also
+rechecks stored receipts. Retries consume no pad slots and preserve the original
+24-hour local expiry. Receipts created before this upgrade have no recovery cache;
+clearing history removes that cache. Recovery needs both devices to sync and cannot
+restore expired or deleted message content. See [delivery recovery](docs/DELIVERY_RECOVERY.md).
+
+The status panel distinguishes new messages, locally queued packets and messages
+waiting for a receipt. Tap it for last relay contact, pad reserve and device identity
+status. Smaller displays use less header space; opening the keyboard temporarily
+hides the header to leave room for the conversation and composer. Connection age
+uses a monotonic clock, and local actions no longer reset network retry backoff.
+
+
+### Multiple private chats
+
+Tap the chat name at the top → **New chat**, enter a friend's name, then pair with
+that friend by USB or the existing QR/file path. Up to **12 separate chats**, with
+**two devices per chat**, are supported. Existing station data stays in place as
+Chat 1. Rename it from the chat picker. New chats inherit only the selected chat's
+relay URL/token and generate a fresh setup secret. Pads, identities, counters and
+history stay separate; a persistent device-wide registry blocks assigning the same
+pad or pairing secret to another chat. Forget pairing affects the selected chat.
+
+While open, automatic sync checks the selected chat and one other chat per cycle;
+other friends are checked in rotation. Unread badges appear in the picker and the
+header. There is no background delivery when the app is closed. A group chat is
+not implemented: do not give the same pad to three or more devices.
+
+The compact layout targets Mudita Kompakt's 480 × 800 screen as well as regular
+Android phones. Android 12/API 31 emulator coverage exercises the platform family;
+actual Kompakt USB host/AOA, keyboard, ghosting and battery behavior still require
+hardware testing. See [security code review](docs/SECURITY_REVIEW.md).
