@@ -24,6 +24,9 @@ android {
 
 dependencies {
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    // The scanner's published metadata does not reliably package these runtime helpers.
+    implementation("androidx.core:core:1.13.1")
+    implementation("androidx.fragment:fragment:1.6.2")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")

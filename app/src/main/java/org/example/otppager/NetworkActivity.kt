@@ -455,7 +455,7 @@ class NetworkActivity : Activity() {
     private fun displaySetupQr(invite: PairingInvite) = displayQr(invite.encode(), "SECRET SETUP · Station ${invite.role}",
         "Scan from your other physical device. Contains token + pairing secret. Closes in 60 seconds.")
     private fun displayQr(payload: String, title: String, detail: String) {
-        val edge = (resources.displayMetrics.widthPixels - dp(96)).coerceIn(200, 1200)
+        val edge = minOf(dp(280), resources.displayMetrics.widthPixels - dp(96)).coerceIn(200, 1200)
         val bitmap = try { PairingQr.bitmap(payload, edge) } catch (_: Exception) { report("Setup is too large for a QR code"); return }
         val image = ImageView(this).apply {
             setImageBitmap(bitmap); contentDescription = "Pairing QR for the other station"

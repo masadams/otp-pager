@@ -75,5 +75,5 @@ wizard: relay settings can be on either device; it creates a fresh secret/pad,
 assigns roles, exchanges identities and uses one confirmation code on both screens.
 Android USB host/AOA support and a data cable are required. The exchange is tested
 with virtual duplex streams; actual USB negotiation and target e-ink hardware still
-need physical validation. Operational pairings are never copied or overwritten.
+need physical validation. Operational pads are never copied. Replacing a conversation requires explicit confirmation and retains the server settings.
 Device identity cards also have Show/Scan QR controls for the fallback setup path.
