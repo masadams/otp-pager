@@ -20,15 +20,27 @@ class CablePairTest {
             val stores = listOf(sa, sb); stores.forEach { it.forget(); it.sibling("pads").forget() }
             val pool = Executors.newFixedThreadPool(2)
             val ain = PipedInputStream(16384); val bout = PipedOutputStream(ain)
-            val bin = PipedInputStream(16384); val aout = PipedOutputStream(bin)
+            val bin = PipedInputStream(16384)
+            val capture = java.io.ByteArrayOutputStream()
+            fun tapped(stream: java.io.OutputStream) = object : java.io.FilterOutputStream(stream) {
+                override fun write(value: Int) { synchronized(capture) { capture.write(value) }; out.write(value) }
+                override fun write(bytes: ByteArray, offset: Int, count: Int) { synchronized(capture) { capture.write(bytes, offset, count) }; out.write(bytes, offset, count) }
+            }
+            val aout = tapped(PipedOutputStream(bin)); val tappedBout = tapped(bout)
             try {
                 val a = StationEngine(sa); val b = StationEngine(sb)
                 (if (configuredHost) a else b).configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "B")
                 val codes = java.util.concurrent.CopyOnWriteArrayList<String>(); val ready = CountDownLatch(2)
                 val review: (String, String) -> Unit = { code, _ -> codes.add(code); ready.countDown(); check(ready.await(20, TimeUnit.SECONDS)) }
                 val af = pool.submit { CableProtocol.run(true, ain, aout, a, review) {} }
-                val bf = pool.submit { CableProtocol.run(false, bin, bout, b, review) {} }
+                val bf = pool.submit { CableProtocol.run(false, bin, tappedBout, b, review) {} }
                 af.get(30, TimeUnit.SECONDS); bf.get(30, TimeUnit.SECONDS)
+                val captured = capture.toString("ISO-8859-1")
+                for (name in listOf("token", "secret", "pad")) {
+                    val value = a.state!!.getString(name)
+                    assertFalse("USB exposed $name", captured.contains(value.take(128)))
+                }
+                assertFalse(captured.contains("\"kind\":\"setup\""))
                 assertEquals(2, codes.size); assertEquals(codes[0], codes[1])
                 assertEquals("A", a.view().role); assertEquals("B", b.view().role)
                 assertEquals(a.view().padCheck, b.view().padCheck)

@@ -8,6 +8,6 @@ import com.journeyapps.barcodescanner.CaptureActivity
 class PairingScannerActivity : CaptureActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        window.protectPrivateContent()
     }
 }

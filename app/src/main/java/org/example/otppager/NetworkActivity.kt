@@ -38,6 +38,7 @@ class NetworkActivity : Activity() {
     private var tab = 0
     private var latest: StationEngine.View? = null
     private var rendered: List<StationEngine.Message>? = null
+    private var renderedSetupComplete: Boolean? = null
     private var errorLoading = false
     private var automatic = true
     private var lastContact = 0L
@@ -139,6 +140,7 @@ class NetworkActivity : Activity() {
         setPadding(dp(12), dp(12), dp(12), dp(12))
         background = surface(Color.WHITE, 6, lineColor)
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        imeOptions = imeOptions or android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING or android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
         isSaveEnabled = false; filterTouchesWhenObscured = true
     }
     private fun section(parent: LinearLayout, label: String, field: View) {
@@ -147,7 +149,7 @@ class NetworkActivity : Activity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        window.protectPrivateContent()
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         window.statusBarColor = paper; window.navigationBarColor = paper
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
@@ -562,7 +564,7 @@ class NetworkActivity : Activity() {
     }
     private fun secureShow(dialog: AlertDialog) {
         openDialogs.removeAll { !it.isShowing }
-        dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        dialog.window?.protectPrivateContent()
         openDialogs.add(dialog); dialog.show()
         for (which in listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)) {
             dialog.getButton(which)?.apply { setTextColor(ink); isAllCaps = false; filterTouchesWhenObscured = true }
@@ -708,7 +710,7 @@ class NetworkActivity : Activity() {
         val hint = when {
             view.role == "—" -> "SET UP YOUR STATION → Link"
             !view.pairingComplete -> "PAIRING INCOMPLETE · arrange a fresh physical pairing on both devices"
-            view.padCheck == null -> "AES TEST MODE · Set up a physical pad → Pad"
+            view.padCheck == null -> "PAIR WITH YOUR FRIEND → Link · USB pairs keys and pad together"
             view.padRemaining == 0 -> "SEND PAD EXHAUSTED · Receiving and queued retries remain available"
             !view.padVerified -> "COMPARE CODES IN PERSON → Pad"
             !view.peerReady -> "WAITING FOR PEER VERIFICATION · Sync both stations"
@@ -733,12 +735,14 @@ class NetworkActivity : Activity() {
         if (view.peerDevice != null) {
             peerCardField.text.clear()
         }
-        if (view.messages == rendered) return
+        if (view.messages == rendered && renderedSetupComplete == view.setupComplete) return
+        renderedSetupComplete = view.setupComplete
         val wasAtBottom = atBottom()
         rendered = view.messages; messages.removeAllViews()
         if (view.messages.isEmpty()) {
-            messages.addView(text("A quiet channel.", 24f).apply { setPadding(dp(10), dp(40), 0, dp(10)) })
-            messages.addView(text(if (view.role == "—") "Open Link to pair this station." else "Write your first message below.", 14f, muted).apply { setPadding(dp(10), 0, 0, 0) })
+            messages.addView(text(if (view.setupComplete) "Ready for your friend." else "Make a private connection.", if (compact) 20f else 24f).apply { setPadding(dp(10), dp(40), 0, dp(10)) })
+            messages.addView(text(if (view.setupComplete) "Send a message below. Delivery updates appear beside each message." else "Save relay details on one device, then connect both with USB and compare the on-screen codes.", 14f, muted).apply { setPadding(dp(10), 0, 0, 0) })
+            if (!view.setupComplete) messages.addView(button("Set up this chat") { selectTab(1) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
         }
         val timeFormat = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
         for (m in view.messages) {

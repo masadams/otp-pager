@@ -88,6 +88,28 @@ class InterfaceTest {
             }
         } finally { image.recycle() }
     }
+    @Test fun unpairedChatExplainsSetupAndProtectsKeyboardInput() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val store = SecureStore(instrumentation.targetContext)
+        store.forget(); store.sibling("pads").forget()
+        StationEngine(store).configure("https://pager.example.com", "x".repeat(43), Protocol.randomSecret(), "A")
+        val activity = instrumentation.startActivitySync(Intent(instrumentation.targetContext, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        try {
+            awaitStation(instrumentation, activity)
+            instrumentation.runOnMainSync {
+                val views = all(content(activity))
+                assertTrue(views.filterIsInstance<TextView>().any { it.text.toString() == "Make a private connection." })
+                assertTrue(views.filterIsInstance<Button>().any { it.text.toString() == "Set up this chat" && it.isShown })
+                views.filterIsInstance<EditText>().forEach {
+                    assertTrue(it.imeOptions and android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING != 0)
+                    assertTrue(it.imeOptions and android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI != 0)
+                }
+            }
+            capture(instrumentation, activity, "unpaired-chat")
+            tap(instrumentation, activity, "Set up this chat")
+            instrumentation.runOnMainSync { assertTrue(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Save & connect" }.isShown) }
+        } finally { instrumentation.runOnMainSync { activity.finish() }; store.forget(); store.sibling("pads").forget() }
+    }
     @Test fun capturesActualEinkInterfaceWithFictionalTraffic() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
