@@ -185,12 +185,12 @@ class NetworkActivity : Activity() {
         }, LinearLayout.LayoutParams(0, -2, 1f)); settings.addView(secrets)
         roleGroup = RadioGroup(this).apply { orientation = RadioGroup.HORIZONTAL }
         for ((index, label) in listOf("Station A", "Station B").withIndex()) roleGroup.addView(RadioButton(this).apply {
-            id = 101 + index; text = label; setTextColor(ink); buttonTintList = ColorStateList.valueOf(green)
+            id = if (index == 0) R.id.station_a else R.id.station_b; text = label; setTextColor(ink); buttonTintList = ColorStateList.valueOf(green)
         }, RadioGroup.LayoutParams(0, dp(48), 1f))
-        roleGroup.check(101); section(settings, "THIS DEVICE", roleGroup)
+        roleGroup.check(R.id.station_a); section(settings, "THIS DEVICE", roleGroup)
         saveButton = button("Save & connect", true) {
             val endpoint = urlField.text.toString(); val token = tokenField.text.toString().trim()
-            val secret = secretField.text.toString().trim(); val role = if (roleGroup.checkedRadioButtonId == 101) "A" else "B"
+            val secret = secretField.text.toString().trim(); val role = if (roleGroup.checkedRadioButtonId == R.id.station_a) "A" else "B"
             runTask { checkNotNull(engine).configure(endpoint, token, secret, role); checkNotNull(engine).sync() }
         }; settings.addView(saveButton)
         pairingCode = text("NOT PAIRED", 12f, green, true).apply { setPadding(0, dp(20), 0, dp(12)) }; settings.addView(pairingCode)
@@ -205,7 +205,7 @@ class NetworkActivity : Activity() {
         } })
         settings.addView(button("Forget pairing") { confirm("Forget this pairing?", "This deletes your saved link and queued messages. Re-pair BOTH devices with a NEW secret; reusing the old one can break replay protection.") {
             runTask { SecureStore(this).forget(); engine = StationEngine(SecureStore(this)); errorLoading = false; "PAIRING FORGOTTEN // use a fresh secret" }
-            urlField.setText(""); tokenField.setText(""); secretField.setText(""); roleGroup.check(101)
+            urlField.setText(""); tokenField.setText(""); secretField.setText(""); roleGroup.check(R.id.station_a)
         } })
         if (!getSystemService(KeyguardManager::class.java).isDeviceSecure)
             settings.addView(text("Set an Android screen lock to enable station unlock protection.", 12f, muted))
@@ -272,7 +272,7 @@ class NetworkActivity : Activity() {
                 if (!active || !unlocked || isFinishing || taskGeneration != generation) return@runOnUiThread
                 if (config != null) {
                     urlField.setText(config!!.getString("endpoint")); tokenField.setText(config!!.getString("token"))
-                    secretField.setText(config!!.getString("secret")); roleGroup.check(if (config!!.getString("role") == "A") 101 else 102)
+                    secretField.setText(config!!.getString("secret")); roleGroup.check(if (config!!.getString("role") == "A") R.id.station_a else R.id.station_b)
                 }
                 view?.let(::render)
                 if (clearComposer && success) composer.text.clear()

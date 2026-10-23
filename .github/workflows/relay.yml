@@ -54,6 +54,9 @@ jobs:
           retention-days: 7
 
   publish:
+    concurrency:
+      group: relay-publish-${{ github.ref_name }}
+      cancel-in-progress: false
     if: github.event_name == 'push' && (github.ref == 'refs/heads/feat/two-device-relay' || github.ref == 'refs/heads/main')
     needs: test
     runs-on: ubuntu-latest

@@ -1,0 +1,4 @@
+<resources>
+    <item name="station_a" type="id" />
+    <item name="station_b" type="id" />
+</resources>
