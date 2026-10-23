@@ -60,3 +60,7 @@ validation is a separate requirement before claiming information-theoretic secre
 - Stable owner-controlled release signing and update verification
 - Independent cryptographic/protocol review and adversarial testing
 - Optional dedicated hardware, entropy measurements, and a minimal firmware review
+
+### 0.3 finite-pad experiment implemented
+
+See [PAD_PROTOCOL.md](PAD_PROTOCOL.md) for physical setup, exact allocation and limitations. Includes import/export, directional XOR slots, separate HMAC keys, burn-before-encryption reservation ledger, exact retries, receipts, retirement and exhaustion UI. This deliberately uses conventional HMAC and Android-generated material, so the information-theoretic authentication/entropy milestone above remains open. Restored/cloned state is not rollback-proof.

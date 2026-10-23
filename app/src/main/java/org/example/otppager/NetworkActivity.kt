@@ -38,6 +38,11 @@ class NetworkActivity : Activity() {
     private var rendered: List<StationEngine.Message>? = null
     private var errorLoading = false
     private var automatic = true
+    private var lastContact = 0L
+    private var connectionFailed = false
+    private var pendingDocument: Pair<Int, android.net.Uri>? = null
+    private lateinit var indicators: TextView
+    private lateinit var padStatus: TextView
     private lateinit var root: LinearLayout
     private lateinit var traffic: LinearLayout
     private lateinit var linkScroll: ScrollView
@@ -64,6 +69,7 @@ class NetworkActivity : Activity() {
     private val lineColor = Color.rgb(215, 217, 205)
     private val poll = object : Runnable {
         override fun run() {
+            if (active && unlocked) updateIndicators()
             if (active && unlocked && automatic && !busy && !errorLoading && latest != null && latest?.role != "—") runTask { engine?.let { it.sync() } ?: "OPEN LINK TO PAIR" }
             else if (active && unlocked) handler.postDelayed(this, 5000)
         }
@@ -130,6 +136,9 @@ class NetworkActivity : Activity() {
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode in listOf(81, 82) && resultCode == RESULT_OK && data?.data != null) {
+            pendingDocument = requestCode to data.data!!; unlocked = true; needsTerminal = true
+        }
         if (requestCode == 71 && resultCode == RESULT_OK) { unlocked = true; needsTerminal = true }
     }
     private fun showTerminal() {
@@ -143,7 +152,11 @@ class NetworkActivity : Activity() {
         val header = row()
         header.addView(text("FIELD", 28f, ink, true).apply { typeface = Typeface.create("monospace", Typeface.BOLD) }, LinearLayout.LayoutParams(0, -2, 1f))
         stationLabel = text("STATION —", 11f, green, true); header.addView(stationLabel); root.addView(header)
-        root.addView(text("PRIVATE CORRESPONDENCE / EXPERIMENTAL", 10f, muted, true))
+        root.addView(text("PRIVATE MESSAGING · ANDROID / E-INK", 10f, muted, true))
+        indicators = text("○ NOT CHECKED", 11f, ink, true).apply {
+            setPadding(dp(12), dp(10), dp(12), dp(10)); background = surface(paper, 2, ink)
+        }
+        root.addView(indicators, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
         val tabs = row().apply { setPadding(0, dp(12), 0, dp(4)) }
         trafficTab = button("Messages") { selectTab(0) }; linkTab = button("Link") { selectTab(1) }
         tabs.addView(trafficTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(linkTab, LinearLayout.LayoutParams(0, -2, 1f)); root.addView(tabs)
@@ -173,7 +186,7 @@ class NetworkActivity : Activity() {
             override fun afterTextChanged(s: Editable?) {}
         })
         val settings = column().apply { setPadding(0, 0, 0, dp(24)) }
-        settings.addView(text("Your private link", 22f))
+        settings.addView(text("Station settings", 22f))
         settings.addView(text("Exchange the pairing secret in person. Give each device a different station letter.", 14f, muted))
         urlField = field("https://pager.example.com"); section(settings, "RELAY ADDRESS", urlField)
         tokenField = field("Relay access token", true); section(settings, "RELAY ACCESS", tokenField)
@@ -200,9 +213,24 @@ class NetworkActivity : Activity() {
         }; settings.addView(saveButton)
         pairingCode = text("NOT PAIRED", 12f, green, true).apply { setPadding(0, dp(20), 0, dp(12)) }; settings.addView(pairingCode)
         settings.addView(text("Compare this pair-check code on both devices in person. Matching codes confirm the same secret; they do not confirm the server is honest.", 12f, muted))
+        section(settings, "FINITE PAD · EXPERIMENTAL", text("Start with a fresh pairing and no traffic. Station A creates a pad file; Station B imports that same file. Transfer it physically, then compare the full pad check on both devices. Both stations must install before sending.", 13f, muted))
+        padStatus = text("AES-GCM · no pad installed", 12f, ink, true).apply { setPadding(0, dp(12), 0, dp(8)) }; settings.addView(padStatus)
+        settings.addView(button("A · Create & export pad file") {
+            confirm("Export secret pad material?", "Choose offline USB storage. This file contains BOTH directions of the pad in plaintext. Do not use cloud storage, email, Git, or an online emulator. Generated with Android randomness; experimental, not certified true-random OTP. If export fails, forget pairing and use a fresh secret and pad.") {
+                startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE); type = "application/octet-stream"; putExtra(Intent.EXTRA_TITLE, "field-secret-pad.fieldpad")
+                }, 81)
+            }
+        })
+        settings.addView(button("B · Import pad file") {
+            confirm("Import a physical pad?", "Only import on Station B from the paired Station A. Never install the same pad on additional devices or after reinstalling. A previous installation on this app is blocked.") {
+                startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply { addCategory(Intent.CATEGORY_OPENABLE); type = "*/*" }, 82)
+            }
+        })
+        settings.addView(text("127 outgoing slots per station. Each message and delivery receipt consumes one slot. No automatic fallback to AES when pads run out. Forgetting keeps a pad retirement record. App uninstall or restored backups cannot be detected reliably: always create fresh pads afterward.", 12f, muted))
         settings.addView(Switch(this).apply {
             text = "Auto sync every 15 seconds while open"; setTextColor(ink); isChecked = automatic
-            setPadding(0, dp(20), 0, dp(12)); setOnCheckedChangeListener { _, checked -> automatic = checked; schedule() }
+            setPadding(0, dp(20), 0, dp(12)); setOnCheckedChangeListener { _, checked -> automatic = checked; updateIndicators(); schedule() }
         })
         settings.addView(text("Messages stay locally for up to 24 hours. Clear history to remove them sooner. Delivery means the other station saved the packet, not that a person read it.", 12f, muted))
         settings.addView(button("Clear message history") { confirm("Clear local messages?", "Pending messages stay queued. Replay protection stays active.") {
@@ -217,11 +245,36 @@ class NetworkActivity : Activity() {
         linkScroll = ScrollView(this).apply { isVerticalScrollBarEnabled = false; addView(settings) }
         root.addView(traffic, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(linkScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root); root.requestApplyInsets(); selectTab(tab)
-        runTask(load = true) { engine = StationEngine(SecureStore(this)); "STATION READY" }
+        runTask(load = true) {
+            engine = StationEngine(SecureStore(this))
+            val document = pendingDocument; pendingDocument = null
+            if (document == null) "STATION READY" else {
+                val (operation, uri) = document
+                if (operation == 81) {
+                    val bundle = checkNotNull(engine).generatePad()
+                    try { contentResolver.openOutputStream(uri, "wt")!!.use { it.write(bundle); it.flush() } }
+                    finally { bundle.fill(0) }
+                    "PAD INSTALLED · transfer file to Station B before sending"
+                } else {
+                    require(engine?.state?.getString("role") == "B") { "Import only on Station B" }
+                    val bundle = contentResolver.openInputStream(uri)!!.use { input ->
+                        val out = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(8192)
+                        while (true) { val n = input.read(buffer); if (n < 0) break; require(out.size() + n <= PadProtocol.BUNDLE_BYTES) { "Pad file too large" }; out.write(buffer, 0, n) }
+                        out.toByteArray()
+                    }
+                    try { checkNotNull(engine).installPad(bundle) } finally { bundle.fill(0) }
+                    "PAD INSTALLED · compare pad check with Station A"
+                }
+            }
+        }
     }
     private fun selectTab(value: Int) {
         tab = value; traffic.visibility = if (value == 0) View.VISIBLE else View.GONE; linkScroll.visibility = if (value == 1) View.VISIBLE else View.GONE
-        trafficTab.setTextColor(if (value == 0) green else muted); linkTab.setTextColor(if (value == 1) green else muted)
+        trafficTab.setTextColor(if (value == 0) Color.WHITE else ink); linkTab.setTextColor(if (value == 1) Color.WHITE else ink)
+        trafficTab.backgroundTintList = ColorStateList.valueOf(if (value == 0) ink else Color.TRANSPARENT)
+        linkTab.backgroundTintList = ColorStateList.valueOf(if (value == 1) ink else Color.TRANSPARENT)
+        if (value == 0 && (latest?.unread ?: 0) > 0 && !busy) runTask { engine?.markRead(); "MESSAGES OPEN" }
     }
     private fun confirm(title: String, detail: String, action: () -> Unit) {
         AlertDialog.Builder(this).setTitle(title).setMessage(detail).setNegativeButton("Cancel", null)
@@ -233,8 +286,25 @@ class NetworkActivity : Activity() {
         for (view in listOf(sendButton, saveButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
         sendButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && !errorLoading
     }
+    private fun updateIndicators() {
+        if (!::indicators.isInitialized) return
+        val v = latest
+        val connection = when {
+            v == null || v.role == "—" -> "○ NOT PAIRED"
+            connectionFailed -> "! RELAY UNAVAILABLE"
+            lastContact == 0L -> "○ NOT CHECKED"
+            System.currentTimeMillis() - lastContact > 60000 -> "○ LAST CHECK >1 MIN"
+            else -> "● RELAY CONNECTED"
+        }
+        val value = "$connection  ·  ${v?.pending ?: 0} QUEUED\n${v?.unread ?: 0} NEW  ·  " + (v?.padRemaining?.let { "$it / ${PadProtocol.SLOTS} PAD SLOTS" } ?: "AES-GCM · TEST MODE") + if (!automatic) " · AUTO OFF" else ""
+        if (indicators.text.toString() != value) indicators.text = value
+    }
     private fun render(view: StationEngine.View) {
-        latest = view; if (stationLabel.text.toString() != "STATION ${view.role}") stationLabel.text = "STATION ${view.role}"
+        latest = view
+        trafficTab.text = if (view.unread > 0) "Messages (${view.unread})" else "Messages"
+        updateIndicators()
+        padStatus.text = view.padCheck?.let { "PAD CHECK\n${it.chunked(4).joinToString(" ")}\n${view.padRemaining} outgoing slots remaining" } ?: "AES-GCM · no pad installed"
+        if (stationLabel.text.toString() != "STATION ${view.role}") stationLabel.text = "STATION ${view.role}"
         if (pairingCode.text.toString() != "PAIR CHECK\n${view.fingerprint}") pairingCode.text = "PAIR CHECK\n${view.fingerprint}"
         if (view.messages == rendered) return
         val wasAtBottom = messageScroll.getChildAt(0).height - (messageScroll.scrollY + messageScroll.height) < dp(100)
@@ -247,9 +317,9 @@ class NetworkActivity : Activity() {
         for (m in view.messages) {
             val card = column().apply {
                 setPadding(dp(14), dp(11), dp(14), dp(12))
-                background = surface(Color.WHITE, 2, lineColor)
+                background = surface(Color.WHITE, 2, if (m.incoming) ink else lineColor)
             }
-            val label = if (m.incoming) "INCOMING" else m.status.uppercase()
+            val label = if (m.incoming) "FROM PEER" else when (m.status) { "queued" -> "○ QUEUED"; "relayed" -> "↑ AT RELAY"; "delivered" -> "✓ PEER SAVED"; else -> m.status.uppercase() }
             card.addView(text("$label  /  ${timeFormat.format(java.util.Date(m.time))}", 10f, muted, true))
             card.addView(text(m.text, 16f).apply { setPadding(0, dp(5), 0, 0); isSaveEnabled = false })
             messages.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
@@ -264,11 +334,13 @@ class NetworkActivity : Activity() {
         setBusy(true); handler.removeCallbacks(poll)
         worker.execute {
             var note: String; var view: StationEngine.View? = null
-            var config: org.json.JSONObject? = null; var success = false
+            var config: org.json.JSONObject? = null; var success = false; var relayFailure = false
             try {
                 note = action(); success = true; backoff = 15000L
+                if (tab == 0) engine?.markRead()
                 view = engine?.view(); if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
             } catch (e: Exception) {
+                relayFailure = e is java.io.IOException || e is RelayHttpException
                 note = friendly(e); backoff = (backoff * 2).coerceAtMost(60000L)
                 if (load) errorLoading = true
                 try { view = engine?.view() } catch (_: Exception) { errorLoading = true }
@@ -279,6 +351,8 @@ class NetworkActivity : Activity() {
                     urlField.setText(config!!.getString("endpoint")); tokenField.setText(config!!.getString("token"))
                     secretField.setText(config!!.getString("secret")); roleGroup.check(if (config!!.getString("role") == "A") R.id.station_a else R.id.station_b)
                 }
+                if (note.startsWith("Connected")) { lastContact = System.currentTimeMillis(); connectionFailed = false }
+                else if (relayFailure) connectionFailed = true
                 view?.let(::render)
                 if (clearComposer && success) composer.text.clear()
                 if (errorLoading) note = "VAULT UNAVAILABLE // data preserved; see Link → Forget pairing to reset"

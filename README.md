@@ -37,3 +37,7 @@ See [security boundaries, upgrades, delivery and e-ink behavior](docs/HARDENING.
 The new Messages/Link interface adds Keystore-encrypted pairing storage, a durable
 outbox, authenticated delivery receipts and persistent replay protection. Update
 the relay and **both** APKs together; legacy v0.1 messages are not imported.
+
+### Android 0.3: finite-pad experiment
+
+The e-ink interface shows relay connectivity, unread messages, queued traffic, delivery state and remaining pad slots. Link settings can create a physical pad file on Station A and import it on Station B. Start a fresh pairing on both devices before installing pads. Read [physical setup and security limits](docs/PAD_PROTOCOL.md) first: plaintext pad files require physical transfer; Android-generated pads and HMAC authentication are experimental and do not claim information-theoretic security. Each station has 127 outgoing slots, including receipts. No automatic AES fallback at exhaustion.

@@ -7,6 +7,7 @@ import org.json.JSONObject
 class StationEngine(private val store: SecureStore, private val relay: RelayTransport = RelayClient) {
     var state: JSONObject? = store.load()
         private set
+    private val padLedger = PadLedger(store.sibling("pads"))
     private var cachedView: View? = null
     private var cacheExpiry = 0L
     init { state?.let { validate(it); transaction(::prune) } }
@@ -17,6 +18,11 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         check(s.getString("role") in listOf("A", "B"))
         check(s.getLong("counter") >= 0 && s.getLong("cursor") >= 0)
         window(s)
+        if (s.has("pad")) {
+            val pad = java.util.Base64.getDecoder().decode(s.getString("pad"))
+            try { check(PadProtocol.hex(PadProtocol.id(pad)) == s.getString("padId")); check(padLedger.high(s.getString("padId")) >= s.getLong("counter")) }
+            finally { pad.fill(0) }
+        }
         check(s.getJSONArray("outbox").length() <= 150 && s.getJSONArray("inbox").length() <= 100)
     }
     private fun transaction(change: (JSONObject) -> Unit) {
@@ -39,6 +45,31 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         next.put("endpoint", url).put("token", access)
         store.save(next); state = next; cachedView = null
     }
+    fun installPad(bundle: ByteArray) {
+        val current = checkNotNull(state) { "Save the link settings first" }
+        check(!current.has("pad")) { "Forget pairing before installing a fresh pad" }
+        check(current.getJSONArray("outbox").length() == 0 && current.getJSONArray("inbox").length() == 0 && current.getLong("counter") == 0L && current.getLong("high") == 0L) { "Start a fresh pairing on both stations before installing pads" }
+        val master = Protocol.master(current.getString("secret"))
+        val pad = try { PadProtocol.material(bundle, PadProtocol.binding(master)) } finally { master.fill(0) }
+        try {
+            val id = PadProtocol.hex(PadProtocol.id(pad))
+            padLedger.register(id) // A failed installation retires the bundle, never makes it reusable.
+            transaction { it.put("pad", java.util.Base64.getEncoder().encodeToString(pad)).put("padId", id).put("cursor", 0L).put("epoch", "") }
+        } finally { pad.fill(0) }
+    }
+    fun generatePad(): ByteArray {
+        val s = checkNotNull(state); require(s.getString("role") == "A") { "Generate on Station A; import on Station B" }
+        val master = Protocol.master(s.getString("secret"))
+        val bundle = try { PadProtocol.generate(PadProtocol.binding(master)) } finally { master.fill(0) }
+        try { installPad(bundle); return bundle } catch (e: Exception) { bundle.fill(0); throw e }
+    }
+    fun markRead() { if (state != null) transaction { s -> items(s.getJSONArray("inbox")).forEach { it.put("read", true) } } }
+    private fun packetRole(s: JSONObject, wire: String) = if (s.has("pad")) PadProtocol.role(wire) else Protocol.role(wire)
+    private fun open(s: JSONObject, master: ByteArray, wire: String, role: Char): Protocol.Opened {
+        if (!s.has("pad")) return Protocol.open(master, wire, role)
+        val pad = java.util.Base64.getDecoder().decode(s.getString("pad"))
+        return try { PadProtocol.open(pad, wire, role) } finally { pad.fill(0) }
+    }
     fun forget() { store.forget(); state = null; cachedView = null }
     private fun window(s: JSONObject): ReplayWindow {
         val seen = s.getJSONArray("seen")
@@ -52,8 +83,21 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         require(items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" } < 50) { "Outbox full; sync before sending more" }
         val n = s.getLong("counter"); check(n < Long.MAX_VALUE) { "Pairing counter exhausted; create a new pairing" }
         val master = Protocol.master(s.getString("secret"))
-        val (id, wire) = try { Protocol.seal(master, s.getString("role")[0], n + 1, payload.toString()) } finally { master.fill(0) }
-        s.put("counter", n + 1)
+        val counter: Long
+        val sealed: Pair<String, String>
+        try {
+            if (s.has("pad")) {
+                require(payload.toString().toByteArray(Charsets.UTF_8).size <= PadProtocol.BLOCK - 2) { "Encoded message too large for a pad slot" }
+                val pad = java.util.Base64.getDecoder().decode(s.getString("pad"))
+                try {
+                    cachedView = null
+                    counter = padLedger.reserve(s.getString("padId")) // Durable burn BEFORE encryption or network output.
+                    sealed = PadProtocol.seal(pad, s.getString("role")[0], counter, payload.toString())
+                } finally { pad.fill(0) }
+            } else { counter = n + 1; sealed = Protocol.seal(master, s.getString("role")[0], counter, payload.toString()) }
+        } finally { master.fill(0) }
+        val (id, wire) = sealed
+        s.put("counter", counter)
         s.getJSONArray("outbox").put(JSONObject().put("id", id).put("packet", wire).put("kind", kind)
             .put("status", "queued").put("time", System.currentTimeMillis()))
         prune(s)
@@ -104,16 +148,18 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
                     val item = messages.getJSONObject(i)
                     val seq = item.getLong("seq"); require(seq > cursor) { "Invalid relay ordering" }
                     val wire = item.getString("packet")
-                    if (Protocol.role(wire) == inbound) {
+                    if (packetRole(next, wire) == inbound) {
                         // Authentication and payload validation finish before touching replay state.
-                        val decoded = try { Protocol.open(master, wire, inbound) } catch (_: Exception) { ignored++; null }
+                        val decoded = try { open(next, master, wire, inbound) } catch (_: Exception) { ignored++; null }
                         if (decoded != null && window(next).accepts(decoded.counter)) {
                             val payload = try { JSONObject(decoded.payload) } catch (_: Exception) { null }
                             val kind = payload?.optString("kind")
                             if (kind == "text" && payload?.opt("text") is String && payload.getString("text").toByteArray(Charsets.UTF_8).size in 1..2048) {
                                 if (items(next.getJSONArray("outbox")).count { it.getString("status") == "queued" } >= 50) break
-                                next.getJSONArray("inbox").put(JSONObject().put("packet", wire).put("id", decoded.id).put("time", System.currentTimeMillis()))
-                                queue(next, JSONObject().put("kind", "receipt").put("for", decoded.id), "receipt")
+                                next.getJSONArray("inbox").put(JSONObject().put("packet", wire).put("id", decoded.id).put("read", false).put("time", System.currentTimeMillis()))
+                                // Exhaustion must not prevent receiving. Last available slots can acknowledge only a finite number of messages.
+                                if (!next.has("pad") || padLedger.high(next.getString("padId")) < PadProtocol.SLOTS)
+                                    queue(next, JSONObject().put("kind", "receipt").put("for", decoded.id), "receipt")
                                 setWindow(next, window(next).accept(decoded.counter))
                             } else if (kind == "receipt" && payload?.opt("for") is String && Regex("[a-f0-9]{32}").matches(payload.getString("for"))) {
                                 items(next.getJSONArray("outbox")).filter { it.getString("id") == payload.getString("for") && it.getString("kind") == "text" }
@@ -121,7 +167,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
                                 setWindow(next, window(next).accept(decoded.counter))
                             } else { ignored++ }
                         }
-                    } else if (Protocol.role(wire) == null) { ignored++ }
+                    } else if (packetRole(next, wire) == null) { ignored++ }
                     cursor = seq; next.put("cursor", cursor)
                 }
                 prune(next)
@@ -139,7 +185,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         } finally { master.fill(0) }
     }
     data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long)
-    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int)
+    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null)
     fun view(): View {
         cachedView?.let { if (System.currentTimeMillis() < cacheExpiry) return it }
         val s = state ?: return View("—", "NOT PAIRED", emptyList(), 0)
@@ -149,17 +195,20 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             val rows = mutableListOf<Message>()
             for (entry in items(s.getJSONArray("inbox"))) {
                 if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
-                val text = JSONObject(Protocol.open(master, entry.getString("packet"), peer).payload).getString("text")
+                val text = JSONObject(open(s, master, entry.getString("packet"), peer).payload).getString("text")
                 rows.add(Message(true, text, "received", entry.getLong("time")))
             }
             for (entry in items(s.getJSONArray("outbox")).filter { it.getString("kind") == "text" }) {
                 if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
-                val text = JSONObject(Protocol.open(master, entry.getString("packet"), own).payload).getString("text")
+                val text = JSONObject(open(s, master, entry.getString("packet"), own).payload).getString("text")
                 rows.add(Message(false, text, entry.getString("status"), entry.getLong("time")))
             }
             cacheExpiry = rows.minOfOrNull { it.time + 86400000L } ?: Long.MAX_VALUE
             View(own.toString(), Protocol.fingerprint(master), rows.sortedBy { it.time }.takeLast(100),
-                items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" }).also { cachedView = it }
+                items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" },
+                items(s.getJSONArray("inbox")).count { !it.optBoolean("read", false) },
+                if (s.has("pad")) PadProtocol.SLOTS - padLedger.high(s.getString("padId")).toInt() else null,
+                s.optString("padId").takeIf { it.isNotEmpty() }).also { cachedView = it }
         } finally { master.fill(0) }
     }
 }

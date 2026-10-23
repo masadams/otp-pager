@@ -17,6 +17,8 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
     private val slot = namespace.also { require(Regex("[a-z0-9-]{1,40}").matches(it)) }
     private val base = File(context.noBackupFilesDir, "$slot.bin")
     private val file = AtomicFile(base)
+    fun sibling(suffix: String): SecureStore = SecureStore(contextRef, "$slot-$suffix")
+    private val contextRef = context.applicationContext
     private val alias = "otp-pager-$slot"
     private val aad = "OTP Pager local vault v2".toByteArray()
     private fun key(create: Boolean): SecretKey {
@@ -32,7 +34,11 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
         }
     }
     fun load(): JSONObject? {
-        if (!base.exists() && !File(base.path + ".bak").exists() && !File(base.path + ".new").exists()) return null
+        if (!base.exists() && !File(base.path + ".bak").exists() && !File(base.path + ".new").exists()) {
+            val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+            check(!keys.containsAlias(alias)) { "Vault file missing; saved key exists. Refusing to reset counters." }
+            return null
+        }
         // Permission errors, a damaged path, and interrupted writes are not a new pairing.
         val bytes = file.readFully()
         require(bytes.size >= 29 && bytes[0] == 2.toByte()) { "Local vault damaged" }
@@ -49,7 +55,10 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
         val clear = state.toString().toByteArray(Charsets.UTF_8)
         val encrypted = try { byteArrayOf(2) + cipher.iv + cipher.doFinal(clear) } finally { clear.fill(0) }
         val stream = file.startWrite()
-        try { stream.write(encrypted); file.finishWrite(stream) }
+        try { stream.write(encrypted); stream.fd.sync(); file.finishWrite(stream)
+            check(base.isFile && base.readBytes().contentEquals(encrypted)) { "Vault commit could not be verified" }
+            val directory = android.system.Os.open(base.parentFile!!.path, android.system.OsConstants.O_RDONLY or android.system.OsConstants.O_DIRECTORY, 0)
+            try { android.system.Os.fsync(directory) } finally { android.system.Os.close(directory) } }
         catch (e: Exception) { file.failWrite(stream); throw e }
     }
     fun forget() {

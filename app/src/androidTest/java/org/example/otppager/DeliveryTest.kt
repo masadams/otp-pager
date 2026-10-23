@@ -63,4 +63,45 @@ class DeliveryTest {
             assertEquals(1L, b.state!!.getLong("high"))
         } finally { aStore.forget(); bStore.forget() }
     }
+    @Test fun padRetryBurnBeforeQueueUnreadAndRetirement() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val aStore = SecureStore(context, "pad-test-a"); val bStore = SecureStore(context, "pad-test-b")
+        aStore.forget(); bStore.forget(); aStore.sibling("pads").forget(); bStore.sibling("pads").forget()
+        val relay = FlakyRelay()
+        try {
+            val secret = Protocol.randomSecret()
+            var a = StationEngine(aStore, relay); var b = StationEngine(bStore, relay)
+            a.configure("https://pager.example.com", "t".repeat(43), secret, "A")
+            b.configure("https://pager.example.com", "t".repeat(43), secret, "B")
+            val bundle = a.generatePad(); b.installPad(bundle)
+            val id = a.state!!.getString("padId")
+            // Simulate death after a durable reservation, before queue encryption/commit.
+            PadLedger(aStore.sibling("pads")).reserve(id)
+            a = StationEngine(aStore, relay); a.send("PAD TRAFFIC")
+            assertEquals(2L, a.state!!.getLong("counter"))
+            assertEquals(125, a.view().padRemaining)
+            val original = a.state!!.getJSONArray("outbox").getJSONObject(0).getString("packet")
+            try { a.sync(); fail("Expected lost response") } catch (_: java.io.IOException) {}
+            a = StationEngine(aStore, relay); a.sync()
+            assertEquals(1, relay.packets.size); assertEquals(original, relay.packets.single().second)
+            b.sync(); assertEquals("PAD TRAFFIC", b.view().messages.single().text)
+            assertEquals(1, b.view().unread); assertEquals(126, b.view().padRemaining)
+            b = StationEngine(bStore, relay); assertEquals(1, b.view().unread)
+            b.markRead(); assertEquals(0, b.view().unread)
+            a.sync(); assertEquals("delivered", a.view().messages.single().status)
+            relay.packets.add(++relay.seq to original); b.sync(); assertEquals(1, b.view().messages.size)
+            assertEquals(126, b.view().padRemaining) // Replay does not consume another receipt slot.
+            b.clearHistory(); b = StationEngine(bStore, relay); assertEquals(126, b.view().padRemaining)
+            b.forget(); b.configure("https://pager.example.com", "t".repeat(43), secret, "B")
+            try { b.installPad(bundle); fail("Re-imported retired pad") } catch (_: IllegalArgumentException) {}
+            // Exhaust all remaining A slots without emitting a ciphertext. Never fall back to AES.
+            val ledger = PadLedger(aStore.sibling("pads"))
+            while (ledger.high(id) < PadProtocol.SLOTS) ledger.reserve(id)
+            a = StationEngine(aStore, relay)
+            try { a.send("must fail"); fail("Exhausted pad sent a message") } catch (_: IllegalStateException) {}
+            assertEquals(0, a.view().padRemaining)
+            bundle.fill(0)
+        } finally { aStore.forget(); bStore.forget(); aStore.sibling("pads").forget(); bStore.sibling("pads").forget() }
+    }
+
 }
