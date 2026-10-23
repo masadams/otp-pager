@@ -109,6 +109,22 @@ class CablePairTest {
             pool.shutdownNow(); stores.forEach { it.forget(); it.sibling("pads").forget() }
         }
     }
+    @Test fun oldPlaintextProtocolCannotDowngradeOrActivatePairing() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val store = SecureStore(context, "cable-downgrade")
+        store.forget(); store.sibling("pads").forget()
+        try {
+            val bytes = java.io.ByteArrayOutputStream()
+            val hello = "{\"kind\":\"hello\",\"version\":2}".toByteArray()
+            java.io.DataOutputStream(bytes).apply { writeInt(hello.size); write(hello) }
+            val output = java.io.ByteArrayOutputStream()
+            try {
+                CableProtocol.run(false, java.io.ByteArrayInputStream(bytes.toByteArray()), output, StationEngine(store), { _, _ -> fail("Old protocol reached review") }) {}
+                fail("Plaintext downgrade accepted")
+            } catch (expected: IllegalArgumentException) { assertTrue(expected.message!!.contains("Upgrade both devices")) }
+            assertEquals(0, output.size()); assertNull(store.load()); assertNull(store.sibling("pads").load())
+        } finally { store.forget(); store.sibling("pads").forget() }
+    }
     @Test fun stagedAndInterruptedPairingRetiresPadAndCannotSend() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val store = SecureStore(context, "cable-stage"); store.forget(); store.sibling("pads").forget()

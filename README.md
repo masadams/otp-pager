@@ -133,7 +133,8 @@ to Messages hides those tabs again. Unpaired chats keep their setup navigation.
 
 ### Android 0.8 development: encrypted USB and clearer setup
 
-Unpaired conversations explain the next step and offer a direct setup action. Sensitive
+Unpaired conversations explain the next step and offer a direct setup action.
+The normal UI requires a physical pad before sending, avoiding accidental AES test traffic. Sensitive
 input requests no personalized keyboard learning; Android 12+ hides application overlays
 on private activities and dialogs. These protections cannot secure a compromised keyboard,
 accessibility service or operating system.

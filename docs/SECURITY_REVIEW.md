@@ -11,6 +11,7 @@ certification or verification of the live Nginx/Portainer configuration.
 | Finding | Consequence | Change |
 | --- | --- | --- |
 | USB exposed pad/token/secret to passive cable capture | High, captured provisioning material compromises a chat | New version-3 provisioning uses ephemeral P-256 ECDH and HKDF-SHA256 directional AES-256-GCM keys. Both ephemeral public keys, identities, nonces and selected endpoint are bound into the physically compared code and signed approvals. Credentials, pad and completion frames are encrypted only after both approvals; strict counters, direction/transcript AAD and bounded binary records reject replay/reflection/tampering. Old plaintext pairing is rejected, with no downgrade. |
+| Normal UI allowed sending with only server/setup credentials | Misleading OTP readiness / accidental use of legacy AES test mode | Require a physical pad before enabling Send in the normal conversation UI and re-check in its worker action. Legacy engine decoding/queued packets remain compatible. |
 | Keyboard could learn sensitive input | Keyboard-dependent content retention | Request no personalized learning and no extract UI for message/setup/name fields. A malicious keyboard can still read typed text. |
 | Non-system overlays could obscure pairing/secret windows | Tapjacking / misleading prompts | Hide application overlays on Android 12+, including private dialogs; retain obscured-touch filtering and screenshot protection. System/accessibility overlays and compromised OS remain outside this protection. |
 

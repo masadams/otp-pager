@@ -99,6 +99,7 @@ class InterfaceTest {
             instrumentation.runOnMainSync {
                 val views = all(content(activity))
                 assertTrue(views.filterIsInstance<TextView>().any { it.text.toString() == "Make a private connection." })
+                assertFalse("Unpaired chat offered AES sending", views.filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
                 assertTrue(views.filterIsInstance<Button>().any { it.text.toString() == "Set up this chat" && it.isShown })
                 views.filterIsInstance<EditText>().forEach {
                     assertTrue(it.imeOptions and android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING != 0)

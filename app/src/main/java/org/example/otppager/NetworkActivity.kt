@@ -245,7 +245,7 @@ class NetworkActivity : Activity() {
         syncButton = button("Sync") { runTask(network = true) { syncChats() } }; composeActions.addView(syncButton)
         sendButton = button("Send", true) {
             val value = composer.text.toString()
-            runTask(clearComposer = true) { checkNotNull(engine).send(value); "QUEUED // saved safely; syncing" }
+            runTask(clearComposer = true) { check(checkNotNull(engine).view().padCheck != null) { "Pair a physical pad before sending" }; checkNotNull(engine).send(value); "QUEUED // saved safely; syncing" }
         }; composeActions.addView(sendButton); traffic.addView(composeActions)
         composer.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -587,7 +587,7 @@ class NetworkActivity : Activity() {
         chatButton.isEnabled = !value && book != null
         for (view in listOf(sendButton, saveButton, saveRelayButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
         syncButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && latest?.pairingComplete == true && !errorLoading
-        sendButton.isEnabled = !value && latest?.canSend == true && !errorLoading
+        sendButton.isEnabled = !value && latest?.canSend == true && latest?.padCheck != null && !errorLoading
         showQrButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && !errorLoading
         scanQrButton.isEnabled = !value && latest?.cableEligible == true && !errorLoading
         imageQrButton.isEnabled = scanQrButton.isEnabled
@@ -615,7 +615,7 @@ class NetworkActivity : Activity() {
         val security = when {
             v?.ownDevice != null && v.peerDevice == null -> "DEVICE EXCHANGE INCOMPLETE"
             v?.peerDevice != null -> "DEVICE VERIFIED"
-            v?.padCheck == null -> "AES TEST MODE"
+            v?.padCheck == null -> "PAD SETUP NEEDED"
             v.padVerified && v.peerReady -> "PAD READY"
             else -> "PAD CHECK NEEDED"
         }
@@ -686,7 +686,7 @@ class NetworkActivity : Activity() {
             "Last successful relay check: ${if (seconds < 60) "$seconds seconds" else "${seconds / 60} minutes"} ago"
         }
         AlertDialog.Builder(this).setTitle("Station ${v.role} · status")
-            .setMessage("$contact\n${if (connectionFailed) "Latest relay check failed" else "Connection is checked only while the app is open"}\n\n${v.pending} packets queued locally\n${v.awaitingReceipt} messages awaiting a saved receipt\n${v.unread} new messages\n\n${v.padRemaining?.let { "$it outgoing pad slots remaining" } ?: "AES-GCM test mode"}\n${if (v.peerDevice != null) "Peer device key pinned" else if (v.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "Device identity not bound"}\n\nPeer saved means the other device stored the message; it does not mean a person read it. Retrying uses the same encrypted packets and no new pad slots.\n\n${status.text}")
+            .setMessage("$contact\n${if (connectionFailed) "Latest relay check failed" else "Connection is checked only while the app is open"}\n\n${v.pending} packets queued locally\n${v.awaitingReceipt} messages awaiting a saved receipt\n${v.unread} new messages\n\n${v.padRemaining?.let { "$it outgoing pad slots remaining" } ?: "No pad installed · sending disabled"}\n${if (v.peerDevice != null) "Peer device key pinned" else if (v.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "Device identity not bound"}\n\nPeer saved means the other device stored the message; it does not mean a person read it. Retrying uses the same encrypted packets and no new pad slots.\n\n${status.text}")
             .setPositiveButton("Settings") { _, _ -> selectTab(1) }
             .setNegativeButton("Close", null)
             .setNeutralButton("Retry") { _, _ ->

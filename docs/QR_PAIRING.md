@@ -80,18 +80,25 @@ but has NOT been tested on physical USB devices here: virtual duplex-stream test
 verify the exchange, not actual cable compatibility, USB role switching or power.
 Failure to negotiate is reported and the manual/QR path remains available.
 
-The cable carries secrets directly. Use a trusted physical data cable and devices,
-not an untrusted USB hub/computer. The one 128-bit displayed confirmation code is
-SHA-256 of the domain-separated, length-prefixed identity transcript (both public
-keys, both random nonces and the selected relay endpoint), truncated to 16 bytes
+Version 3 (Android 0.8+) encrypts cable provisioning. Both devices must upgrade
+before a new USB pairing; older plaintext pairing is rejected with no downgrade.
+Existing paired chats are unchanged. Use a trusted physical data cable and devices. The one 128-bit displayed confirmation code is
+SHA-256 of the domain-separated, length-prefixed identity transcript (both device identity
+keys, both ephemeral P-256 keys, both random nonces and the selected relay endpoint), truncated to 16 bytes
 and displayed as eight hex groups. Compare every group. The relay token, fresh
 secret and pad are sent only AFTER both people confirm and both device acceptance
 signatures verify. A separate signed material transcript binds those verified keys,
 nonces, endpoint, credentials and complete pad bundle; the application verifies
 it automatically. ECDSA signatures use separate accept/server/setup/saved/complete
 labels. This is a project-specific, unaudited physical-exchange protocol, not a
-claim of a reviewed network key-exchange protocol. A malicious cable can observe
-the directly transferred secrets; code comparison does not encrypt the cable.
+claim of a reviewed network key-exchange protocol. Ephemeral P-256 ECDH and
+HKDF-SHA256 derive separate A-to-B and B-to-A AES-256-GCM keys. Credential, setup,
+saved and complete frames are encrypted with strict sequence counters and
+transcript/direction AAD; invalid lengths, sequence, authentication or I/O abort
+the session. This prevents passive plaintext capture, not endpoint compromise.
+Public endpoint/identity metadata and transfer sizes/timing remain visible.
+Conventional P-256 ECDH is not post-quantum: a future break could decrypt archived
+USB sessions. Do not describe the pad exchange as quantum-safe.
 
 Exposed pad IDs are durably retired on both devices before activation; retries
 use fresh secrets and pad material. A rejected/cancelled stage does not activate a

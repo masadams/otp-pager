@@ -28,7 +28,8 @@ object CableProtocol {
         .put("ephemeral", b64.encodeToString(ephemeral.public.encoded)).put("key", engine.cableIdentity()).put("nonce", b64.encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) }))
         .also { h -> engine.state?.let { h.put("endpoint", it.getString("endpoint")) } }
     private fun checkHello(h: JSONObject) {
-        require(h.getString("kind") == "hello" && h.getInt("version") == 3)
+        require(h.getString("kind") == "hello")
+        require(h.getInt("version") == 3) { "Upgrade both devices to 0.8 or later for encrypted USB pairing" }
         IdentityProtocol.publicKey(h.getString("ephemeral")); IdentityProtocol.publicKey(h.getString("key")); require(decoder.decode(h.getString("nonce")).size == 32)
         if (h.has("endpoint")) { Protocol.endpoint(h.getString("endpoint")) }
     }
