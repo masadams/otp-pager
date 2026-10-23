@@ -79,9 +79,8 @@ Docker **Standalone** is the target; Swarm/multiple replicas are not supported.
    Authorization headers and request bodies.
 7. Check `https://pager.yourdomain.ca/health` returns `{"status":"ok"}`.
 8. Install the APK from the successful **Android debug build** workflow's
-   `otp-pager-debug-apk` artifact. Enter your HTTPS URL, the relay token, the shared
-   pairing secret, and opposite A/B station roles. Use TEST LINK, then TRANSMIT
-   and RECEIVE in each direction. Health is only liveness; transmitting verifies
+   `otp-pager-debug-apk` artifact. On Link, enter your HTTPS URL, relay token, shared
+   pairing secret, and opposite A/B station roles. Use Save & connect, then Send and Sync in each direction. Health is only liveness; transmitting verifies
    writable storage. Pairing secret entry remains manual and in person.
 
 For updates use Portainer **Pull and redeploy**, with **Re-pull image** enabled.
@@ -137,11 +136,10 @@ Self-signed certificates and HTTP URLs are intentionally not accepted by the APK
 - Expiry is logical deletion, not forensic erasure of flash, volumes or backups.
 - Single operator token is for a small private prototype, not multi-user hosting.
   Rotate by changing the environment variable, redeploying, and updating both phones.
-- This is polling via RECEIVE, not push delivery. No background notifications,
-  client outbox, durable client replay protection or delivery receipts yet. Keep
-  the pairing secret for a test session; closing the app requires re-entry and
-  can display old messages again. A timeout after sending can mean the packet was
-  committed; retrying may create a duplicate.
+- The v0.2 APK syncs every 15 seconds while open, with a durable outbox,
+  encrypted pairing storage, persistent replay protection and encrypted delivery
+  receipts. There is no background delivery. See [HARDENING.md](HARDENING.md) for
+  upgrade requirements, expiry and endpoint limitations.
 
 ## Optional private network
 
@@ -166,3 +164,11 @@ References:
 - https://nebula.defined.net/docs/guides/quick-start/
 - https://developer.android.com/develop/connectivity/vpn
 - https://docs.portainer.io/user/docker/stacks/add
+
+## v0.2 upgrade and edge protection
+
+Update the relay and both APKs; see [HARDENING.md](HARDENING.md). Existing volume
+contents migrate in place. The Android client now requires relay protocol 2.
+For Nginx Proxy Manager rate limits, the repository includes separate HTTP-context
+and Proxy Host snippets in `deploy/npm-*.conf.example`; they must be applied to
+your running proxy by its operator. The relay image alone cannot install them.

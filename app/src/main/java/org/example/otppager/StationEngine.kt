@@ -7,7 +7,7 @@ import org.json.JSONObject
 class StationEngine(private val store: SecureStore) {
     var state: JSONObject? = store.load()
         private set
-    init { state?.let(::validate) }
+    init { state?.let { validate(it); transaction(::prune) } }
     private fun validate(s: JSONObject) {
         check(s.getInt("version") == 2)
         Protocol.endpoint(s.getString("endpoint")); Protocol.token(s.getString("token"))

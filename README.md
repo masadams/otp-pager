@@ -1,6 +1,6 @@
 # OTP Pager
 
-Experimental, open-source, physically paired text messenger. Android is the first development target; a dedicated ESP32-S3/T-Deck Pro handheld is the long-term goal.
+Experimental, open-source, physically paired text messenger. Android, including Android e-ink readers, is the primary target. Dedicated handhelds remain an optional future target.
 
 > **Security status: NOT AUDITED. NOT READY FOR SENSITIVE COMMUNICATIONS.** This repository begins with specifications and testable scaffolding, not a claim of secure or Jericho-compatible messaging.
 
@@ -30,3 +30,10 @@ No project-wide code license has been selected yet. Do not copy Jericho source i
 See [Docker / Portainer + Nginx setup](docs/DEPLOYMENT.md) and
 [two-device testing](docs/TWO_DEVICE_TEST.md). The Android field terminal currently
 uses experimental AES-GCM; true OTP and Jericho compatibility remain future work.
+
+## Android v0.2 hardening
+
+See [security boundaries, upgrades, delivery and e-ink behavior](docs/HARDENING.md).
+The new Messages/Link interface adds Keystore-encrypted pairing storage, a durable
+outbox, authenticated delivery receipts and persistent replay protection. Update
+the relay and **both** APKs together; legacy v0.1 messages are not imported.

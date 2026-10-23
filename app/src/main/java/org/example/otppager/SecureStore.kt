@@ -14,7 +14,8 @@ import javax.crypto.spec.GCMParameterSpec
 
 /** One encrypted, atomic snapshot: pairing, counters, inbox and outbox commit together. */
 class SecureStore(context: Context) {
-    private val file = AtomicFile(File(context.noBackupFilesDir, "station-v2.bin"))
+    private val base = File(context.noBackupFilesDir, "station-v2.bin")
+    private val file = AtomicFile(base)
     private val alias = "otp-pager-station-v2"
     private val aad = "OTP Pager local vault v2".toByteArray()
     private fun key(create: Boolean): SecretKey {
@@ -30,7 +31,9 @@ class SecureStore(context: Context) {
         }
     }
     fun load(): JSONObject? {
-        val bytes = try { file.readFully() } catch (e: java.io.FileNotFoundException) { return null }
+        if (!base.exists() && !File(base.path + ".bak").exists() && !File(base.path + ".new").exists()) return null
+        // Permission errors, a damaged path, and interrupted writes are not a new pairing.
+        val bytes = file.readFully()
         require(bytes.size >= 29 && bytes[0] == 2.toByte()) { "Local vault damaged" }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, key(false), GCMParameterSpec(128, bytes.copyOfRange(1, 13)))

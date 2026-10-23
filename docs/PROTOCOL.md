@@ -1,3 +1,27 @@
+# Current transport: v0.2 AES-GCM
+
+The original OTP sketch below is future work. Current shipped transport is a
+versioned AES-GCM prototype; see [HARDENING.md](HARDENING.md).
+
+Frame, in network byte order: `version=2 (1 byte) | sender=A/B (1 byte) |
+counter (8 bytes, positive signed-long range) | random id (16 bytes) |
+random GCM nonce (12 bytes) | ciphertext | GCM tag (16 bytes)`.
+The complete 38-byte header is authenticated AAD. Keys are HKDF-SHA256:
+extract salt `OTP Pager / protocol v2`, input 32-byte pairing secret; expand info
+`message:A` or `message:B`, length 32 bytes. Payload is UTF-8 JSON: text
+`{"kind":"text","text":"..."}` or delivery `{"kind":"receipt","for":"<32 hex id>"}`.
+A shared deterministic vector is in `test-vectors/protocol-v2.properties`.
+
+The recipient authenticates before advancing its persisted 4,096-counter replay
+window. Inbox/cursor/replay state/receipt queue commit together in the local vault.
+Send counter allocation and wire ciphertext commit before upload; retries reuse
+that exact wire packet. Relay API remains `/v1/mailbox/<room>` for compatibility,
+with `protocol:2`, durable `epoch`, and `limit=1..50` pagination on GET. Duplicate
+POST wire bytes return the existing sequence with HTTP 200; new packets return 201.
+Existing schema-v1 relay volumes migrate without dropping queued traffic.
+
+---
+
 # Protocol sketch — NOT IMPLEMENTED OR AUDITED
 
 This is a requirements sketch, **not a finalized cryptographic protocol**.
@@ -27,3 +51,4 @@ A relay stores opaque authenticated ciphertext envelopes, with no plaintext or k
 
 ## Compatibility gate
 Do not assert compatibility with Jericho until independent message vectors and actual cross-client exchange succeed.
+

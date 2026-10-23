@@ -25,7 +25,7 @@ class ProtocolTest {
         }
     }
     @Test fun sharedWireVectorMatchesNode() {
-        val fixture = java.util.Properties().apply { load(javaClass.getResourceAsStream("/protocol-v2.properties")) }
+        val fixture = java.util.Properties().apply { load(ProtocolTest::class.java.getResourceAsStream("/protocol-v2.properties")) }
         val bytes = fixture.getProperty("master").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
         val opened = Protocol.open(bytes, fixture.getProperty("wire"), 'A')
         assertEquals(fixture.getProperty("payload"), opened.payload)

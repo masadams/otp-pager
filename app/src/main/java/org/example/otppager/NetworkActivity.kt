@@ -191,7 +191,7 @@ class NetworkActivity : Activity() {
         saveButton = button("Save & connect", true) {
             val endpoint = urlField.text.toString(); val token = tokenField.text.toString().trim()
             val secret = secretField.text.toString().trim(); val role = if (roleGroup.checkedRadioButtonId == 101) "A" else "B"
-            runTask { checkNotNull(engine).configure(endpoint, token, secret, role); "LINK SAVED // checking relay" }
+            runTask { checkNotNull(engine).configure(endpoint, token, secret, role); checkNotNull(engine).sync() }
         }; settings.addView(saveButton)
         pairingCode = text("NOT PAIRED", 12f, green, true).apply { setPadding(0, dp(20), 0, dp(12)) }; settings.addView(pairingCode)
         settings.addView(text("Compare this pair-check code on both devices in person. Matching codes confirm the same secret; they do not confirm the server is honest.", 12f, muted))
