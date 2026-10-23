@@ -15,7 +15,6 @@ import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class InterfaceTest {
@@ -52,9 +51,17 @@ class InterfaceTest {
                     // Draw our own view tree, keeping FLAG_SECURE enabled. No real pairing data.
                     val image = Bitmap.createBitmap(content.width, content.height, Bitmap.Config.ARGB_8888)
                     content.draw(Canvas(image))
-                    val target = File(context.getExternalFilesDir(null), "screenshots/$name.png")
-                    target.parentFile!!.mkdirs()
-                    target.outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }; image.recycle()
+                    // MediaStore downloads survive the test runner uninstalling the target APK.
+                    if (android.os.Build.VERSION.SDK_INT >= 29) {
+                        val values = android.content.ContentValues().apply {
+                            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, "$name.png")
+                            put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/png")
+                            put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, "Download/otp-pager-preview")
+                        }
+                        val uri = context.contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)!!
+                        context.contentResolver.openOutputStream(uri)!!.use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                    }
+                    image.recycle()
                 }
                 capture("messages")
                 all(content).filterIsInstance<Button>().first { it.text.toString() == "Link" }.performClick()

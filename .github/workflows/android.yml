@@ -47,7 +47,7 @@ jobs:
           disable-animations: true
           script: |
             gradle --no-daemon :app:connectedDebugAndroidTest
-            adb pull /sdcard/Android/data/org.example.otppager/files/screenshots app/build/screenshots
+            adb pull /sdcard/Download/otp-pager-preview app/build/screenshots
       - uses: actions/upload-artifact@v4
         if: always()
         with:
