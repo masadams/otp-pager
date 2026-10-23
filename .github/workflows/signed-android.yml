@@ -25,7 +25,10 @@ jobs:
           gradle-version: '8.9'
           cache-disabled: true # Privileged signing build consumes no PR-populated Gradle cache.
       - name: Install platform and signature verification tools
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: |
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$ANDROID_HOME/platform-tools" >> "$GITHUB_PATH"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
       - name: Build and verify with the pinned owner key
         env:
           OTP_SIGNING_KEYSTORE_B64: ${{ secrets.ANDROID_SIGNING_KEYSTORE }}

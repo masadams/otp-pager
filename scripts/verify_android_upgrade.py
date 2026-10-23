@@ -6,7 +6,7 @@ import shutil
 import subprocess
 import tempfile
 
-from android_signing import ALIAS, PACKAGE, certificate, generate, inspect_apk, run, sdk_tool, verify_update
+from android_signing import ALIAS, PACKAGE, build_release, certificate, generate, inspect_apk, run, sdk_tool, verify_update
 
 
 def instrument(phase):
@@ -31,19 +31,32 @@ def main():
         store = root / "test.p12"; generate(store, password)
         signer = certificate(store, password)
         env = dict(os.environ, OTP_SIGNING_STORE_FILE=str(store), OTP_SIGNING_STORE_PASSWORD=password)
-        apks = []
-        for version in (800001, 800002):
-            subprocess.run(["gradle", "--no-daemon", "-PupgradeVerification=true", f"-PverificationVersionCode={version}",
-                            ":app:assembleRelease", ":app:assembleReleaseAndroidTest"], env=env, check=True)
-            apk = root / f"build-{version}.apk"
-            shutil.copyfile("app/build/outputs/apk/release/app-release.apk", apk)
-            info = inspect_apk(apk)
-            assert info["version_code"] == version and info["certificate_sha256"] == signer
-            apks.append(apk)
-            if version == 800001:
-                run(["adb", "install", apk])
-                run(["adb", "install", "-t", "app/build/outputs/apk/androidTest/release/app-release-androidTest.apk"])
-                instrument("seed")
+        # Exercise the exact production signing/verification path with disposable credentials.
+        production_env = dict(OTP_SIGNING_KEYSTORE_B64=base64.b64encode(store.read_bytes()).decode(),
+                              OTP_SIGNING_PASSWORD=password, OTP_SIGNING_CERT_SHA256=signer)
+        prior_env = {key: os.environ.get(key) for key in production_env}
+        try:
+            os.environ.update(production_env)
+            build_release()
+        finally:
+            for key, value in prior_env.items():
+                if value is None: os.environ.pop(key, None)
+                else: os.environ[key] = value
+        first_apk = root / "first.apk"
+        shutil.copyfile("app/build/outputs/apk/release/app-release.apk", first_apk)
+        initial_version = inspect_apk(first_apk)["version_code"]
+        subprocess.run(["gradle", "--no-daemon", "-PupgradeVerification=true", f"-PverificationVersionCode={initial_version}",
+                        ":app:assembleReleaseAndroidTest"], env=env, check=True)
+        run(["adb", "install", first_apk])
+        run(["adb", "install", "-t", "app/build/outputs/apk/androidTest/release/app-release-androidTest.apk"])
+        instrument("seed")
+        subprocess.run(["gradle", "--no-daemon", "-PupgradeVerification=true", f"-PverificationVersionCode={initial_version + 1}",
+                        ":app:assembleRelease"], env=env, check=True)
+        second_apk = root / "second.apk"
+        shutil.copyfile("app/build/outputs/apk/release/app-release.apk", second_apk)
+        info = inspect_apk(second_apk)
+        assert info["version_code"] == initial_version + 1 and info["certificate_sha256"] == signer
+        apks = [first_apk, second_apk]
         verify_update(apks[0], apks[1], signer)
         run(["adb", "shell", "am", "force-stop", PACKAGE])
         run(["adb", "install", "-r", apks[1]])
