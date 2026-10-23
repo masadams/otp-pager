@@ -63,7 +63,7 @@ class NetworkActivity : Activity() {
     private val lineColor = Color.rgb(215, 217, 205)
     private val poll = object : Runnable {
         override fun run() {
-            if (active && unlocked && automatic && !busy && !errorLoading) runTask { engine?.let { it.sync() } ?: "OPEN LINK TO PAIR" }
+            if (active && unlocked && automatic && !busy && !errorLoading && latest != null && latest?.role != "—") runTask { engine?.let { it.sync() } ?: "OPEN LINK TO PAIR" }
             else if (active && unlocked) handler.postDelayed(this, 5000)
         }
     }

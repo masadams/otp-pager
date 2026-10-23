@@ -7,6 +7,8 @@ import org.json.JSONObject
 class StationEngine(private val store: SecureStore, private val relay: RelayTransport = RelayClient) {
     var state: JSONObject? = store.load()
         private set
+    private var cachedView: View? = null
+    private var cacheExpiry = 0L
     init { state?.let { validate(it); transaction(::prune) } }
     private fun validate(s: JSONObject) {
         check(s.getInt("version") == 2)
@@ -19,7 +21,9 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     }
     private fun transaction(change: (JSONObject) -> Unit) {
         val next = JSONObject(checkNotNull(state).toString())
-        change(next); validate(next); store.save(next); state = next
+        change(next); validate(next)
+        if (next.toString() == state!!.toString()) return
+        store.save(next); state = next; cachedView = null
     }
     fun configure(endpoint: String, token: String, secret: String, role: String) {
         val url = Protocol.endpoint(endpoint); val access = Protocol.token(token)
@@ -33,9 +37,9 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             .put("high", 0L).put("seen", JSONArray()).put("outbox", JSONArray()).put("inbox", JSONArray()).put("epoch", "")
         if (previous != null && previous.getString("endpoint") != url) next.put("cursor", 0L).put("epoch", "")
         next.put("endpoint", url).put("token", access)
-        store.save(next); state = next
+        store.save(next); state = next; cachedView = null
     }
-    fun forget() { store.forget(); state = null }
+    fun forget() { store.forget(); state = null; cachedView = null }
     private fun window(s: JSONObject): ReplayWindow {
         val seen = s.getJSONArray("seen")
         return ReplayWindow(s.getLong("high"), (0 until seen.length()).map { seen.getLong(it) }.toSet())
@@ -77,6 +81,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         // Do not clear the counter or replay window when removing message history.
     }
     fun sync(): String {
+        if (state != null) transaction(::prune)
         val s = checkNotNull(state) { "Save your link settings first" }
         val master = Protocol.master(s.getString("secret"))
         var ignored = 0
@@ -136,6 +141,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long)
     data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int)
     fun view(): View {
+        cachedView?.let { if (System.currentTimeMillis() < cacheExpiry) return it }
         val s = state ?: return View("—", "NOT PAIRED", emptyList(), 0)
         val master = Protocol.master(s.getString("secret"))
         return try {
@@ -151,8 +157,9 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
                 val text = JSONObject(Protocol.open(master, entry.getString("packet"), own).payload).getString("text")
                 rows.add(Message(false, text, entry.getString("status"), entry.getLong("time")))
             }
+            cacheExpiry = rows.minOfOrNull { it.time + 86400000L } ?: Long.MAX_VALUE
             View(own.toString(), Protocol.fingerprint(master), rows.sortedBy { it.time }.takeLast(100),
-                items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" })
+                items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" }).also { cachedView = it }
         } finally { master.fill(0) }
     }
 }

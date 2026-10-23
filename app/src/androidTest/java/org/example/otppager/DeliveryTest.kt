@@ -43,6 +43,12 @@ class DeliveryTest {
             assertEquals(original, a.state!!.getJSONArray("outbox").getJSONObject(0).getString("packet"))
             a.sync(); assertEquals(1, relay.packets.size) // Same wire bytes, no duplicate.
             assertEquals("relayed", a.view().messages.single().status)
+            a.sync() // First read of our own newly uploaded packet advances the transport cursor.
+            val stableVault = java.io.File(context.noBackupFilesDir, "test-a.bin").readBytes()
+            val stableView = a.view()
+            a.sync()
+            assertArrayEquals(stableVault, java.io.File(context.noBackupFilesDir, "test-a.bin").readBytes())
+            assertSame(stableView, a.view()) // Idle polling neither rewrites the vault nor decrypts history again.
             b.sync(); assertEquals("MEET AT 2200", b.view().messages.single().text)
             b = StationEngine(bStore, relay)
             a.sync(); a = StationEngine(aStore, relay)

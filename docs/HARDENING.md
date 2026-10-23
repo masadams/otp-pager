@@ -59,7 +59,8 @@ pairing; physical key rotation and eventual OTP work remain separate milestones.
   delivery stops. Manual Sync remains available when automatic sync is off.
 - White backgrounds, black text/borders, no custom animation, stable message views,
   separate Messages and Link screens. Idle polling does not reconstruct the
-  conversation. Actual e-ink ghosting, refresh behavior and battery cost still
+  conversation or rewrite an unchanged vault. Decrypted view state is cached only
+  for the foreground session. Actual e-ink ghosting, refresh behavior and battery cost still
   need measurement on the user's Android e-ink device.
 
 ## Bounds and retention
