@@ -8,7 +8,6 @@ import android.view.WindowManager
 import android.graphics.Color
 import android.graphics.Typeface
 import android.widget.*
-import android.view.ViewGroup
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 import java.security.SecureRandom
@@ -96,6 +95,9 @@ class NetworkActivity : Activity() {
         if (!Regex("^[A-Za-z0-9_-]{43,128}$").matches(token)) {
             report("ERROR: ENTER RELAY ACCESS TOKEN"); return
         }
+        if (send && msg.toByteArray(Charsets.UTF_8).size !in 1..2048) {
+            report("ERROR: MESSAGE MUST BE 1–2048 UTF-8 BYTES"); return
+        }
         worker.execute {
             var master = ByteArray(0)
             try {
@@ -157,10 +159,10 @@ class NetworkActivity : Activity() {
         conn.setRequestProperty("Authorization", "Bearer $token")
         conn.requestMethod = method; conn.connectTimeout = 10000; conn.readTimeout = 10000
         return try {
-          if (body != null) {
-            conn.doOutput = true; conn.setRequestProperty("Content-Type", "application/json")
-            conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
-        }
+            if (body != null) {
+                conn.doOutput = true; conn.setRequestProperty("Content-Type", "application/json")
+                conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            }
             val status = conn.responseCode
             if (status !in 200..299) error("HTTP $status")
             conn.inputStream.bufferedReader().use { it.readText() }
