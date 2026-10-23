@@ -90,7 +90,10 @@ class NetworkActivity : Activity() {
         this.hint = hint; textSize = 15f; setTextColor(ink); setHintTextColor(muted)
         typeface = Typeface.MONOSPACE
         inputType = InputType.TYPE_CLASS_TEXT or if (password) InputType.TYPE_TEXT_VARIATION_PASSWORD else InputType.TYPE_TEXT_VARIATION_URI
-        setSingleLine(true); setPadding(dp(12), dp(12), dp(12), dp(12))
+        setSingleLine(true)
+        // setSingleLine installs a transformation; restore password masking afterward.
+        if (password) transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()
+        setPadding(dp(12), dp(12), dp(12), dp(12))
         background = surface(Color.WHITE, 6, lineColor)
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
         isSaveEnabled = false; filterTouchesWhenObscured = true
@@ -146,7 +149,7 @@ class NetworkActivity : Activity() {
         tabs.addView(trafficTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(linkTab, LinearLayout.LayoutParams(0, -2, 1f)); root.addView(tabs)
         status = text("Opening station…", 11f, muted, true).apply { setPadding(dp(2), dp(4), 0, dp(10)) }; root.addView(status)
         traffic = column()
-        messageScroll = ScrollView(this).apply { isFillViewport = true }
+        messageScroll = ScrollView(this).apply { isFillViewport = true; isVerticalScrollBarEnabled = false }
         messages = column().apply { setPadding(0, dp(8), 0, dp(12)) }; messageScroll.addView(messages)
         traffic.addView(messageScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         composer = field("Write a message…").apply {
@@ -211,7 +214,7 @@ class NetworkActivity : Activity() {
         } })
         if (!getSystemService(KeyguardManager::class.java).isDeviceSecure)
             settings.addView(text("Set an Android screen lock to enable station unlock protection.", 12f, muted))
-        linkScroll = ScrollView(this).apply { addView(settings) }
+        linkScroll = ScrollView(this).apply { isVerticalScrollBarEnabled = false; addView(settings) }
         root.addView(traffic, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(linkScroll, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root); root.requestApplyInsets(); selectTab(tab)
         runTask(load = true) { engine = StationEngine(SecureStore(this)); "STATION READY" }

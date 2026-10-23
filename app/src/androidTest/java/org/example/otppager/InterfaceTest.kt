@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.text.method.PasswordTransformationMethod
 import android.widget.Button
 import android.widget.Switch
 import android.widget.TextView
@@ -47,6 +49,11 @@ class InterfaceTest {
             assertTrue("Station UI did not load", ready)
             instrumentation.runOnMainSync {
                 all(content).filterIsInstance<Switch>().forEach { it.isChecked = false }
+                val credentialFields = all(content).filterIsInstance<EditText>().filter {
+                    it.hint.toString() == "Relay access token" || it.hint.toString() == "43-character pairing secret"
+                }
+                assertEquals(2, credentialFields.size)
+                credentialFields.forEach { assertTrue("Credential field must be masked", it.transformationMethod is PasswordTransformationMethod) }
                 fun capture(name: String) {
                     // Draw our own view tree, keeping FLAG_SECURE enabled. No real pairing data.
                     val image = Bitmap.createBitmap(content.width, content.height, Bitmap.Config.ARGB_8888)
