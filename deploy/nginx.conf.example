@@ -1,5 +1,6 @@
 # Place limit_req_zone in the http {} context (not server/location).
 limit_req_zone $binary_remote_addr zone=otp_pager:10m rate=5r/s;
+limit_conn_zone $binary_remote_addr zone=otp_connections:10m;
 
 server {
     listen 443 ssl;
@@ -7,6 +8,11 @@ server {
     ssl_certificate /etc/letsencrypt/live/pager.example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/pager.example.com/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
+    server_tokens off;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    limit_conn otp_connections 10;
+    client_header_timeout 10s;
+    keepalive_timeout 15s;
     client_max_body_size 16k;
     client_body_timeout 10s;
     # Mailbox IDs are sensitive metadata; avoid normal URI access logging.

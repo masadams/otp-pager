@@ -1,0 +1,57 @@
+package org.example.otppager
+
+import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.AtomicFile
+import org.json.JSONObject
+import java.io.File
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+
+/** One encrypted, atomic snapshot: pairing, counters, inbox and outbox commit together. */
+class SecureStore(context: Context) {
+    private val file = AtomicFile(File(context.noBackupFilesDir, "station-v2.bin"))
+    private val alias = "otp-pager-station-v2"
+    private val aad = "OTP Pager local vault v2".toByteArray()
+    private fun key(create: Boolean): SecretKey {
+        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val existing = store.getKey(alias, null) as SecretKey?
+        if (existing != null) return existing
+        check(create) { "Local encryption key unavailable; forget pairing and pair again" }
+        return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").run {
+            init(KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                .setKeySize(256).setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build())
+            generateKey()
+        }
+    }
+    fun load(): JSONObject? {
+        val bytes = try { file.readFully() } catch (e: java.io.FileNotFoundException) { return null }
+        require(bytes.size >= 29 && bytes[0] == 2.toByte()) { "Local vault damaged" }
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.DECRYPT_MODE, key(false), GCMParameterSpec(128, bytes.copyOfRange(1, 13)))
+        cipher.updateAAD(aad)
+        val clear = cipher.doFinal(bytes.copyOfRange(13, bytes.size))
+        return try { JSONObject(String(clear, Charsets.UTF_8)).also { check(it.getInt("version") == 2) } }
+        finally { clear.fill(0) }
+    }
+    fun save(state: JSONObject) {
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(Cipher.ENCRYPT_MODE, key(true)); cipher.updateAAD(aad)
+        val clear = state.toString().toByteArray(Charsets.UTF_8)
+        val encrypted = try { byteArrayOf(2) + cipher.iv + cipher.doFinal(clear) } finally { clear.fill(0) }
+        val stream = file.startWrite()
+        try { stream.write(encrypted); file.finishWrite(stream) }
+        catch (e: Exception) { file.failWrite(stream); throw e }
+    }
+    fun forget() {
+        // Invalidate the key first: if the process dies, old data cannot be reopened.
+        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        store.deleteEntry(alias)
+        file.delete()
+    }
+}
