@@ -11,6 +11,7 @@ import java.util.Base64
 
 /** Physical cable transport; identity is authenticated by comparing the displayed transcript code. */
 object CableProtocol {
+    class UpgradeRequired : IllegalArgumentException("Upgrade both devices to 0.8 or later for encrypted USB pairing")
     private const val LIMIT = 4096 // Public hello/approval frames only; encrypted material has a separate bound.
     private fun hash(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes)
     private val b64 = Base64.getEncoder()
@@ -29,7 +30,7 @@ object CableProtocol {
         .also { h -> engine.state?.let { h.put("endpoint", it.getString("endpoint")) } }
     private fun checkHello(h: JSONObject) {
         require(h.getString("kind") == "hello")
-        require(h.getInt("version") == 3) { "Upgrade both devices to 0.8 or later for encrypted USB pairing" }
+        if (h.getInt("version") != 3) throw UpgradeRequired()
         IdentityProtocol.publicKey(h.getString("ephemeral")); IdentityProtocol.publicKey(h.getString("key")); require(decoder.decode(h.getString("nonce")).size == 32)
         if (h.has("endpoint")) { Protocol.endpoint(h.getString("endpoint")) }
     }

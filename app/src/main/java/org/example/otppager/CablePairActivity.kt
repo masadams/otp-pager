@@ -124,9 +124,10 @@ class CablePairActivity : Activity() {
                     }, progress = ::note)
                 }
                 runOnUiThread { if (active && !cancelled.get()) { finish.text = "Done · open messages"; confirm.isEnabled = false } }
-            } catch (_: Exception) {
+            } catch (failure: Exception) {
                 val saved = engine?.state?.has("pad") == true
-                note(if (saved) "Connection interrupted after saving locally. Keep both devices offline and start a FRESH pairing on BOTH before use; do not reuse the transferred pad."
+                note(if (failure is CableProtocol.UpgradeRequired) "${failure.message}. Close this screen and update both devices before retrying."
+                    else if (saved) "Connection interrupted after saving locally. Keep both devices offline and start a FRESH pairing on BOTH before use; do not reuse the transferred pad."
                     else "Pairing did not finish. No link was activated here. Close and retry; any exposed pad is retired automatically.")
                 runOnUiThread { confirm.isEnabled = false }
             } finally { channel?.close(); channel = null; confirmation = null }

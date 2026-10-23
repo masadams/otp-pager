@@ -45,6 +45,15 @@ class CableSessionTest {
             } }
         }
     }
+    @Test fun independentPythonEcdhHkdfAndFrameVector() {
+        val v = java.util.Properties().apply { load(CableSessionTest::class.java.getResourceAsStream("/cable-v3.properties")) }
+        fun bytes(name: String) = Base64.getDecoder().decode(v.getProperty(name))
+        val privateKey = java.security.KeyFactory.getInstance("EC").generatePrivate(java.security.spec.PKCS8EncodedKeySpec(bytes("privateA")))
+        val own = java.security.KeyPair(IdentityProtocol.publicKey(v.getProperty("publicA")), privateKey)
+        CableSession.establish(true, own, v.getProperty("publicB"), bytes("transcript")).use {
+            assertArrayEquals(bytes("wire"), wire(it, bytes("plaintext")))
+        }
+    }
     @Test fun outputFailureCannotReuseSessionOrNonce() {
         val (a, b) = sessions()
         a.use { b.use {

@@ -110,6 +110,6 @@ Completed pairings hide administrative navigation from the normal conversation.
 Chat settings remains available through the picker/status panel; this is a layout
 choice, not an authorization boundary. Tests verify both hiding and access to settings.
 
-0.8 regression additions cover encrypted large USB transfer in both directions, wire capture without setup secrets, tag/sequence/transcript changes, reflection, truncation, oversized lengths, replay and session invalidation after failed writes. Test execution must be verified in CI before release.
+0.8 regression additions include an independent Python ECDH/HKDF/AES-GCM frame vector and cover encrypted large USB transfer in both directions, wire capture without setup secrets, tag/sequence/transcript changes, reflection, truncation, oversized lengths, replay and session invalidation after failed writes. Test execution must be verified in CI before release.
 
 References: https://www.rfc-editor.org/rfc/rfc5869.html ; https://developer.android.com/security/fraud-prevention/activities ; https://developer.android.com/reference/android/view/inputmethod/EditorInfo#IME_FLAG_NO_PERSONALIZED_LEARNING
