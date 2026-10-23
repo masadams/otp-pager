@@ -1,0 +1,32 @@
+# Build the image first; see docs/DEPLOYMENT.md. Docker Standalone stack.
+services:
+  relay:
+    image: ${RELAY_IMAGE:-otp-pager-relay:local}
+    restart: unless-stopped
+    init: true
+    environment:
+      RELAY_TOKEN: ${RELAY_TOKEN:?Set a random relay access token}
+      DATA_DIR: /data
+    expose:
+      - '8080'
+    volumes:
+      - relay-data:/data
+    networks:
+      proxy:
+        aliases: [otp-pager-relay]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
+volumes:
+  relay-data:
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK:-proxy}

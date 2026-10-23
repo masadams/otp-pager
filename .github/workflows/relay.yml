@@ -3,6 +3,7 @@ on:
   push:
     branches: [main, feat/two-device-relay]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -15,3 +16,39 @@ jobs:
           node-version: '22'
       - run: npm test
         working-directory: relay
+      - name: Validate stack syntax and build image
+        env:
+          RELAY_TOKEN: CI-placeholder-only-xxxxxxxxxxxxxxxxxxxxxxxxx
+        run: |
+          docker compose config --quiet
+          docker compose -f deploy/portainer-stack.yml config --quiet
+          docker build -t otp-pager-relay:local ./relay
+      - name: Container smoke test with persistent volume
+        shell: bash
+        run: |
+          set -euo pipefail
+          export RELAY_TOKEN="$(node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))")"
+          trap 'docker compose down -v' EXIT
+          docker compose up -d --wait
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const base = 'http://127.0.0.1:8080/v1/mailbox/' + 'a'.repeat(64);
+          const headers = { Authorization: 'Bearer ' + process.env.RELAY_TOKEN, 'Content-Type': 'application/json' };
+          assert.equal((await fetch(base)).status, 401);
+          assert.equal((await fetch(base, { method: 'POST', headers, body: JSON.stringify({packet:'YQ=='}) })).status, 201);
+          JS
+          docker compose restart relay
+          docker compose up -d --wait
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const response = await fetch('http://127.0.0.1:8080/v1/mailbox/' + 'a'.repeat(64), {
+            headers: { Authorization: 'Bearer ' + process.env.RELAY_TOKEN }
+          });
+          assert.deepEqual((await response.json()).messages, [{seq:1, packet:'YQ=='}]);
+          JS
+      - run: docker save -o relay-image.tar otp-pager-relay:local
+      - uses: actions/upload-artifact@v4
+        with:
+          name: otp-pager-relay-image
+          path: relay-image.tar
+          retention-days: 7

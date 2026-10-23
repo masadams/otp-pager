@@ -2,7 +2,8 @@ package org.example.otppager
 
 import android.app.Activity
 import android.os.Bundle
-import android.os.StrictMode
+import android.text.InputType
+import android.view.View
 import android.view.WindowManager
 import android.graphics.Color
 import android.graphics.Typeface
@@ -24,11 +25,13 @@ class NetworkActivity : Activity() {
     private val worker = Executors.newSingleThreadExecutor()
     private val rng = SecureRandom()
     private lateinit var urlField: EditText
+    private lateinit var tokenField: EditText
     private lateinit var secretField: EditText
     private lateinit var messageField: EditText
     private lateinit var log: TextView
     private lateinit var station: Spinner
     private var cursor = 0L
+    private var linkIdentity = ""
     private val seen = mutableSetOf<String>()
     private val bg = Color.rgb(14, 24, 17)
     private val fg = Color.rgb(169, 219, 158)
@@ -55,7 +58,15 @@ class NetworkActivity : Activity() {
         layout.addView(line("STATION LINK  //  EXPERIMENTAL AES-GCM"))
         urlField = field("HTTPS RELAY URL").apply { setText("https://") }
         layout.addView(urlField)
-        secretField = field("SHARED SECRET (BASE64 URL SAFE)")
+        tokenField = field("RELAY ACCESS TOKEN").apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+        }
+        layout.addView(tokenField)
+        secretField = field("SHARED SECRET (BASE64 URL SAFE)").apply {
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+        }
         layout.addView(secretField)
         layout.addView(button("GENERATE PAIRING SECRET") {
             val key = ByteArray(32).also(rng::nextBytes)
@@ -67,6 +78,7 @@ class NetworkActivity : Activity() {
         layout.addView(station)
         messageField = field("MESSAGE")
         layout.addView(messageField)
+        layout.addView(button("TEST LINK") { perform(false, true) })
         layout.addView(button("TRANSMIT") { perform(true) })
         layout.addView(button("RECEIVE") { perform(false) })
         log = line("READY. NOT FOR SECRETS.")
@@ -74,12 +86,16 @@ class NetworkActivity : Activity() {
         setContentView(ScrollView(this).apply { addView(layout) })
     }
     private fun report(value: String) = runOnUiThread { log.text = value }
-    private fun perform(send: Boolean) {
+    private fun perform(send: Boolean, testOnly: Boolean = false) {
         val endpoint = urlField.text.toString().trim().trimEnd('/')
+        val token = tokenField.text.toString().trim()
         val secret = secretField.text.toString().trim()
         val msg = messageField.text.toString()
         val role = station.selectedItemPosition
         if (!endpoint.startsWith("https://")) { report("ERROR: HTTPS REQUIRED"); return }
+        if (!Regex("^[A-Za-z0-9_-]{43,128}$").matches(token)) {
+            report("ERROR: ENTER RELAY ACCESS TOKEN"); return
+        }
         worker.execute {
             var master = ByteArray(0)
             try {
@@ -87,6 +103,14 @@ class NetworkActivity : Activity() {
                 require(master.size == 32) { "PAIRING SECRET MUST BE 32 BYTES" }
                 val room = hex(sha256("room".toByteArray() + master))
                 val path = "$endpoint/v1/mailbox/$room"
+                val identity = "$endpoint:$room:$role"
+                if (identity != linkIdentity) {
+                    cursor = 0L; seen.clear(); linkIdentity = identity
+                }
+                if (testOnly) {
+                    request("$path?after=$cursor", "GET", null, token)
+                    report("LINK VERIFIED // AUTHENTICATED HTTPS"); return@execute
+                }
                 val outbound = if (role == 0) "A" else "B"
                 val inbound = if (role == 0) "B" else "A"
                 if (send) {
@@ -97,10 +121,10 @@ class NetworkActivity : Activity() {
                     val data = cipher.doFinal(msg.toByteArray(Charsets.UTF_8))
                     val packet = outbound.toByteArray() + iv + data
                     val encoded = Base64.encodeToString(packet, Base64.NO_WRAP)
-                    request(path, "POST", JSONObject().put("packet", encoded).toString())
+                    request(path, "POST", JSONObject().put("packet", encoded).toString(), token)
                     report("TRANSMITTED // ${msg.toByteArray().size} BYTES")
                 } else {
-                    val response = JSONObject(request("$path?after=$cursor", "GET", null))
+                    val response = JSONObject(request("$path?after=$cursor", "GET", null, token))
                     val messages = response.getJSONArray("messages")
                     val received = mutableListOf<String>()
                     for (i in 0 until messages.length()) {
@@ -108,9 +132,9 @@ class NetworkActivity : Activity() {
                         cursor = maxOf(cursor, item.getLong("seq"))
                         val encoded = item.getString("packet")
                         if (!seen.add(encoded)) continue
-                        val packet = Base64.decode(encoded, Base64.DEFAULT)
-                        if (packet.size < 30 || packet[0].toInt().toChar().toString() != inbound) continue
                         try {
+                            val packet = Base64.decode(encoded, Base64.DEFAULT)
+                            if (packet.size < 29 || packet[0].toInt().toChar().toString() != inbound) continue
                             val iv = packet.copyOfRange(1, 13)
                             val ciphertext = packet.copyOfRange(13, packet.size)
                             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -127,14 +151,16 @@ class NetworkActivity : Activity() {
     }
     private fun sha256(data: ByteArray) = MessageDigest.getInstance("SHA-256").digest(data)
     private fun hex(data: ByteArray) = data.joinToString("") { "%02x".format(it) }
-    private fun request(url: String, method: String, body: String?): String {
+    private fun request(url: String, method: String, body: String?, token: String): String {
         val conn = URL(url).openConnection() as HttpsURLConnection
+        conn.instanceFollowRedirects = false
+        conn.setRequestProperty("Authorization", "Bearer $token")
         conn.requestMethod = method; conn.connectTimeout = 10000; conn.readTimeout = 10000
-        if (body != null) {
+        return try {
+          if (body != null) {
             conn.doOutput = true; conn.setRequestProperty("Content-Type", "application/json")
             conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
         }
-        return try {
             val status = conn.responseCode
             if (status !in 200..299) error("HTTP $status")
             conn.inputStream.bufferedReader().use { it.readText() }
@@ -142,3 +168,4 @@ class NetworkActivity : Activity() {
     }
     override fun onDestroy() { worker.shutdownNow(); super.onDestroy() }
 }
+

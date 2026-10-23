@@ -23,3 +23,10 @@ A cryptographically secure pseudorandom stream is not an information-theoretical
 
 ## License
 No project-wide code license has been selected yet. Do not copy Jericho source into this repository until its exact license and attribution obligations are reviewed.
+
+
+## Two-phone deployment prototype
+
+See [Docker / Portainer + Nginx setup](docs/DEPLOYMENT.md) and
+[two-device testing](docs/TWO_DEVICE_TEST.md). The Android field terminal currently
+uses experimental AES-GCM; true OTP and Jericho compatibility remain future work.
