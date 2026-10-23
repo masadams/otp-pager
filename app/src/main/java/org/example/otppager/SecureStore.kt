@@ -17,6 +17,7 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
     private val slot = namespace.also { require(Regex("[a-z0-9-]{1,40}").matches(it)) }
     private val base = File(context.noBackupFilesDir, "$slot.bin")
     private val file = AtomicFile(base)
+    fun identity() = DeviceIdentity("otp-pager-$slot-device")
     fun sibling(suffix: String): SecureStore = SecureStore(contextRef, "$slot-$suffix")
     private val contextRef = context.applicationContext
     private val alias = "otp-pager-$slot"
@@ -46,7 +47,7 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
         cipher.init(Cipher.DECRYPT_MODE, key(false), GCMParameterSpec(128, bytes.copyOfRange(1, 13)))
         cipher.updateAAD(aad)
         val clear = cipher.doFinal(bytes.copyOfRange(13, bytes.size))
-        return try { JSONObject(String(clear, Charsets.UTF_8)).also { check(it.getInt("version") in 2..3) } }
+        return try { JSONObject(String(clear, Charsets.UTF_8)).also { check(it.getInt("version") in 2..4) } }
         finally { clear.fill(0) }
     }
     fun save(state: JSONObject) {
@@ -64,6 +65,7 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
     fun forget() {
         // Invalidate the key first: if the process dies, old data cannot be reopened.
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        identity().forget()
         store.deleteEntry(alias)
         file.delete()
     }

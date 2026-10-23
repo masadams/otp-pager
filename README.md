@@ -47,3 +47,16 @@ The e-ink interface shows relay connectivity, unread messages, queued traffic, d
 Messages, Link and Pad now have separate tabs. After importing pads, compare the full pad-check code in person, verify on **both devices**, and sync both. New pad messages unlock only after authenticated peer readiness arrives. This uses one setup slot per station; re-announcing readiness retries identical ciphertext without spending more pad material. Upgrade both APKs. See [0.4 setup and upgrade details](docs/PAD_PROTOCOL.md#android-04-verified-setup-gate). Existing 0.3 pads migrate with their counters intact; old APKs reject the migrated pad vault.
 
 The proposed next networking feature is [integrated, self-hosted WireGuard](docs/PRIVATE_NETWORK.md), including server enrolment, in-app tunnel controls and measured connection indicators. This is a design, not a feature in the current APK.
+
+### Android 0.5: device identity binding
+
+The Device tab adds an explicit physical exchange of public identity cards after
+pad setup. Compare full fingerprints on the actual devices and pin each other.
+New text messages and delivery receipts then require the pinned device's signature,
+including when received later while the sender is offline. Android Keystore holds
+the private signing key; the app reports hardware/software protection. Older
+history stays labelled shared-secret-only. No continuous handshake, TOTP, or server
+identity verdict is involved. This experimental signed-message profile creates
+verifiable attribution and does **not** provide deniability. Read
+[setup, upgrade rules, signed bytes and limits](docs/DEVICE_IDENTITY.md) before
+starting. Integrated WireGuard is still a design, not implemented.

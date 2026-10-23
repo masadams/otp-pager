@@ -8,12 +8,22 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     var state: JSONObject? = store.load()
         private set
     private val padLedger = PadLedger(store.sibling("pads"))
+    private val identity = store.identity()
     private var cachedView: View? = null
     private var cacheExpiry = 0L
     init { state?.let { validate(it); transaction { next -> if (next.has("pad") && next.getInt("version") == 2) next.put("version", 3).put("cursor", 0L).put("epoch", ""); prune(next) } } }
     private fun validate(s: JSONObject) {
-        check(s.getInt("version") in 2..3)
+        check(s.getInt("version") in 2..4)
         check(s.getInt("version") != 3 || s.has("pad"))
+        if (s.has("ownDevice")) {
+            check(s.getInt("version") == 4 && s.has("pad"))
+            identity.check(s.getString("ownDevice"))
+            if (s.has("peerDevice")) {
+                IdentityProtocol.publicKey(s.getString("peerDevice"))
+                check(s.getString("peerDevice") != s.getString("ownDevice"))
+            }
+        }
+        check(!s.has("peerDevice") || s.has("ownDevice"))
         Protocol.endpoint(s.getString("endpoint")); Protocol.token(s.getString("token"))
         Protocol.master(s.getString("secret")).fill(0)
         check(s.getString("role") in listOf("A", "B"))
@@ -64,9 +74,46 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         val bundle = try { PadProtocol.generate(PadProtocol.binding(master)) } finally { master.fill(0) }
         try { installPad(bundle); return bundle } catch (e: Exception) { bundle.fill(0); throw e }
     }
+    /** Local identity exchange uses public cards only. No relay, pad slots, or liveness claim. */
+    fun prepareIdentity() {
+        val s = checkNotNull(state)
+        check(s.has("pad") && s.optBoolean("padVerified") && s.optBoolean("peerReady")) { "Finish pad verification on both stations first" }
+        check(items(s.getJSONArray("outbox")).none { it.getString("status") == "queued" }) { "Sync queued packets before starting device binding" }
+        if (s.has("ownDevice")) { identity.check(s.getString("ownDevice")); return }
+        val card = identity.card(create = true)
+        transaction { it.put("version", 4).put("ownDevice", card) }
+    }
+    fun pinDevice(card: String, comparedSuffix: String) {
+        val canonical = card.trim()
+        val fingerprint = IdentityProtocol.fingerprint(canonical)
+        require(comparedSuffix.trim().lowercase() == fingerprint.takeLast(8)) { "Compare the FULL fingerprint with the other station in person" }
+        transaction { s ->
+            check(s.has("ownDevice")) { "Create this station's identity first" }
+            require(canonical != s.getString("ownDevice")) { "That is this station's own identity card" }
+            check(!s.has("peerDevice") || s.getString("peerDevice") == canonical) { "Device already pinned. A different key requires a fresh physical pairing" }
+            s.put("peerDevice", canonical).put("cursor", 0L).put("epoch", "")
+        }
+    }
+    private fun signatureData(s: JSONObject, role: Char, counter: Long, body: String): ByteArray {
+        val master = Protocol.master(s.getString("secret"))
+        val own = role == s.getString("role")[0]
+        return try { IdentityProtocol.transcript(Protocol.room(master), s.getString("padId"), role, counter,
+            s.getString(if (own) "ownDevice" else "peerDevice"), s.getString(if (own) "peerDevice" else "ownDevice"), body) }
+        finally { master.fill(0) }
+    }
+    private fun deviceBody(s: JSONObject, decoded: Protocol.Opened, role: Char, enforce: Boolean): String {
+        if (!IdentityProtocol.isSigned(decoded.payload)) {
+            check(!enforce || !s.has("ownDevice")) { "Unsigned packet rejected: device binding is active" }
+            return decoded.payload
+        }
+        check(s.has("peerDevice")) { "Verify the peer identity before receiving device-bound packets" }
+        val card = s.getString(if (role == s.getString("role")[0]) "ownDevice" else "peerDevice")
+        return IdentityProtocol.body(decoded.payload) { body, sig -> IdentityProtocol.verify(card, signatureData(s, role, decoded.counter, body), sig) }
+    }
     /** Full code must be compared in person; suffix entry is an additional typing check only. */
     fun confirmPad(peerSuffix: String) {
         transaction { s ->
+            check(!s.has("ownDevice")) { "Pad setup is complete; device binding uses public cards without readiness heartbeats" }
             check(s.has("pad")) { "Install a pad first" }
             require(peerSuffix.trim().lowercase() == s.getString("padId").takeLast(8)) { "Code does not match. Compare the FULL pad check on both devices." }
             if (!s.optBoolean("padVerified")) {
@@ -105,6 +152,11 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     private fun items(array: JSONArray) = (0 until array.length()).map { array.getJSONObject(it) }
     private fun queue(s: JSONObject, payload: JSONObject, kind: String) {
         require(items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" } < 50) { "Outbox full; sync before sending more" }
+        if (s.has("ownDevice")) {
+            check(s.has("peerDevice")) { "Verify the other device identity first" }
+            val bytes = payload.toString().toByteArray(Charsets.UTF_8).size
+            require(4 + ((bytes + 2) / 3) * 4 + 1 + 108 <= PadProtocol.BLOCK - 2) { "Encoded signed message too large for a pad slot" }
+        }
         val n = s.getLong("counter"); check(n < Long.MAX_VALUE) { "Pairing counter exhausted; create a new pairing" }
         val master = Protocol.master(s.getString("secret"))
         val counter: Long
@@ -116,7 +168,12 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
                 try {
                     cachedView = null
                     counter = padLedger.reserve(s.getString("padId")) // Durable burn BEFORE encryption or network output.
-                    sealed = PadProtocol.seal(pad, s.getString("role")[0], counter, payload.toString())
+                    val body = if (s.has("ownDevice")) {
+                        check(s.has("peerDevice")) { "Verify the other device identity first" }
+                        identity.check(s.getString("ownDevice"))
+                        IdentityProtocol.signed(payload.toString()) { identity.sign(signatureData(s, s.getString("role")[0], counter, it)) }
+                    } else payload.toString()
+                    sealed = PadProtocol.seal(pad, s.getString("role")[0], counter, body)
                 } finally { pad.fill(0) }
             } else { counter = n + 1; sealed = Protocol.seal(master, s.getString("role")[0], counter, payload.toString()) }
         } finally { master.fill(0) }
@@ -140,6 +197,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         require(text.toByteArray(Charsets.UTF_8).size in 1..2048) { "Message must be 1–2048 UTF-8 bytes" }
         transaction { s ->
             check(!s.has("pad") || (s.optBoolean("padVerified") && s.optBoolean("peerReady"))) { "Open Pad: compare codes and wait for the other station to verify and sync" }
+            check(!s.has("ownDevice") || s.has("peerDevice")) { "Finish physical device verification before sending" }
             prune(s)
             queue(s, JSONObject().put("kind", "text").put("text", text), "text")
         }
@@ -177,7 +235,9 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
                         // Authentication and payload validation finish before touching replay state.
                         val decoded = try { open(next, master, wire, inbound) } catch (_: Exception) { ignored++; null }
                         if (decoded != null && window(next).accepts(decoded.counter)) {
-                            val payload = try { JSONObject(decoded.payload) } catch (_: Exception) { null }
+                            // Hold signed packets while the physical key exchange is incomplete.
+                            if (next.has("ownDevice") && !next.has("peerDevice") && IdentityProtocol.isSigned(decoded.payload)) break
+                            val payload = try { JSONObject(deviceBody(next, decoded, inbound, enforce = true)) } catch (_: Exception) { null }
                             val kind = payload?.optString("kind")
                             if (kind == "text" && payload?.opt("text") is String && payload.getString("text").toByteArray(Charsets.UTF_8).size in 1..2048) {
                                 if (items(next.getJSONArray("outbox")).count { it.getString("status") == "queued" } >= 50) break
@@ -212,9 +272,9 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             return "Connected" + if (ignored > 0) " · $ignored invalid/legacy packets skipped" else ""
         } finally { master.fill(0) }
     }
-    data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false)
-    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false) {
-        val canSend: Boolean get() = role != "—" && padRemaining != 0 && (padCheck == null || (padVerified && peerReady))
+    data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false)
+    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null) {
+        val canSend: Boolean get() = role != "—" && padRemaining != 0 && (padCheck == null || (padVerified && peerReady)) && (ownDevice == null || peerDevice != null)
     }
     fun view(): View {
         cachedView?.let { if (System.currentTimeMillis() < cacheExpiry) return it }
@@ -225,20 +285,24 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             val rows = mutableListOf<Message>()
             for (entry in items(s.getJSONArray("inbox"))) {
                 if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
-                val text = JSONObject(open(s, master, entry.getString("packet"), peer).payload).getString("text")
-                rows.add(Message(true, text, "received", entry.getLong("time"), !entry.optBoolean("read", false)))
+                val decoded = open(s, master, entry.getString("packet"), peer)
+                val text = JSONObject(deviceBody(s, decoded, peer, enforce = false)).getString("text")
+                rows.add(Message(true, text, "received", entry.getLong("time"), !entry.optBoolean("read", false), IdentityProtocol.isSigned(decoded.payload)))
             }
             for (entry in items(s.getJSONArray("outbox")).filter { it.getString("kind") == "text" }) {
                 if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
-                val text = JSONObject(open(s, master, entry.getString("packet"), own).payload).getString("text")
-                rows.add(Message(false, text, entry.getString("status"), entry.getLong("time")))
+                val decoded = open(s, master, entry.getString("packet"), own)
+                val text = JSONObject(deviceBody(s, decoded, own, enforce = false)).getString("text")
+                rows.add(Message(false, text, entry.getString("status"), entry.getLong("time"), deviceVerified = IdentityProtocol.isSigned(decoded.payload)))
             }
             cacheExpiry = rows.minOfOrNull { it.time + 86400000L } ?: Long.MAX_VALUE
             View(own.toString(), Protocol.fingerprint(master), rows.sortedBy { it.time }.takeLast(100),
                 items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" },
                 items(s.getJSONArray("inbox")).count { !it.optBoolean("read", false) },
                 if (s.has("pad")) PadProtocol.SLOTS - padLedger.high(s.getString("padId")).toInt() else null,
-                s.optString("padId").takeIf { it.isNotEmpty() }, s.optBoolean("padVerified"), s.optBoolean("peerReady")).also { cachedView = it }
+                s.optString("padId").takeIf { it.isNotEmpty() }, s.optBoolean("padVerified"), s.optBoolean("peerReady"),
+                s.optString("ownDevice").takeIf { it.isNotEmpty() }, s.optString("peerDevice").takeIf { it.isNotEmpty() },
+                if (s.has("ownDevice")) identity.protection() else null).also { cachedView = it }
         } finally { master.fill(0) }
     }
 }
