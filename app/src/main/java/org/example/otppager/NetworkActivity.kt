@@ -31,6 +31,7 @@ class NetworkActivity : Activity() {
     private var busy = false
     private var active = false
     private var unlocked = false
+    private var needsTerminal = true
     private var backoff = 15000L
     private var tab = 0
     private var latest: StationEngine.View? = null
@@ -110,7 +111,7 @@ class NetworkActivity : Activity() {
         if (!unlocked) {
             val guard = getSystemService(KeyguardManager::class.java)
             if (guard.isDeviceSecure) showUnlock() else { unlocked = true; showTerminal() }
-        } else schedule()
+        } else if (needsTerminal) showTerminal() else schedule()
     }
     private fun showUnlock() {
         busy = false
@@ -126,9 +127,10 @@ class NetworkActivity : Activity() {
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 71 && resultCode == RESULT_OK) { unlocked = true; showTerminal() }
+        if (requestCode == 71 && resultCode == RESULT_OK) { unlocked = true; needsTerminal = true }
     }
     private fun showTerminal() {
+        needsTerminal = false
         generation++
         latest = null; rendered = null; busy = false; errorLoading = false
         root = column().apply { setBackgroundColor(paper); setPadding(dp(20), dp(10), dp(20), dp(8)) }
@@ -299,7 +301,7 @@ class NetworkActivity : Activity() {
         if (active && unlocked && !isFinishing && !errorLoading) handler.postDelayed(poll, delay)
     }
     override fun onStop() {
-        generation++; active = false; unlocked = false; handler.removeCallbacks(poll)
+        generation++; active = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
         if (::composer.isInitialized) composer.text.clear()
         if (::messages.isInitialized) messages.removeAllViews()
         if (::tokenField.isInitialized) { tokenField.text.clear(); secretField.text.clear() }
