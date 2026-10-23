@@ -6,8 +6,8 @@ The relay sees ciphertext, mailbox identifiers, timing and connection addresses.
 
 ## Portainer: deploy directly from Git
 
-No local build, image download or shell access is required once the published
-GitHub container package is Public. GitHub Actions tests the relay and builds an
+No local build, image download, registry login or shell access is required.
+The published package was verified accessible by an anonymous Docker pull. GitHub Actions tests the relay and builds an
 image for **amd64 and arm64**, then pushes it to:
 
 `ghcr.io/masadams/otp-pager-relay:edge`
@@ -17,19 +17,19 @@ is the moving development tag. Updates are manual by default; for a fixed build,
 set `RELAY_IMAGE` to a published digest such as
 `ghcr.io/masadams/otp-pager-relay@sha256:<digest>`.
 
-### One-time GitHub package visibility
+### Verified published image
 
-GitHub defaults new container packages to Private, even in public repositories.
-After the first successful image publication, open:
+Image build, publication, and anonymous pull passed in:
+https://github.com/masadams/otp-pager/actions/runs/39886652548
 
-https://github.com/users/masadams/packages/container/otp-pager-relay/settings
+Verified multi-platform digest:
 
-Under **Danger Zone → Change visibility**, select **Public**. This makes the
-compiled public-project image available anonymously; it does not expose your
-relay token or message volume. The workflow checks an anonymous pull and reports
-whether this setting is still required. Package visibility is an account setting
-and is not changed by the GitHub connector. Alternatively configure an
- authenticated GHCR registry in Portainer with a suitable `read:packages` token.
+`ghcr.io/masadams/otp-pager-relay@sha256:525b08524a5af6e4fa77c128334f4181b7add3063d60d483705e489c167f6533`
+
+**No package-visibility change is needed for this published image.** If you fork
+and publish under a different account later, GitHub normally creates packages as
+Private; change that new package to Public or supply registry credentials. The
+workflow checks anonymous access after each publication.
 
 ### Portainer settings
 
