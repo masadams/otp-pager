@@ -23,12 +23,18 @@ import java.util.concurrent.Executors
 
 /** Isolated two-device chats, foreground-only delivery. No background service or analytics. */
 class NetworkActivity : Activity() {
-    companion object { private val stationWorker = Executors.newSingleThreadExecutor() }
-    private val worker = stationWorker
+    private val worker = StationRuntime.worker
     private val handler = Handler(Looper.getMainLooper())
     private var engine: StationEngine? = null // worker-thread owned
     private var book: ChatBook? = null
     private lateinit var chatButton: Button
+    private lateinit var receiveButton: Button
+    private lateinit var renewButton: Button
+    private lateinit var advancedSetup: LinearLayout
+    private lateinit var serverForm: LinearLayout
+    private lateinit var pairedOptions: LinearLayout
+    private var advancedShown = false
+    private var selectedPadSize = 4 * PadProtocol.MATERIAL_BYTES
     @Volatile private var generation = 0
     private var busy = false
     @Volatile private var active = false
@@ -151,13 +157,14 @@ class NetworkActivity : Activity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        selectedPadSize = getSharedPreferences("receiving", MODE_PRIVATE).getInt("padSize", 4 * PadProtocol.MATERIAL_BYTES).takeIf { PadProtocol.validSize(it) } ?: 4 * PadProtocol.MATERIAL_BYTES
         window.protectPrivateContent()
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         window.statusBarColor = paper; window.navigationBarColor = paper
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
     }
     override fun onResume() {
-        super.onResume(); active = true
+        super.onResume(); active = true; StationRuntime.uiVisible = true
         if (!unlocked) {
             val guard = getSystemService(KeyguardManager::class.java)
             if (guard.isDeviceSecure) showUnlock() else { unlocked = true; showTerminal() }
@@ -207,9 +214,11 @@ class NetworkActivity : Activity() {
             setPadding(0, 0, dp(6), 0); background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
         }
         header.addView(chatButton, LinearLayout.LayoutParams(0, -2, 1f))
-        stationLabel = text("STATION —", 11f, green, true); header.addView(stationLabel); chrome.addView(header)
-        if (!compact) chrome.addView(text("PRIVATE CHANNEL / EXPERIMENTAL", 10f, muted, true))
-        indicators = text("○ NOT CHECKED", 11f, ink, true).apply {
+        stationLabel = text("STATION —", 11f, green, true); header.addView(stationLabel)
+        receiveButton = button("Receive") { showReceiving() }.apply { textSize = 11f; minWidth = 0; minimumWidth = 0 }
+        header.addView(receiveButton); chrome.addView(header)
+        if (!compact) chrome.addView(text("PRIVATE MESSAGES", 10f, muted, true))
+        indicators = text("○ Not checked yet", 11f, ink, true).apply {
             setPadding(dp(10), dp(if (compact) 5 else 8), dp(10), dp(if (compact) 5 else 8)); background = surface(paper, 2, ink)
             contentDescription = "Station status. Tap for connection, delivery and security details."
             setOnClickListener { showStationStatus() }
@@ -259,14 +268,28 @@ class NetworkActivity : Activity() {
             override fun afterTextChanged(s: Editable?) {}
         })
         val settings = column().apply { setPadding(0, 0, 0, dp(24)) }
-        settings.addView(text("Station settings", 22f))
+        settings.addView(text("Chat settings", 22f))
+        pairedOptions = column(); settings.addView(pairedOptions)
+        pairedOptions.addView(button("Receiving & battery") { showReceiving() })
+        renewButton = button("Renew pad · USB") { choosePadSize(renew = true) }
+        pairedOptions.addView(renewButton)
+        pairedOptions.addView(button("Pad size for USB pairing") { choosePadSize(renew = false, launch = false) })
         settings.addView(button("Chat relay access") { showRelayAccess() })
         settings.addView(text("Save server details on one device, then pair by cable. QR is available as a fallback.", 14f, muted))
         settings.addView(button("Pair devices · USB cable", true) {
             if (latest?.cableEligible == false) confirm("Replace this pairing?", "This removes the current conversation and queued messages on THIS station. The server address and token stay saved. A fresh secret and pad will be created; the old pad cannot be reused. Start the new pairing on both intended devices.") { beginCablePairing(true) }
-            else beginCablePairing(false)
+            else choosePadSize(renew = false)
         })
         settings.addView(text("Open Pair devices on both and connect a USB data cable. Setup, pad transfer and identity verification happen together.", 12f, muted))
+        settings.addView(button("Advanced connection setup") {
+            advancedShown = !advancedShown; advancedSetup.visibility = if (advancedShown) View.VISIBLE else View.GONE; serverForm.visibility = if (latest?.setupComplete != true || advancedShown) View.VISIBLE else View.GONE
+        })
+        advancedSetup = column(); settings.addView(advancedSetup)
+        advancedSetup.addView(button("Tap setup · NFC") {
+            runTask(onSuccess = { startActivity(Intent(this, NfcSetupActivity::class.java).putExtra("chat", checkNotNull(book).active().id)) }) {
+                checkNotNull(engine).requireCableEligible(); "Open NFC setup on the other device"
+            }
+        })
         val qrActions = row()
         showQrButton = button("Show setup QR") {
             confirm("Share this station's setup?", "This QR contains your relay token and pairing secret. Show it only to your other physical station. Anyone photographing it gets those secrets. It does not include the pad or private device key. Never use it to clone an existing paired device; replacement devices need a fresh secret and pad.") {
@@ -277,13 +300,14 @@ class NetworkActivity : Activity() {
         scanQrButton = button("Scan setup QR") {
             launchQrScanner(false)
         }
-        qrActions.addView(showQrButton, LinearLayout.LayoutParams(0, -2, 1f)); qrActions.addView(scanQrButton, LinearLayout.LayoutParams(0, -2, 1f)); settings.addView(qrActions)
+        qrActions.addView(showQrButton, LinearLayout.LayoutParams(0, -2, 1f)); qrActions.addView(scanQrButton, LinearLayout.LayoutParams(0, -2, 1f)); advancedSetup.addView(qrActions)
         imageQrButton = button("Import QR image · no camera") {
             startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply { addCategory(Intent.CATEGORY_OPENABLE); type = "image/*" }, 85)
-        }; settings.addView(imageQrButton)
-        settings.addView(text("QR fallback: show on one station, scan on the other. The QR contains secrets. Pad and identity setup remain separate in this fallback.", 12f, muted))
-        urlField = field("https://pager.example.com"); section(settings, "RELAY ADDRESS", urlField)
-        tokenField = field("Relay access token", true); section(settings, "RELAY ACCESS", tokenField)
+        }; advancedSetup.addView(imageQrButton)
+        advancedSetup.addView(text("QR fallback: show on one station, scan on the other. The QR contains secrets. Pad and identity setup remain separate in this fallback.", 12f, muted))
+        serverForm = column(); settings.addView(serverForm, 1)
+        urlField = field("https://pager.example.com"); section(serverForm, "RELAY ADDRESS", urlField)
+        tokenField = field("Relay access token", true); section(serverForm, "RELAY SETUP TOKEN", tokenField)
         saveRelayButton = button("Save server settings", true) {
             val endpoint = urlField.text.toString(); val token = tokenField.text.toString().trim()
             runTask(load = true) {
@@ -291,10 +315,10 @@ class NetworkActivity : Activity() {
                 station.configure(endpoint, token, current?.getString("secret") ?: Protocol.randomSecret(), current?.getString("role") ?: "A")
                 "SERVER SAVED · open Pair devices on both stations"
             }
-        }; settings.addView(saveRelayButton)
+        }; serverForm.addView(saveRelayButton)
         val manual = column().apply { visibility = View.GONE }
-        settings.addView(button("Advanced · manual pairing") { manual.visibility = if (manual.visibility == View.GONE) View.VISIBLE else View.GONE })
-        settings.addView(manual)
+        advancedSetup.addView(button("Advanced · manual pairing") { manual.visibility = if (manual.visibility == View.GONE) View.VISIBLE else View.GONE })
+        advancedSetup.addView(manual)
         secretField = field("43-character pairing secret", true); section(manual, "PAIRING SECRET", secretField)
         val secrets = row()
         secrets.addView(button("Show / hide") {
@@ -318,8 +342,8 @@ class NetworkActivity : Activity() {
                 checkNotNull(engine).configure(endpoint, token, secret, role); "LINK SAVED · checking relay"
             }
         }; manual.addView(saveButton)
-        pairingCode = text("NOT PAIRED", 12f, green, true).apply { setPadding(0, dp(20), 0, dp(12)) }; settings.addView(pairingCode)
-        settings.addView(text("Compare this pair-check code on both devices in person. Matching codes confirm the same secret; they do not confirm the server is honest.", 12f, muted))
+        pairingCode = text("NOT PAIRED", 12f, green, true).apply { setPadding(0, dp(20), 0, dp(12)) }; advancedSetup.addView(pairingCode)
+        advancedSetup.addView(text("Compare this pair-check code on both devices in person. Matching codes confirm the same secret; they do not confirm the server is honest.", 12f, muted))
         val padSettings = column().apply { setPadding(0, 0, 0, dp(24)) }
         padSettings.addView(text("Physical pad setup", 22f))
         padSettings.addView(text("01  Save a fresh link on both stations.\n02  A exports; B imports via physical storage.\n03  Compare the FULL code in person.\n04  Verify on both devices, then sync both.", 14f, ink, true))
@@ -407,6 +431,10 @@ class NetworkActivity : Activity() {
         runTask(load = true, onSuccess = { loadedInvite?.let(::previewSetupQr) }, publicTransfer = pendingDocument?.first in listOf(83, 84), qrTransfer = pendingDocument?.first == 85) {
             book = null; engine = null
             book = ChatBook(this)
+            if (intent.getBooleanExtra("openUnread", false)) {
+                book!!.chats().firstOrNull { book!!.summary(it.id).unread > 0 }?.let { book!!.select(it.id) }
+                intent.removeExtra("openUnread")
+            }
             engine = checkNotNull(book).engine()
             val scanned = scanResult
             val document = pendingDocument; pendingDocument = null
@@ -440,7 +468,7 @@ class NetworkActivity : Activity() {
                     importedDeviceCard = card
                     "PUBLIC CARD IMPORTED · compare the full fingerprint before pinning"
                 } else if (operation == 81) {
-                    val bundle = checkNotNull(engine).generatePad()
+                    val bundle = checkNotNull(engine).generatePad(selectedPadSize)
                     try { contentResolver.openOutputStream(uri, "wt")!!.use { it.write(bundle); it.flush() } }
                     finally { bundle.fill(0) }
                     "PAD INSTALLED · transfer file to Station B before sending"
@@ -449,7 +477,7 @@ class NetworkActivity : Activity() {
                     val bundle = contentResolver.openInputStream(uri)!!.use { input ->
                         val out = java.io.ByteArrayOutputStream()
                         val buffer = ByteArray(8192)
-                        while (true) { val n = input.read(buffer); if (n < 0) break; require(out.size() + n <= PadProtocol.BUNDLE_BYTES) { "Pad file too large" }; out.write(buffer, 0, n) }
+                        while (true) { val n = input.read(buffer); if (n < 0) break; require(out.size() + n <= PadProtocol.MAX_BUNDLE_BYTES) { "Pad file too large" }; out.write(buffer, 0, n) }
                         out.toByteArray()
                     }
                     try { checkNotNull(engine).installPad(bundle) } finally { bundle.fill(0) }
@@ -480,11 +508,54 @@ class NetworkActivity : Activity() {
     }
     private fun atBottom() = !::messageScroll.isInitialized || messageScroll.getChildAt(0) == null ||
         messageScroll.getChildAt(0).height - (messageScroll.scrollY + messageScroll.height) < dp(24)
-    private fun beginCablePairing(replace: Boolean) {
-        runTask(onSuccess = { startActivity(Intent(this, CablePairActivity::class.java).putExtra("chat", checkNotNull(book).active().id)) }) {
+    private fun beginCablePairing(replace: Boolean, renew: Boolean = false) {
+        runTask(onSuccess = { startActivity(Intent(this, CablePairActivity::class.java).putExtra("chat", checkNotNull(book).active().id).putExtra("renew", renew).putExtra("padSize", selectedPadSize)) }) {
             val station = checkNotNull(engine)
             if (replace) station.resetForCable()
-            station.requireCableEligible(); "OPENING PHYSICAL PAIRING"
+            if (renew) station.requireRenewalIdentity() else station.requireCableEligible(); "Opening USB connection"
+        }
+    }
+    private fun choosePadSize(renew: Boolean, launch: Boolean = true) {
+        val choices = arrayOf("1 MiB · 127 slots each way", "2 MiB · 254 slots each way", "4 MiB · 508 slots each way")
+        val sizes = intArrayOf(PadProtocol.MATERIAL_BYTES, 2 * PadProtocol.MATERIAL_BYTES, 4 * PadProtocol.MATERIAL_BYTES)
+        var selected = sizes.indexOf(selectedPadSize).coerceAtLeast(0)
+        AlertDialog.Builder(this).setTitle(if (renew) "Renew this friend's pad" else "Choose a USB pad size")
+            .setSingleChoiceItems(choices, selected) { _, which -> selected = which }
+            .setPositiveButton(if (launch) "Continue by USB" else "Save") { _, _ ->
+                selectedPadSize = sizes[selected]
+                getSharedPreferences("receiving", MODE_PRIVATE).edit().putInt("padSize", selectedPadSize).apply()
+                if (launch) beginCablePairing(false, renew) else report("USB pad size: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB")
+            }.setNegativeButton("Cancel", null).create().also(::secureShow)
+    }
+    private fun showReceiving() {
+        val enabled = ReceiveService.enabled(this)
+        val notifications = androidx.core.app.NotificationManagerCompat.from(this).areNotificationsEnabled()
+        val power = getSystemService(android.os.PowerManager::class.java)
+        val battery = if (power.isIgnoringBatteryOptimizations(packageName)) "Battery restrictions are lifted." else "Android may delay checks in deep sleep. For timely delivery, allow unrestricted battery use in Android settings."
+        val state = if (ReceiveService.running) "Receiving is on." else if (enabled) "Receiving is paused. Tap Resume." else "Receiving is off. Messages are checked while the app is open."
+        AlertDialog.Builder(this).setTitle("Receive with the screen off")
+            .setMessage("$state${if (!notifications) " Notifications are currently blocked." else ""}\n\nBackground checks cycle through your friends about every 30 seconds, with backoff when connections fail. A persistent notification lets you stop receiving. Message text and friend names stay out of notifications.\n\n$battery\n\nThis uses additional battery. After a restart or Force stop, open the app and resume if needed.")
+            .setPositiveButton(if (ReceiveService.running) "Turn off" else if (enabled) "Resume" else "Turn on") { _, _ ->
+                if (ReceiveService.running) ReceiveService.stop(this) else {
+                    if (android.os.Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+                        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 92)
+                    else enableReceiving()
+                }
+                updateIndicators()
+            }.setNeutralButton("Battery settings") { _, _ ->
+                try { startActivity(Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
+                catch (_: Exception) { report("Open Android settings → Apps → OTP Pager → Battery") }
+            }.setNegativeButton("Close", null).create().also(::secureShow)
+    }
+    private fun enableReceiving() {
+        try { ReceiveService.start(this); report("Background receiving enabled"); handler.postDelayed({ if (active) updateIndicators() }, 600) }
+        catch (_: Exception) { report("Receiving could not start. Keep the app open and try again.") }
+    }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 92 && active) {
+            if (grantResults.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED) enableReceiving()
+            else report("Notifications were not allowed. Receiving remains off.")
         }
     }
     private fun launchQrScanner(deviceIdentity: Boolean) {
@@ -605,6 +676,7 @@ class NetworkActivity : Activity() {
         peerCardField.isEnabled = !value && latest?.ownDevice != null && latest?.peerDevice == null
         createPadButton.isEnabled = !value && latest?.role == "A" && latest?.padCheck == null
         importPadButton.isEnabled = !value && latest?.role == "B" && latest?.padCheck == null
+        renewButton.isEnabled = !value && latest?.peerDevice != null && latest?.relayRevoked != true
         verifyButton.isEnabled = !value && latest?.ownDevice == null && latest?.padCheck != null && (latest?.padVerified == true || latest?.padRemaining != 0)
         updateIndicators()
     }
@@ -616,14 +688,18 @@ class NetworkActivity : Activity() {
     private fun updateIndicators() {
         if (!::indicators.isInitialized) return
         val v = latest
+        if (::receiveButton.isInitialized) {
+            receiveButton.text = if (ReceiveService.running) "Receiving ●" else if (ReceiveService.enabled(this)) "Resume" else "Receive"
+            receiveButton.contentDescription = "Background receiving. " + if (ReceiveService.running) "On" else "Off or paused"
+        }
         val connection = when {
-            v == null || v.role == "—" -> "○ NOT PAIRED"
-            v.relayRevoked -> "! CHAT ACCESS REVOKED"
-            networkBusy -> "○ CHECKING RELAY"
+            v == null || v.role == "—" -> "○ Set up this chat"
+            v.relayRevoked -> "! Chat access revoked"
+            networkBusy -> "○ Checking relay…"
             connectionFailed -> "! $connectionProblem"
-            lastContact == 0L -> "○ NOT CHECKED"
-            android.os.SystemClock.elapsedRealtime() - lastContact > 60000 -> "○ LAST CHECK >1 MIN"
-            else -> "● RELAY CHECKED"
+            lastContact == 0L -> "○ Not checked yet"
+            android.os.SystemClock.elapsedRealtime() - lastContact > 60000 -> "○ Check needed"
+            else -> "● Relay checked"
         }
         val security = when {
             v?.ownDevice != null && v.peerDevice == null -> "DEVICE EXCHANGE INCOMPLETE"
@@ -632,9 +708,13 @@ class NetworkActivity : Activity() {
             v.padVerified && v.peerReady -> "PAD READY"
             else -> "PAD CHECK NEEDED"
         }
-        val accessBadge = if (v?.padCheck != null && !v.relayRevoked) if (v.relayScoped) " · CHAT ACCESS" else " · SHARED ACCESS" else ""
-        val value = "$connection$accessBadge${if (!automatic) " · AUTO OFF" else ""}\n${v?.unread ?: 0} NEW · ${v?.pending ?: 0} QUEUED · ${v?.awaitingReceipt ?: 0} AT RELAY" +
-            if (compact) "" else "\n$security${v?.padRemaining?.let { " · $it SLOTS" } ?: ""}"
+        val accessBadge = if (v?.padCheck != null && !v.relayRevoked) if (v.relayScoped) " · Private chat" else " · Shared access" else ""
+        val details = listOfNotNull(
+            v?.unread?.takeIf { it > 0 }?.let { "$it new" },
+            v?.pending?.takeIf { it > 0 }?.let { "$it waiting to send" },
+            v?.awaitingReceipt?.takeIf { it > 0 }?.let { "$it awaiting delivery" }
+        ).joinToString(" · ").ifEmpty { "All caught up" }
+        val value = "$connection$accessBadge${if (!automatic) " · Manual" else ""}\n$details"
         val access = if (v?.relayRevoked == true) "Chat access revoked" else if (v?.relayScoped == true) "Chat access protected" else "Shared relay access; update relay to protect this chat"
         indicators.contentDescription = "$value. $security. $access. Tap for details."
         if (indicators.text.toString() != value) indicators.text = value
@@ -648,7 +728,7 @@ class NetworkActivity : Activity() {
         val rows = chats.map { chat ->
             val summary = checkNotNull(book).summary(chat.id)
             "${if (chat.id == book?.active()?.id) "● " else ""}${chat.name}" +
-                if (summary.problem) " · CHECK LINK" else " · ${summary.unread} new / ${summary.queued} queued"
+                if (summary.problem) "\nNeeds attention" else "\n${if (summary.unread > 0) "${summary.unread} new messages" else "No new messages"}${if (summary.queued > 0) " · ${summary.queued} waiting to send" else ""}"
         }.toMutableList().apply { add("Chat settings"); add("Rename chat") }.toTypedArray()
         AlertDialog.Builder(this).setTitle("Chats · two devices each")
             .setItems(rows) { _, which ->
@@ -729,6 +809,12 @@ class NetworkActivity : Activity() {
     }
     private fun render(view: StationEngine.View) {
         latest = view; updateNavigation()
+        advancedSetup.visibility = if (advancedShown) View.VISIBLE else View.GONE
+        serverForm.visibility = if (!view.setupComplete || advancedShown) View.VISIBLE else View.GONE
+        pairedOptions.visibility = if (view.padCheck != null) View.VISIBLE else View.GONE
+        stationLabel.visibility = if (view.setupComplete && tab == 0) View.GONE else View.VISIBLE
+        renewButton.isEnabled = !busy && view.peerDevice != null && !view.relayRevoked
+
         val current = book?.active()
         val elsewhere = book?.unreadElsewhere() ?: 0
         val chatLabel = "${current?.name ?: "Chats"} ▾${if (elsewhere > 0) " · $elsewhere new" else ""}"
@@ -741,13 +827,13 @@ class NetworkActivity : Activity() {
         val hint = when {
             view.role == "—" -> "SET UP YOUR STATION → Link"
             view.relayRevoked -> "CHAT ACCESS REVOKED · open chat settings to pair afresh"
-            !view.pairingComplete -> "PAIRING INCOMPLETE · arrange a fresh physical pairing on both devices"
+            !view.pairingComplete -> "USB exchange paused · reconnect both devices to recover"
             view.padCheck == null -> "PAIR WITH YOUR FRIEND → Link · USB pairs keys and pad together"
-            view.padRemaining == 0 -> "SEND PAD EXHAUSTED · Receiving and queued retries remain available"
+            view.padRemaining == 0 -> "Pad empty · renew by USB. You can still receive and retry saved messages."
             !view.padVerified -> "COMPARE CODES IN PERSON → Pad"
             !view.peerReady -> "WAITING FOR PEER VERIFICATION · Sync both stations"
             view.ownDevice != null && view.peerDevice == null -> "FINISH DEVICE EXCHANGE → Device"
-            (view.padRemaining ?: Int.MAX_VALUE) <= 10 -> "LOW PAD RESERVE · Arrange a fresh physical pairing"
+            (view.padRemaining ?: Int.MAX_VALUE) <= 10 -> "Pad running low · open Chat settings → Renew pad"
             else -> ""
         }
         setupHint.visibility = if (hint.isEmpty()) View.GONE else View.VISIBLE
@@ -782,8 +868,8 @@ class NetworkActivity : Activity() {
                 setPadding(dp(14), dp(11), dp(14), dp(12))
                 background = surface(Color.WHITE, 2, if (m.incoming) ink else lineColor)
             }
-            val label = if (m.incoming) (if (m.unread) "● NEW FROM PEER" else "FROM PEER") else when (m.status) { "queued" -> "○ QUEUED"; "relayed" -> "↑ AT RELAY"; "delivered" -> "✓ PEER SAVED"; else -> m.status.uppercase() }
-            card.addView(text("$label  /  ${timeFormat.format(java.util.Date(m.time))}${if (m.deviceVerified) " · VERIFIED" else " · UNBOUND"}", 10f, muted, true))
+            val label = if (m.incoming) (if (m.unread) "● New · ${current?.name ?: "Friend"}" else current?.name ?: "Friend") else when (m.status) { "queued" -> "Waiting to send"; "relayed" -> "Sent · awaiting delivery"; "delivered" -> "✓ Delivered to device"; else -> "Expired" }
+            card.addView(text("$label  /  ${timeFormat.format(java.util.Date(m.time))}${if (m.deviceVerified) "" else " · Unverified device"}", 10f, muted, true))
             card.addView(text(m.text, 16f, ink, true).apply { setPadding(0, dp(5), 0, 0); isSaveEnabled = false })
             messages.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
                 topMargin = dp(10); if (m.incoming) rightMargin = dp(24) else leftMargin = dp(24)
@@ -863,7 +949,7 @@ class NetworkActivity : Activity() {
     override fun onStop() {
         openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
         pairingDialog?.dismiss(); pairingDialog = null
-        generation++; active = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
+        generation++; active = false; StationRuntime.uiVisible = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
         if (::composer.isInitialized) composer.text.clear()
         if (::messages.isInitialized) messages.removeAllViews()
         if (::chatButton.isInitialized) chatButton.text = "Chats"

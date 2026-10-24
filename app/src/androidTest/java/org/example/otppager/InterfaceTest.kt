@@ -320,7 +320,7 @@ class InterfaceTest {
                 fun latestDialog() = (NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }.get(activity) as List<android.app.AlertDialog>).last { it.isShowing }
                 instrumentation.runOnMainSync {
                     val strip = NetworkActivity::class.java.getDeclaredField("indicators").apply { isAccessible = true }.get(activity) as TextView
-                    assertTrue(strip.text.toString().contains("CHAT ACCESS"))
+                    assertTrue(strip.text.toString().contains("Private chat"))
                     strip.performClick()
                 }
                 instrumentation.waitForIdleSync()

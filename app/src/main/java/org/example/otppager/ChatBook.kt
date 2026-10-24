@@ -72,7 +72,7 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
             fun live(entry: JSONObject) = now - entry.getLong("time") < 86400000
             val inbox = s?.getJSONArray("inbox"); val out = s?.getJSONArray("outbox")
             summaries[id] = Summary(
-                if (inbox == null) 0 else (0 until inbox.length()).count { live(inbox.getJSONObject(it)) && !inbox.getJSONObject(it).optBoolean("read") },
+                (if (inbox == null) 0 else (0 until inbox.length()).count { live(inbox.getJSONObject(it)) && !inbox.getJSONObject(it).optBoolean("read") }) + (s?.optJSONArray("history")?.let { history -> (0 until history.length()).count { live(history.getJSONObject(it)) && history.getJSONObject(it).optBoolean("unread") } } ?: 0),
                 if (out == null) 0 else (0 until out.length()).count { live(out.getJSONObject(it)) && out.getJSONObject(it).getString("status") == "queued" })
         } catch (_: Exception) { summaries[id] = Summary(problem = true) }
     }

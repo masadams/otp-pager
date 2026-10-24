@@ -55,7 +55,7 @@ internal class CableSession private constructor(
     }
     override fun close() { closed = true; sendKey.fill(0); receiveKey.fill(0); context.fill(0) }
     companion object {
-        const val LIMIT = 1450000
+        const val LIMIT = 5700000
         fun ephemeral(): KeyPair = KeyPairGenerator.getInstance("EC").apply { initialize(ECGenParameterSpec("secp256r1")) }.generateKeyPair()
         /** HKDF-SHA256 extract and single-block expand (RFC 5869), independently labelled directions. */
         fun establish(host: Boolean, own: KeyPair, peerCard: String, transcript: ByteArray): CableSession {
