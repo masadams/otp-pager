@@ -1,0 +1,211 @@
+package org.example.otppager
+
+import android.app.Activity
+import android.app.AlertDialog
+import android.content.Context
+import android.graphics.Color
+import android.graphics.Typeface
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.nfc.NfcAdapter
+import android.nfc.Tag
+import android.nfc.tech.IsoDep
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import android.view.WindowManager
+import android.widget.*
+import java.net.Inet4Address
+import java.net.InetSocketAddress
+import java.net.ServerSocket
+import java.net.Socket
+import java.net.SocketTimeoutException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+
+/** Explicit foreground-only local Wi-Fi transfer, bootstrapped by a secret NFC tap. */
+class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
+    private val handler = Handler(Looper.getMainLooper())
+    private val stopped = AtomicBoolean(false)
+    private val reading = AtomicBoolean(false)
+    @Volatile private var listener: ServerSocket? = null
+    @Volatile private var socket: Socket? = null
+    @Volatile private var ticket: RadioTicket? = null
+    @Volatile private var confirmation: CountDownLatch? = null
+    @Volatile private var approved = false
+    @Volatile private var authenticated = false
+    @Volatile private var complete = false
+    private var active = false
+    private var adapter: NfcAdapter? = null
+    private lateinit var chat: String
+    private var renew = false
+    private var size = PadProtocol.MATERIAL_BYTES
+    private lateinit var status: TextView
+    private lateinit var share: Button
+    private lateinit var read: Button
+    private lateinit var confirm: Button
+    private lateinit var done: Button
+    private fun note(text: String) = runOnUiThread { if (active && !stopped.get()) status.text = text }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        chat = intent.getStringExtra("chat") ?: run { finish(); return }
+        renew = intent.getBooleanExtra("renew", false)
+        size = intent.getIntExtra("padSize", PadProtocol.MATERIAL_BYTES)
+        if (!PadProtocol.validSize(size)) { finish(); return }
+        StationRuntime.pairingOpen = true
+        window.protectPrivateContent(); window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        adapter = NfcAdapter.getDefaultAdapter(this)
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(24, 32, 24, 24); setBackgroundColor(Color.WHITE) }
+        fun label(text: String, sp: Float = 16f) = TextView(this).apply {
+            this.text = text; textSize = sp; setTextColor(Color.BLACK); typeface = Typeface.MONOSPACE; setPadding(0, 8, 0, 16)
+        }
+        root.addView(label(if (renew) "Renew pad nearby" else "Pair nearby", 24f))
+        val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(ScrollView(this).apply { addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        body.addView(label("Connect both devices to the same private Wi-Fi. Choose Share on one and Read on the other, then touch their NFC antennas. Compare the codes on both screens before approving. The sharing device selects the pad size: ${size / PadProtocol.MATERIAL_BYTES} MiB."))
+        body.addView(label("The tap shares a temporary transfer secret. Keep it private: NFC can be intercepted or relayed at close range. Wi-Fi carries authenticated encrypted data; the relay server receives no pad. This experimental wireless option uses computational encryption. Use USB for the most controlled physical exchange.", 13f))
+        status = label("Ready · both devices need version 0.12 or later"); body.addView(status)
+        share = Button(this).apply { text = "Share · tap within 60 seconds"; isEnabled = adapter != null && packageManager.hasSystemFeature("android.hardware.nfc.hce"); setOnClickListener { startSharing() } }; body.addView(share)
+        read = Button(this).apply { text = "Read other device"; isEnabled = adapter != null; setOnClickListener { startReading() } }; body.addView(read)
+        if (adapter == null) body.addView(label("NFC unavailable. Return to chat settings and pair by USB."))
+        confirm = Button(this).apply { text = if (renew) "Codes match · Renew" else "Codes match · Pair"; isEnabled = false; filterTouchesWhenObscured = true
+            setOnClickListener { approved = true; isEnabled = false; confirmation?.countDown() } }; root.addView(confirm)
+        done = Button(this).apply { text = "Cancel"; setOnClickListener { finish() } }; root.addView(done)
+        setContentView(root)
+        handler.postDelayed({ if (!stopped.get() && !complete) { note("Transfer timed out. Close and retry on both devices."); closeLinks(); confirm.isEnabled = false } }, 180000)
+    }
+    override fun onResume() { super.onResume(); active = true }
+    private fun ready(): Boolean {
+        if (adapter?.isEnabled != true) { status.text = "Turn NFC on in Android settings first."; return false }
+        return true
+    }
+    private fun lockChoices() { share.isEnabled = false; read.isEnabled = false }
+    @Suppress("DEPRECATION")
+    private fun wifi(): Pair<Network, Inet4Address> {
+        val manager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        for (network in manager.allNetworks) {
+            if (manager.getNetworkCapabilities(network)?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) != true) continue
+            val address = manager.getLinkProperties(network)?.linkAddresses?.map { it.address }
+                ?.filterIsInstance<Inet4Address>()?.firstOrNull { it.isSiteLocalAddress && !it.isLoopbackAddress }
+            if (address != null) return network to address
+        }
+        error("Connect both devices to the same private Wi-Fi first. IPv4 is required; guest Wi-Fi may block device connections.")
+    }
+    private fun startSharing() {
+        if (!ready()) return
+        lockChoices(); adapter?.disableReaderMode(this)
+        StationRuntime.worker.execute {
+            try {
+                val engine = ChatBook(this).engine(chat)
+                if (renew) engine.requireRenewalIdentity() else engine.requireCableEligible()
+                val (_, address) = wifi()
+                val server = ServerSocket(); listener = server
+                server.reuseAddress = false; server.bind(InetSocketAddress(address, 0)); server.soTimeout = 1000
+                if (stopped.get()) { server.close(); return@execute }
+                val offer = RadioTicket.create(address.hostAddress!!, server.localPort); ticket = offer
+                val expires = SystemClock.elapsedRealtime() + 60000
+                val payload = offer.encode().toByteArray(Charsets.UTF_8)
+                runOnUiThread {
+                    if (active && !stopped.get()) {
+                        NfcSetupExchange.clear(); NfcSetupExchange.payload = payload; NfcSetupExchange.expires = expires
+                        status.text = "Ready to tap · choose Read on the other device. Both must use the same Wi-Fi."
+                    } else payload.fill(0)
+                }
+                while (!stopped.get() && SystemClock.elapsedRealtime() < expires) {
+                    val connection = try { server.accept() } catch (_: SocketTimeoutException) { continue }
+                    socket = connection; connection.soTimeout = 5000
+                    if (stopped.get() || SystemClock.elapsedRealtime() >= expires) { connection.close(); break }
+                    val envelope = try { RadioHandoff.establish(true, connection.getInputStream(), connection.getOutputStream(), offer) }
+                        catch (_: Exception) { connection.close(); socket = null; continue }
+                    authenticated = true
+                    server.close(); listener = null
+                    offer.close(); ticket = null
+                    runOnUiThread { NfcSetupExchange.clear() }
+                    connection.soTimeout = 100000
+                    envelope.use { transfer(true, it, engine) }
+                    return@execute
+                }
+                error("Tap expired. Close this screen and start again.")
+            } catch (e: Exception) { failed(e) }
+            finally { closeLinks() }
+        }
+    }
+    private fun startReading() {
+        if (!ready()) return
+        lockChoices(); NfcSetupExchange.clear()
+        adapter?.enableReaderMode(this, this, NfcAdapter.FLAG_READER_NFC_A or NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK, null)
+        status.text = "Touch the sharing device's NFC antenna. Then approve the connection shown here."
+    }
+    override fun onTagDiscovered(tag: Tag) {
+        if (!reading.compareAndSet(false, true) || stopped.get()) return
+        try {
+            val card = IsoDep.get(tag) ?: error("NFC card mode unavailable")
+            val offer = card.use { RadioTicket.decode(readNfcSetupPayload(it)) }
+            runOnUiThread {
+                if (!active || stopped.get()) { offer.close(); return@runOnUiThread }
+                adapter?.disableReaderMode(this)
+                val dialog = AlertDialog.Builder(this).setTitle("Connect to this device?")
+                    .setMessage("Local Wi-Fi: ${offer.address}\n\nOnly continue with the physical device you just tapped. You will compare confirmation codes before any pad or relay credentials transfer.")
+                    .setNegativeButton("Cancel") { _, _ -> offer.close(); finish() }
+                    .setOnCancelListener { offer.close(); finish() }
+                    .setPositiveButton("Connect encrypted") { _, _ -> connect(offer) }.create()
+                dialog.show(); dialog.window?.protectPrivateContent()
+                ticket = offer
+            }
+        } catch (_: Exception) {
+            reading.set(false); note("Could not read a wireless offer. Select Share nearby on the other device, then tap again. USB remains available.")
+        }
+    }
+    private fun connect(offer: RadioTicket) {
+        StationRuntime.worker.execute {
+            try {
+                check(!stopped.get())
+                val engine = ChatBook(this).engine(chat)
+                if (renew) engine.requireRenewalIdentity() else engine.requireCableEligible()
+                val (network, _) = wifi()
+                val connection = network.socketFactory.createSocket(); socket = connection
+                if (stopped.get()) { connection.close(); return@execute }
+                note("Connecting over local Wi-Fi…")
+                connection.connect(InetSocketAddress(offer.address, offer.port), 8000); connection.soTimeout = 8000
+                RadioHandoff.establish(false, connection.getInputStream(), connection.getOutputStream(), offer).use {
+                    authenticated = true; offer.close(); ticket = null; connection.soTimeout = 100000
+                    transfer(false, it, engine)
+                }
+            } catch (e: Exception) { failed(e) }
+            finally { closeLinks() }
+        }
+    }
+    private fun transfer(host: Boolean, envelope: RadioHandoff, engine: StationEngine) {
+        CableProtocol.run(host, envelope.input, envelope.output, engine, review = { code, endpoint ->
+            val latch = CountDownLatch(1); confirmation = latch
+            runOnUiThread { if (active && !stopped.get()) {
+                status.text = "Compare ALL groups on both devices:\n\n$code\n\n$endpoint\n\nApprove only if every group matches your friend's physical screen."
+                confirm.isEnabled = true
+            } }
+            check(latch.await(90, TimeUnit.SECONDS) && approved && !stopped.get()) { "Confirmation cancelled" }
+        }, progress = { note(it.replace("USB", "local Wi-Fi")) }, renew = renew, size = size)
+        complete = true
+        runOnUiThread { if (active && !stopped.get()) { done.text = "Done · open messages"; confirm.isEnabled = false } }
+    }
+    private fun failed(error: Exception) {
+        note(if (!authenticated) error.message ?: "Connection unavailable. Close and retry, or use USB."
+            else if (renew) "Renewal interrupted. Keep both devices offline; reopen Renew for this friend on BOTH devices and reconnect by USB or nearby transfer to recover. History and identity are retained."
+            else "Pairing interrupted. Before use, start a fresh pairing on BOTH devices. Any exposed candidate pad must not be reused.")
+        runOnUiThread { if (active) confirm.isEnabled = false }
+    }
+    private fun closeLinks() {
+        try { listener?.close() } catch (_: Exception) {}; listener = null
+        try { socket?.close() } catch (_: Exception) {}; socket = null
+        ticket?.close(); ticket = null; confirmation?.countDown()
+        NfcSetupExchange.clear()
+    }
+    override fun onStop() {
+        active = false; stopped.set(true); closeLinks(); adapter?.disableReaderMode(this); handler.removeCallbacksAndMessages(null)
+        StationRuntime.worker.execute { StationRuntime.pairingOpen = false }
+        if (!isFinishing) finish()
+        super.onStop()
+    }
+}

@@ -11,6 +11,22 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.*
 
+internal fun readNfcSetupPayload(card: IsoDep): String {
+    card.timeout = 3000; card.connect()
+    check(card.transceive(NfcSetupExchange.select).contentEquals(byteArrayOf(0x90.toByte(), 0)))
+    val buffer = java.io.ByteArrayOutputStream()
+    while (buffer.size() <= 1024) {
+        val at = buffer.size()
+        val chunk = card.transceive(byteArrayOf(0x80.toByte(), 0xca.toByte(), (at shr 8).toByte(), at.toByte(), 192.toByte()))
+        check(chunk.size in 2..194 && chunk[chunk.size - 2] == 0x90.toByte() && chunk.last() == 0.toByte())
+        buffer.write(chunk, 0, chunk.size - 2)
+        if (chunk.size < 194) break
+    }
+    require(buffer.size() <= 1024)
+    val bytes = buffer.toByteArray()
+    return try { String(bytes, Charsets.UTF_8) } finally { bytes.fill(0) }
+}
+
 /** Explicit, short-lived setup sharing, like the secret QR. Never exports operational pads. */
 object NfcSetupExchange {
     val select = byteArrayOf(0, 0xa4.toByte(), 4, 0, 7, 0xf0.toByte(), 0x46, 0x49, 0x45, 0x4c, 0x44, 1, 0)
@@ -78,20 +94,7 @@ class NfcSetupActivity : Activity(), NfcAdapter.ReaderCallback {
     override fun onTagDiscovered(tag: Tag) {
         try {
             val card = IsoDep.get(tag) ?: error("Other device does not support this NFC setup method")
-            val text = card.use {
-                card.timeout = 3000; card.connect()
-                check(card.transceive(NfcSetupExchange.select).contentEquals(byteArrayOf(0x90.toByte(), 0)))
-                val buffer = java.io.ByteArrayOutputStream()
-                while (buffer.size() <= 1024) {
-                    val at = buffer.size()
-                    val chunk = card.transceive(byteArrayOf(0x80.toByte(), 0xca.toByte(), (at shr 8).toByte(), at.toByte(), 192.toByte()))
-                    check(chunk.size in 2..194 && chunk[chunk.size - 2] == 0x90.toByte() && chunk.last() == 0.toByte())
-                    buffer.write(chunk, 0, chunk.size - 2)
-                    if (chunk.size < 194) break
-                }
-                require(buffer.size() <= 1024)
-                buffer.toString("UTF-8")
-            }
+            val text = card.use { readNfcSetupPayload(it) }
             val invite = PairingInvite.decode(text)
             runOnUiThread {
                 if (!active || sharing) return@runOnUiThread

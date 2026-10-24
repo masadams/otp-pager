@@ -21,7 +21,7 @@ import android.view.WindowManager
 import android.widget.*
 import java.util.concurrent.Executors
 
-/** Isolated two-device chats, foreground-only delivery. No background service or analytics. */
+/** Isolated two-device chats with explicit receiving and physical pairing controls. */
 class NetworkActivity : Activity() {
     private val worker = StationRuntime.worker
     private val handler = Handler(Looper.getMainLooper())
@@ -282,6 +282,7 @@ class NetworkActivity : Activity() {
         pairedOptions.addView(button("Receiving & battery") { showReceiving() })
         renewButton = button("Renew pad · USB") { choosePadSize(renew = true) }
         pairedOptions.addView(renewButton)
+        pairedOptions.addView(button("Renew nearby · NFC + Wi-Fi") { beginRadioPairing(true) })
         pairedOptions.addView(button("Pad size for USB pairing") { choosePadSize(renew = false, launch = false) })
         settings.addView(button("Chat relay access") { showRelayAccess() })
         settingsIntro = text("Save server details on one device, then pair by cable. QR is available as a fallback.", 14f, muted); settings.addView(settingsIntro)
@@ -289,6 +290,7 @@ class NetworkActivity : Activity() {
             if (latest?.cableEligible == false) confirm("Replace this pairing?", "This removes the current conversation and queued messages on THIS station. The server address and token stay saved. A fresh secret and pad will be created; the old pad cannot be reused. Start the new pairing on both intended devices.") { beginCablePairing(true) }
             else choosePadSize(renew = false)
         }; settings.addView(pairButton)
+        settings.addView(button("Pair nearby · NFC + Wi-Fi") { beginRadioPairing(false) })
         pairingHelp = text("Open Pair devices on both and connect a USB data cable. Setup, pad transfer and identity verification happen together.", 12f, muted); settings.addView(pairingHelp)
         settings.addView(button("Advanced connection setup") {
             advancedShown = !advancedShown
@@ -526,6 +528,16 @@ class NetworkActivity : Activity() {
             val station = checkNotNull(engine)
             if (replace) station.resetForCable()
             if (renew) station.requireRenewalIdentity() else station.requireCableEligible(); "Opening USB connection"
+        }
+    }
+    private fun beginRadioPairing(renew: Boolean) {
+        confirm(if (renew) "Renew over local Wi-Fi?" else "Pair over local Wi-Fi?",
+            "Both devices need version 0.12, NFC and the same private Wi-Fi. Tap to share a temporary secret, then compare codes before the encrypted pad transfer. No pad goes to the relay. Keep the tap private; use USB if you prefer a cable. Existing pairings are preserved. Pad size on this device: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB.") {
+            runTask(onSuccess = { startActivity(Intent(this, RadioPairActivity::class.java)
+                .putExtra("chat", checkNotNull(book).active().id).putExtra("renew", renew).putExtra("padSize", selectedPadSize)) }) {
+                if (renew) checkNotNull(engine).requireRenewalIdentity() else checkNotNull(engine).requireCableEligible()
+                "Opening nearby transfer"
+            }
         }
     }
     private fun choosePadSize(renew: Boolean, launch: Boolean = true) {

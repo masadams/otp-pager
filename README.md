@@ -177,6 +177,8 @@ initial signature transition remain explicit; see the update instructions.
 
 The v0.10 development pass adds [per-chat relay access and revocation](docs/CHAT_RELAY_ACCESS.md), clearer connection/delivery status and draft-aware sending. Update both clients before enabling chat protection on the new relay.
 
-The v0.11 development branch adds a friendlier chat view, opt-in background receiving,
-selectable USB pad sizes and identity/history-preserving USB renewal. NFC link setup
-is experimental; wireless pad handoff is not enabled. See [pager operation](docs/PAGER_V011.md).
+The development branch includes the v0.11 friendlier chat view, opt-in background receiving,
+selectable pad sizes and identity/history-preserving renewal. See [pager operation](docs/PAGER_V011.md).
+v0.12 adds optional [NFC-assisted encrypted local Wi-Fi pairing and renewal](docs/NFC_WIFI_HANDOFF.md).
+Both devices need the same private Wi-Fi; physical NFC/HCE and Kompakt interoperability still need testing.
+USB remains the preferred controlled exchange. These changes are pending merge, not a server deployment.
