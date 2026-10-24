@@ -17,7 +17,8 @@ import javax.crypto.spec.SecretKeySpec
 /** One ephemeral physical-pairing session. Keys are never stored or reused across sessions. */
 internal class CableSession private constructor(
     private val sendKey: ByteArray, private val receiveKey: ByteArray,
-    private val context: ByteArray, private val sendDirection: Byte, private val receiveDirection: Byte
+    private val context: ByteArray, private val sendDirection: Byte, private val receiveDirection: Byte,
+    private val limit: Int = LIMIT
 ) : AutoCloseable {
     private var sent = 0L
     private var received = 0L
@@ -26,7 +27,7 @@ internal class CableSession private constructor(
     private fun nonce(sequence: Long) = ByteBuffer.allocate(12).putInt(0).putLong(sequence).array()
     // A failed write consumes the sequence and invalidates the entire channel; never retry encryption.
     @Synchronized fun send(output: OutputStream, plaintext: ByteArray) {
-        check(!closed); require(plaintext.size in 1..LIMIT); check(sent < Long.MAX_VALUE)
+        check(!closed); require(plaintext.size in 1..limit); check(sent < Long.MAX_VALUE)
         val sequence = sent++
         try {
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -41,7 +42,7 @@ internal class CableSession private constructor(
         check(!closed)
         try {
             val source = DataInputStream(input)
-            val size = source.readInt(); require(size in 17..(LIMIT + 16)) { "Invalid encrypted cable frame" }
+            val size = source.readInt(); require(size in 17..(limit + 16)) { "Invalid encrypted cable frame" }
             val sequence = source.readLong(); require(sequence == received && received < Long.MAX_VALUE) { "Cable sequence rejected" }
             val encrypted = ByteArray(size)
             try {
@@ -55,7 +56,21 @@ internal class CableSession private constructor(
     }
     override fun close() { closed = true; sendKey.fill(0); receiveKey.fill(0); context.fill(0) }
     companion object {
-        const val LIMIT = 1450000
+        const val LIMIT = 5700000
+        /** Separate domain and bounded records for the NFC secret's outer radio envelope. */
+        fun radio(host: Boolean, secret: ByteArray, transcript: ByteArray): CableSession {
+            require(secret.size == 32 && transcript.size == 32)
+            fun hmac(key: ByteArray, data: ByteArray) = Mac.getInstance("HmacSHA256").run {
+                init(SecretKeySpec(key, "HmacSHA256")); doFinal(data)
+            }
+            val prk = hmac(transcript, secret)
+            try {
+                fun expand(direction: String) = hmac(prk, "Field NFC radio v1 / $direction".toByteArray(Charsets.US_ASCII) + byteArrayOf(1))
+                val a = expand("A to B"); val b = expand("B to A")
+                return if (host) CableSession(a, b, transcript.copyOf(), 0, 1, 32768)
+                    else CableSession(b, a, transcript.copyOf(), 1, 0, 32768)
+            } finally { prk.fill(0) }
+        }
         fun ephemeral(): KeyPair = KeyPairGenerator.getInstance("EC").apply { initialize(ECGenParameterSpec("secp256r1")) }.generateKeyPair()
         /** HKDF-SHA256 extract and single-block expand (RFC 5869), independently labelled directions. */
         fun establish(host: Boolean, own: KeyPair, peerCard: String, transcript: ByteArray): CableSession {

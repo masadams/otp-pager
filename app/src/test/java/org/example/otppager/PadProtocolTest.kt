@@ -48,6 +48,22 @@ class PadProtocolTest {
         rejects { PadProtocol.open(mutable, Base64.getEncoder().encodeToString(forged), 'A', identity) }
         assertEquals(PadProtocol.messageId(pad, 'A', 2), PadProtocol.open(mutable, later, 'A', identity).id)
     }
+    @Test fun largerPadsKeepDirectionsSeparateAndEnforceTheirCapacity() {
+        for (size in listOf(2, 4)) {
+            val material = ByteArray(size * PadProtocol.MATERIAL_BYTES) { (it * 13 + 7).toByte() }
+            val capacity = PadProtocol.slots(material)
+            assertEquals(size * PadProtocol.MATERIAL_BYTES / 2 / PadProtocol.STRIDE, capacity)
+            val identity = PadProtocol.id(material)
+            val message = PadProtocol.seal(material, 'B', capacity.toLong(), "large pad", identity)
+            assertEquals("large pad", PadProtocol.open(material, message.second, 'B', identity).payload)
+            rejects { PadProtocol.seal(material, 'B', capacity + 1L, "overflow", identity) }
+            PadProtocol.retire(material, 'A', capacity.toLong())
+            assertEquals("large pad", PadProtocol.open(material, message.second, 'B', identity).payload)
+            val binding = ByteArray(32) { 4 }
+            assertArrayEquals(material, PadProtocol.material(PadProtocol.bundle(material, binding), binding))
+        }
+        rejects { PadProtocol.generate(ByteArray(32), 3 * PadProtocol.MATERIAL_BYTES) }
+    }
     @Test fun bundleMustMatchSizeVersionAndPairing() {
         val binding = ByteArray(32) { it.toByte() }; val bundle = PadProtocol.generate(binding)
         assertEquals(PadProtocol.MATERIAL_BYTES, PadProtocol.material(bundle, binding).size)

@@ -48,7 +48,7 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
         cipher.init(Cipher.DECRYPT_MODE, key(false), GCMParameterSpec(128, bytes.copyOfRange(1, 13)))
         cipher.updateAAD(aad)
         val clear = cipher.doFinal(bytes.copyOfRange(13, bytes.size))
-        return try { JSONObject(String(clear, Charsets.UTF_8)).also { check(it.getInt("version") in 2..5) } }
+        return try { JSONObject(String(clear, Charsets.UTF_8)).also { check(it.getInt("version") in 2..6) } }
         finally { clear.fill(0) }
     }
     fun save(state: JSONObject) {
