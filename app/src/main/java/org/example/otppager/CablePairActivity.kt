@@ -75,7 +75,7 @@ class CablePairActivity : Activity() {
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val scroll = ScrollView(this).apply { addView(body) }; root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         body.addView(label("Open this screen on both devices, then connect a USB data cable. At least one station must have its relay address and access token saved. Approve Android's USB prompts. After both confirm, roles, fresh secret, pad and identities transfer automatically over an encrypted USB session. Both devices need version 0.11 or later. The USB host selects the pad size."))
-        if (renewal) body.addView(label("Select Renew pad for the SAME friend on both devices. Sync pending messages first. Your history and verified identities stay in place. If interrupted, reconnect both on this screen to recover. Pad choice: ${padSize / PadProtocol.MATERIAL_BYTES} MiB."))
+        if (renewal) body.addView(label("Select Renew pad for the SAME friend on both devices. Outstanding messages are confirmed over USB before renewal. Your history and verified identities stay in place. If interrupted, reconnect both on this screen to recover. Pad choice: ${padSize / PadProtocol.MATERIAL_BYTES} MiB."))
         status = label("Waiting for the other device…"); body.addView(status)
         confirm = Button(this).apply { text = if (renewal) "Codes match · Renew pad" else "Codes match · Pair devices"; isEnabled = false; filterTouchesWhenObscured = true
             setOnClickListener { approved = true; isEnabled = false; confirmation?.countDown() } }; root.addView(confirm)
@@ -134,7 +134,7 @@ class CablePairActivity : Activity() {
             } catch (failure: Exception) {
                 val saved = engine?.state?.has("pad") == true
                 note(if (failure is CableProtocol.UpgradeRequired) "${failure.message}. Close this screen and update both devices before retrying."
-                    else if (renewal) "Renewal paused. History and identities are retained. Reopen Renew pad for this friend on BOTH devices and reconnect USB to recover. Sync outstanding messages first if requested."
+                    else if (renewal) "Renewal paused. History and identities are retained. Reopen Renew pad for this friend on BOTH devices and reconnect USB to recover. No saved message is silently discarded."
                     else if (saved) "Connection interrupted after saving locally. Keep both devices offline and start a FRESH pairing on BOTH before use; do not reuse the transferred pad."
                     else "Pairing did not finish. No link was activated here. Close and retry; any exposed pad is retired automatically.")
                 runOnUiThread { confirm.isEnabled = false }

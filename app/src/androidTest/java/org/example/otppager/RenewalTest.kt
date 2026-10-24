@@ -34,14 +34,20 @@ class RenewalTest {
             cable(a, b)
             val card = a.view().ownDevice; val peer = a.view().peerDevice; val secret = a.state!!.getString("secret")
             a.send("Saved history")
-            val saved = JSONObject(a.state.toString())
-            saved.getJSONArray("outbox").getJSONObject(0).put("status", "delivered"); sa.save(saved)
-            a = StationEngine(sa)
+            // Exhaust both send directions with an unconfirmed text still queued on A.
+            // USB must confirm it without allocating a receipt from the exhausted pad.
+            for (store in stores) {
+                val ledger = PadLedger(store.sibling("pads")); val id = a.view().padCheck!!
+                while (ledger.high(id) < PadProtocol.SLOTS) ledger.reserve(id)
+            }
+            a = StationEngine(sa); b = StationEngine(sb)
+            assertEquals(0, a.view().padRemaining); assertEquals(0, b.view().padRemaining)
             val oldId = a.view().padCheck
             cable(a, b, true, 4 * PadProtocol.MATERIAL_BYTES)
             assertNotEquals(oldId, a.view().padCheck); assertEquals(a.view().padCheck, b.view().padCheck)
             assertEquals(card, a.view().ownDevice); assertEquals(peer, a.view().peerDevice); assertEquals(secret, a.state!!.getString("secret"))
             assertEquals("Saved history", a.view().messages.single().text); assertTrue(a.view().messages.single().deviceVerified)
+            assertEquals("Saved history", b.view().messages.single().text); assertEquals("delivered", a.view().messages.single().status)
             assertEquals(508, a.view().padRemaining)
             a = StationEngine(sa); b = StationEngine(sb)
             assertEquals("Saved history", a.view().messages.single().text)

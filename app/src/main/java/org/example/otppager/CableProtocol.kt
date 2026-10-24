@@ -11,7 +11,7 @@ import java.util.Base64
 
 /** Physical cable transport; identity is authenticated by comparing the displayed transcript code. */
 object CableProtocol {
-    class UpgradeRequired : IllegalArgumentException("Update both devices to 0.11 or later for this USB operation")
+    class UpgradeRequired : IllegalArgumentException("Upgrade both devices to 0.11 or later for this USB operation")
     private const val LIMIT = 4096 // Public hello/approval frames only; encrypted material has a separate bound.
     private fun hash(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes)
     private val b64 = Base64.getEncoder()
@@ -89,7 +89,6 @@ object CableProtocol {
             check(peer.getString("room") == own.getString("room") && peer.getString("role") != own.getString("role") && peer.getString("role") in listOf("A", "B")) { "Choose the matching chat on both devices" }
         }
         val recover = renew && own.getString("padId") == peer.getString("padId") && (own.optBoolean("paused") || peer.optBoolean("paused"))
-        if (renew && !recover) engine.requireRenewalEligible()
         val a = if (host) own else peer; val b = if (host) peer else own
         val server = if (a.has("endpoint")) a else b
         check(server.has("endpoint")) { "Enter and save relay settings on either device first" }
@@ -109,7 +108,6 @@ object CableProtocol {
             verify(peerKey, identityDigest, "accept-A", accepted.getString("proof"))
             send(output, JSONObject().put("kind", "accepted").put("proof", proof(engine, identityDigest, "accept-B")))
         }
-        if (renew && !recover) engine.beginRenewal()
         CableSession.establish(host, ephemeral, peer.getString("ephemeral"), identityDigest).use { channel ->
             fun secureSend(value: JSONObject) {
                 val bytes = value.toString().toByteArray(Charsets.UTF_8)
@@ -127,6 +125,24 @@ object CableProtocol {
                 engine.finishCable()
                 progress("Connection recovered · current pad and messages retained")
                 return
+            }
+            if (renew) {
+                progress("Confirming outstanding messages over encrypted USB…")
+                val sent = engine.renewalTraffic()
+                if (host) {
+                    secureSend(JSONObject().put("kind", "traffic").put("packets", sent))
+                    val reply = secureRead(); require(reply.getString("kind") == "traffic-reply")
+                    engine.acknowledgeRenewalTraffic(reply.getJSONArray("ack"), sent)
+                    val ack = engine.receiveRenewalTraffic(reply.getJSONArray("packets"))
+                    secureSend(JSONObject().put("kind", "traffic-done").put("ack", ack))
+                } else {
+                    val incoming = secureRead(); require(incoming.getString("kind") == "traffic")
+                    val ack = engine.receiveRenewalTraffic(incoming.getJSONArray("packets"))
+                    secureSend(JSONObject().put("kind", "traffic-reply").put("ack", ack).put("packets", sent))
+                    val done = secureRead(); require(done.getString("kind") == "traffic-done")
+                    engine.acknowledgeRenewalTraffic(done.getJSONArray("ack"), sent)
+                }
+                engine.beginRenewal()
             }
             if (!host && !a.has("endpoint")) {
                 val token = checkNotNull(engine.state).getString("token")
