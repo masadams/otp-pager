@@ -48,6 +48,7 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
     private lateinit var read: Button
     private lateinit var confirm: Button
     private lateinit var done: Button
+    private lateinit var padChoice: Button
     private fun note(text: String) = runOnUiThread { if (active && !stopped.get()) status.text = text }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,9 +66,19 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         root.addView(label(if (renew) "Renew pad nearby" else "Pair nearby", 24f))
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(ScrollView(this).apply { addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
-        body.addView(label("Connect both devices to the same private Wi-Fi. Choose Share on one and Read on the other, then touch their NFC antennas. Compare the codes on both screens before approving. The sharing device selects the pad size: ${size / PadProtocol.MATERIAL_BYTES} MiB."))
+        body.addView(label("Connect both devices to the same private Wi-Fi. Choose Share on one and Read on the other, then touch their NFC antennas. Compare the codes on both screens before approving. The sharing device selects the pad size below."))
         body.addView(label("The tap shares a temporary transfer secret. Keep it private: NFC can be intercepted or relayed at close range. Wi-Fi carries authenticated encrypted data; the relay server receives no pad. This experimental wireless option uses computational encryption. Use USB for the most controlled physical exchange.", 13f))
         status = label("Ready · both devices need version 0.12 or later"); body.addView(status)
+        padChoice = Button(this).apply { text = "Pad size · ${size / PadProtocol.MATERIAL_BYTES} MiB"; setOnClickListener {
+            val sizes = intArrayOf(PadProtocol.MATERIAL_BYTES, 2 * PadProtocol.MATERIAL_BYTES, 4 * PadProtocol.MATERIAL_BYTES)
+            var selected = sizes.indexOf(size)
+            val dialog = AlertDialog.Builder(this@RadioPairActivity).setTitle("Choose a pad size")
+                .setSingleChoiceItems(arrayOf("1 MiB · 127 slots each way", "2 MiB · 254 slots each way", "4 MiB · 508 slots each way"), selected) { _, which -> selected = which }
+                .setNegativeButton("Cancel", null).setPositiveButton("Use this size") { _, _ ->
+                    size = sizes[selected]; text = "Pad size · ${size / PadProtocol.MATERIAL_BYTES} MiB"
+                }.create()
+            dialog.show(); dialog.window?.protectPrivateContent()
+        } }; body.addView(padChoice)
         share = Button(this).apply { text = "Share · tap within 60 seconds"; isEnabled = adapter != null && packageManager.hasSystemFeature("android.hardware.nfc.hce"); setOnClickListener { startSharing() } }; body.addView(share)
         read = Button(this).apply { text = "Read other device"; isEnabled = adapter != null; setOnClickListener { startReading() } }; body.addView(read)
         if (adapter == null) body.addView(label("NFC unavailable. Return to chat settings and pair by USB."))
@@ -82,7 +93,7 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         if (adapter?.isEnabled != true) { status.text = "Turn NFC on in Android settings first."; return false }
         return true
     }
-    private fun lockChoices() { share.isEnabled = false; read.isEnabled = false }
+    private fun lockChoices() { share.isEnabled = false; read.isEnabled = false; padChoice.isEnabled = false }
     @Suppress("DEPRECATION")
     private fun wifi(): Pair<Network, Inet4Address> {
         val manager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

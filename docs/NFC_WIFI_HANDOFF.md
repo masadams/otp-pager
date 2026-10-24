@@ -4,7 +4,7 @@ Optional local wireless pad transfer; USB remains available. Both devices need v
 
 ## Use
 
-Save relay settings on at least one unused chat. Open **Pair nearby · NFC + Wi-Fi** on both devices. Choose Share on one and Read on the other, then touch their NFC antennas. Review the local connection on the reader. Compare ALL confirmation-code groups on both screens and approve both. The sharing device's saved pad-size choice (1/2/4 MiB) wins. The pad-size selector in settings also sets this choice.
+Save relay settings on at least one unused chat. Open **Pair nearby · NFC + Wi-Fi** on both devices. Select 1/2/4 MiB directly in the wizard if desired, then choose Share on one and Read on the other and touch their NFC antennas. Review the local connection on the reader. Compare ALL confirmation-code groups on both screens and approve both. The sharing device's choice wins; the reader reviews it with the confirmation code. Initial size comes from chat settings (4 MiB by default).
 
 For an existing friend choose **Renew nearby** for the same chat on both. Identity pins and chat secrets must match. Outstanding texts are confirmed before renewal; retained history and identities stay in place. Interrupted renewal uses the USB protocol's persistent paused/recovery states. If fresh pairing is interrupted after either side saves, replace that pairing on BOTH before use. Exposed candidates are retired, never cloned. Leaving/locking the transfer screen cancels the listener and connection. Recovery never copies an operational used pad.
 
