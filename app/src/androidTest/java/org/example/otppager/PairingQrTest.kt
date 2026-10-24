@@ -21,6 +21,23 @@ class PairingQrTest {
         try { PairingQr.readImage(ByteArray(4 * 1024 * 1024 + 1).inputStream()); fail("Oversized image accepted") } catch (_: IllegalArgumentException) {}
         try { PairingQr.readImage("not an image".byteInputStream()); fail("Invalid image accepted") } catch (_: IllegalArgumentException) {}
     }
+    @Test fun cleanImportedImagesDecodeAcrossAllQrMasks() {
+        val secret = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(ByteArray(32) { it.toByte() })
+        val payload = PairingInvite("https://pager.example.com", "t".repeat(128), secret, "B").encode()
+        for (mask in 0..7) {
+            val matrix = com.google.zxing.qrcode.QRCodeWriter().encode(payload, com.google.zxing.BarcodeFormat.QR_CODE, 640, 640,
+                mapOf(com.google.zxing.EncodeHintType.MARGIN to 4, com.google.zxing.EncodeHintType.QR_MASK_PATTERN to mask,
+                    com.google.zxing.EncodeHintType.ERROR_CORRECTION to com.google.zxing.qrcode.decoder.ErrorCorrectionLevel.M))
+            val pixels = IntArray(matrix.width * matrix.height) { i -> if (matrix[i % matrix.width, i / matrix.width]) android.graphics.Color.BLACK else android.graphics.Color.WHITE }
+            val bitmap = android.graphics.Bitmap.createBitmap(pixels, matrix.width, matrix.height, android.graphics.Bitmap.Config.ARGB_8888)
+            try {
+                assertEquals("Mask $mask", payload, PairingQr.decode(bitmap))
+                val png = java.io.ByteArrayOutputStream()
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, png)
+                assertEquals("PNG mask $mask", payload, PairingQr.readImage(png.toByteArray().inputStream()))
+            } finally { bitmap.recycle(); pixels.fill(0) }
+        }
+    }
     @Test fun embeddedScannerInflatesWithSecureWindow() {
         val instrumentation = InstrumentationRegistry.getInstrumentation(); val context = instrumentation.targetContext
         instrumentation.uiAutomation.grantRuntimePermission(context.packageName, android.Manifest.permission.CAMERA)

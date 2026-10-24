@@ -130,3 +130,19 @@ After a complete USB pairing (or completed manual pad/device verification), Mess
 becomes the main view and the setup tabs are hidden. Open the chat picker → **Chat
 settings**, or tap status → **Settings**, to reach Link, Pad and Device. Returning
 to Messages hides those tabs again. Unpaired chats keep their setup navigation.
+
+### Android 0.8 development: encrypted USB and clearer setup
+
+Unpaired conversations explain the next step and offer a direct setup action.
+The normal UI requires a physical pad before sending, avoiding accidental AES test traffic. Sensitive
+input requests no personalized keyboard learning; Android 12+ hides application overlays
+on private activities and dialogs. These protections cannot secure a compromised keyboard,
+accessibility service or operating system.
+
+New USB provisioning uses ephemeral P-256 ECDH, HKDF-SHA256 and directional AES-GCM.
+The physical comparison code and signed approvals bind both ephemeral keys; secrets and
+pads transfer only after both devices approve. Both devices need 0.8 for a **new** USB
+pairing; there is no plaintext compatibility fallback. Existing paired chat state and
+relay/message formats are unchanged. This is conventional, unaudited encryption, not
+post-quantum provisioning. See [the security review](docs/SECURITY_REVIEW.md) for open risks.
+The 0.7 field-release links above remain pinned until a new build is verified and released.

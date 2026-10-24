@@ -60,14 +60,15 @@ class CablePairActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         chatId = intent.getStringExtra("chat") ?: run { finish(); return }
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        window.protectPrivateContent()
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         manager = getSystemService(UsbManager::class.java)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 48, 32, 24); setBackgroundColor(Color.WHITE) }
         fun label(value: String, size: Float = 17f) = TextView(this).apply { text = value; textSize = size; setTextColor(Color.BLACK); typeface = Typeface.MONOSPACE; setPadding(0, 12, 0, 20) }
         root.addView(label("PAIR DEVICES", 25f))
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val scroll = ScrollView(this).apply { addView(body) }; root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        body.addView(label("Open this screen on both devices, then connect a USB data cable. At least one station must have its relay address and access token saved. Approve Android's USB prompts. Roles, fresh secret, pad and identities are exchanged automatically."))
+        body.addView(label("Open this screen on both devices, then connect a USB data cable. At least one station must have its relay address and access token saved. Approve Android's USB prompts. After both confirm, roles, fresh secret, pad and identities transfer automatically over an encrypted USB session. Both devices need version 0.8 or later."))
         status = label("Waiting for the other device…"); body.addView(status)
         confirm = Button(this).apply { text = "Codes match · Pair devices"; isEnabled = false; filterTouchesWhenObscured = true
             setOnClickListener { approved = true; isEnabled = false; confirmation?.countDown() } }; root.addView(confirm)
@@ -123,9 +124,10 @@ class CablePairActivity : Activity() {
                     }, progress = ::note)
                 }
                 runOnUiThread { if (active && !cancelled.get()) { finish.text = "Done · open messages"; confirm.isEnabled = false } }
-            } catch (_: Exception) {
+            } catch (failure: Exception) {
                 val saved = engine?.state?.has("pad") == true
-                note(if (saved) "Connection interrupted after saving locally. Keep both devices offline and start a FRESH pairing on BOTH before use; do not reuse the transferred pad."
+                note(if (failure is CableProtocol.UpgradeRequired) "${failure.message}. Close this screen and update both devices before retrying."
+                    else if (saved) "Connection interrupted after saving locally. Keep both devices offline and start a FRESH pairing on BOTH before use; do not reuse the transferred pad."
                     else "Pairing did not finish. No link was activated here. Close and retry; any exposed pad is retired automatically.")
                 runOnUiThread { confirm.isEnabled = false }
             } finally { channel?.close(); channel = null; confirmation = null }

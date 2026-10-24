@@ -1,4 +1,4 @@
-# Security code review — Android 0.7
+# Security code review — Android 0.8 (proposed)
 
 Scope: first-party client encryption/authentication, pad accounting, physical pairing,
 local storage, chat separation, relay HTTP/storage and checked-in deployment examples.
@@ -6,7 +6,25 @@ This is a developer-led code review and regression testing, not an independent a
 penetration test of the owner's server, cryptographic proof, dependency vulnerability
 certification or verification of the live Nginx/Portainer configuration.
 
-## Findings addressed in this iteration
+## Findings addressed in 0.8
+
+| Finding | Consequence | Change |
+| --- | --- | --- |
+| USB exposed pad/token/secret to passive cable capture | High, captured provisioning material compromises a chat | New version-3 provisioning uses ephemeral P-256 ECDH and HKDF-SHA256 directional AES-256-GCM keys. Both ephemeral public keys, identities, nonces and selected endpoint are bound into the physically compared code and signed approvals. Credentials, pad and completion frames are encrypted only after both approvals; strict counters, direction/transcript AAD and bounded binary records reject replay/reflection/tampering. Old plaintext pairing is rejected, with no downgrade. |
+| Normal UI allowed sending with only server/setup credentials | Misleading OTP readiness / accidental use of legacy AES test mode | Require a physical pad before enabling Send in the normal conversation UI and re-check in its worker action. Legacy engine decoding/queued packets remain compatible. |
+| Keyboard could learn sensitive input | Keyboard-dependent content retention | Request no personalized learning and no extract UI for message/setup/name fields. A malicious keyboard can still read typed text. |
+| Non-system overlays could obscure pairing/secret windows | Tapjacking / misleading prompts | Hide application overlays on Android 12+, including private dialogs; retain obscured-touch filtering and screenshot protection. System/accessibility overlays and compromised OS remain outside this protection. |
+
+**Compatibility:** upgrade both devices before a new USB pairing. Existing 0.7 paired
+chats and message packets are unchanged. No server update is required for these changes.
+This is conventional computational encryption, not post-quantum provisioning. A future
+break of recorded P-256 ECDH could expose captured provisioning sessions. Public
+hello/approval metadata, endpoint, frame sizes and timing remain observable. A compromised
+endpoint can read material after decryption; Java/JSON strings and provider private-key
+objects cannot be reliably erased. Temporary byte-array keys and frame buffers are cleared
+on normal/failure exit where accessible. Physical comparison remains mandatory.
+
+## Findings addressed in 0.7
 
 | Finding | Severity / consequence | Change |
 | --- | --- | --- |
@@ -25,7 +43,7 @@ certification or verification of the live Nginx/Portainer configuration.
 | Full pad remains stored on device | A later endpoint/pad compromise exposes captured traffic for that pad, including earlier slots. The ledger prevents reuse; it does not erase consumed pad bytes or provide forward secrecy. |
 | Experimental cryptography | SecureRandom-generated material and conventional HMAC/signatures do not establish information-theoretic OTP security. Protocol composition needs independent review. |
 | Device state rollback/cloning | Restoring coordinated old vault/ledger/registry snapshots can defeat local high-water checks. Uninstall removes these records. Never restore operational pads or reinstall and reuse them. |
-| USB cable carries plaintext pad material | The public-code comparison and signatures authenticate the exchange, but do not encrypt its transport. A malicious cable/USB host or compromised endpoint can capture secrets. Use a trusted direct cable; encrypted provisioning remains future work. |
+| USB provisioning cryptographic assurance | Version 3 prevents passive plaintext capture using conventional ECDH/AES-GCM, but the composed protocol is not independently audited or post-quantum. Verify the complete displayed code on both devices and use a trusted direct cable. Compromised endpoints remain a threat. |
 | Secret QR is a bearer credential | A photographed setup QR remains valid after its one-minute display closes. It contains relay token and pairing secret, not the pad or private signing key. It is only for direct trusted physical transfer. |
 | Release/update signing | CI produces debug APKs; owner-controlled stable release signing and verified updates are unfinished. An incompatible-signature uninstall erases pairing state; provision fresh pads afterward. |
 | Metadata and denial of service | Relay operators see mailbox IDs, timing, directional packet headers and request addresses; they can drop/delay/replay traffic or lie about accepting it. They cannot be forced to deliver. |
@@ -91,3 +109,7 @@ Mudita specifications: https://store.mudita.com/store/mudita-kompakt-global
 Completed pairings hide administrative navigation from the normal conversation.
 Chat settings remains available through the picker/status panel; this is a layout
 choice, not an authorization boundary. Tests verify both hiding and access to settings.
+
+0.8 regression additions include an independent Python ECDH/HKDF/AES-GCM frame vector and cover encrypted large USB transfer in both directions, wire capture without setup secrets, tag/sequence/transcript changes, reflection, truncation, oversized lengths, replay and session invalidation after failed writes. Test execution must be verified in CI before release.
+
+References: https://www.rfc-editor.org/rfc/rfc5869.html ; https://developer.android.com/security/fraud-prevention/activities ; https://developer.android.com/reference/android/view/inputmethod/EditorInfo#IME_FLAG_NO_PERSONALIZED_LEARNING

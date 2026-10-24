@@ -20,15 +20,27 @@ class CablePairTest {
             val stores = listOf(sa, sb); stores.forEach { it.forget(); it.sibling("pads").forget() }
             val pool = Executors.newFixedThreadPool(2)
             val ain = PipedInputStream(16384); val bout = PipedOutputStream(ain)
-            val bin = PipedInputStream(16384); val aout = PipedOutputStream(bin)
+            val bin = PipedInputStream(16384)
+            val capture = java.io.ByteArrayOutputStream()
+            fun tapped(stream: java.io.OutputStream) = object : java.io.FilterOutputStream(stream) {
+                override fun write(value: Int) { synchronized(capture) { capture.write(value) }; out.write(value) }
+                override fun write(bytes: ByteArray, offset: Int, count: Int) { synchronized(capture) { capture.write(bytes, offset, count) }; out.write(bytes, offset, count) }
+            }
+            val aout = tapped(PipedOutputStream(bin)); val tappedBout = tapped(bout)
             try {
                 val a = StationEngine(sa); val b = StationEngine(sb)
                 (if (configuredHost) a else b).configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "B")
                 val codes = java.util.concurrent.CopyOnWriteArrayList<String>(); val ready = CountDownLatch(2)
                 val review: (String, String) -> Unit = { code, _ -> codes.add(code); ready.countDown(); check(ready.await(20, TimeUnit.SECONDS)) }
                 val af = pool.submit { CableProtocol.run(true, ain, aout, a, review) {} }
-                val bf = pool.submit { CableProtocol.run(false, bin, bout, b, review) {} }
+                val bf = pool.submit { CableProtocol.run(false, bin, tappedBout, b, review) {} }
                 af.get(30, TimeUnit.SECONDS); bf.get(30, TimeUnit.SECONDS)
+                val captured = capture.toString("ISO-8859-1")
+                for (name in listOf("token", "secret", "pad")) {
+                    val value = a.state!!.getString(name)
+                    assertFalse("USB exposed $name", captured.contains(value.take(128)))
+                }
+                assertFalse(captured.contains("\"kind\":\"setup\""))
                 assertEquals(2, codes.size); assertEquals(codes[0], codes[1])
                 assertEquals("A", a.view().role); assertEquals("B", b.view().role)
                 assertEquals(a.view().padCheck, b.view().padCheck)
@@ -96,6 +108,22 @@ class CablePairTest {
             listOf(ain, bin, aout, bout).forEach { try { it.close() } catch (_: Exception) {} }
             pool.shutdownNow(); stores.forEach { it.forget(); it.sibling("pads").forget() }
         }
+    }
+    @Test fun oldPlaintextProtocolCannotDowngradeOrActivatePairing() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val store = SecureStore(context, "cable-downgrade")
+        store.forget(); store.sibling("pads").forget()
+        try {
+            val bytes = java.io.ByteArrayOutputStream()
+            val hello = "{\"kind\":\"hello\",\"version\":2}".toByteArray()
+            java.io.DataOutputStream(bytes).apply { writeInt(hello.size); write(hello) }
+            val output = java.io.ByteArrayOutputStream()
+            try {
+                CableProtocol.run(false, java.io.ByteArrayInputStream(bytes.toByteArray()), output, StationEngine(store), { _, _ -> fail("Old protocol reached review") }) {}
+                fail("Plaintext downgrade accepted")
+            } catch (expected: IllegalArgumentException) { assertTrue(expected.message!!.contains("Upgrade both devices")) }
+            assertEquals(0, output.size()); assertNull(store.load()); assertNull(store.sibling("pads").load())
+        } finally { store.forget(); store.sibling("pads").forget() }
     }
     @Test fun stagedAndInterruptedPairingRetiresPadAndCannotSend() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext

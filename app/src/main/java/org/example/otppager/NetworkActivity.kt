@@ -38,6 +38,7 @@ class NetworkActivity : Activity() {
     private var tab = 0
     private var latest: StationEngine.View? = null
     private var rendered: List<StationEngine.Message>? = null
+    private var renderedSetupComplete: Boolean? = null
     private var errorLoading = false
     private var automatic = true
     private var lastContact = 0L
@@ -139,6 +140,7 @@ class NetworkActivity : Activity() {
         setPadding(dp(12), dp(12), dp(12), dp(12))
         background = surface(Color.WHITE, 6, lineColor)
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+        imeOptions = imeOptions or android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING or android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
         isSaveEnabled = false; filterTouchesWhenObscured = true
     }
     private fun section(parent: LinearLayout, label: String, field: View) {
@@ -147,7 +149,7 @@ class NetworkActivity : Activity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        window.protectPrivateContent()
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         window.statusBarColor = paper; window.navigationBarColor = paper
         window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
@@ -243,7 +245,7 @@ class NetworkActivity : Activity() {
         syncButton = button("Sync") { runTask(network = true) { syncChats() } }; composeActions.addView(syncButton)
         sendButton = button("Send", true) {
             val value = composer.text.toString()
-            runTask(clearComposer = true) { checkNotNull(engine).send(value); "QUEUED // saved safely; syncing" }
+            runTask(clearComposer = true) { check(checkNotNull(engine).view().padCheck != null) { "Pair a physical pad before sending" }; checkNotNull(engine).send(value); "QUEUED // saved safely; syncing" }
         }; composeActions.addView(sendButton); traffic.addView(composeActions)
         composer.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -562,7 +564,7 @@ class NetworkActivity : Activity() {
     }
     private fun secureShow(dialog: AlertDialog) {
         openDialogs.removeAll { !it.isShowing }
-        dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        dialog.window?.protectPrivateContent()
         openDialogs.add(dialog); dialog.show()
         for (which in listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)) {
             dialog.getButton(which)?.apply { setTextColor(ink); isAllCaps = false; filterTouchesWhenObscured = true }
@@ -585,7 +587,7 @@ class NetworkActivity : Activity() {
         chatButton.isEnabled = !value && book != null
         for (view in listOf(sendButton, saveButton, saveRelayButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
         syncButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && latest?.pairingComplete == true && !errorLoading
-        sendButton.isEnabled = !value && latest?.canSend == true && !errorLoading
+        sendButton.isEnabled = !value && latest?.canSend == true && latest?.padCheck != null && !errorLoading
         showQrButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && !errorLoading
         scanQrButton.isEnabled = !value && latest?.cableEligible == true && !errorLoading
         imageQrButton.isEnabled = scanQrButton.isEnabled
@@ -613,7 +615,7 @@ class NetworkActivity : Activity() {
         val security = when {
             v?.ownDevice != null && v.peerDevice == null -> "DEVICE EXCHANGE INCOMPLETE"
             v?.peerDevice != null -> "DEVICE VERIFIED"
-            v?.padCheck == null -> "AES TEST MODE"
+            v?.padCheck == null -> "PAD SETUP NEEDED"
             v.padVerified && v.peerReady -> "PAD READY"
             else -> "PAD CHECK NEEDED"
         }
@@ -684,7 +686,7 @@ class NetworkActivity : Activity() {
             "Last successful relay check: ${if (seconds < 60) "$seconds seconds" else "${seconds / 60} minutes"} ago"
         }
         AlertDialog.Builder(this).setTitle("Station ${v.role} · status")
-            .setMessage("$contact\n${if (connectionFailed) "Latest relay check failed" else "Connection is checked only while the app is open"}\n\n${v.pending} packets queued locally\n${v.awaitingReceipt} messages awaiting a saved receipt\n${v.unread} new messages\n\n${v.padRemaining?.let { "$it outgoing pad slots remaining" } ?: "AES-GCM test mode"}\n${if (v.peerDevice != null) "Peer device key pinned" else if (v.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "Device identity not bound"}\n\nPeer saved means the other device stored the message; it does not mean a person read it. Retrying uses the same encrypted packets and no new pad slots.\n\n${status.text}")
+            .setMessage("$contact\n${if (connectionFailed) "Latest relay check failed" else "Connection is checked only while the app is open"}\n\n${v.pending} packets queued locally\n${v.awaitingReceipt} messages awaiting a saved receipt\n${v.unread} new messages\n\n${v.padRemaining?.let { "$it outgoing pad slots remaining" } ?: "No pad installed · sending disabled"}\n${if (v.peerDevice != null) "Peer device key pinned" else if (v.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "Device identity not bound"}\n\nPeer saved means the other device stored the message; it does not mean a person read it. Retrying uses the same encrypted packets and no new pad slots.\n\n${status.text}")
             .setPositiveButton("Settings") { _, _ -> selectTab(1) }
             .setNegativeButton("Close", null)
             .setNeutralButton("Retry") { _, _ ->
@@ -708,7 +710,7 @@ class NetworkActivity : Activity() {
         val hint = when {
             view.role == "—" -> "SET UP YOUR STATION → Link"
             !view.pairingComplete -> "PAIRING INCOMPLETE · arrange a fresh physical pairing on both devices"
-            view.padCheck == null -> "AES TEST MODE · Set up a physical pad → Pad"
+            view.padCheck == null -> "PAIR WITH YOUR FRIEND → Link · USB pairs keys and pad together"
             view.padRemaining == 0 -> "SEND PAD EXHAUSTED · Receiving and queued retries remain available"
             !view.padVerified -> "COMPARE CODES IN PERSON → Pad"
             !view.peerReady -> "WAITING FOR PEER VERIFICATION · Sync both stations"
@@ -733,12 +735,14 @@ class NetworkActivity : Activity() {
         if (view.peerDevice != null) {
             peerCardField.text.clear()
         }
-        if (view.messages == rendered) return
+        if (view.messages == rendered && renderedSetupComplete == view.setupComplete) return
+        renderedSetupComplete = view.setupComplete
         val wasAtBottom = atBottom()
         rendered = view.messages; messages.removeAllViews()
         if (view.messages.isEmpty()) {
-            messages.addView(text("A quiet channel.", 24f).apply { setPadding(dp(10), dp(40), 0, dp(10)) })
-            messages.addView(text(if (view.role == "—") "Open Link to pair this station." else "Write your first message below.", 14f, muted).apply { setPadding(dp(10), 0, 0, 0) })
+            messages.addView(text(if (view.setupComplete) "Ready for your friend." else "Make a private connection.", if (compact) 20f else 24f).apply { setPadding(dp(10), dp(40), 0, dp(10)) })
+            messages.addView(text(if (view.setupComplete) "Send a message below. Delivery updates appear beside each message." else "Save relay details on one device, then connect both with USB and compare the on-screen codes.", 14f, muted).apply { setPadding(dp(10), 0, 0, 0) })
+            if (!view.setupComplete) messages.addView(button("Set up this chat") { selectTab(1) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
         }
         val timeFormat = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
         for (m in view.messages) {
