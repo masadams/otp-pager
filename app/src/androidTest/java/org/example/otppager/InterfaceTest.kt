@@ -44,8 +44,8 @@ class InterfaceTest {
     private fun capture(instrumentation: Instrumentation, activity: Activity, name: String, windowOnly: Boolean = false) {
         val context = instrumentation.targetContext
         @Suppress("UNCHECKED_CAST")
-        val dialogs = (NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }
-            .get(activity) as List<android.app.AlertDialog>).filter { it.isShowing }
+        val dialogs = if (activity is NetworkActivity) (NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }
+            .get(activity) as List<android.app.AlertDialog>).filter { it.isShowing } else emptyList()
         // Only this test's fictional profile is present. Check the production flag before
         // temporarily permitting compositor capture; restore it even if capture fails.
         instrumentation.runOnMainSync {
@@ -87,6 +87,25 @@ class InterfaceTest {
                 context.contentResolver.openOutputStream(uri)!!.use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
             }
         } finally { image.recycle() }
+    }
+    @Test fun nearbyWizardFitsAndRequiresExplicitApproval() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val activity = instrumentation.startActivitySync(Intent(instrumentation.targetContext, RadioPairActivity::class.java)
+            .putExtra("chat", "nearby-ui-fixture").putExtra("padSize", 4 * PadProtocol.MATERIAL_BYTES)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        try {
+            instrumentation.waitForIdleSync()
+            instrumentation.runOnMainSync {
+                val buttons = all(content(activity)).filterIsInstance<Button>()
+                val approve = buttons.first { it.text.toString() == "Codes match · Pair" }
+                val cancel = buttons.first { it.text.toString() == "Cancel" }
+                assertFalse(approve.isEnabled); assertTrue(approve.isShown); assertTrue(cancel.isShown)
+                val bounds = android.graphics.Rect(); assertTrue(cancel.getGlobalVisibleRect(bounds))
+                assertTrue(bounds.bottom <= activity.window.decorView.height)
+                assertTrue(all(content(activity)).filterIsInstance<TextView>().any { it.text.toString().contains("same private Wi-Fi") })
+            }
+            capture(instrumentation, activity, "nearby-pairing", windowOnly = true)
+        } finally { instrumentation.runOnMainSync { activity.finish() }; instrumentation.waitForIdleSync() }
     }
     @Test fun unpairedChatExplainsSetupAndProtectsKeyboardInput() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
