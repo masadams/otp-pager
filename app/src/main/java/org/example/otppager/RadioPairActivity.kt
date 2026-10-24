@@ -66,9 +66,8 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         root.addView(label(if (renew) "Renew pad nearby" else "Pair nearby", 24f))
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(ScrollView(this).apply { addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
-        body.addView(label("Connect both devices to the same private Wi-Fi. Choose Share on one and Read on the other, then touch their NFC antennas. Compare the codes on both screens before approving. The sharing device selects the pad size below."))
-        body.addView(label("The tap shares a temporary transfer secret. Keep it private: NFC can be intercepted or relayed at close range. Wi-Fi carries authenticated encrypted data; the relay server receives no pad. This experimental wireless option uses computational encryption. Use USB for the most controlled physical exchange.", 13f))
-        status = label("Ready · both devices need version 0.12 or later"); body.addView(status)
+        body.addView(label("Use the same private Wi-Fi on both devices. Share on one, Read on the other. Tap, then compare codes."))
+        status = label("Ready · 0.12 required on both", 14f); body.addView(status)
         padChoice = Button(this).apply { text = "Pad size · ${size / PadProtocol.MATERIAL_BYTES} MiB"; setOnClickListener {
             val sizes = intArrayOf(PadProtocol.MATERIAL_BYTES, 2 * PadProtocol.MATERIAL_BYTES, 4 * PadProtocol.MATERIAL_BYTES)
             var selected = sizes.indexOf(size)
@@ -81,6 +80,13 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         } }; body.addView(padChoice)
         share = Button(this).apply { text = "Share · tap within 60 seconds"; isEnabled = adapter != null && packageManager.hasSystemFeature("android.hardware.nfc.hce"); setOnClickListener { startSharing() } }; body.addView(share)
         read = Button(this).apply { text = "Read other device"; isEnabled = adapter != null; setOnClickListener { startReading() } }; body.addView(read)
+        body.addView(label("Keep the tap private. USB is also available.", 13f))
+        body.addView(Button(this).apply { text = "About wireless security"; setOnClickListener {
+            val dialog = AlertDialog.Builder(this@RadioPairActivity).setTitle("Wireless pairing")
+                .setMessage("The tap shares a temporary transfer secret. NFC can be intercepted or relayed at close range. Wi-Fi carries authenticated encrypted data; the relay server receives no pad. Always compare all code groups on both physical screens.\n\nThis experimental option uses computational encryption and is not independently audited or claimed post-quantum secure. Use USB for the most controlled physical exchange. The sharing device selects the pad size.")
+                .setPositiveButton("Close", null).create()
+            dialog.show(); dialog.window?.protectPrivateContent()
+        } })
         if (adapter == null) body.addView(label("NFC unavailable. Return to chat settings and pair by USB."))
         confirm = Button(this).apply { text = if (renew) "Codes match · Renew" else "Codes match · Pair"; isEnabled = false; filterTouchesWhenObscured = true
             setOnClickListener { approved = true; isEnabled = false; confirmation?.countDown() } }; root.addView(confirm)
