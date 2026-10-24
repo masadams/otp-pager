@@ -105,7 +105,7 @@ class NetworkActivity : Activity() {
     private val poll = object : Runnable {
         override fun run() {
             if (active && unlocked) updateIndicators()
-            if (active && unlocked && automatic && !busy && !errorLoading && latest != null && latest?.role != "—" && latest?.pairingComplete == true) runTask(network = true) { syncChats() }
+            if (active && unlocked && automatic && !busy && !errorLoading && latest != null && latest?.role != "—" && latest?.pairingComplete == true && latest?.relayRevoked != true) runTask(network = true) { syncChats() }
             else if (active && unlocked) handler.postDelayed(this, 5000)
         }
     }
@@ -225,7 +225,7 @@ class NetworkActivity : Activity() {
         tabs.addView(trafficTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(linkTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(padTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(deviceTab, LinearLayout.LayoutParams(0, -2, 1f)); chrome.addView(tabs)
         status = text("Opening station…", 11f, muted, true).apply { setPadding(dp(2), dp(2), 0, dp(4)); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setOnClickListener { showStationStatus() } }; chrome.addView(status)
         traffic = column()
-        setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, ink); setOnClickListener { selectTab(if (latest?.ownDevice != null && latest?.peerDevice == null) 3 else if (latest?.padCheck == null) 1 else 2) } }; traffic.addView(setupHint)
+        setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, ink); setOnClickListener { selectTab(if (latest?.relayRevoked == true) 1 else if (latest?.ownDevice != null && latest?.peerDevice == null) 3 else if (latest?.padCheck == null) 1 else 2) } }; traffic.addView(setupHint)
         newMessagesButton = button("New messages · Jump to latest") {
             messageScroll.fullScroll(View.FOCUS_DOWN)
             ackVisibleMessages()
@@ -591,7 +591,7 @@ class NetworkActivity : Activity() {
         if (!value) networkBusy = false
         chatButton.isEnabled = !value && book != null
         for (view in listOf(sendButton, saveButton, saveRelayButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
-        syncButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && latest?.pairingComplete == true && !errorLoading
+        syncButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && latest?.pairingComplete == true && latest?.relayRevoked != true && !errorLoading
         updateSendButton()
         showQrButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && !errorLoading
         scanQrButton.isEnabled = !value && latest?.cableEligible == true && !errorLoading
@@ -707,6 +707,7 @@ class NetworkActivity : Activity() {
                 runTask(network = true) { checkNotNull(engine).revokeRelayAccess(); "CHAT ACCESS REVOKED · local history kept" }
             }
         }
+        if (v.relayRevoked) builder.setPositiveButton("Pair again") { _, _ -> selectTab(1) }
         builder.create().also(::secureShow)
     }
     private fun showStationStatus() {
@@ -719,8 +720,8 @@ class NetworkActivity : Activity() {
             .setMessage("$contact\n${if (connectionFailed) connectionProblem else "Checks run while this app is open; this is not peer online status"}\n${if (v.relayRevoked) "CHAT ACCESS REVOKED" else if (v.relayScoped) "CHAT ACCESS PROTECTED" else "SHARED RELAY ACCESS · update relay"}\n\n${v.pending} packets queued locally\n${v.awaitingReceipt} messages awaiting a saved receipt\n${v.unread} new messages\n\n${v.padRemaining?.let { "$it outgoing pad slots remaining" } ?: "No pad installed · sending disabled"}\n${if (v.peerDevice != null) "Peer device key pinned" else if (v.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "Device identity not bound"}\n\nPeer saved means the other device stored the message; it does not mean a person read it. Retrying uses the same encrypted packets and no new pad slots.\n\n${status.text}")
             .setPositiveButton("Chat access") { _, _ -> showRelayAccess() }
             .setNegativeButton("Close", null)
-            .setNeutralButton("Retry") { _, _ ->
-                runTask(onSuccess = { runTask(network = true) { syncChats() } }) {
+            .setNeutralButton(if (v.relayRevoked) "Pair again" else "Retry") { _, _ ->
+                if (v.relayRevoked) selectTab(1) else runTask(onSuccess = { runTask(network = true) { syncChats() } }) {
                     val n = checkNotNull(engine).retryDelivery()
                     "$n SAVED MESSAGES REQUEUED · checking existing receipts"
                 }

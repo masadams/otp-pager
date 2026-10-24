@@ -39,7 +39,7 @@ on normal/failure exit where accessible. Physical comparison remains mandatory.
 
 | Risk | Present consequence / boundary |
 | --- | --- |
-| Shared relay token | This is operator-wide access, not per-user/per-mailbox authorization. A token holder who knows a mailbox ID can fetch ciphertext and inject junk, and can consume global capacity. Clients still authenticate contents. Per-mailbox capabilities remain future work. |
+| Shared relay setup token | v0.10 protects claimed mailboxes with per-chat capabilities and persistent revocation. The shared token still provisions new claims and accesses legacy unclaimed mailboxes; migrate every active chat. Per-device relay credentials and protection against server-root compromise remain outside this change. |
 | Pad retention and endpoint compromise | v0.9 logically clears consumed slots in the current vault. Retained history, old snapshots and copied original pads can still expose earlier traffic. This does not provide forensic erasure or forward secrecy. |
 | Experimental cryptography | SecureRandom-generated material and conventional HMAC/signatures do not establish information-theoretic OTP security. Protocol composition needs independent review. |
 | Device state rollback/cloning | Restoring coordinated old vault/ledger/registry snapshots can defeat local high-water checks. Uninstall removes these records. Never restore operational pads or reinstall and reuse them. |
