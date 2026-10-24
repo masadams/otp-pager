@@ -182,6 +182,12 @@ class NetworkActivity : Activity() {
         })
         setContentView(lock)
     }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent); setIntent(intent)
+        if (::composer.isInitialized && active && composer.text.isNotEmpty()) {
+            intent.removeExtra("openUnread"); report("New messages are available in Chats")
+        } else needsTerminal = true
+    }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == com.google.zxing.integration.android.IntentIntegrator.REQUEST_CODE) {
@@ -234,7 +240,7 @@ class NetworkActivity : Activity() {
         tabs.addView(trafficTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(linkTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(padTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(deviceTab, LinearLayout.LayoutParams(0, -2, 1f)); chrome.addView(tabs)
         status = text("Opening station…", 11f, muted, true).apply { setPadding(dp(2), dp(2), 0, dp(4)); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setOnClickListener { showStationStatus() } }; chrome.addView(status)
         traffic = column()
-        setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, ink); setOnClickListener { selectTab(if (latest?.relayRevoked == true) 1 else if (latest?.ownDevice != null && latest?.peerDevice == null) 3 else if (latest?.padCheck == null) 1 else 2) } }; traffic.addView(setupHint)
+        setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, ink); setOnClickListener { selectTab(if (latest?.relayRevoked == true || latest?.pairingComplete == false) 1 else if (latest?.ownDevice != null && latest?.peerDevice == null) 3 else if (latest?.padCheck == null) 1 else 2) } }; traffic.addView(setupHint)
         newMessagesButton = button("New messages · Jump to latest") {
             messageScroll.fullScroll(View.FOCUS_DOWN)
             ackVisibleMessages()
@@ -534,7 +540,7 @@ class NetworkActivity : Activity() {
         val battery = if (power.isIgnoringBatteryOptimizations(packageName)) "Battery restrictions are lifted." else "Android may delay checks in deep sleep. For timely delivery, allow unrestricted battery use in Android settings."
         val state = if (ReceiveService.running) "Receiving is on." else if (enabled) "Receiving is paused. Tap Resume." else "Receiving is off. Messages are checked while the app is open."
         AlertDialog.Builder(this).setTitle("Receive with the screen off")
-            .setMessage("$state${if (!notifications) " Notifications are currently blocked." else ""}\n\nBackground checks cycle through your friends about every 30 seconds, with backoff when connections fail. A persistent notification lets you stop receiving. Message text and friend names stay out of notifications.\n\n$battery\n\nThis uses additional battery. After a restart or Force stop, open the app and resume if needed.")
+            .setMessage("$state${if (!notifications) " Notifications are currently blocked." else ""}\n\nBackground checks cycle through your friends about every 30 seconds, with backoff when connections fail. Live receiving keeps the CPU awake and uses more battery. A persistent notification lets you stop it. Message text and friend names stay out of notifications.\n\n$battery\n\nThis uses additional battery. After a restart or Force stop, open the app and resume if needed.")
             .setPositiveButton(if (ReceiveService.running) "Turn off" else if (enabled) "Resume" else "Turn on") { _, _ ->
                 if (ReceiveService.running) ReceiveService.stop(this) else {
                     if (android.os.Build.VERSION.SDK_INT >= 33 && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
@@ -713,7 +719,7 @@ class NetworkActivity : Activity() {
             v?.unread?.takeIf { it > 0 }?.let { "$it new" },
             v?.pending?.takeIf { it > 0 }?.let { "$it waiting to send" },
             v?.awaitingReceipt?.takeIf { it > 0 }?.let { "$it awaiting delivery" }
-        ).joinToString(" · ").ifEmpty { "All caught up" }
+        ).joinToString(" · ").ifEmpty { "No unread messages" }
         val value = "$connection$accessBadge${if (!automatic) " · Manual" else ""}\n$details"
         val access = if (v?.relayRevoked == true) "Chat access revoked" else if (v?.relayScoped == true) "Chat access protected" else "Shared relay access; update relay to protect this chat"
         indicators.contentDescription = "$value. $security. $access. Tap for details."

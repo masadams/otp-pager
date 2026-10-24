@@ -69,9 +69,12 @@ object CableProtocol {
     private fun verify(key: String, digest: ByteArray, label: String, proof: String) {
         require(proof.length <= 108 && IdentityProtocol.verify(key, digest + label.toByteArray(Charsets.US_ASCII), decoder.decode(proof))) { "Cable identity proof rejected" }
     }
+    fun run(host: Boolean, input: InputStream, output: OutputStream, engine: StationEngine,
+            review: (String, String) -> Unit, progress: (String) -> Unit) =
+        run(host, input, output, engine, review, progress, false, PadProtocol.MATERIAL_BYTES)
     /** review blocks only this transfer worker; closing its channel cancels the wizard. */
     fun run(host: Boolean, input: InputStream, output: OutputStream, engine: StationEngine,
-            review: (String, String) -> Unit, progress: (String) -> Unit, renew: Boolean = false, size: Int = PadProtocol.MATERIAL_BYTES) {
+            review: (String, String) -> Unit, progress: (String) -> Unit, renew: Boolean, size: Int) {
         if (renew) engine.requireRenewalIdentity() else engine.requireCableEligible()
         val ephemeral = CableSession.ephemeral()
         val own = hello(engine, ephemeral, renew, size)

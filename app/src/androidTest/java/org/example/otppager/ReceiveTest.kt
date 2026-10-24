@@ -69,7 +69,8 @@ class ReceiveTest {
         }
     }
     @Test fun nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks() {
-        val card = NfcSetupCard()
+        lateinit var card: NfcSetupCard
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { card = NfcSetupCard() }
         NfcSetupExchange.clear()
         assertFalse(card.processCommandApdu(NfcSetupExchange.select, null).contentEquals(byteArrayOf(0x90.toByte(), 0)))
         try {

@@ -31,6 +31,15 @@ class ReceiveService : Service() {
     private val cycle = ReceiveCycle()
     private var delay = 30000L
     private lateinit var manager: NotificationManager
+    private var liveWake: PowerManager.WakeLock? = null
+    private val keepAwake = object : Runnable {
+        override fun run() {
+            if (!stopped && running && enabled(this@ReceiveService)) {
+                liveWake?.acquire(600000)
+                handler.postDelayed(this, 60000)
+            }
+        }
+    }
     private fun open(): PendingIntent = PendingIntent.getActivity(this, 301, Intent(this, NetworkActivity::class.java).putExtra("openUnread", true), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     private fun notice(detail: String): Notification {
         val stop = PendingIntent.getService(this, 302, Intent(this, ReceiveService::class.java).setAction(STOP), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
@@ -49,7 +58,11 @@ class ReceiveService : Service() {
         try {
             ServiceCompat.startForeground(this, 301, notice("Checks continue when you close the app"), if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING else 0)
         } catch (_: Exception) { enabled(this, false); stopSelf(); return START_NOT_STICKY }
-        if (!running) { running = true; stopped = false; handler.post(poll) }
+        if (!running) {
+            running = true; stopped = false
+            liveWake = getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "otp-pager:live-receiver").apply { setReferenceCounted(false) }
+            handler.post(keepAwake); handler.post(poll)
+        }
         return START_STICKY
     }
     private val poll = object : Runnable {
@@ -59,21 +72,17 @@ class ReceiveService : Service() {
                 var text = "Receiving · checks may pause during deep sleep"
                 try {
                     if (!stopped && !StationRuntime.uiVisible && !StationRuntime.pairingOpen) {
-                        val lock = getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "otp-pager:receive")
-                        lock.acquire(60000)
-                        try {
-                            val result = cycle.poll(ChatBook(this@ReceiveService), allowed = { !stopped && !StationRuntime.uiVisible && !StationRuntime.pairingOpen })
-                            val total = result.unread; val failed = result.failed; val attempted = result.attempted
-                            if (result.newMessages && !StationRuntime.uiVisible && (Build.VERSION.SDK_INT < 33 || checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) && NotificationManagerCompat.from(this@ReceiveService).areNotificationsEnabled()) {
-                                manager.notify(303, Notification.Builder(this@ReceiveService, MESSAGES).setSmallIcon(android.R.drawable.stat_notify_chat)
-                                    .setContentTitle("New private message").setContentText("Open OTP Pager to read your messages")
-                                    .setContentIntent(open()).setAutoCancel(true).setVisibility(Notification.VISIBILITY_SECRET).build())
-                            }
-                            if (failed == 0 && attempted > 0) { lastCheck = SystemClock.elapsedRealtime(); lastProblem = ""; delay = 30000L }
-                            else if (failed > 0) { lastProblem = "Some chats could not connect"; delay = (delay * 2).coerceAtMost(120000L) }
-                            text = if (failed > 0) "Connection needs attention · saved messages retained" else if (total > 0) "$total unread · open to read" else "Receiving · no new messages"
-                        } finally { if (lock.isHeld) lock.release() }
-                    } else text = if (StationRuntime.pairingOpen) "Paused during USB pairing" else "App open · foreground checks active"
+                        val result = cycle.poll(ChatBook(this@ReceiveService), allowed = { !stopped && !StationRuntime.uiVisible && !StationRuntime.pairingOpen })
+                        val total = result.unread; val failed = result.failed; val attempted = result.attempted
+                        if (result.newMessages && !StationRuntime.uiVisible && (Build.VERSION.SDK_INT < 33 || checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) && NotificationManagerCompat.from(this@ReceiveService).areNotificationsEnabled()) {
+                            manager.notify(303, Notification.Builder(this@ReceiveService, MESSAGES).setSmallIcon(android.R.drawable.stat_notify_chat)
+                                .setContentTitle("New private message").setContentText("Open OTP Pager to read your messages")
+                                .setContentIntent(open()).setAutoCancel(true).setVisibility(Notification.VISIBILITY_SECRET).build())
+                        }
+                        if (failed == 0 && attempted > 0) { lastCheck = SystemClock.elapsedRealtime(); lastProblem = ""; delay = 30000L }
+                        else if (failed > 0) { lastProblem = "Some chats could not connect"; delay = (delay * 2).coerceAtMost(120000L) }
+                        text = if (failed > 0) "Connection needs attention · saved messages retained" else if (total > 0) "$total unread · open to read" else "Receiving · no new messages"
+                    } else text = if (StationRuntime.pairingOpen) "Paused during USB pairing" else "App open · background checks paused"
                 } catch (_: Exception) { lastProblem = "Receiver needs attention"; delay = 120000L; text = lastProblem }
                 handler.post {
                     if (!stopped) {
@@ -84,6 +93,6 @@ class ReceiveService : Service() {
             }
         }
     }
-    override fun onDestroy() { stopped = true; running = false; handler.removeCallbacksAndMessages(null); stopForeground(STOP_FOREGROUND_REMOVE); super.onDestroy() }
+    override fun onDestroy() { stopped = true; running = false; handler.removeCallbacksAndMessages(null); liveWake?.let { if (it.isHeld) it.release() }; liveWake = null; stopForeground(STOP_FOREGROUND_REMOVE); super.onDestroy() }
     override fun onBind(intent: Intent?) = null
 }

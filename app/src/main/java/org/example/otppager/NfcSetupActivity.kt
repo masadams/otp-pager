@@ -69,7 +69,7 @@ class NfcSetupActivity : Activity(), NfcAdapter.ReaderCallback {
                     if (active) {
                         NfcSetupExchange.clear(); NfcSetupExchange.payload = bytes; NfcSetupExchange.expires = android.os.SystemClock.elapsedRealtime() + 60000
                         sharing = true; status.text = "Sharing secret setup for 60 seconds. Hold the reading device close. USB is still needed for the pad and identities."
-                        handler.postDelayed({ NfcSetupExchange.clear(); sharing = false; if (active) status.text = "Sharing stopped." }, 60000)
+                        handler.postDelayed({ if (android.os.SystemClock.elapsedRealtime() >= NfcSetupExchange.expires) { NfcSetupExchange.clear(); sharing = false; if (active) status.text = "Sharing stopped." } }, 60000)
                     } else bytes.fill(0)
                 }
             } catch (e: Exception) { runOnUiThread { if (active) status.text = e.message ?: "Setup unavailable" } }
