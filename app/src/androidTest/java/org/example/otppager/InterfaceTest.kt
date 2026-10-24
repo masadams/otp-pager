@@ -318,6 +318,10 @@ class InterfaceTest {
                 capture(instrumentation, activity, "messages-paired")
                 @Suppress("UNCHECKED_CAST")
                 fun latestDialog() = (NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }.get(activity) as List<android.app.AlertDialog>).last { it.isShowing }
+                tap(instrumentation, activity, "Receive")
+                instrumentation.runOnMainSync { assertEquals("Turn on", latestDialog().getButton(android.app.AlertDialog.BUTTON_POSITIVE).text.toString()) }
+                capture(instrumentation, activity, "receiving-settings")
+                instrumentation.runOnMainSync { latestDialog().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick() }
                 instrumentation.runOnMainSync {
                     val strip = NetworkActivity::class.java.getDeclaredField("indicators").apply { isAccessible = true }.get(activity) as TextView
                     assertTrue(strip.text.toString().contains("Private chat"))
@@ -353,6 +357,11 @@ class InterfaceTest {
                 instrumentation.runOnMainSync {
                     assertTrue(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Link" }.isShown)
                 }
+                capture(instrumentation, activity, "settings-paired")
+                tap(instrumentation, activity, "Renew pad · USB")
+                instrumentation.runOnMainSync { assertEquals(3, latestDialog().listView.adapter.count) }
+                capture(instrumentation, activity, "pad-size")
+                instrumentation.runOnMainSync { latestDialog().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick() }
                 tap(instrumentation, activity, "Messages")
                 instrumentation.runOnMainSync {
                     assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Link" }.isShown)
