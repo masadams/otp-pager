@@ -40,7 +40,7 @@ on normal/failure exit where accessible. Physical comparison remains mandatory.
 | Risk | Present consequence / boundary |
 | --- | --- |
 | Shared relay token | This is operator-wide access, not per-user/per-mailbox authorization. A token holder who knows a mailbox ID can fetch ciphertext and inject junk, and can consume global capacity. Clients still authenticate contents. Per-mailbox capabilities remain future work. |
-| Full pad remains stored on device | A later endpoint/pad compromise exposes captured traffic for that pad, including earlier slots. The ledger prevents reuse; it does not erase consumed pad bytes or provide forward secrecy. |
+| Pad retention and endpoint compromise | v0.9 logically clears consumed slots in the current vault. Retained history, old snapshots and copied original pads can still expose earlier traffic. This does not provide forensic erasure or forward secrecy. |
 | Experimental cryptography | SecureRandom-generated material and conventional HMAC/signatures do not establish information-theoretic OTP security. Protocol composition needs independent review. |
 | Device state rollback/cloning | Restoring coordinated old vault/ledger/registry snapshots can defeat local high-water checks. Uninstall removes these records. Never restore operational pads or reinstall and reuse them. |
 | USB provisioning cryptographic assurance | Version 3 prevents passive plaintext capture using conventional ECDH/AES-GCM, but the composed protocol is not independently audited or post-quantum. Verify the complete displayed code on both devices and use a trusted direct cable. Compromised endpoints remain a threat. |
@@ -113,3 +113,11 @@ choice, not an authorization boundary. Tests verify both hiding and access to se
 0.8 regression additions include an independent Python ECDH/HKDF/AES-GCM frame vector and cover encrypted large USB transfer in both directions, wire capture without setup secrets, tag/sequence/transcript changes, reflection, truncation, oversized lengths, replay and session invalidation after failed writes. Test execution must be verified in CI before release.
 
 References: https://www.rfc-editor.org/rfc/rfc5869.html ; https://developer.android.com/security/fraud-prevention/activities ; https://developer.android.com/reference/android/view/inputmethod/EditorInfo#IME_FLAG_NO_PERSONALIZED_LEARNING
+
+### v0.9 consumed pad retirement
+
+Schema 5 saves authenticated retained payloads inside the existing Keystore-backed encrypted vault before zeroing complete consumed pad slots (message bytes and HMAC key). Outgoing durable reservations, including interrupted sends, are retired at the next successful transaction/startup. Incoming slots are retired only after acceptance; missing out-of-order slots remain available. The original pad identifier stays fixed after retirement; new imports still verify the complete original material and reuse claims remain in force.
+
+Retries post the original ciphertext. A duplicate received text can recover its saved receipt only when its entire packet exactly matches retained accepted history; modified packets cannot authenticate with a retired zero key. Clearing or expiring history also removes its retained payload cache. The original readiness packet remains available for setup recovery.
+
+This is logical cleanup of the current snapshot, **not forensic erasure or forward secrecy**. Android flash wear leveling, older encrypted snapshots decryptable with the same vault key, original exported pad bundles, process memory and backups can retain material. Retained message history is intentionally readable by an unlocked/compromised endpoint. Device compromise and previously copied pads remain serious risks. An independent protocol and implementation audit is still needed.

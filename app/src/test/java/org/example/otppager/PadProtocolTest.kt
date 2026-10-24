@@ -30,6 +30,24 @@ class PadProtocolTest {
             rejects { PadProtocol.open(pad, Base64.getEncoder().encodeToString(altered), 'B') }
         }
     }
+    @Test fun retirementKeepsIdentityAndUnspentDirectionalSlotsButRejectsZeroKeyForgery() {
+        val mutable = pad.clone(); val identity = PadProtocol.id(mutable)
+        val old = PadProtocol.seal(mutable, 'A', 1, "old", identity).second
+        val later = PadProtocol.seal(mutable, 'A', 2, "later", identity).second
+        val opposite = PadProtocol.seal(mutable, 'B', 1, "opposite", identity).second
+        PadProtocol.retire(mutable, 'A', 1)
+        assertTrue(mutable.take(PadProtocol.STRIDE).all { it == 0.toByte() })
+        assertFalse(identity.contentEquals(PadProtocol.id(mutable)))
+        rejects { PadProtocol.open(mutable, old, 'A', identity) }
+        rejects { PadProtocol.seal(mutable, 'A', 1, "reuse", identity) }
+        assertEquals("later", PadProtocol.open(mutable, later, 'A', identity).payload)
+        assertEquals("opposite", PadProtocol.open(mutable, opposite, 'B', identity).payload)
+        val forged = Base64.getDecoder().decode(old)
+        val tag = PadProtocol.authenticate(ByteArray(32), forged.copyOfRange(0, 26 + PadProtocol.BLOCK))
+        tag.copyInto(forged, 26 + PadProtocol.BLOCK)
+        rejects { PadProtocol.open(mutable, Base64.getEncoder().encodeToString(forged), 'A', identity) }
+        assertEquals(PadProtocol.messageId(pad, 'A', 2), PadProtocol.open(mutable, later, 'A', identity).id)
+    }
     @Test fun bundleMustMatchSizeVersionAndPairing() {
         val binding = ByteArray(32) { it.toByte() }; val bundle = PadProtocol.generate(binding)
         assertEquals(PadProtocol.MATERIAL_BYTES, PadProtocol.material(bundle, binding).size)
