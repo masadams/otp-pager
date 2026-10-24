@@ -54,7 +54,7 @@ export function makeServer(options = {}) {
     } catch (e) { poisoned = true; throw e; }
   }
   // Migrate existing v1 volume in place, preserving all ciphertext and cursors.
-  if (!state.epoch) commit({ ...state, epoch: randomUUID() });
+  if (state.version === 1 && !state.epoch) commit({ ...state, epoch: randomUUID() });
   if (typeof state.epoch !== 'string' || !/^[a-f0-9-]{36}$/.test(state.epoch))
     throw new Error('Invalid storage epoch');
   const sequences = state.messages.map(m => m.seq);

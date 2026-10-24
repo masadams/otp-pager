@@ -301,6 +301,7 @@ class InterfaceTest {
             ready.getJSONArray("outbox").getJSONObject(0).put("status", "relayed"); store.save(ready)
             val bound = StationEngine(store); bound.prepareIdentity()
             val card = peer.card(create = true); bound.pinDevice(card, IdentityProtocol.fingerprint(card).takeLast(8))
+            store.save(JSONObject(bound.state.toString()).put("relayScoped", true))
             val activity = instrumentation.startActivitySync(Intent(context, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             try {
                 awaitStation(instrumentation, activity)
@@ -315,6 +316,31 @@ class InterfaceTest {
                     assertFalse(send.isEnabled)
                 }
                 capture(instrumentation, activity, "messages-paired")
+                @Suppress("UNCHECKED_CAST")
+                fun latestDialog() = (NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }.get(activity) as List<android.app.AlertDialog>).last { it.isShowing }
+                instrumentation.runOnMainSync {
+                    val strip = NetworkActivity::class.java.getDeclaredField("indicators").apply { isAccessible = true }.get(activity) as TextView
+                    assertTrue(strip.text.toString().contains("CHAT ACCESS"))
+                    strip.performClick()
+                }
+                instrumentation.waitForIdleSync()
+                capture(instrumentation, activity, "chat-status")
+                instrumentation.runOnMainSync { latestDialog().getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick() }
+                instrumentation.waitForIdleSync()
+                instrumentation.runOnMainSync {
+                    val dialog = latestDialog()
+                    assertEquals("Revoke this chat", dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).text.toString())
+                    assertTrue(dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).isShown)
+                }
+                capture(instrumentation, activity, "chat-access")
+                instrumentation.runOnMainSync { latestDialog().getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick() }
+                instrumentation.waitForIdleSync()
+                instrumentation.runOnMainSync {
+                    assertEquals("Continue", latestDialog().getButton(android.app.AlertDialog.BUTTON_POSITIVE).text.toString())
+                    latestDialog().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick()
+                }
+                assertFalse(StationEngine(store).view().relayRevoked) // Opening/cancelling confirmation never revokes.
+
                 instrumentation.runOnMainSync {
                     all(content(activity)).filterIsInstance<Button>().first { it.text.toString().contains("▾") }.performClick()
                     @Suppress("UNCHECKED_CAST")

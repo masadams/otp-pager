@@ -632,7 +632,8 @@ class NetworkActivity : Activity() {
             v.padVerified && v.peerReady -> "PAD READY"
             else -> "PAD CHECK NEEDED"
         }
-        val value = "$connection${if (!automatic) " · AUTO OFF" else ""}\n${v?.unread ?: 0} NEW · ${v?.pending ?: 0} QUEUED · ${v?.awaitingReceipt ?: 0} AT RELAY" +
+        val accessBadge = if (v?.padCheck != null && !v.relayRevoked) if (v.relayScoped) " · CHAT ACCESS" else " · SHARED ACCESS" else ""
+        val value = "$connection$accessBadge${if (!automatic) " · AUTO OFF" else ""}\n${v?.unread ?: 0} NEW · ${v?.pending ?: 0} QUEUED · ${v?.awaitingReceipt ?: 0} AT RELAY" +
             if (compact) "" else "\n$security${v?.padRemaining?.let { " · $it SLOTS" } ?: ""}"
         val access = if (v?.relayRevoked == true) "Chat access revoked" else if (v?.relayScoped == true) "Chat access protected" else "Shared relay access; update relay to protect this chat"
         indicators.contentDescription = "$value. $security. $access. Tap for details."
