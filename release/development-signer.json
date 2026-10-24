@@ -1,0 +1,5 @@
+{
+  "purpose": "temporary-development-only",
+  "certificate_sha256": "f77e18d0213e0f5c0903a86dd47eeb528e16a7d3730b4d235fcedcb037198ee8",
+  "production_transition": "A different production signer requires fresh installs and pairings. This file contains only the public fingerprint; private material is retained separately."
+}

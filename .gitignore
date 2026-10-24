@@ -7,6 +7,10 @@ local.properties
 *.aab
 *.jks
 *.keystore
+*.p12
+*.pfx
+password.txt
+bitwarden-backup.txt
 
 # Never commit key material or exported pairing bundles
 *.otpkey
@@ -18,3 +22,7 @@ pairing-export/
 
 # Local relay state
 relay/data/
+
+# Python release tooling
+__pycache__/
+*.pyc

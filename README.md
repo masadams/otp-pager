@@ -146,3 +146,19 @@ pairing; there is no plaintext compatibility fallback. Existing paired chat stat
 relay/message formats are unchanged. This is conventional, unaudited encryption, not
 post-quantum provisioning. See [the security review](docs/SECURITY_REVIEW.md) for open risks.
 The 0.7 field-release links above remain pinned until a new build is verified and released.
+
+### Permanent signing and update verification (proposed)
+
+[Owner setup and update instructions](docs/ANDROID_UPDATES.md) provide a permanent,
+locally generated release signer, main-only signed builds and a publisher that rejects
+new debug-signed releases. An emulator job installs a second non-debuggable release APK
+over a seeded first one and checks Keystore identity, chat state, queued ciphertext,
+replay state and pad allocation; wrong-signature and downgrade installs must fail.
+The one-time switch from existing temporary debug keys still requires fresh pairings.
+The release key is not configured until the owner runs setup on their phone or PC.
+Android/Termux setup includes a compact Bitwarden Secure Note backup and tested restore.
+
+During temporary development, unsigned CI review APKs can instead be signed privately
+with the owner's authorized temporary signer and delivered as test APKs. No signing key
+is stored in the public repository or Actions artifacts. Production custody and the
+initial signature transition remain explicit; see the update instructions.

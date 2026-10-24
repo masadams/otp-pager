@@ -43,6 +43,20 @@ jobs:
           name: otp-pager-debug-apk-api-${{ matrix.api }}
           path: app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Build unsigned review APK for private development signing
+        if: matrix.api == 31
+        env:
+          REVIEW_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          gradle --no-daemon :app:assembleRelease
+          python3 scripts/prepare_review_apk.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: matrix.api == 31
+        with:
+          name: otp-pager-unsigned-review-apk
+          path: app/build/unsigned-review/
+          if-no-files-found: error
+
       - name: Enable KVM for Android storage verification
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

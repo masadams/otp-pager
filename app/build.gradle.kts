@@ -13,6 +13,32 @@ android {
         versionName = "0.8.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+    val upgradeVerification = providers.gradleProperty("upgradeVerification").isPresent
+    if (upgradeVerification) {
+        testBuildType = "release"
+        defaultConfig.versionCode = providers.gradleProperty("verificationVersionCode").get().toInt()
+    }
+    val signingStore = providers.environmentVariable("OTP_SIGNING_STORE_FILE").orNull
+    val signingPassword = providers.environmentVariable("OTP_SIGNING_STORE_PASSWORD").orNull
+    val requireSigning = providers.gradleProperty("requireReleaseSigning").isPresent || upgradeVerification
+    if (requireSigning) {
+        require(!signingStore.isNullOrBlank() && !signingPassword.isNullOrBlank()) {
+            "Release signing is required. Configure the owner-controlled key; debug fallback is forbidden."
+        }
+    }
+    if (!signingStore.isNullOrBlank() && !signingPassword.isNullOrBlank()) {
+        val ownerRelease = signingConfigs.create("ownerRelease") {
+            storeFile = file(signingStore)
+            storePassword = signingPassword
+            keyAlias = "otp-pager"
+            keyPassword = signingPassword
+            storeType = "PKCS12"
+            enableV1Signing = true
+            enableV2Signing = true
+        }
+        buildTypes.getByName("release").signingConfig = ownerRelease
+    }
+    buildTypes.getByName("release").isDebuggable = false
     sourceSets["test"].resources.srcDir("../test-vectors")
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
