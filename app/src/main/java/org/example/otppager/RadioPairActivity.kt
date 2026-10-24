@@ -193,6 +193,7 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
     private fun transfer(host: Boolean, envelope: RadioHandoff, engine: StationEngine) {
         CableProtocol.run(host, envelope.input, envelope.output, engine, review = { code, endpoint ->
             val latch = CountDownLatch(1); confirmation = latch
+            if (stopped.get()) latch.countDown() // Covers cancellation just before the latch was registered.
             runOnUiThread { if (active && !stopped.get()) {
                 status.text = "Compare ALL groups on both devices:\n\n$code\n\n$endpoint\n\nApprove only if every group matches your friend's physical screen."
                 confirm.isEnabled = true
