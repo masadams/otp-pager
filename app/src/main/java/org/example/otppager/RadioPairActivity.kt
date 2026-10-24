@@ -214,6 +214,11 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         ticket?.close(); ticket = null; confirmation?.countDown()
         NfcSetupExchange.clear()
     }
+    // Explicit Cancel/Back closes sensitive resources before Android's asynchronous onStop.
+    override fun finish() {
+        stopped.set(true); closeLinks()
+        super.finish()
+    }
     override fun onStop() {
         active = false; stopped.set(true); closeLinks(); adapter?.disableReaderMode(this); handler.removeCallbacksAndMessages(null)
         StationRuntime.worker.execute { StationRuntime.pairingOpen = false }

@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class RadioPairTest {
-    @Test fun leavingWizardClosesListenerAndWipesOffer() {
+    @Test fun cancellingWizardClosesListenerSynchronouslyAndWipesOffer() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val activity = instrumentation.startActivitySync(android.content.Intent(instrumentation.targetContext, RadioPairActivity::class.java)
             .putExtra("chat", "radio-ui-fixture").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -25,10 +25,10 @@ class RadioPairTest {
                 RadioPairActivity::class.java.getDeclaredField("ticket").apply { isAccessible = true }.set(activity, offer)
                 NfcSetupExchange.payload = offer.encode().toByteArray()
                 activity.finish()
+                assertTrue(server.isClosed); assertNull(NfcSetupExchange.payload)
+                assertTrue(offer.secret.all { it == 0.toByte() })
             }
             instrumentation.waitForIdleSync()
-            assertTrue(server.isClosed); assertNull(NfcSetupExchange.payload)
-            assertTrue(offer.secret.all { it == 0.toByte() })
         } finally { server.close(); offer.close(); instrumentation.runOnMainSync { activity.finish() } }
     }
     private fun transfer(a: StationEngine, b: StationEngine, renew: Boolean, cancel: Boolean = false) {
