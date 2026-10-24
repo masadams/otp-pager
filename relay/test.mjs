@@ -178,3 +178,92 @@ test('finite-pad v3 reference frame survives relay persistence and exact retries
     pad.fill(0); clear.fill(0);
   } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
 });
+
+test('chat claims isolate credentials, preserve traffic, persist only hashes, and cannot be replaced', async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-scope-'));
+  let { server, base } = await launch({ dataDir });
+  const cap = 'c'.repeat(43), other = 'd'.repeat(43), second = '/v1/mailbox/' + 'b'.repeat(64);
+  const scoped = value => ({ Authorization: 'Bearer ' + value, 'Content-Type': 'application/json' });
+  const claim = (route, capability) => fetch(base + route + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability }) });
+  try {
+    assert.equal((await post(base, 'YQ==')).status, 201);
+    assert.equal((await claim(path, cap)).status, 201);
+    assert.equal((await claim(path, cap)).status, 200); // Peer/retry is idempotent.
+    assert.equal((await claim(path, other)).status, 403);
+    assert.equal((await fetch(base + path, { headers })).status, 401); // Shared setup token is no longer traffic access.
+    assert.equal((await post(base, 'Yg==')).status, 401);
+    assert.equal((await fetch(base + path, { headers: scoped(other) })).status, 401);
+    let page = await (await fetch(base + path, { headers: scoped(cap) })).json();
+    assert.equal(page.access, 'chat'); assert.deepEqual(page.messages, [{ seq: 1, packet: 'YQ==' }]);
+    assert.equal((await claim(second, other)).status, 201);
+    assert.equal((await fetch(base + second, { headers: scoped(cap) })).status, 401);
+    assert.equal((await fetch(base + path, { method: 'POST', headers: scoped(cap), body: JSON.stringify({ packet: 'Yg==' }) })).status, 201);
+    const disk = readFileSync(join(dataDir, 'mailboxes.json'), 'utf8');
+    assert.equal(JSON.parse(disk).version, 2);
+    assert.equal(disk.includes(cap), false); assert.equal(disk.includes(token), false);
+    await stop(server); ({ server, base } = await launch({ dataDir }));
+    page = await (await fetch(base + path, { headers: scoped(cap) })).json();
+    assert.equal(page.messages.length, 2);
+    assert.equal((await fetch(base + path, { headers })).status, 401);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});
+
+test('revocation survives expiry/restart and cannot be reopened with the setup token', async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-revoke-')); let clock = 1000;
+  let { server, base } = await launch({ dataDir, now: () => clock, ttl: 10 });
+  const cap = 'r'.repeat(43), ch = { Authorization: 'Bearer ' + cap, 'Content-Type': 'application/json' };
+  const claim = () => fetch(base + path + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability: cap }) });
+  try {
+    assert.equal((await claim()).status, 201);
+    assert.equal((await fetch(base + path, { method: 'POST', headers: ch, body: JSON.stringify({ packet: 'YQ==' }) })).status, 201);
+    assert.equal((await fetch(base + path, { method: 'DELETE', headers })).status, 401);
+    assert.equal((await fetch(base + path, { method: 'DELETE', headers: ch })).status, 200);
+    assert.deepEqual(JSON.parse(readFileSync(join(dataDir, 'mailboxes.json'))).messages, []);
+    clock += 100;
+    await stop(server); ({ server, base } = await launch({ dataDir, now: () => clock, ttl: 10 }));
+    assert.equal((await fetch(base + path, { headers: ch })).status, 410);
+    assert.equal((await fetch(base + path, { method: 'POST', headers: ch, body: JSON.stringify({ packet: 'Yg==' }) })).status, 410);
+    assert.equal((await claim()).status, 410);
+    assert.equal((await fetch(base + path, { headers })).status, 401);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});
+
+test('claim capacity and malformed protected storage fail closed without erasing claims', async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-claim-bound-'));
+  const { server, base } = await launch({ dataDir, maxClaims: 1 });
+  try {
+    for (const [route, expected] of [[path, 201], ['/v1/mailbox/' + 'b'.repeat(64), 429]]) {
+      assert.equal((await fetch(base + route + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability: 'q'.repeat(43) }) })).status, expected);
+    }
+    await stop(server);
+    const s = JSON.parse(readFileSync(join(dataDir, 'mailboxes.json'))); delete s.access;
+    writeFileSync(join(dataDir, 'mailboxes.json'), JSON.stringify(s));
+    assert.throws(() => makeServer({ token, dataDir }), /access state/);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});
+
+test('a slow POST cannot cross a concurrent claim or revocation', async () => {
+  const { request } = await import('node:http');
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-claim-race-'));
+  const { server, base } = await launch({ dataDir });
+  const cap = 'k'.repeat(43), ch = { Authorization: 'Bearer ' + cap, 'Content-Type': 'application/json' };
+  async function slowPost(auth) {
+    const body = JSON.stringify({ packet: 'YQ==' });
+    const accepted = new Promise(r => server.once('request', r));
+    let resolve;
+    const result = new Promise(r => { resolve = r; });
+    const req = request(base + path, { method: 'POST', headers: { ...auth, 'Content-Length': Buffer.byteLength(body) } }, res => { res.resume(); res.on('end', () => resolve(res.statusCode)); });
+    req.on('error', error => resolve(error)); req.write(body.slice(0, 5));
+    await accepted;
+    return () => { req.end(body.slice(5)); return result; };
+  }
+  try {
+    const finishLegacy = await slowPost(headers);
+    assert.equal((await fetch(base + path + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability: cap }) })).status, 201);
+    assert.equal(await finishLegacy(), 401);
+    const finishScoped = await slowPost(ch);
+    assert.equal((await fetch(base + path, { method: 'DELETE', headers: ch })).status, 200);
+    assert.equal(await finishScoped(), 410);
+    assert.equal(JSON.parse(readFileSync(join(dataDir, 'mailboxes.json'))).messages.length, 0);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});

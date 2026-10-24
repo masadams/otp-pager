@@ -8,7 +8,7 @@ const MAX_BODY = 16 * 1024;
 const ROOM = /^[a-f0-9]{64}$/;
 
 // One process per data volume. Synchronous commits serialize writes and acknowledge
-// only after file + directory fsync. Never persist authentication/encryption keys.
+// only after file + directory fsync. Persist capability hashes, never raw credentials or encryption keys.
 export function makeServer(options = {}) {
   const token = options.token ?? (process.env.RELAY_TOKEN_FILE ? readFileSync(process.env.RELAY_TOKEN_FILE, 'utf8').trim() : process.env.RELAY_TOKEN);
   if (!token || !/^[A-Za-z0-9_-]{43,128}$/.test(token))
@@ -18,21 +18,30 @@ export function makeServer(options = {}) {
   const ttl = options.ttl ?? 86400000;
   const maxMessages = options.maxMessages ?? 2000;
   const maxRoom = options.maxRoom ?? 200;
+  const maxClaims = options.maxClaims ?? 1000;
   const now = options.now ?? Date.now;
   const rateLimit = options.rateLimit ?? 360;
   const buckets = new Map();
   let poisoned = false;
+  const credentialHash = value => createHash('sha256').update(value).digest('hex');
+  const equalHash = (a, b) => timingSafeEqual(Buffer.from(a, 'hex'), Buffer.from(b, 'hex'));
   const digest = packet => createHash('sha256').update(Buffer.from(packet, 'base64')).digest('hex');
   mkdirSync(dataDir, { recursive: true, mode: 0o700 });
   const file = join(dataDir, 'mailboxes.json');
   let state = { version: 1, seq: 0, messages: [] };
   try { state = JSON.parse(readFileSync(file, 'utf8')); }
   catch (e) { if (e.code !== 'ENOENT') throw e; }
-  if (state.version !== 1 || !Number.isSafeInteger(state.seq) || state.seq < 0 ||
+  if (![1, 2].includes(state.version) || !Number.isSafeInteger(state.seq) || state.seq < 0 ||
       !Array.isArray(state.messages) || state.messages.some(m => !ROOM.test(m.room) ||
         !Number.isSafeInteger(m.seq) || m.seq <= 0 || m.seq > state.seq ||
         !Number.isFinite(m.time) || typeof m.packet !== 'string' || m.packet.length > 12000))
     throw new Error('Invalid mailbox state; refusing to reset cursors');
+  // Access claims are permanent metadata; expiry never reopens a protected/revoked room.
+  if (state.access === undefined && state.version === 1) state.access = {};
+  if (!state.access || typeof state.access !== 'object' || Array.isArray(state.access) ||
+      Object.entries(state.access).some(([room, entry]) => !ROOM.test(room) || !entry ||
+        typeof entry.hash !== 'string' || !/^[a-f0-9]{64}$/.test(entry.hash) || typeof entry.revoked !== 'boolean'))
+    throw new Error('Invalid mailbox access state');
   function commit(next) {
     if (poisoned) throw new Error('Storage unavailable');
     try {
@@ -45,7 +54,7 @@ export function makeServer(options = {}) {
     } catch (e) { poisoned = true; throw e; }
   }
   // Migrate existing v1 volume in place, preserving all ciphertext and cursors.
-  if (!state.epoch) commit({ ...state, epoch: randomUUID() });
+  if (state.version === 1 && !state.epoch) commit({ ...state, epoch: randomUUID() });
   if (typeof state.epoch !== 'string' || !/^[a-f0-9-]{36}$/.test(state.epoch))
     throw new Error('Invalid storage epoch');
   const sequences = state.messages.map(m => m.seq);
@@ -83,8 +92,14 @@ export function makeServer(options = {}) {
       // Trust socket peer only, never arbitrary X-Forwarded-For. Behind Nginx
       // this is a shared proxy budget; configure per-public-IP limits at Nginx.
       const actual = Buffer.from(req.headers.authorization || '');
-      const authorized = actual.length === expected.length && timingSafeEqual(actual, expected);
-      const peer = (authorized ? 'auth:' : 'anon:') + req.socket.remoteAddress;
+      const bootstrap = actual.length === expected.length && timingSafeEqual(actual, expected);
+      const match = /^\/v1\/mailbox\/([a-f0-9]{64})(\/claim)?$/.exec(url.pathname);
+      const room = match?.[1];
+      const claim = state.access[room];
+      const bearer = /^Bearer ([A-Za-z0-9_-]{43,128})$/.exec(req.headers.authorization || '')?.[1];
+      const scoped = !!(claim && bearer && equalHash(claim.hash, credentialHash(bearer)));
+      const authorized = scoped || (bootstrap && !claim);
+      const peer = scoped ? 'room:' + room : (bootstrap ? 'setup:' : 'anon:') + req.socket.remoteAddress;
       const time = now();
       for (const [ip, bucket] of buckets) if (time - bucket.start >= 60000) buckets.delete(ip);
       if (!buckets.has(peer)) {
@@ -95,18 +110,46 @@ export function makeServer(options = {}) {
         res.setHeader('Retry-After', '60');
         return json(res, 429, { error: 'rate limited' });
       }
-      if (!authorized)
-        return json(res, 401, { error: 'unauthorized' });
-      const match = /^\/v1\/mailbox\/([a-f0-9]{64})$/.exec(url.pathname);
-      if (!match) return json(res, 404, { error: 'not found' });
-      const room = match[1];
+      if (!match) return json(res, bootstrap ? 404 : 401, { error: 'not found' });
+      if (match[2]) {
+        if (!bootstrap) return json(res, 401, { error: 'unauthorized' });
+        if (req.method !== 'POST') return json(res, 405, { error: 'method not allowed' });
+        if (!/^application\/json(?:;|$)/i.test(req.headers['content-type'] || ''))
+          return json(res, 415, { error: 'JSON content type required' });
+        let data;
+        try { data = JSON.parse(await readBody(req)); }
+        catch (e) {
+          if (e?.status) { res.setHeader('Connection', 'close'); res.once('finish', () => req.destroy()); }
+          return json(res, e?.status || 400, { error: 'invalid request' });
+        }
+        if (!data || typeof data.capability !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(data.capability) || data.capability === token)
+          return json(res, 400, { error: 'invalid capability' });
+        const hash = credentialHash(data.capability);
+        const existing = state.access[room]; // Recheck after async body read; claims cannot be replaced.
+        if (existing) {
+          if (!equalHash(existing.hash, hash)) return json(res, 403, { error: 'claim conflict' });
+          if (existing.revoked) return json(res, 410, { error: 'chat revoked' });
+          return json(res, 200, { access: 'chat' });
+        }
+        if (Object.keys(state.access).length >= maxClaims) return json(res, 429, { error: 'claim capacity reached' });
+        commit({ ...state, version: 2, access: { ...state.access, [room]: { hash, revoked: false } } });
+        return json(res, 201, { access: 'chat' });
+      }
+      if (!authorized) return json(res, 401, { error: 'unauthorized' });
+      if (claim?.revoked) return json(res, 410, { error: 'chat revoked' });
+      if (req.method === 'DELETE') {
+        if (!scoped) return json(res, 403, { error: 'chat credential required' });
+        commit({ ...state, access: { ...state.access, [room]: { ...state.access[room], revoked: true } },
+          messages: state.messages.filter(m => m.room !== room) });
+        return json(res, 200, { access: 'revoked' });
+      }
       clean();
       if (req.method === 'GET') {
         const after = Number(url.searchParams.get('after') || 0);
         if (!Number.isSafeInteger(after) || after < 0) return json(res, 400, { error: 'bad cursor' });
         const limit = Number(url.searchParams.get('limit') || 50);
         if (!Number.isInteger(limit) || limit < 1 || limit > 50) return json(res, 400, { error: 'bad page size' });
-        return json(res, 200, { protocol: 2, epoch: state.epoch,
+        return json(res, 200, { protocol: 2, access: scoped ? 'chat' : 'shared', epoch: state.epoch,
           messages: state.messages.filter(m => m.room === room && m.seq > after).slice(0, limit)
             .map(({ seq, packet }) => ({ seq, packet })) });
       }
@@ -121,6 +164,11 @@ export function makeServer(options = {}) {
       }
       if (!data || typeof data.packet !== 'string' || data.packet.length > 12000 ||
           !/^[A-Za-z0-9+/_=-]+$/.test(data.packet)) return json(res, 400, { error: 'invalid packet' });
+      // The body read yielded: a concurrent claim/revocation must also block this write.
+      const current = state.access[room];
+      if (current && (!bearer || !equalHash(current.hash, credentialHash(bearer))))
+        return json(res, 401, { error: 'unauthorized' });
+      if (current?.revoked) return json(res, 410, { error: 'chat revoked' });
       // Reject permissive Node base64 decoding ambiguities before deduplication.
       const canonical = Buffer.from(data.packet, 'base64').toString('base64');
       if (canonical.replace(/=+$/, '') !== data.packet.replace(/-/g, '+').replace(/_/g, '/').replace(/=+$/, ''))

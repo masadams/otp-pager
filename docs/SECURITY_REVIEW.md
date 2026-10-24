@@ -39,7 +39,7 @@ on normal/failure exit where accessible. Physical comparison remains mandatory.
 
 | Risk | Present consequence / boundary |
 | --- | --- |
-| Shared relay token | This is operator-wide access, not per-user/per-mailbox authorization. A token holder who knows a mailbox ID can fetch ciphertext and inject junk, and can consume global capacity. Clients still authenticate contents. Per-mailbox capabilities remain future work. |
+| Shared relay setup token | v0.10 protects claimed mailboxes with per-chat capabilities and persistent revocation. The shared token still provisions new claims and accesses legacy unclaimed mailboxes; migrate every active chat. Per-device relay credentials and protection against server-root compromise remain outside this change. |
 | Pad retention and endpoint compromise | v0.9 logically clears consumed slots in the current vault. Retained history, old snapshots and copied original pads can still expose earlier traffic. This does not provide forensic erasure or forward secrecy. |
 | Experimental cryptography | SecureRandom-generated material and conventional HMAC/signatures do not establish information-theoretic OTP security. Protocol composition needs independent review. |
 | Device state rollback/cloning | Restoring coordinated old vault/ledger/registry snapshots can defeat local high-water checks. Uninstall removes these records. Never restore operational pads or reinstall and reuse them. |
@@ -121,3 +121,7 @@ Schema 5 saves authenticated retained payloads inside the existing Keystore-back
 Retries post the original ciphertext. A duplicate received text can recover its saved receipt only when its entire packet exactly matches retained accepted history; modified packets cannot authenticate with a retired zero key. Clearing or expiring history also removes its retained payload cache. The original readiness packet remains available for setup recovery.
 
 This is logical cleanup of the current snapshot, **not forensic erasure or forward secrecy**. Android flash wear leveling, older encrypted snapshots decryptable with the same vault key, original exported pad bundles, process memory and backups can retain material. Retained message history is intentionally readable by an unlocked/compromised endpoint. Device compromise and previously copied pads remain serious risks. An independent protocol and implementation audit is still needed.
+
+### v0.10 chat relay capabilities
+
+See [CHAT_RELAY_ACCESS.md](CHAT_RELAY_ACCESS.md) for staged migration, claim/revocation semantics and deployment. Protected rooms reject the shared setup token and credentials from other rooms; the server persists hashes rather than raw capabilities. Active protection is pinned locally and cannot silently fall back to shared traffic. Revocation disables both devices' relay access without deleting local history. Legacy unclaimed mailboxes still have shared access until migrated, and provisioning authority is still shared. Server-root compromise and restoring/loss of the access registry remain outside that isolation guarantee.

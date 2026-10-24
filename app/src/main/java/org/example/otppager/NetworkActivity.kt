@@ -43,6 +43,8 @@ class NetworkActivity : Activity() {
     private var automatic = true
     private var lastContact = 0L
     private var connectionFailed = false
+    private var connectionProblem = "RELAY UNAVAILABLE"
+    private var networkBusy = false
     private val compact: Boolean get() = resources.configuration.screenHeightDp < 600 || resources.configuration.screenWidthDp < 360
     private var importedDeviceCard: String? = null
     private lateinit var exportDeviceButton: Button
@@ -103,7 +105,7 @@ class NetworkActivity : Activity() {
     private val poll = object : Runnable {
         override fun run() {
             if (active && unlocked) updateIndicators()
-            if (active && unlocked && automatic && !busy && !errorLoading && latest != null && latest?.role != "—" && latest?.pairingComplete == true) runTask(network = true) { syncChats() }
+            if (active && unlocked && automatic && !busy && !errorLoading && latest != null && latest?.role != "—" && latest?.pairingComplete == true && latest?.relayRevoked != true) runTask(network = true) { syncChats() }
             else if (active && unlocked) handler.postDelayed(this, 5000)
         }
     }
@@ -223,7 +225,7 @@ class NetworkActivity : Activity() {
         tabs.addView(trafficTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(linkTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(padTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(deviceTab, LinearLayout.LayoutParams(0, -2, 1f)); chrome.addView(tabs)
         status = text("Opening station…", 11f, muted, true).apply { setPadding(dp(2), dp(2), 0, dp(4)); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setOnClickListener { showStationStatus() } }; chrome.addView(status)
         traffic = column()
-        setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, ink); setOnClickListener { selectTab(if (latest?.ownDevice != null && latest?.peerDevice == null) 3 else if (latest?.padCheck == null) 1 else 2) } }; traffic.addView(setupHint)
+        setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, ink); setOnClickListener { selectTab(if (latest?.relayRevoked == true) 1 else if (latest?.ownDevice != null && latest?.peerDevice == null) 3 else if (latest?.padCheck == null) 1 else 2) } }; traffic.addView(setupHint)
         newMessagesButton = button("New messages · Jump to latest") {
             messageScroll.fullScroll(View.FOCUS_DOWN)
             ackVisibleMessages()
@@ -252,11 +254,13 @@ class NetworkActivity : Activity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, n: Int) {
                 val bytes = s.toString().toByteArray(Charsets.UTF_8).size
                 count.text = "$bytes / 2048 bytes"; count.setTextColor(if (bytes > 2048) Color.rgb(145, 57, 39) else muted)
+                updateSendButton()
             }
             override fun afterTextChanged(s: Editable?) {}
         })
         val settings = column().apply { setPadding(0, 0, 0, dp(24)) }
         settings.addView(text("Station settings", 22f))
+        settings.addView(button("Chat relay access") { showRelayAccess() })
         settings.addView(text("Save server details on one device, then pair by cable. QR is available as a fallback.", 14f, muted))
         settings.addView(button("Pair devices · USB cable", true) {
             if (latest?.cableEligible == false) confirm("Replace this pairing?", "This removes the current conversation and queued messages on THIS station. The server address and token stay saved. A fresh secret and pad will be created; the old pad cannot be reused. Start the new pairing on both intended devices.") { beginCablePairing(true) }
@@ -584,10 +588,11 @@ class NetworkActivity : Activity() {
     }
     private fun setBusy(value: Boolean) {
         busy = value
+        if (!value) networkBusy = false
         chatButton.isEnabled = !value && book != null
         for (view in listOf(sendButton, saveButton, saveRelayButton, syncButton, urlField, tokenField, secretField, roleGroup)) view.isEnabled = !value
-        syncButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && latest?.pairingComplete == true && !errorLoading
-        sendButton.isEnabled = !value && latest?.canSend == true && latest?.padCheck != null && !errorLoading
+        syncButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && latest?.pairingComplete == true && latest?.relayRevoked != true && !errorLoading
+        updateSendButton()
         showQrButton.isEnabled = !value && latest?.role != null && latest?.role != "—" && !errorLoading
         scanQrButton.isEnabled = !value && latest?.cableEligible == true && !errorLoading
         imageQrButton.isEnabled = scanQrButton.isEnabled
@@ -601,16 +606,24 @@ class NetworkActivity : Activity() {
         createPadButton.isEnabled = !value && latest?.role == "A" && latest?.padCheck == null
         importPadButton.isEnabled = !value && latest?.role == "B" && latest?.padCheck == null
         verifyButton.isEnabled = !value && latest?.ownDevice == null && latest?.padCheck != null && (latest?.padVerified == true || latest?.padRemaining != 0)
+        updateIndicators()
+    }
+    private fun updateSendButton() {
+        if (!::sendButton.isInitialized) return
+        val bytes = composer.text.toString().toByteArray(Charsets.UTF_8).size
+        sendButton.isEnabled = !busy && latest?.canSend == true && latest?.padCheck != null && !errorLoading && bytes in 1..2048
     }
     private fun updateIndicators() {
         if (!::indicators.isInitialized) return
         val v = latest
         val connection = when {
             v == null || v.role == "—" -> "○ NOT PAIRED"
-            connectionFailed -> "! RELAY UNAVAILABLE"
+            v.relayRevoked -> "! CHAT ACCESS REVOKED"
+            networkBusy -> "○ CHECKING RELAY"
+            connectionFailed -> "! $connectionProblem"
             lastContact == 0L -> "○ NOT CHECKED"
             android.os.SystemClock.elapsedRealtime() - lastContact > 60000 -> "○ LAST CHECK >1 MIN"
-            else -> "● RELAY CONNECTED"
+            else -> "● RELAY CHECKED"
         }
         val security = when {
             v?.ownDevice != null && v.peerDevice == null -> "DEVICE EXCHANGE INCOMPLETE"
@@ -619,9 +632,11 @@ class NetworkActivity : Activity() {
             v.padVerified && v.peerReady -> "PAD READY"
             else -> "PAD CHECK NEEDED"
         }
-        val value = "$connection${if (!automatic) " · AUTO OFF" else ""}\n${v?.unread ?: 0} NEW · ${v?.pending ?: 0} QUEUED · ${v?.awaitingReceipt ?: 0} WAITING" +
+        val accessBadge = if (v?.padCheck != null && !v.relayRevoked) if (v.relayScoped) " · CHAT ACCESS" else " · SHARED ACCESS" else ""
+        val value = "$connection$accessBadge${if (!automatic) " · AUTO OFF" else ""}\n${v?.unread ?: 0} NEW · ${v?.pending ?: 0} QUEUED · ${v?.awaitingReceipt ?: 0} AT RELAY" +
             if (compact) "" else "\n$security${v?.padRemaining?.let { " · $it SLOTS" } ?: ""}"
-        indicators.contentDescription = "$value. $security. Tap for details."
+        val access = if (v?.relayRevoked == true) "Chat access revoked" else if (v?.relayScoped == true) "Chat access protected" else "Shared relay access; update relay to protect this chat"
+        indicators.contentDescription = "$value. $security. $access. Tap for details."
         if (indicators.text.toString() != value) indicators.text = value
     }
     private fun syncChats(): String {
@@ -679,6 +694,22 @@ class NetworkActivity : Activity() {
         composer.text.clear(); lastContact = 0L; connectionFailed = false; backoff = 15000L; tab = 0
         showTerminal()
     }
+    private fun showRelayAccess() {
+        val v = latest ?: return
+        val explanation = when {
+            v.relayRevoked -> "This chat can no longer use the relay. Local history remains on this device. Pair a fresh chat on both devices to continue."
+            v.relayScoped -> "This chat uses its own relay credential. The shared setup token cannot read or write this protected mailbox. Other chats use different credentials. Revoking stops relay access for BOTH devices and removes this chat's queued server packets. Local history is kept."
+            else -> "This chat currently uses shared relay access. Update the relay, then tap Sync on both devices to enable chat protection automatically. Update both apps before doing so: older apps cannot access a protected mailbox."
+        }
+        val builder = AlertDialog.Builder(this).setTitle("Chat relay access").setMessage(explanation).setNegativeButton("Close", null)
+        if (v.relayScoped && !v.relayRevoked) builder.setPositiveButton("Revoke this chat") { _, _ ->
+            confirm("Revoke access for both devices?", "This chat will stop sending and receiving through the relay. Local messages stay saved. You will need fresh physical pairing on both devices to continue.") {
+                runTask(network = true) { checkNotNull(engine).revokeRelayAccess(); "CHAT ACCESS REVOKED · local history kept" }
+            }
+        }
+        if (v.relayRevoked) builder.setPositiveButton("Pair again") { _, _ -> selectTab(1) }
+        builder.create().also(::secureShow)
+    }
     private fun showStationStatus() {
         val v = latest ?: return
         val contact = if (lastContact == 0L) "No successful relay check this session" else {
@@ -686,11 +717,11 @@ class NetworkActivity : Activity() {
             "Last successful relay check: ${if (seconds < 60) "$seconds seconds" else "${seconds / 60} minutes"} ago"
         }
         AlertDialog.Builder(this).setTitle("Station ${v.role} · status")
-            .setMessage("$contact\n${if (connectionFailed) "Latest relay check failed" else "Connection is checked only while the app is open"}\n\n${v.pending} packets queued locally\n${v.awaitingReceipt} messages awaiting a saved receipt\n${v.unread} new messages\n\n${v.padRemaining?.let { "$it outgoing pad slots remaining" } ?: "No pad installed · sending disabled"}\n${if (v.peerDevice != null) "Peer device key pinned" else if (v.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "Device identity not bound"}\n\nPeer saved means the other device stored the message; it does not mean a person read it. Retrying uses the same encrypted packets and no new pad slots.\n\n${status.text}")
-            .setPositiveButton("Settings") { _, _ -> selectTab(1) }
+            .setMessage("$contact\n${if (connectionFailed) connectionProblem else "Checks run while this app is open; this is not peer online status"}\n${if (v.relayRevoked) "CHAT ACCESS REVOKED" else if (v.relayScoped) "CHAT ACCESS PROTECTED" else "SHARED RELAY ACCESS · update relay"}\n\n${v.pending} packets queued locally\n${v.awaitingReceipt} messages awaiting a saved receipt\n${v.unread} new messages\n\n${v.padRemaining?.let { "$it outgoing pad slots remaining" } ?: "No pad installed · sending disabled"}\n${if (v.peerDevice != null) "Peer device key pinned" else if (v.ownDevice != null) "DEVICE EXCHANGE INCOMPLETE" else "Device identity not bound"}\n\nPeer saved means the other device stored the message; it does not mean a person read it. Retrying uses the same encrypted packets and no new pad slots.\n\n${status.text}")
+            .setPositiveButton("Chat access") { _, _ -> showRelayAccess() }
             .setNegativeButton("Close", null)
-            .setNeutralButton("Retry") { _, _ ->
-                runTask(onSuccess = { runTask(network = true) { syncChats() } }) {
+            .setNeutralButton(if (v.relayRevoked) "Pair again" else "Retry") { _, _ ->
+                if (v.relayRevoked) selectTab(1) else runTask(onSuccess = { runTask(network = true) { syncChats() } }) {
                     val n = checkNotNull(engine).retryDelivery()
                     "$n SAVED MESSAGES REQUEUED · checking existing receipts"
                 }
@@ -709,6 +740,7 @@ class NetworkActivity : Activity() {
         newMessagesButton.text = "${view.unread} new · Jump to latest"
         val hint = when {
             view.role == "—" -> "SET UP YOUR STATION → Link"
+            view.relayRevoked -> "CHAT ACCESS REVOKED · open chat settings to pair afresh"
             !view.pairingComplete -> "PAIRING INCOMPLETE · arrange a fresh physical pairing on both devices"
             view.padCheck == null -> "PAIR WITH YOUR FRIEND → Link · USB pairs keys and pad together"
             view.padRemaining == 0 -> "SEND PAD EXHAUSTED · Receiving and queued retries remain available"
@@ -751,7 +783,7 @@ class NetworkActivity : Activity() {
                 background = surface(Color.WHITE, 2, if (m.incoming) ink else lineColor)
             }
             val label = if (m.incoming) (if (m.unread) "● NEW FROM PEER" else "FROM PEER") else when (m.status) { "queued" -> "○ QUEUED"; "relayed" -> "↑ AT RELAY"; "delivered" -> "✓ PEER SAVED"; else -> m.status.uppercase() }
-            card.addView(text("$label  /  ${timeFormat.format(java.util.Date(m.time))}\n${if (m.deviceVerified) "DEVICE SIGNATURE VERIFIED" else "PAD / SHARED SECRET ONLY"}", 10f, muted, true))
+            card.addView(text("$label  /  ${timeFormat.format(java.util.Date(m.time))}${if (m.deviceVerified) " · VERIFIED" else " · UNBOUND"}", 10f, muted, true))
             card.addView(text(m.text, 16f, ink, true).apply { setPadding(0, dp(5), 0, 0); isSaveEnabled = false })
             messages.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
                 topMargin = dp(10); if (m.incoming) rightMargin = dp(24) else leftMargin = dp(24)
@@ -762,15 +794,21 @@ class NetworkActivity : Activity() {
     private fun runTask(network: Boolean = false, load: Boolean = false, clearComposer: Boolean = false, publicTransfer: Boolean = false, qrTransfer: Boolean = false, onSuccess: (() -> Unit)? = null, action: () -> String) {
         if (busy || !active || !unlocked || isFinishing) return
         val taskGeneration = generation
-        setBusy(true); handler.removeCallbacks(poll)
+        networkBusy = network; setBusy(true); handler.removeCallbacks(poll)
         worker.execute {
             var note: String; var view: StationEngine.View? = null
-            var config: org.json.JSONObject? = null; var success = false; var relayFailure = false
+            var config: org.json.JSONObject? = null; var success = false; var relayFailure = false; var failureLabel = "RELAY UNAVAILABLE"
             try {
                 note = action(); success = true; if (network) backoff = 15000L
                 book?.refresh(); view = engine?.view(); if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
             } catch (e: Exception) {
-                relayFailure = network && (e is java.io.IOException || e is RelayHttpException)
+                relayFailure = network
+                failureLabel = when (e) {
+                    is RelayHttpException -> when (e.status) { 401, 403 -> "ACCESS DENIED"; 410 -> "CHAT ACCESS REVOKED"; 429 -> "RELAY BUSY"; else -> "RELAY ERROR ${e.status}" }
+                    is javax.net.ssl.SSLException -> "TLS CHECK FAILED"
+                    is java.io.IOException -> "RELAY UNAVAILABLE"
+                    else -> "CHECK RELAY SETTINGS"
+                }
                 note = if (load && engine != null && e is java.io.IOException) {
                     if (qrTransfer) "QR IMAGE COULD NOT BE READ // no settings changed"
                     else if (publicTransfer) "PUBLIC CARD TRANSFER FAILED // identity retained; retry the file transfer"
@@ -787,7 +825,10 @@ class NetworkActivity : Activity() {
                     secretField.setText(config!!.getString("secret")); roleGroup.check(if (config!!.getString("role") == "A") R.id.station_a else R.id.station_b)
                 }
                 if (network && success) { lastContact = android.os.SystemClock.elapsedRealtime(); connectionFailed = false }
-                else if (relayFailure) connectionFailed = true
+                else if (relayFailure) {
+                    connectionFailed = true
+                    connectionProblem = failureLabel
+                }
                 view?.let(::render)
                 if (clearComposer && success) composer.text.clear()
                 if (errorLoading) note = "VAULT UNAVAILABLE // data preserved; see Link → Forget pairing to reset"
@@ -802,7 +843,8 @@ class NetworkActivity : Activity() {
     }
     private fun friendly(e: Exception): String = when (e) {
         is RelayHttpException -> when (e.status) {
-            401, 403 -> "ACCESS DENIED // check the relay token in Link"
+            401, 403 -> "ACCESS DENIED // check chat access or the setup token in Settings"
+            410 -> "CHAT ACCESS REVOKED // pair a fresh chat on both devices"
             429 -> "RELAY BUSY OR FULL // queued traffic will retry"
             413 -> "RELAY REJECTED MESSAGE SIZE"
             in 300..399 -> "REDIRECT BLOCKED // use the final HTTPS hostname"

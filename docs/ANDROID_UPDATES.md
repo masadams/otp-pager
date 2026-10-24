@@ -198,7 +198,7 @@ identity, queued signed ciphertext, nonzero replay state and reserved pad slots,
 active chat, peer pin, the old private key's ability to sign, exact queued message state
 and a new send above the previous pad high-water mark. Android must also reject an older
 APK and a differently signed APK while retaining the fixture. Test versionCodes and key
-material never enter production artifacts. The baseline APK uses the actual v0.8 source; the replacement uses current source.
+material never enter production artifacts. The baseline APK uses the actual v0.9 source; the replacement uses current source.
 This covers that storage migration with a disposable signer, not arbitrary future formats
 or an in-place update from the earlier debug signer. Existing migration/fault tests remain required.
 
@@ -208,4 +208,4 @@ References:
 - https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
 - https://cli.github.com/manual/gh_secret_set
 
-v0.9 migrates v0.8 pad vaults to schema 5 on opening each chat. Retained traffic and queued packet bytes are preserved in the encrypted vault while consumed pad slots are cleared. The signed-update CI fixture now installs the actual v0.8 source (758b35e) before replacing it with the new release using a disposable signer. Schema 5 is intentionally rejected by older apps. Keep the same signing certificate when updating the temporary test installation; a different production certificate requires a fresh installation/pairing.
+v0.9 migrates v0.8 pad vaults to schema 5 on opening each chat. Retained traffic and queued packet bytes are preserved in the encrypted vault while consumed pad slots are cleared. The signed-update CI fixture now installs the actual v0.9 source (4308ac9) before replacing it with the new release using a disposable signer. Schema 5 is intentionally rejected by older apps. Keep the same signing certificate when updating the temporary test installation; a different production certificate requires a fresh installation/pairing.

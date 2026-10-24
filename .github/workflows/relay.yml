@@ -1,7 +1,7 @@
 name: Relay tests
 on:
   push:
-    branches: [main, feat/two-device-relay]
+    branches: [main, feat/two-device-relay, feat/chat-relay-access]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -36,13 +36,16 @@ jobs:
           const headers = { Authorization: 'Bearer ' + process.env.RELAY_TOKEN, 'Content-Type': 'application/json' };
           assert.equal((await fetch(base)).status, 401);
           assert.equal((await fetch(base, { method: 'POST', headers, body: JSON.stringify({packet:'YQ=='}) })).status, 201);
+          const capability = 'c'.repeat(43);
+          assert.equal((await fetch(base + '/claim', { method:'POST', headers, body:JSON.stringify({capability}) })).status, 201);
+          assert.equal((await fetch(base, {headers})).status, 401);
           JS
           docker compose restart relay
           docker compose up -d --wait
           node --input-type=module <<'JS'
           import assert from 'node:assert/strict';
           const response = await fetch('http://127.0.0.1:8080/v1/mailbox/' + 'a'.repeat(64), {
-            headers: { Authorization: 'Bearer ' + process.env.RELAY_TOKEN }
+            headers: { Authorization: 'Bearer ' + 'c'.repeat(43) }
           });
           assert.deepEqual((await response.json()).messages, [{seq:1, packet:'YQ=='}]);
           JS
@@ -57,7 +60,7 @@ jobs:
     concurrency:
       group: relay-publish-${{ github.ref_name }}
       cancel-in-progress: false
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/feat/two-device-relay' || github.ref == 'refs/heads/main')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/feat/two-device-relay' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feat/chat-relay-access')
     needs: test
     runs-on: ubuntu-latest
     permissions:
@@ -80,7 +83,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/masadams/otp-pager-relay:edge
+            ghcr.io/masadams/otp-pager-relay:${{ github.ref_name == 'feat/chat-relay-access' && 'access-test' || 'edge' }}
             ghcr.io/masadams/otp-pager-relay:sha-${{ github.sha }}
           labels: |
             org.opencontainers.image.source=https://github.com/masadams/otp-pager
