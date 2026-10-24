@@ -248,7 +248,7 @@ class InterfaceTest {
             waiting.getJSONArray("outbox").getJSONObject(0).put("status", "relayed"); store.save(waiting)
             val launched = instrumentation.startActivitySync(Intent(context, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             activity = launched; awaitStation(instrumentation, launched)
-            fun assertUsable() = instrumentation.runOnMainSync {
+            fun assertUsable(expectedSendEnabled: Boolean) = instrumentation.runOnMainSync {
                 val views = all(content(launched))
                 val scroll = views.filterIsInstance<android.widget.ScrollView>().first { it.isShown }
                 assertTrue("Traffic area collapsed", scroll.height >= (40 * context.resources.displayMetrics.density).toInt())
@@ -256,9 +256,9 @@ class InterfaceTest {
                 val bounds = android.graphics.Rect()
                 assertTrue("Send clipped", send.getGlobalVisibleRect(bounds))
                 assertEquals(send.height, bounds.height())
-                assertTrue(send.isEnabled)
+                assertEquals(expectedSendEnabled, send.isEnabled)
             }
-            assertUsable(); capture(instrumentation, launched, "messages-compact")
+            assertUsable(false); capture(instrumentation, launched, "messages-compact")
             instrumentation.runOnMainSync {
                 assertEquals(480, launched.resources.displayMetrics.widthPixels)
                 assertEquals(320, launched.resources.configuration.screenWidthDp)
@@ -277,7 +277,7 @@ class InterfaceTest {
                 if (!keyboard) Thread.sleep(50)
             }
             assertTrue("Keyboard did not open", keyboard)
-            instrumentation.waitForIdleSync(); assertUsable(); capture(instrumentation, launched, "messages-compact-keyboard", windowOnly = true)
+            instrumentation.waitForIdleSync(); assertUsable(true); capture(instrumentation, launched, "messages-compact-keyboard", windowOnly = true)
         } finally {
             activity?.let { a -> instrumentation.runOnMainSync {
                 a.getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(a.window.decorView.windowToken, 0)
