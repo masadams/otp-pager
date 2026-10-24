@@ -4,7 +4,13 @@ Update **both Android apps first**, then update the relay. An old app using the 
 
 ## Portainer test deployment
 
-The `feat/chat-relay-access` branch builds the public `access-test` image after relay/container checks. Use the immutable `ghcr.io/masadams/otp-pager-relay:sha-<tested branch commit>` once the workflow has successfully published it. Keep the existing Portainer stack name, token, Nginx configuration and `relay-data` volume. Set its `RELAY_IMAGE` environment variable to that tested image and pull/redeploy. Do not remove or recreate the volume. The production default remains 0.7.0 until a separately verified release is published.
+The chat-access changes are merged into `main`. The default Portainer stack pins this tested multi-platform image:
+
+```text
+ghcr.io/masadams/otp-pager-relay@sha256:7e90cc527e1150e448b70c36bac1bb33ce4f7131a56dd4d367fda2480df85c51
+```
+
+Keep the existing stack name, token, Nginx configuration and `relay-data` volume. If `RELAY_IMAGE` is already set in Portainer, update that override to the pinned image above; otherwise the updated stack default applies. Pull/redeploy without removing or recreating the volume. Main builds also publish `edge` and commit tags after relay/container checks; prefer a verified digest for deployment. The APK remains a temporary-signer test build; this deployment pin does not declare a production Android release.
 
 Open the app and Sync on both devices. Tap the status strip, then **Chat access**. It should report **CHAT ACCESS PROTECTED**. No extra pairing code, QR, pad slot or device signature exchange is needed. Existing pairings and queued ciphertext remain in place.
 

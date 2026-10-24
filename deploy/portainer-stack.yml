@@ -1,7 +1,7 @@
 # Portainer Git deployment; see docs/DEPLOYMENT.md. Docker Standalone stack.
 services:
   relay:
-    image: ${RELAY_IMAGE:-ghcr.io/masadams/otp-pager-relay:0.7.0}
+    image: ${RELAY_IMAGE:-ghcr.io/masadams/otp-pager-relay@sha256:7e90cc527e1150e448b70c36bac1bb33ce4f7131a56dd4d367fda2480df85c51}
     restart: unless-stopped
     init: true
     environment:

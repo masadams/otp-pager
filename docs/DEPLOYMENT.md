@@ -1,24 +1,29 @@
-# Deploy OTP Pager 0.7.0
+# Deploy OTP Pager v0.10
 
 The server is an opaque mailbox relay in Docker. The client is the Android APK.
-Finite-pad/device-bound mode and labelled AES-GCM test mode use the same relay API.
+The normal client requires physical pad pairing and supports pinned device identity.
 The relay does not receive pad material, pairing secrets or private device keys.
 This is an experimental field release; see [security review](SECURITY_REVIEW.md).
 
-## Release files
+## Current merged build: v0.10
 
-https://github.com/masadams/otp-pager/releases/tag/v0.7.0
+The client changes and relay access protection are merged into `main`. Use the privately
+provided **signed v0.10 test APK on both devices**, then update the relay. Ordinary CI
+debug APKs are not compatible updates to that signed installation. See
+[Android updates](ANDROID_UPDATES.md) for signer custody and the first debug-to-signed transition.
 
-- `otp-pager-0.7.0-debug.apk`: the exact APK from the successful Android matrix.
-- `portainer-stack.yml`: deployment stack using the versioned image by default.
-- `relay-image.txt`: versioned image and immutable multi-platform digest.
-- `SHA256SUMS`: file checksums; `SECURITY_REVIEW.md`: known risks and boundaries.
+The default stack pins the already tested Linux amd64/arm64 relay:
 
-Image: `ghcr.io/masadams/otp-pager-relay:0.7.0` (Linux amd64 and arm64).
-Version tags are only created from an already tested image. The release publisher
-rejects conflicting existing tags and checks both platform manifests. `edge` remains
-a moving development tag; use the version or digest for a deployed release.
-Publishing a release does not automatically redeploy an owner's private server.
+```text
+ghcr.io/masadams/otp-pager-relay@sha256:7e90cc527e1150e448b70c36bac1bb33ce4f7131a56dd4d367fda2480df85c51
+```
+
+This is a development field build, with temporary Android signing and no independent
+audit. A separately published production-signed Android release is still pending.
+The [v0.7 release](https://github.com/masadams/otp-pager/releases/tag/v0.7.0) is historical;
+its debug APK and old stack are not the current v0.10 installation path. `edge` is a
+moving main-build tag; use a verified digest for deployment. Publishing an image or
+merging source does not redeploy the owner's private server.
 
 ## Update an existing Portainer stack
 
@@ -28,19 +33,21 @@ volume or restore an old snapshot as part of a normal update.
 
 1. Set the stack Git reference to `refs/heads/main` and keep compose path
    `deploy/portainer-stack.yml` from `https://github.com/masadams/otp-pager`.
-2. Set `RELAY_IMAGE=ghcr.io/masadams/otp-pager-relay:0.7.0`, or the immutable reference
-   from the release's `relay-image.txt`. Existing environment overrides win over
-   the compose default, so replace a previously configured `edge` value explicitly.
+2. Set `RELAY_IMAGE` to the tested digest above, or remove an old override to use
+   the current compose default. Environment overrides win over the compose default,
+   so a previously configured `0.7.0` or `edge` value must be updated explicitly.
 3. Keep `RELAY_TOKEN` and `PROXY_NETWORK` unchanged. Use **Pull and redeploy**, with
-   **Re-pull image** enabled. The relay keeps its existing protocol/storage format.
+   **Re-pull image** enabled. Mailbox traffic keeps its protocol; access claims
+   migrate the server disk format to schema 2 while preserving ciphertext/cursors.
 4. Verify the container is healthy and `https://YOUR_HOST/health` returns
    `{"status":"ok"}`. Test message delivery in both directions using the paired
    clients. Health alone does not prove authenticated access or writable storage.
 5. Reload Nginx if it cached the old upstream container address after recreation.
 
-Rollback uses the previous image digest with the SAME named volume. Do not downgrade
-the APK or roll back client vault/ledger snapshots. Ordinary server restart/upgrade
-preserves stored ciphertext, cursor sequence and storage epoch.
+After the first protected chat, use a relay compatible with disk schema 2. Older
+relays reject protected state: do not roll back to 0.7 or restore old snapshots to
+bypass that protection. Do not downgrade the APK or restore vault/ledger snapshots.
+Ordinary restart/upgrade preserves ciphertext, cursors, epoch and access records.
 
 ## First Portainer installation
 
@@ -59,7 +66,7 @@ not supported. No registry login or local image build is needed for the public i
 | --- | --- |
 | `RELAY_TOKEN` | Private random URL-safe token, 43–128 characters |
 | `PROXY_NETWORK` | Existing bridge network shared with Nginx; default `proxy` |
-| `RELAY_IMAGE` | `ghcr.io/masadams/otp-pager-relay:0.7.0`, or release digest |
+| `RELAY_IMAGE` | Leave unset for the current pinned stack default, or use the tested digest above |
 
 Generate the token locally with a trusted password manager or:
 
@@ -69,7 +76,9 @@ openssl rand -base64 32 | tr '+/' '-_' | tr -d '=\n'
 
 Keep it different from the phones' pairing secret. Do not store it in Git, URLs,
 screenshots or logs. Docker/Portainer administrators can inspect container environment.
-The current token is operator-wide rather than a per-friend access capability.
+The token provisions chat access and still accesses legacy unclaimed mailboxes.
+Protected chats require separate automatically derived capabilities. See
+[chat access](CHAT_RELAY_ACCESS.md) for staged migration and revocation limits.
 
 The stack publishes no host port. Nginx reaches `otp-pager-relay:8080` across the
 shared proxy network. Keep Portainer/admin interfaces separately protected.
@@ -89,10 +98,11 @@ The APK rejects HTTP, redirects and untrusted/self-signed certificates.
 
 ## Android setup
 
-Install the SAME release APK on both devices. It is a debug-signed field build;
-owner-controlled stable release signing is still unfinished. If an incompatible
-signature requires uninstalling an older debug app, create fresh pads/secrets on
-both devices afterward. Never restore an operational pad after uninstalling.
+Install the SAME signed v0.10 test APK on both devices before upgrading the relay.
+Update a previous same-signer test installation in place, retaining app data. Moving
+from historical debug APKs or later to a different production signer requires a
+deliberate fresh-install/fresh-pairing transition; see [Android updates](ANDROID_UPDATES.md).
+Never restore an operational pad after uninstalling.
 
 For each friend, tap the chat name → New chat and give it a name. Save server address
 and token on at least one unused station, open **Pair devices · USB cable** on both,
@@ -110,8 +120,9 @@ inactive chat are checked each cycle; inactive chats rotate.
 
 - Authenticated mailbox traffic, not only `/health`, must work after deployment.
 - Unauthenticated mailbox requests return 401. There is no public mailbox-list API.
-- Named volume `relay-data` retains ciphertext, sequence numbers and storage epoch.
-  A replacement volume triggers client recovery but cannot restore expired content.
+- Named volume `relay-data` retains ciphertext, sequence numbers, storage epoch and
+  access/revocation records. A replacement volume loses that server history; automatic
+  claim/traffic recovery cannot reconstruct forgotten revocations or expired content.
 - Relay/client retention is up to 24 hours; logical expiry is not forensic erasure
   of disks, flash, backups or captured packets.
 - Limits: 200 live packets per mailbox, 2,000 globally, 50 per response page, 16 KiB

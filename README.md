@@ -4,15 +4,27 @@ Experimental, open-source, physically paired text messenger. Android, including 
 
 > **Security status: NOT AUDITED. NOT READY FOR SENSITIVE COMMUNICATIONS.** This repository begins with specifications and testable scaffolding, not a claim of secure or Jericho-compatible messaging.
 
-## First field release: 0.7.0
+## Current merged build: v0.10
 
-[Download the APK and deployment files](https://github.com/masadams/otp-pager/releases/tag/v0.7.0).
-Install the same `otp-pager-0.7.0-debug.apk` on both devices. Server image:
-`ghcr.io/masadams/otp-pager-relay:0.7.0` (amd64/arm64).
-Portainer: `refs/heads/main`, compose path `deploy/portainer-stack.yml`.
-See [deployment instructions](docs/DEPLOYMENT.md) and [security review](docs/SECURITY_REVIEW.md).
-This is the first integrated field-test prerelease; owner-controlled stable signing
-and independent security review remain unfinished.
+`main` includes encrypted USB pairing, separate friend chats, device signatures,
+used-pad cleanup, compatible signed updates, per-chat relay access/revocation and
+compact Android/e-ink UI improvements. The signed v0.10 test APK has been delivered
+privately using the same saved temporary signer as previous signed test builds.
+Production signer custody and independent review remain pending.
+
+Update **both clients first**, then pull/redeploy the existing Portainer stack using
+`refs/heads/main` and `deploy/portainer-stack.yml`, preserving its data volume and token.
+The stack now pins this tested amd64/arm64 relay:
+
+```text
+ghcr.io/masadams/otp-pager-relay@sha256:7e90cc527e1150e448b70c36bac1bb33ce4f7131a56dd4d367fda2480df85c51
+```
+
+An existing `RELAY_IMAGE` override must be updated explicitly. See
+[deployment instructions](docs/DEPLOYMENT.md), [chat access](docs/CHAT_RELAY_ACCESS.md)
+and [security review](docs/SECURITY_REVIEW.md). The
+[v0.7 release](https://github.com/masadams/otp-pager/releases/tag/v0.7.0) remains available
+as historical material; its debug APK is not the current installation path.
 
 ## Goals
 - No phone-number account or remote contact enrollment.
@@ -145,9 +157,9 @@ pads transfer only after both devices approve. Both devices need 0.8 for a **new
 pairing; there is no plaintext compatibility fallback. Existing paired chat state and
 relay/message formats are unchanged. This is conventional, unaudited encryption, not
 post-quantum provisioning. See [the security review](docs/SECURITY_REVIEW.md) for open risks.
-The 0.7 field-release links above remain pinned until a new build is verified and released.
+Historical release assets remain unchanged. The current Portainer default is the tested v0.10 relay digest above.
 
-### Permanent signing and update verification (proposed)
+### Signing and update verification
 
 [Owner setup and update instructions](docs/ANDROID_UPDATES.md) provide a permanent,
 locally generated release signer, main-only signed builds and a publisher that rejects
