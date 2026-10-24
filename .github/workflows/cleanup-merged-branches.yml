@@ -1,0 +1,67 @@
+name: One-time merged branch cleanup
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/cleanup-merged-branches.yml]
+permissions:
+  contents: read
+jobs:
+  cleanup:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact merged branch heads and delete only those refs
+        env:
+          CLEANUP_TOKEN: ${{ github.token }}
+          CLEANUP_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess, urllib.request, urllib.error, urllib.parse
+          repository = os.environ['CLEANUP_REPOSITORY']
+          assert repository == 'masadams/otp-pager'
+          base = 'https://api.github.com/repos/' + repository
+          headers = {'Authorization': 'Bearer ' + os.environ['CLEANUP_TOKEN'],
+                     'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}
+          branches = {
+              'feat/android-offline-demo': '491c24061c17a9cdf54324092b32c449c1fa4254',
+              'feat/two-device-relay': '3632cc60d8f0a50c5dddd4032eadcbeb8e67d6c7',
+              'feat/encrypted-pairing-ux': '269dff73bcd4cdc82e8eb1b925342583d7294a4e',
+              'feat/stable-android-updates': '758b35e0366204d422dc90c106166226028ed104',
+              'feat/used-pad-retirement': '4308ac9c82d1384ca71a73b76aa3648611e14ac4',
+              'feat/chat-relay-access': '114b796d5008917d53b89c6faf7fbc04eb3c0a80',
+          }
+          def api(path, method='GET'):
+              request = urllib.request.Request(base + path, headers=headers, method=method)
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      body = response.read()
+                      return json.loads(body) if body else None
+              except urllib.error.HTTPError as error:
+                  if method == 'GET' and error.code == 404: return None
+                  raise RuntimeError('GitHub operation failed with HTTP ' + str(error.code)) from None
+          pending = []
+          for branch, expected in branches.items():
+              ref = api('/git/ref/heads/' + branch)
+              if ref is None:
+                  print('Already absent:', branch)
+                  continue
+              assert ref['object']['sha'] == expected, 'Branch moved; preserve ' + branch
+              subprocess.run(['git', 'merge-base', '--is-ancestor', expected, 'HEAD'], check=True)
+              for field, value in [('head', 'masadams:' + branch), ('base', branch)]:
+                  query = urllib.parse.urlencode({'state':'open', field:value})
+                  assert not api('/pulls?' + query), 'Open pull request uses ' + branch
+              pending.append((branch, expected))
+          for branch, expected in pending:
+              assert api('/git/ref/heads/' + branch)['object']['sha'] == expected, 'Branch moved; preserve ' + branch
+              api('/git/refs/heads/' + branch, 'DELETE')
+              print('Deleted merged branch:', branch)
+          print('Merged branch cleanup completed.')
+          PY
