@@ -12,6 +12,25 @@ import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class RadioPairTest {
+    @Test fun leavingWizardClosesListenerAndWipesOffer() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val activity = instrumentation.startActivitySync(android.content.Intent(instrumentation.targetContext, RadioPairActivity::class.java)
+            .putExtra("chat", "radio-ui-fixture").addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+        val server = ServerSocket(0)
+        val offer = RadioTicket.create("10.1.2.3", server.localPort)
+        try {
+            instrumentation.runOnMainSync {
+                assertTrue(activity.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_SECURE != 0)
+                RadioPairActivity::class.java.getDeclaredField("listener").apply { isAccessible = true }.set(activity, server)
+                RadioPairActivity::class.java.getDeclaredField("ticket").apply { isAccessible = true }.set(activity, offer)
+                NfcSetupExchange.payload = offer.encode().toByteArray()
+                activity.finish()
+            }
+            instrumentation.waitForIdleSync()
+            assertTrue(server.isClosed); assertNull(NfcSetupExchange.payload)
+            assertTrue(offer.secret.all { it == 0.toByte() })
+        } finally { server.close(); offer.close(); instrumentation.runOnMainSync { activity.finish() } }
+    }
     private fun transfer(a: StationEngine, b: StationEngine, renew: Boolean, cancel: Boolean = false) {
         val pool = Executors.newFixedThreadPool(2)
         ServerSocket(0).use { server ->

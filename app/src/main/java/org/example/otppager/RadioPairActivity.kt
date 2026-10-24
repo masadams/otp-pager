@@ -120,6 +120,7 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
                     if (stopped.get() || SystemClock.elapsedRealtime() >= expires) { connection.close(); break }
                     val envelope = try { RadioHandoff.establish(true, connection.getInputStream(), connection.getOutputStream(), offer) }
                         catch (_: Exception) { connection.close(); socket = null; continue }
+                    if (stopped.get() || SystemClock.elapsedRealtime() >= expires) { envelope.close(); connection.close(); break }
                     authenticated = true
                     server.close(); listener = null
                     offer.close(); ticket = null

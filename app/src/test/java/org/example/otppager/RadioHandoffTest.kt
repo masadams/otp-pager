@@ -23,7 +23,7 @@ class RadioHandoffTest {
         t.close(); assertTrue(t.secret.all { it == 0.toByte() })
     }
     @Test fun independentPythonRadioRecordVector() {
-        val v = java.util.Properties().apply { load(javaClass.getResourceAsStream("/radio-v1.properties")) }
+        val v = java.util.Properties().apply { load(RadioHandoffTest::class.java.getResourceAsStream("/radio-v1.properties")) }
         fun bytes(name: String) = Base64.getDecoder().decode(v.getProperty(name))
         CableSession.radio(true, bytes("secret"), bytes("transcript")).use { a ->
             val out = ByteArrayOutputStream(); a.send(out, bytes("plaintext")); assertArrayEquals(bytes("wire"), out.toByteArray())

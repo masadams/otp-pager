@@ -36,6 +36,7 @@ class NetworkActivity : Activity() {
     private lateinit var settingsIntro: TextView
     private lateinit var pairingHelp: TextView
     private lateinit var pairButton: Button
+    private lateinit var radioPairButton: Button
     private var advancedShown = false
     private var selectedPadSize = 4 * PadProtocol.MATERIAL_BYTES
     @Volatile private var generation = 0
@@ -283,14 +284,14 @@ class NetworkActivity : Activity() {
         renewButton = button("Renew pad · USB") { choosePadSize(renew = true) }
         pairedOptions.addView(renewButton)
         pairedOptions.addView(button("Renew nearby · NFC + Wi-Fi") { beginRadioPairing(true) })
-        pairedOptions.addView(button("Pad size for USB pairing") { choosePadSize(renew = false, launch = false) })
+        pairedOptions.addView(button("Pad size for pairing") { choosePadSize(renew = false, launch = false) })
         settings.addView(button("Chat relay access") { showRelayAccess() })
         settingsIntro = text("Save server details on one device, then pair by cable. QR is available as a fallback.", 14f, muted); settings.addView(settingsIntro)
         pairButton = button("Pair devices · USB cable", true) {
             if (latest?.cableEligible == false) confirm("Replace this pairing?", "This removes the current conversation and queued messages on THIS station. The server address and token stay saved. A fresh secret and pad will be created; the old pad cannot be reused. Start the new pairing on both intended devices.") { beginCablePairing(true) }
             else choosePadSize(renew = false)
         }; settings.addView(pairButton)
-        settings.addView(button("Pair nearby · NFC + Wi-Fi") { beginRadioPairing(false) })
+        radioPairButton = button("Pair nearby · NFC + Wi-Fi") { beginRadioPairing(false) }; settings.addView(radioPairButton)
         pairingHelp = text("Open Pair devices on both and connect a USB data cable. Setup, pad transfer and identity verification happen together.", 12f, muted); settings.addView(pairingHelp)
         settings.addView(button("Advanced connection setup") {
             advancedShown = !advancedShown
@@ -298,6 +299,7 @@ class NetworkActivity : Activity() {
             val paired = latest?.peerDevice != null
             serverForm.visibility = if (!paired || advancedShown) View.VISIBLE else View.GONE
             pairButton.visibility = if (!paired || advancedShown) View.VISIBLE else View.GONE
+            radioPairButton.visibility = if (!paired || advancedShown) View.VISIBLE else View.GONE
         })
         advancedSetup = column(); settings.addView(advancedSetup)
         advancedSetup.addView(button("Tap setup · NFC") {
@@ -544,12 +546,12 @@ class NetworkActivity : Activity() {
         val choices = arrayOf("1 MiB · 127 slots each way", "2 MiB · 254 slots each way", "4 MiB · 508 slots each way")
         val sizes = intArrayOf(PadProtocol.MATERIAL_BYTES, 2 * PadProtocol.MATERIAL_BYTES, 4 * PadProtocol.MATERIAL_BYTES)
         var selected = sizes.indexOf(selectedPadSize).coerceAtLeast(0)
-        AlertDialog.Builder(this).setTitle(if (renew) "Renew this friend's pad" else "Choose a USB pad size")
+        AlertDialog.Builder(this).setTitle(if (renew) "Renew this friend's pad" else "Choose a pad size")
             .setSingleChoiceItems(choices, selected) { _, which -> selected = which }
             .setPositiveButton(if (launch) "Continue by USB" else "Save") { _, _ ->
                 selectedPadSize = sizes[selected]
                 getSharedPreferences("receiving", MODE_PRIVATE).edit().putInt("padSize", selectedPadSize).apply()
-                if (launch) beginCablePairing(false, renew) else report("USB pad size: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB")
+                if (launch) beginCablePairing(false, renew) else report("Pad size: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB")
             }.setNegativeButton("Cancel", null).create().also(::secureShow)
     }
     private fun showReceiving() {
@@ -838,8 +840,9 @@ class NetworkActivity : Activity() {
         val paired = view.peerDevice != null
         serverForm.visibility = if (!paired || advancedShown) View.VISIBLE else View.GONE
         pairButton.visibility = if (!paired || advancedShown) View.VISIBLE else View.GONE
+        radioPairButton.visibility = if (!paired || advancedShown) View.VISIBLE else View.GONE
         pairingHelp.visibility = if (paired) View.GONE else View.VISIBLE
-        settingsIntro.text = if (paired) "Your friend's device is verified. Renew its pad here while keeping your history and identities." else "Save server details on one device, then pair by USB. Advanced setup includes QR and NFC options."
+        settingsIntro.text = if (paired) "Your friend's device is verified. Renew its pad here while keeping your history and identities." else "Save server details on one device, then pair by USB or tap for an encrypted local Wi-Fi transfer."
         pairedOptions.visibility = if (view.padCheck != null) View.VISIBLE else View.GONE
         stationLabel.visibility = if (view.setupComplete && tab == 0) View.GONE else View.VISIBLE
         renewButton.isEnabled = !busy && view.peerDevice != null && !view.relayRevoked
