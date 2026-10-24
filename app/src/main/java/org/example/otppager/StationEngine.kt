@@ -58,7 +58,10 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         val next = previous?.let { JSONObject(it.toString()) } ?: JSONObject()
             .put("version", 2).put("secret", secret).put("role", role).put("counter", 0L).put("cursor", 0L)
             .put("high", 0L).put("seen", JSONArray()).put("outbox", JSONArray()).put("inbox", JSONArray()).put("epoch", "")
-        if (previous != null && previous.getString("endpoint") != url) next.put("cursor", 0L).put("epoch", "")
+        if (previous != null && previous.getString("endpoint") != url) {
+            next.put("cursor", 0L).put("epoch", "").remove("relayScoped")
+            next.remove("relayRevoked")
+        }
         next.put("endpoint", url).put("token", access)
         claims?.room(secret, store.namespace, existing = previous != null)
         store.save(next); state = next; cachedView = null
@@ -311,6 +314,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     fun send(text: String) {
         require(text.toByteArray(Charsets.UTF_8).size in 1..2048) { "Message must be 1–2048 UTF-8 bytes" }
         transaction { s ->
+            check(!s.optBoolean("relayRevoked")) { "Chat access revoked; pair a fresh chat on both devices" }
             check(s.optBoolean("cableComplete", true)) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }
             check(!s.has("pad") || (s.optBoolean("padVerified") && s.optBoolean("peerReady"))) { "Open Pad: compare codes and wait for the other station to verify and sync" }
             check(!s.has("ownDevice") || s.has("peerDevice")) { "Finish physical device verification before sending" }
@@ -366,7 +370,18 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         s.put("outbox", JSONArray(items(s.getJSONArray("outbox")).filter { it.getString("status") == "queued" }))
         // Do not clear the counter or replay window when removing message history.
     }
+    fun revokeRelayAccess() {
+        val s = checkNotNull(state)
+        check(s.optBoolean("relayScoped")) { "Sync with an updated relay before revoking chat access" }
+        val master = Protocol.master(s.getString("secret"))
+        try {
+            try { relay.request(s.getString("endpoint"), Protocol.room(master), Protocol.relayCapability(master), "DELETE") }
+            catch (e: RelayHttpException) { if (e.status != 410) throw e }
+            transaction { it.put("relayRevoked", true) }
+        } finally { master.fill(0) }
+    }
     fun sync(): String {
+        check(state?.optBoolean("relayRevoked") != true) { "Chat access revoked; pair a fresh chat on both devices" }
         check(state?.optBoolean("cableComplete", true) != false) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }
         if (state != null) transaction(::prune)
         val s = checkNotNull(state) { "Save your link settings first" }
@@ -374,7 +389,21 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         var ignored = 0
         try {
             val room = Protocol.room(master)
-            val response = JSONObject(relay.request(s.getString("endpoint"), room, s.getString("token"), "GET", cursor = s.getLong("cursor")))
+            if (s.has("pad") && !s.optBoolean("relayScoped") &&
+                relay.scope(s.getString("endpoint"), room, s.getString("token"), Protocol.relayCapability(master))) {
+                // Persist protection before traffic. A later failure must never fall back to shared access.
+                transaction { it.put("relayScoped", true) }
+            }
+            val credential = if (state!!.optBoolean("relayScoped")) Protocol.relayCapability(master) else s.getString("token")
+            val response = JSONObject(try {
+                relay.request(s.getString("endpoint"), room, credential, "GET", cursor = s.getLong("cursor"))
+            } catch (e: RelayHttpException) {
+                if (e.status != 401 || !state!!.optBoolean("relayScoped")) throw e
+                // Lost relay volume: restore this same claim, never read/write with the setup token.
+                check(relay.scope(s.getString("endpoint"), room, s.getString("token"), credential)) { "Update the relay; protected chat access cannot be downgraded" }
+                relay.request(s.getString("endpoint"), room, credential, "GET", cursor = s.getLong("cursor"))
+            })
+            if (state!!.optBoolean("relayScoped")) check(response.optString("access") == "chat") { "Relay chat protection unavailable; access was not downgraded" }
             check(response.optInt("protocol") == 2) { "Update the relay container before using this APK" }
             val epoch = response.getString("epoch")
             if (s.getString("epoch").isNotEmpty() && s.getString("epoch") != epoch) {
@@ -436,19 +465,22 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             // Retry the exact durable ciphertext; a timeout never creates a new message ID/counter.
             val pending = items(checkNotNull(state).getJSONArray("outbox")).filter { it.getString("status") == "queued" }.take(10)
             for (entry in pending) {
-                relay.request(s.getString("endpoint"), room, s.getString("token"), "POST", JSONObject().put("packet", entry.getString("packet")).toString())
+                relay.request(s.getString("endpoint"), room, credential, "POST", JSONObject().put("packet", entry.getString("packet")).toString())
                 transaction { next ->
                     items(next.getJSONArray("outbox")).firstOrNull { it.getString("id") == entry.getString("id") }?.put("status", "relayed")
                     prune(next)
                 }
             }
             return "Connected" + if (ignored > 0) " · $ignored invalid/legacy packets skipped" else ""
+        } catch (e: RelayHttpException) {
+            if (e.status == 410 && state?.has("pad") == true) transaction { it.put("relayScoped", true).put("relayRevoked", true) }
+            throw e
         } finally { master.fill(0) }
     }
     data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false)
-    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true, val cableEligible: Boolean = true, val awaitingReceipt: Int = 0) {
+    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true, val cableEligible: Boolean = true, val awaitingReceipt: Int = 0, val relayScoped: Boolean = false, val relayRevoked: Boolean = false) {
         val setupComplete: Boolean get() = pairingComplete && padCheck != null && padVerified && peerReady && peerDevice != null
-        val canSend: Boolean get() = pairingComplete && role != "—" && padRemaining != 0 && (padCheck == null || (padVerified && peerReady)) && (ownDevice == null || peerDevice != null)
+        val canSend: Boolean get() = !relayRevoked && pairingComplete && role != "—" && padRemaining != 0 && (padCheck == null || (padVerified && peerReady)) && (ownDevice == null || peerDevice != null)
     }
     fun view(): View {
         cachedView?.let { if (System.currentTimeMillis() < cacheExpiry) return it }
@@ -478,7 +510,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
                 s.optString("ownDevice").takeIf { it.isNotEmpty() }, s.optString("peerDevice").takeIf { it.isNotEmpty() },
                 if (s.has("ownDevice")) identity.protection() else null, s.optBoolean("cableComplete", true),
                 !s.has("pad") && s.getLong("counter") == 0L && s.getLong("high") == 0L && s.getJSONArray("outbox").length() == 0 && s.getJSONArray("inbox").length() == 0,
-                rows.count { !it.incoming && it.status == "relayed" }).also { cachedView = it }
+                rows.count { !it.incoming && it.status == "relayed" }, s.optBoolean("relayScoped"), s.optBoolean("relayRevoked")).also { cachedView = it }
         } finally { master.fill(0) }
     }
 }

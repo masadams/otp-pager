@@ -36,6 +36,9 @@ object Protocol {
     private fun hex(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(it.toInt() and 255) }
     // Retain mailbox derivation so the existing relay URL and pairing secret still work.
     fun room(master: ByteArray) = hex(hash("room".toByteArray() + master))
+    // Relay authorization only; domain-separated from mailbox, content keys and physical pad.
+    fun relayCapability(master: ByteArray): String = Base64.getUrlEncoder().withoutPadding()
+        .encodeToString(hash("OTP Pager / relay capability v1".toByteArray(Charsets.UTF_8) + master))
     fun fingerprint(master: ByteArray) = hex(hash("verify:v2".toByteArray() + master)).take(24).chunked(4).joinToString(" ")
     private fun hmac(key: ByteArray, data: ByteArray) = Mac.getInstance("HmacSHA256").run {
         init(SecretKeySpec(key, "HmacSHA256")); doFinal(data)

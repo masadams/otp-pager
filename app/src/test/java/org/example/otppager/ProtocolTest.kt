@@ -7,6 +7,15 @@ import java.util.Base64
 class ProtocolTest {
     private val master = ByteArray(32) { it.toByte() }
     private fun rejects(action: () -> Unit) { try { action(); fail("Expected rejection") } catch (_: Exception) {} }
+    @Test fun relayCapabilityHasIndependentDomainAndVariesPerPairing() {
+        val master = ByteArray(32) { it.toByte() }
+        val capability = Protocol.relayCapability(master)
+        assertEquals(43, capability.length)
+        assertEquals(capability, Protocol.relayCapability(master.clone()))
+        assertNotEquals(Protocol.room(master), capability)
+        assertNotEquals(capability, Protocol.relayCapability(ByteArray(32)))
+        assertEquals("ESqsiv9a_4bvS-gTPtLO9YeYGfqqFqWMlfMnucdFvY0", capability)
+    }
     @Test fun twoDirectionsUnicodeAndEmptyRoundTrips() {
         for (role in listOf('A', 'B')) for (text in listOf("", "RENDEZVOUS — café 🛰", "\n".repeat(2048))) {
             val (id, wire) = Protocol.seal(master, role, 21L, text)

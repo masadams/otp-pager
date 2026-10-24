@@ -307,7 +307,12 @@ class InterfaceTest {
                 instrumentation.runOnMainSync {
                     val views = all(content(activity))
                     for (label in listOf("Link", "Pad", "Device")) assertFalse("Setup tab remained visible", views.filterIsInstance<Button>().first { it.text.toString() == label }.isShown)
-                    assertTrue(views.filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
+                    val send = views.filterIsInstance<Button>().first { it.text.toString() == "Send" }
+                    assertFalse("Empty composer enabled Send", send.isEnabled)
+                    views.filterIsInstance<android.widget.EditText>().first { it.hint?.toString() == "Write a message…" }.setText("Ready")
+                    assertTrue("Valid draft disabled Send", send.isEnabled)
+                    views.filterIsInstance<android.widget.EditText>().first { it.hint?.toString() == "Write a message…" }.text.clear()
+                    assertFalse(send.isEnabled)
                 }
                 capture(instrumentation, activity, "messages-paired")
                 instrumentation.runOnMainSync {

@@ -162,3 +162,5 @@ During temporary development, unsigned CI review APKs can instead be signed priv
 with the owner's authorized temporary signer and delivered as test APKs. No signing key
 is stored in the public repository or Actions artifacts. Production custody and the
 initial signature transition remain explicit; see the update instructions.
+
+The v0.10 development pass adds [per-chat relay access and revocation](docs/CHAT_RELAY_ACCESS.md), clearer connection/delivery status and draft-aware sending. Update both clients before enabling chat protection on the new relay.
