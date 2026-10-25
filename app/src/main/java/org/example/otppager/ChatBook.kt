@@ -19,8 +19,8 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
         }
     private var roundRobin = 0
     data class Chat(val id: String, val name: String)
-    data class Summary(val unread: Int = 0, val queued: Int = 0, val problem: Boolean = false)
-    private val summaries = mutableMapOf<String, Summary>()
+    data class Summary(val unread: Int = 0, val queued: Int = 0, val problem: Boolean = false, val draft: Boolean = false)
+    private val summaries = java.util.concurrent.ConcurrentHashMap<String, Summary>()
     init { validate(data); refreshSummaries() }
     private fun validate(value: JSONObject) {
         val chats = value.getJSONArray("chats")
@@ -62,7 +62,7 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
         require(chats().any { it.id == id }) { "Unknown chat" }
         return StationEngine(SecureStore(context, id), relay, claims)
     }
-    fun forgetActive() { SecureStore(context, active().id).forget(); refresh() }
+    fun forgetActive() { ChatDraft(SecureStore(context, active().id).sibling("draft")).clear(); SecureStore(context, active().id).forget(); refresh() }
     fun summary(id: String) = summaries[id] ?: Summary()
     fun unreadElsewhere() = summaries.filterKeys { it != active().id }.values.sumOf { it.unread }
     fun refresh(id: String = active().id) {
@@ -71,9 +71,16 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
             val now = System.currentTimeMillis()
             fun live(entry: JSONObject) = now - entry.getLong("time") < 86400000
             val inbox = s?.getJSONArray("inbox"); val out = s?.getJSONArray("outbox")
+            val draft = try {
+                if (s == null) false else {
+                    val master = Protocol.master(s.getString("secret"))
+                    val room = try { Protocol.room(master) } finally { master.fill(0) }
+                    ChatDraft(SecureStore(context, id).sibling("draft")).read(room, s.optString("lastSentDraft")) != null
+                }
+            } catch (_: Exception) { false } // A damaged draft never blocks receiving this chat.
             summaries[id] = Summary(
                 (if (inbox == null) 0 else (0 until inbox.length()).count { live(inbox.getJSONObject(it)) && !inbox.getJSONObject(it).optBoolean("read") }) + (s?.optJSONArray("history")?.let { history -> (0 until history.length()).count { live(history.getJSONObject(it)) && history.getJSONObject(it).optBoolean("unread") } } ?: 0),
-                if (out == null) 0 else (0 until out.length()).count { live(out.getJSONObject(it)) && out.getJSONObject(it).getString("status") == "queued" })
+                if (out == null) 0 else (0 until out.length()).count { live(out.getJSONObject(it)) && out.getJSONObject(it).getString("status") == "queued" }, draft = draft)
         } catch (_: Exception) { summaries[id] = Summary(problem = true) }
     }
     private fun refreshSummaries() { chats().forEach { refresh(it.id) } }

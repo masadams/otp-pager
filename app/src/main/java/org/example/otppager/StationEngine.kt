@@ -42,6 +42,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         }
         check((s.optJSONObject("acceptedPackets")?.length() ?: 0) <= PadProtocol.MAX_SLOTS)
         check(s.getJSONArray("outbox").length() <= 150 && s.getJSONArray("inbox").length() <= 100)
+        check(!s.has("lastSentDraft") || ChatDraft.validId(s.getString("lastSentDraft")))
     }
     private fun transaction(change: (JSONObject) -> Unit) {
         val next = JSONObject(checkNotNull(state).toString())
@@ -395,7 +396,12 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         s.put("outbox", JSONArray((final + pending).sortedBy { it.getLong("time") }))
         s.put("inbox", JSONArray(items(s.getJSONArray("inbox")).filter { now - it.getLong("time") < 86400000 }.takeLast(100)))
     }
-    fun send(text: String) {
+    fun send(text: String) = sendText(text, null)
+    /** Accepted draft ID commits with its ciphertext, so failed draft cleanup cannot resurrect a sent draft. */
+    fun sendDraft(text: String, draftId: String) {
+        require(ChatDraft.validId(draftId)); sendText(text, draftId)
+    }
+    private fun sendText(text: String, draftId: String?) {
         require(text.toByteArray(Charsets.UTF_8).size in 1..2048) { "Message must be 1–2048 UTF-8 bytes" }
         transaction { s ->
             check(!s.optBoolean("renewalPaused")) { "Finish USB pad renewal on both devices first" }
@@ -405,6 +411,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             check(!s.has("ownDevice") || s.has("peerDevice")) { "Finish physical device verification before sending" }
             prune(s)
             queue(s, JSONObject().put("kind", "text").put("text", text), "text")
+            if (draftId != null) s.put("lastSentDraft", draftId)
         }
     }
     /** Repost retained ciphertext, preserving IDs, pad reservations and original expiry. */

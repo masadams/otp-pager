@@ -39,6 +39,12 @@ class NetworkActivity : Activity() {
     private lateinit var radioPairButton: Button
     private var advancedShown = false
     private var selectedPadSize = 4 * PadProtocol.MATERIAL_BYTES
+    private var draftChatId: String? = null
+    private var draftRoom: String? = null
+    private var draftId = java.util.UUID.randomUUID().toString()
+    private var restoringDraft = false
+    private var draftSaved = false
+    private val saveDraft = Runnable { persistDraft() }
     @Volatile private var generation = 0
     private var busy = false
     @Volatile private var active = false
@@ -49,6 +55,7 @@ class NetworkActivity : Activity() {
     private var latest: StationEngine.View? = null
     private var rendered: List<StationEngine.Message>? = null
     private var renderedSetupComplete: Boolean? = null
+    private var renderedDay = ""
     private var errorLoading = false
     private var automatic = true
     private var lastContact = 0L
@@ -209,9 +216,11 @@ class NetworkActivity : Activity() {
         if (requestCode == 71 && resultCode == RESULT_OK) { unlocked = true; needsTerminal = true }
     }
     private fun showTerminal() {
+        if (::composer.isInitialized) persistDraft()
         needsTerminal = false
         generation++
         latest = null; rendered = null; busy = false; errorLoading = false
+        draftChatId = null; draftRoom = null; draftSaved = false
         root = column().apply { isFocusableInTouchMode = true; setBackgroundColor(paper); setPadding(dp(if (compact) 12 else 20), dp(8), dp(if (compact) 12 else 20), dp(6)) }
         root.setOnApplyWindowInsetsListener { view, insets ->
             view.setPadding(dp(if (compact) 12 else 20), insets.systemWindowInsetTop + dp(8), dp(if (compact) 12 else 20), insets.systemWindowInsetBottom + dp(6)); insets
@@ -259,6 +268,7 @@ class NetworkActivity : Activity() {
         composer = field("Write a message…").apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
             setSingleLine(false); maxLines = if (compact) 2 else 4; minLines = if (compact) 1 else 2; gravity = Gravity.TOP
+            filters = arrayOf(android.text.InputFilter.LengthFilter(8192))
         }
         traffic.addView(composer)
         val composeActions = row()
@@ -266,13 +276,26 @@ class NetworkActivity : Activity() {
         syncButton = button("Sync") { runTask(network = true) { syncChats() } }; composeActions.addView(syncButton)
         sendButton = button("Send", true) {
             val value = composer.text.toString()
-            runTask(clearComposer = true) { check(checkNotNull(engine).view().padCheck != null) { "Pair a physical pad before sending" }; checkNotNull(engine).send(value); "QUEUED // saved safely; syncing" }
+            val id = checkNotNull(draftChatId); val room = checkNotNull(draftRoom); val submittedId = draftId
+            handler.removeCallbacks(saveDraft)
+            runTask(clearComposer = true) {
+                check(checkNotNull(engine).view().padCheck != null) { "Pair a physical pad before sending" }
+                val draft = ChatDraft(SecureStore(this, id).sibling("draft"))
+                draft.save(room, submittedId, value) // If this fails, no message or pad slot is allocated.
+                checkNotNull(engine).sendDraft(value, submittedId)
+                try { draft.clear() } catch (_: Exception) {} // Durable accepted ID suppresses stale recovery.
+                "Message queued · checking delivery"
+            }
         }; composeActions.addView(sendButton); traffic.addView(composeActions)
         composer.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, n: Int) {
-                val bytes = s.toString().toByteArray(Charsets.UTF_8).size
-                count.text = "$bytes / 2048 bytes"; count.setTextColor(if (bytes > 2048) Color.rgb(145, 57, 39) else muted)
+                if (!restoringDraft) {
+                    draftId = java.util.UUID.randomUUID().toString(); draftSaved = false
+                    handler.removeCallbacks(saveDraft)
+                    if (draftChatId != null) handler.postDelayed(saveDraft, 700)
+                }
+                updateComposerCount()
                 updateSendButton()
             }
             override fun afterTextChanged(s: Editable?) {}
@@ -300,6 +323,7 @@ class NetworkActivity : Activity() {
             serverForm.visibility = if (!paired || advancedShown) View.VISIBLE else View.GONE
             pairButton.visibility = if (!paired || advancedShown) View.VISIBLE else View.GONE
             radioPairButton.visibility = if (!paired || advancedShown) View.VISIBLE else View.GONE
+            updateNavigation()
         })
         advancedSetup = column(); settings.addView(advancedSetup)
         advancedSetup.addView(button("Tap setup · NFC") {
@@ -428,7 +452,9 @@ class NetworkActivity : Activity() {
             runTask { checkNotNull(engine).clearHistory(); "LOCAL HISTORY CLEARED" }
         } })
         settings.addView(button("Forget pairing") { confirm("Forget this pairing?", "This deletes your saved link and queued messages. Re-pair BOTH devices with a NEW secret; reusing the old one can break replay protection.") {
-            runTask { checkNotNull(book).forgetActive(); engine = checkNotNull(book).engine(); errorLoading = false; "PAIRING FORGOTTEN // use a fresh secret" }
+            handler.removeCallbacks(saveDraft); draftChatId = null; draftRoom = null; restoringDraft = true
+            try { composer.text.clear() } finally { restoringDraft = false }
+            runTask(onSuccess = { reopenChat() }) { checkNotNull(book).forgetActive(); engine = checkNotNull(book).engine(); errorLoading = false; "PAIRING FORGOTTEN // use a fresh secret" }
             urlField.setText(""); tokenField.setText(""); secretField.setText(""); roleGroup.check(R.id.station_a)
         } })
         if (!getSystemService(KeyguardManager::class.java).isDeviceSecure)
@@ -445,7 +471,17 @@ class NetworkActivity : Activity() {
         var loadedInvite: PairingInvite? = null
         val scanResult = pendingScan; pendingScan = null
         val deviceScanResult = pendingDeviceScan; pendingDeviceScan = null
-        runTask(load = true, onSuccess = { loadedInvite?.let(::previewSetupQr) }, publicTransfer = pendingDocument?.first in listOf(83, 84), qrTransfer = pendingDocument?.first == 85) {
+        var restoredDraft: ChatDraft.Entry? = null
+        var loadedChat: String? = null; var loadedRoom: String? = null; var draftProblem = false
+        runTask(load = true, onComplete = {
+            draftChatId = loadedChat; draftRoom = loadedRoom
+            restoringDraft = true
+            try { composer.setText(restoredDraft?.text ?: ""); composer.setSelection(composer.length()) }
+            finally { restoringDraft = false }
+            draftId = restoredDraft?.id ?: java.util.UUID.randomUUID().toString()
+            draftSaved = restoredDraft != null; updateComposerCount(); updateSendButton()
+            if (draftProblem) report("Saved draft unavailable · use Chats → Clear draft to discard it")
+        }, onSuccess = { loadedInvite?.let(::previewSetupQr) }, publicTransfer = pendingDocument?.first in listOf(83, 84), qrTransfer = pendingDocument?.first == 85) {
             book = null; engine = null
             book = ChatBook(this)
             if (intent.getBooleanExtra("openUnread", false)) {
@@ -453,6 +489,13 @@ class NetworkActivity : Activity() {
                 intent.removeExtra("openUnread")
             }
             engine = checkNotNull(book).engine()
+            loadedChat = book!!.active().id
+            engine?.state?.let { s ->
+                val master = Protocol.master(s.getString("secret"))
+                loadedRoom = try { Protocol.room(master) } finally { master.fill(0) }
+                try { restoredDraft = ChatDraft(SecureStore(this, loadedChat!!).sibling("draft")).read(loadedRoom!!, s.optString("lastSentDraft")) }
+                catch (_: Exception) { draftProblem = true }
+            }
             val scanned = scanResult
             val document = pendingDocument; pendingDocument = null
             if (deviceScanResult != null) {
@@ -683,6 +726,12 @@ class NetworkActivity : Activity() {
     }
     private fun updateNavigation() {
         if (::navigation.isInitialized) navigation.visibility = if (latest?.setupComplete == true && tab == 0) View.GONE else View.VISIBLE
+        if (::padTab.isInitialized) {
+            val technical = latest?.setupComplete != true || advancedShown || tab in listOf(2, 3)
+            padTab.visibility = if (technical) View.VISIBLE else View.GONE
+            deviceTab.visibility = if (technical) View.VISIBLE else View.GONE
+            linkTab.text = if (latest?.setupComplete == true) "Settings" else "Link"
+        }
     }
     private fun setBusy(value: Boolean) {
         busy = value
@@ -710,7 +759,28 @@ class NetworkActivity : Activity() {
     private fun updateSendButton() {
         if (!::sendButton.isInitialized) return
         val bytes = composer.text.toString().toByteArray(Charsets.UTF_8).size
-        sendButton.isEnabled = !busy && latest?.canSend == true && latest?.padCheck != null && !errorLoading && bytes in 1..2048
+        composer.isEnabled = latest != null && latest?.role != "—" && !errorLoading && draftRoom != null
+        sendButton.isEnabled = !busy && latest?.canSend == true && latest?.padCheck != null && !errorLoading && draftRoom != null && bytes in 1..2048
+    }
+    private fun updateComposerCount() {
+        val bytes = composer.text.toString().toByteArray(Charsets.UTF_8).size
+        count.text = "$bytes / 2048 bytes" + if (bytes > 0) if (draftSaved) " · Draft saved" else " · Draft" else ""
+        count.setTextColor(if (bytes > 2048) Color.rgb(145, 57, 39) else muted)
+    }
+    private fun persistDraft() {
+        handler.removeCallbacks(saveDraft)
+        val id = draftChatId ?: return; val room = draftRoom ?: return
+        val value = composer.text.toString(); val revision = draftId; val visibleGeneration = generation
+        worker.execute {
+            val saved = try { ChatDraft(SecureStore(this, id).sibling("draft")).save(room, revision, value); book?.refresh(id); true }
+                catch (_: Exception) { false }
+            runOnUiThread {
+                if (active && unlocked && visibleGeneration == generation && draftChatId == id && draftId == revision) {
+                    draftSaved = saved && value.isNotEmpty(); updateComposerCount()
+                    if (!saved) report("Draft not saved · keep this screen open or retry")
+                }
+            }
+        }
     }
     private fun updateIndicators() {
         if (!::indicators.isInitialized) return
@@ -755,13 +825,20 @@ class NetworkActivity : Activity() {
         val rows = chats.map { chat ->
             val summary = checkNotNull(book).summary(chat.id)
             "${if (chat.id == book?.active()?.id) "● " else ""}${chat.name}" +
-                if (summary.problem) "\nNeeds attention" else "\n${if (summary.unread > 0) "${summary.unread} new messages" else "No new messages"}${if (summary.queued > 0) " · ${summary.queued} waiting to send" else ""}"
+                if (summary.problem) "\nNeeds attention" else "\n${if (summary.unread > 0) "${summary.unread} new messages" else "No new messages"}${if (summary.queued > 0) " · ${summary.queued} waiting to send" else ""}${if (summary.draft) " · Draft" else ""}"
         }.toMutableList().apply { add("Chat settings"); add("Rename chat") }.toTypedArray()
+        val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, rows) {
+            override fun getView(position: Int, recycled: View?, parent: ViewGroup): View = (super.getView(position, recycled, parent) as TextView).apply {
+                textSize = 15f; setTextColor(ink); minHeight = dp(64); setPadding(dp(20), dp(14), dp(20), dp(14))
+                typeface = Typeface.create("monospace", if (position < chats.size && (book?.summary(chats[position].id)?.unread ?: 0) > 0) Typeface.BOLD else Typeface.NORMAL)
+            }
+        }
         AlertDialog.Builder(this).setTitle("Chats · two devices each")
-            .setItems(rows) { _, which ->
+            .setAdapter(adapter) { _, which ->
                 when (which) { chats.size -> selectTab(1); chats.size + 1 -> editChatName(create = false); else -> switchChat(chats[which].id) }
             }
             .setPositiveButton("New chat") { _, _ -> editChatName(create = true) }
+            .setNeutralButton("Clear draft") { _, _ -> clearDraft() }
             .setNegativeButton("Close", null).create().also(::secureShow)
     }
     private fun editChatName(create: Boolean) {
@@ -777,7 +854,7 @@ class NetworkActivity : Activity() {
             val value = input.text.toString()
             if (value.isBlank()) { input.error = "Enter a name"; return@setOnClickListener }
             dialog.dismiss()
-            discardDraftThen {
+            preserveDraftThen {
                 runTask(onSuccess = { reopenChat() }) {
                     val contacts = checkNotNull(book)
                     if (create) contacts.select(contacts.add(value).id) else contacts.rename(value)
@@ -787,18 +864,29 @@ class NetworkActivity : Activity() {
         } }
         secureShow(dialog)
     }
-    private fun discardDraftThen(action: () -> Unit) {
-        if (composer.text.isNotEmpty()) confirm("Discard unsent draft?", "Queued messages stay in their original chat. This only clears what you are typing.", action)
-        else action()
+    private fun preserveDraftThen(action: () -> Unit) {
+        persistDraft(); action()
+    }
+    private fun clearDraft() {
+        confirm("Discard this chat's draft?", "This removes only the unsent draft on this device. Queued and delivered messages stay in place.") {
+            val id = draftChatId ?: return@confirm
+            handler.removeCallbacks(saveDraft); restoringDraft = true
+            try { composer.text.clear() } finally { restoringDraft = false }
+            draftId = java.util.UUID.randomUUID().toString(); draftSaved = false; updateComposerCount()
+            runTask { ChatDraft(SecureStore(this, id).sibling("draft")).clear(); "Draft discarded" }
+        }
     }
     private fun switchChat(id: String) {
         if (id == book?.active()?.id) return
-        discardDraftThen {
+        preserveDraftThen {
             runTask(onSuccess = { reopenChat() }) { checkNotNull(book).select(id); "CHAT SELECTED" }
         }
     }
     private fun reopenChat() {
-        composer.text.clear(); lastContact = 0L; connectionFailed = false; backoff = 15000L; tab = 0
+        persistDraft()
+        draftChatId = null; draftRoom = null; restoringDraft = true
+        try { composer.text.clear() } finally { restoringDraft = false }
+        lastContact = 0L; connectionFailed = false; backoff = 15000L; tab = 0
         showTerminal()
     }
     private fun showRelayAccess() {
@@ -885,7 +973,10 @@ class NetworkActivity : Activity() {
         if (view.peerDevice != null) {
             peerCardField.text.clear()
         }
-        if (view.messages == rendered && renderedSetupComplete == view.setupComplete) return
+        val dayFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val today = dayFormat.format(java.util.Date())
+        if (view.messages == rendered && renderedSetupComplete == view.setupComplete && renderedDay == today) return
+        renderedDay = today
         renderedSetupComplete = view.setupComplete
         val wasAtBottom = atBottom()
         rendered = view.messages; messages.removeAllViews()
@@ -895,7 +986,15 @@ class NetworkActivity : Activity() {
             if (!view.setupComplete) messages.addView(button("Set up this chat") { selectTab(1) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
         }
         val timeFormat = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+        val yesterday = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, -1) }.time.let(dayFormat::format)
+        var previousDay = ""
         for (m in view.messages) {
+            val day = dayFormat.format(java.util.Date(m.time))
+            if (day != previousDay) {
+                messages.addView(text(when (day) { today -> "Today"; yesterday -> "Yesterday"; else -> java.text.SimpleDateFormat("d MMM", java.util.Locale.getDefault()).format(java.util.Date(m.time)) }, 11f, muted, true)
+                    .apply { gravity = Gravity.CENTER; setPadding(0, dp(12), 0, dp(2)) })
+                previousDay = day
+            }
             val card = column().apply {
                 setPadding(dp(14), dp(11), dp(14), dp(12))
                 background = surface(Color.WHITE, 2, if (m.incoming) ink else lineColor)
@@ -909,15 +1008,22 @@ class NetworkActivity : Activity() {
         }
         if (wasAtBottom) messageScroll.post { messageScroll.fullScroll(View.FOCUS_DOWN) }
     }
-    private fun runTask(network: Boolean = false, load: Boolean = false, clearComposer: Boolean = false, publicTransfer: Boolean = false, qrTransfer: Boolean = false, onSuccess: (() -> Unit)? = null, action: () -> String) {
+    private fun runTask(network: Boolean = false, load: Boolean = false, clearComposer: Boolean = false, publicTransfer: Boolean = false, qrTransfer: Boolean = false, onComplete: (() -> Unit)? = null, onSuccess: (() -> Unit)? = null, action: () -> String) {
         if (busy || !active || !unlocked || isFinishing) return
         val taskGeneration = generation
+        val submittedText = if (clearComposer) composer.text.toString() else ""
+        val submittedId = draftId
         networkBusy = network; setBusy(true); handler.removeCallbacks(poll)
         worker.execute {
             var note: String; var view: StationEngine.View? = null
             var config: org.json.JSONObject? = null; var success = false; var relayFailure = false; var failureLabel = "RELAY UNAVAILABLE"
+            var configuredRoom: String? = null
             try {
                 note = action(); success = true; if (network) backoff = 15000L
+                engine?.state?.let { s ->
+                    val master = Protocol.master(s.getString("secret"))
+                    configuredRoom = try { Protocol.room(master) } finally { master.fill(0) }
+                }
                 book?.refresh(); view = engine?.view(); if (load) config = engine?.state?.let { org.json.JSONObject(it.toString()) }
             } catch (e: Exception) {
                 relayFailure = network
@@ -948,9 +1054,11 @@ class NetworkActivity : Activity() {
                     connectionProblem = failureLabel
                 }
                 view?.let(::render)
-                if (clearComposer && success) composer.text.clear()
+                if (draftChatId != null && draftRoom == null && configuredRoom != null) draftRoom = configuredRoom
+                if (clearComposer && success && composer.text.toString() == submittedText && draftId == submittedId) composer.text.clear()
                 if (errorLoading) note = "VAULT UNAVAILABLE // data preserved; see Link → Forget pairing to reset"
                 report(note); setBusy(false); schedule(if (clearComposer && success) 100 else backoff)
+                onComplete?.invoke()
                 if (success) onSuccess?.invoke()
                 // Check current visibility AFTER rendering/network completion, not before a slow sync.
                 messageScroll.post {
@@ -979,10 +1087,14 @@ class NetworkActivity : Activity() {
         if (active && unlocked && !isFinishing && !errorLoading) handler.postDelayed(poll, delay)
     }
     override fun onStop() {
+        if (::composer.isInitialized) persistDraft()
         openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
         pairingDialog?.dismiss(); pairingDialog = null
         generation++; active = false; StationRuntime.uiVisible = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
+        draftChatId = null; draftRoom = null; restoringDraft = true
         if (::composer.isInitialized) composer.text.clear()
+        restoringDraft = false; handler.removeCallbacks(saveDraft)
+        lastContact = 0L; connectionFailed = false
         if (::messages.isInitialized) messages.removeAllViews()
         if (::chatButton.isInitialized) chatButton.text = "Chats"
         if (::tokenField.isInitialized) { tokenField.text.clear(); secretField.text.clear() }

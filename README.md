@@ -182,3 +182,5 @@ selectable pad sizes and identity/history-preserving renewal. See [pager operati
 v0.12 adds optional [NFC-assisted encrypted local Wi-Fi pairing and renewal](docs/NFC_WIFI_HANDOFF.md).
 Both devices need the same private Wi-Fi; physical NFC/HCE and Kompakt interoperability still need testing.
 USB remains the preferred controlled exchange. These changes are pending merge, not a server deployment.
+
+v0.13 improves [everyday messaging and encrypted drafts](docs/PAGER_V013.md): preserve drafts per friend, keep new typing when Send finishes, simplify paired settings, and label days in the conversation.

@@ -1,0 +1,13 @@
+# v0.13 everyday messaging and encrypted drafts
+
+Each configured chat retains one encrypted local draft for up to 24 hours from its last edit. Switching friends, renaming, screen locking and restarting no longer require discarding unsent text. The composer shows Draft / Draft saved; the friend chooser marks chats with drafts, unread messages or queued traffic. Names/text are shown only within the existing unlocked app UI. Nothing is written to ordinary preferences or sent to the relay until Send. Clear draft in Chats explicitly removes it; Forget pairing removes it too. Typing is disabled until this chat has saved relay setup.
+
+Autosaving uses a short debounce and flushes on chat switching or leaving the screen. A sudden process/device failure before that write can still lose the most recent edits; Draft saved indicates a completed local write.
+
+Drafts use separate small AES-GCM/Android-Keystore vaults with the existing atomic storage implementation, so autosaving does not rewrite a large pad vault or reserve any OTP slots. A draft is bound to the chat's mailbox identity, limited to 32 KiB UTF-8 (the editor accepts at most 8192 UTF-16 units), and expires after 24 hours. A substantial backwards clock change discards it. This is logical expiration, not guaranteed forensic erasure; existing endpoint/keyboard/backup limitations still apply. Expiration is enforced when the draft is next inspected, not by a timed filesystem eraser.
+
+Send first saves the exact draft revision, then atomically records its accepted ID together with the outgoing ciphertext in the chat vault. If cleanup/UI completion is interrupted, that accepted ID suppresses recovery of the already-sent draft. Every subsequent send must durably save its current revision before allocating a pad slot. New typing gets a new ID; completion only clears a composer still showing the submitted revision. Draft-save failure prevents that send and leaves the text visible. Corrupt draft storage does not block receiving or reset chat keys/counters; explicitly discard the draft to recover.
+
+Paired chats show Messages / Settings when visiting settings; the Pad and Device administration tabs are available through Advanced connection setup. Day separators improve message history scanning. Connection freshness resets on leaving the app so an earlier session is not presented as a fresh relay check. A relay check still does not mean the friend's device or person is online.
+
+Wire messages, relay capabilities and USB/NFC pairing protocols are unchanged. Existing chats/pads/identity pins remain in place. The signed upgrade test uses actual v0.12 source. No relay redeploy is required.

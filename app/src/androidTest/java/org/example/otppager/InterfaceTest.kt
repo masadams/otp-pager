@@ -326,7 +326,7 @@ class InterfaceTest {
                 awaitStation(instrumentation, activity)
                 instrumentation.runOnMainSync {
                     val views = all(content(activity))
-                    for (label in listOf("Link", "Pad", "Device")) assertFalse("Setup tab remained visible", views.filterIsInstance<Button>().first { it.text.toString() == label }.isShown)
+                    for (label in listOf("Settings", "Pad", "Device")) assertFalse("Setup tab remained visible", views.filterIsInstance<Button>().first { it.text.toString() == label }.isShown)
                     val send = views.filterIsInstance<Button>().first { it.text.toString() == "Send" }
                     assertFalse("Empty composer enabled Send", send.isEnabled)
                     views.filterIsInstance<android.widget.EditText>().first { it.hint?.toString() == "Write a message…" }.setText("Ready")
@@ -337,6 +337,21 @@ class InterfaceTest {
                 capture(instrumentation, activity, "messages-paired")
                 @Suppress("UNCHECKED_CAST")
                 fun latestDialog() = (NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }.get(activity) as List<android.app.AlertDialog>).last { it.isShowing }
+                instrumentation.runOnMainSync {
+                    all(content(activity)).filterIsInstance<EditText>().first { it.hint?.toString() == "Write a message…" }.setText("Meet at the north gate.")
+                    NetworkActivity::class.java.getDeclaredMethod("persistDraft").apply { isAccessible = true }.invoke(activity)
+                }
+                StationRuntime.worker.submit {}.get(10, java.util.concurrent.TimeUnit.SECONDS)
+                instrumentation.waitForIdleSync()
+                capture(instrumentation, activity, "messages-draft")
+                instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.text.toString().contains("▾") }.performClick() }
+                instrumentation.waitForIdleSync()
+                capture(instrumentation, activity, "chat-chooser")
+                instrumentation.runOnMainSync {
+                    latestDialog().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick()
+                    all(content(activity)).filterIsInstance<EditText>().first { it.hint?.toString() == "Write a message…" }.text.clear()
+                    NetworkActivity::class.java.getDeclaredMethod("persistDraft").apply { isAccessible = true }.invoke(activity)
+                }
                 tap(instrumentation, activity, "Receive")
                 instrumentation.runOnMainSync { assertEquals("Turn on", latestDialog().getButton(android.app.AlertDialog.BUTTON_POSITIVE).text.toString()) }
                 capture(instrumentation, activity, "receiving-settings")
@@ -374,7 +389,9 @@ class InterfaceTest {
                 }
                 instrumentation.waitForIdleSync()
                 instrumentation.runOnMainSync {
-                    assertTrue(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Link" }.isShown)
+                    assertTrue(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Settings" }.isShown)
+                    assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Pad" }.isShown)
+                    assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Device" }.isShown)
                 }
                 capture(instrumentation, activity, "settings-paired")
                 tap(instrumentation, activity, "Renew pad · USB")
@@ -383,7 +400,7 @@ class InterfaceTest {
                 instrumentation.runOnMainSync { latestDialog().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick() }
                 tap(instrumentation, activity, "Messages")
                 instrumentation.runOnMainSync {
-                    assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Link" }.isShown)
+                    assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Settings" }.isShown)
                 }
             } finally { instrumentation.runOnMainSync { activity.finish() }; instrumentation.waitForIdleSync() }
         } finally { store.forget(); store.sibling("pads").forget(); peer.forget() }
