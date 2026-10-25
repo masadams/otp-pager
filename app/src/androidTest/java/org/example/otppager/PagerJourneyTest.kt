@@ -158,7 +158,8 @@ class PagerJourneyTest {
             InterfaceTest().capture(instrumentation, a, "friend-details")
             tap(a, "Advanced setup")
             instrumentation.runOnMainSync { assertTrue(views(a).filterIsInstance<Button>().first { it.text.toString() == "Device" }.isShown) }
-            instrumentation.runOnMainSync { a.onBackPressed() }
+            instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+            await { views(a).filterIsInstance<TextView>().any { it.isShown && it.text.toString() == "Friend details" } }
             instrumentation.runOnMainSync { views(a).filterIsInstance<Button>().first { it.isShown && it.contentDescription?.toString() == "Back" }.performClick() }
             instrumentation.runOnMainSync { views(a).filterIsInstance<Button>().first { it.isShown && it.contentDescription?.toString() == "Back to chats" }.performClick() }
             instrumentation.runOnMainSync { views(a).filterIsInstance<Button>().first { it.isShown && it.contentDescription?.toString()?.startsWith("Morgan.") == true }.performClick() }

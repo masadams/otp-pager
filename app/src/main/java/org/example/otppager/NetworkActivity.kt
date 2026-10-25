@@ -57,6 +57,13 @@ class NetworkActivity : Activity() {
     private val inboxCycle = ReceiveCycle()
     private var pendingFriend: Pair<String, Int>? = null
     private var pendingAdd = false
+    private var systemBack: AutoCloseable? = null
+    @androidx.annotation.RequiresApi(33)
+    private class SystemBackRegistration(private val activity: Activity, action: () -> Unit) : AutoCloseable {
+        private val callback = android.window.OnBackInvokedCallback { action() }
+        init { activity.onBackInvokedDispatcher.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback) }
+        override fun close() { activity.onBackInvokedDispatcher.unregisterOnBackInvokedCallback(callback) }
+    }
     private var latest: StationEngine.View? = null
     private var rendered: List<StationEngine.Message>? = null
     private var renderedSetupComplete: Boolean? = null
@@ -850,6 +857,10 @@ class NetworkActivity : Activity() {
             screens.notice(message, tab)
     }
     private fun updateNavigation() {
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            if (unlocked && tab != 4 && systemBack == null) systemBack = SystemBackRegistration(this) { if (!navigateBack()) finish() }
+            else if ((!unlocked || tab == 4) && systemBack != null) { systemBack?.close(); systemBack = null }
+        }
         if (::stationLabel.isInitialized) stationLabel.visibility = if (tab == 0) View.GONE else View.VISIBLE
         if (::navigation.isInitialized) navigation.visibility = if (tab == 0 || tab >= 4) View.GONE else View.VISIBLE
         if (::padTab.isInitialized) {
@@ -1212,14 +1223,19 @@ class NetworkActivity : Activity() {
     }
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
-        if (unlocked && ::screens.isInitialized && tab != 4) selectTab(when (tab) { 6 -> 0; 1, 2, 3 -> if (latest?.setupComplete == true) 6 else 5; else -> 4 })
-        else super.onBackPressed()
+        if (!navigateBack()) super.onBackPressed()
+    }
+    private fun navigateBack(): Boolean {
+        if (!unlocked || !::screens.isInitialized || tab == 4) return false
+        selectTab(when (tab) { 6 -> 0; 1, 2, 3 -> if (latest?.setupComplete == true) 6 else 5; else -> 4 })
+        return true
     }
     override fun onStop() {
         if (::composer.isInitialized) persistDraft()
         openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
         pairingDialog?.dismiss(); pairingDialog = null
         generation++; active = false; StationRuntime.uiVisible = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
+        systemBack?.close(); systemBack = null
         pendingFriend = null; pendingAdd = false
         draftChatId = null; draftRoom = null; restoringDraft = true
         if (::composer.isInitialized) composer.text.clear()

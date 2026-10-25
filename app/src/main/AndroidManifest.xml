@@ -18,7 +18,7 @@
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:allowBackup="false"
         android:usesCleartextTraffic="false">
-        <activity android:name=".NetworkActivity" android:exported="true" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize">
+        <activity android:name=".NetworkActivity" android:exported="true" android:launchMode="singleTask" android:enableOnBackInvokedCallback="true" android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
