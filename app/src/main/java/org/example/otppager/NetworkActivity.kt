@@ -159,6 +159,7 @@ class NetworkActivity : Activity() {
         }
         setTextColor(ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf()), intArrayOf(muted, if (primary) Color.WHITE else ink)))
         filterTouchesWhenObscured = true
+        isSaveEnabled = false
         setOnClickListener { if (!busy) action() }
     }
     private fun field(hint: String, password: Boolean = false) = EditText(this).apply {
@@ -583,6 +584,7 @@ class NetworkActivity : Activity() {
     }
     private fun selectTab(value: Int) {
         if (value == 4 && tab == 0) persistDraft()
+        if (::screens.isInitialized && value != tab) screens.clearNotices()
         root.requestFocus()
         getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(root.windowToken, 0)
         tab = value; updateNavigation(); traffic.visibility = if (value == 0) View.VISIBLE else View.GONE; linkScroll.visibility = if (value == 1) View.VISIBLE else View.GONE
@@ -844,10 +846,11 @@ class NetworkActivity : Activity() {
         if (!active || !unlocked || !::status.isInitialized) return
         if (status.text.toString() != message) status.text = message
         status.visibility = if (tab == 0 && !connectionFailed && !errorLoading && (message in listOf("STATION READY", "LATEST MESSAGES", "Connected", "Message queued · checking delivery") || message.startsWith("Connected"))) View.GONE else View.VISIBLE
-        if (tab >= 4 && message !in listOf("STATION READY", "LATEST MESSAGES", "Chats updated", "Conversation opened") && !message.startsWith("Connected"))
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        if (::screens.isInitialized && tab >= 4 && !errorLoading && message !in listOf("STATION READY", "LATEST MESSAGES", "Chats updated", "Conversation opened", "Conversation saved", "Server saved") && !message.startsWith("Connected") && !message.startsWith("Pad size:"))
+            screens.notice(message, tab)
     }
     private fun updateNavigation() {
+        if (::stationLabel.isInitialized) stationLabel.visibility = if (tab == 0) View.GONE else View.VISIBLE
         if (::navigation.isInitialized) navigation.visibility = if (tab == 0 || tab >= 4) View.GONE else View.VISIBLE
         if (::padTab.isInitialized) {
             val technical = latest?.setupComplete != true || advancedShown || tab in listOf(2, 3)

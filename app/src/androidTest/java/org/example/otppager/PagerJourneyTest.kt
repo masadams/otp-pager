@@ -145,6 +145,7 @@ class PagerJourneyTest {
                 assertFalse(views(a).filterIsInstance<EditText>().any { it.isShown })
             }
             InterfaceTest().capture(instrumentation, a, "inbox-friends")
+            assertEquals(1, StationEngine(store).view().unread) // Showing Chats must not mark a friend's message read.
             instrumentation.runOnMainSync { views(a).filterIsInstance<Button>().first { it.isShown && it.contentDescription?.toString()?.startsWith("Alex.") == true }.performClick() }
             await { views(a).filterIsInstance<EditText>().any { it.isShown && it.text.toString() == "Meet at the north gate." } }
             await { !(NetworkActivity::class.java.getDeclaredField("busy").apply { isAccessible = true }.getBoolean(a)) }

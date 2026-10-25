@@ -42,6 +42,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         setPadding(dp(14), dp(8), dp(14), dp(8)); setTextColor(if (primary) Color.WHITE else ink)
         background = GradientDrawable().apply { setColor(if (primary) ink else Color.WHITE); cornerRadius = dp(2).toFloat(); if (!primary) setStroke(dp(1), Color.rgb(215, 215, 215)) }
         filterTouchesWhenObscured = true; setOnClickListener { action() }
+        isSaveEnabled = false
     }
     private fun header(title: String, back: Int? = null, menu: Boolean = false) = row().apply {
         if (back != null) addView(button("‹") { actions.back(back) }.apply { contentDescription = "Back" }, LinearLayout.LayoutParams(dp(44), dp(44)))
@@ -51,6 +52,9 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     val inbox = column()
     private val inboxRows = column()
     private val inboxStatus = label("Private conversations", 12f, true)
+    private val inboxNotice = label("", 13f).apply { visibility = View.GONE }
+    private val setupNotice = label("", 13f).apply { visibility = View.GONE }
+    private val detailsNotice = label("", 13f).apply { visibility = View.GONE }
     private lateinit var addButton: Button
     val setup = column()
     private val setupBody = column()
@@ -71,11 +75,13 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     init {
         inbox.addView(header("Chats", menu = true))
         inbox.addView(inboxStatus.apply { setPadding(0, dp(2), 0, dp(14)); setOnClickListener { actions.receiving() } })
+        inbox.addView(inboxNotice)
         inbox.addView(ScrollView(activity).apply { addView(inboxRows); isFillViewport = true }, LinearLayout.LayoutParams(-1, 0, 1f))
         addButton = button("Add friend", true) { actions.addFriend() }
         inbox.addView(addButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
 
         setup.addView(header("Add friend", back = 4))
+        setup.addView(setupNotice)
         setup.addView(ScrollView(activity).apply { addView(setupBody) }, LinearLayout.LayoutParams(-1, 0, 1f))
         setupBody.addView(setupTitle.apply { setPadding(0, dp(18), 0, dp(10)) })
         setupBody.addView(setupIntro.apply { setPadding(0, 0, 0, dp(20)) })
@@ -96,6 +102,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         setupBody.addView(button("Other setup options") { actions.advanced() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(24); bottomMargin = dp(16) })
 
         details.addView(header("Friend details", back = 0))
+        details.addView(detailsNotice)
         val body = column()
         details.addView(ScrollView(activity).apply { addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
         body.addView(friendName.apply { setPadding(0, dp(20), 0, dp(8)) })
@@ -156,5 +163,10 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         inboxRows.addView(button("Open recovery tools") { actions.advanced() }, LinearLayout.LayoutParams(-1, -2))
     }
     fun opening(value: String) { inboxStatus.text = value }
-    fun clearPrivate() { setupAddress.text.clear(); setupToken.text.clear(); inboxRows.removeAllViews(); shownFriends = null; friendName.text = "Friend"; keys.text = ""; friendState.text = "Private conversation"; setupTitle.text = "Pair with a friend" }
+    fun notice(value: String, page: Int) {
+        val target = when (page) { 4 -> inboxNotice; 5 -> setupNotice; 6 -> detailsNotice; else -> return }
+        target.text = value; target.visibility = View.VISIBLE; target.setPadding(0, dp(8), 0, dp(12))
+    }
+    fun clearNotices() { for (view in listOf(inboxNotice, setupNotice, detailsNotice)) { view.text = ""; view.visibility = View.GONE } }
+    fun clearPrivate() { setupAddress.text.clear(); setupToken.text.clear(); inboxRows.removeAllViews(); shownFriends = null; friendName.text = "Friend"; keys.text = ""; friendState.text = "Private conversation"; setupTitle.text = "Pair with a friend"; clearNotices() }
 }
