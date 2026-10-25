@@ -158,7 +158,15 @@ class PagerJourneyTest {
             InterfaceTest().capture(instrumentation, a, "friend-details")
             tap(a, "Advanced setup")
             instrumentation.runOnMainSync { assertTrue(views(a).filterIsInstance<Button>().first { it.text.toString() == "Device" }.isShown) }
-            instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+            // Let the previous dialog/window and IME hand off focus before sending
+            // Back through the system input path, including predictive Back on 33+.
+            await {
+                a.hasWindowFocus() && (android.os.Build.VERSION.SDK_INT < 30 ||
+                    a.window.decorView.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime()) == false)
+            }
+            android.os.ParcelFileDescriptor.AutoCloseInputStream(
+                instrumentation.uiAutomation.executeShellCommand("input keyevent KEYCODE_BACK")
+            ).use { it.readBytes() }
             await { views(a).filterIsInstance<TextView>().any { it.isShown && it.text.toString() == "Friend details" } }
             instrumentation.runOnMainSync { views(a).filterIsInstance<Button>().first { it.isShown && it.contentDescription?.toString() == "Back" }.performClick() }
             instrumentation.runOnMainSync { views(a).filterIsInstance<Button>().first { it.isShown && it.contentDescription?.toString() == "Back to chats" }.performClick() }
