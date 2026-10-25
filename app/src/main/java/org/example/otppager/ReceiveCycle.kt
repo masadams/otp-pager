@@ -5,6 +5,10 @@ class ReceiveCycle {
     private var nextChat = 0
     data class Result(val newMessages: Boolean, val unread: Int, val attempted: Int, val failed: Int)
     fun poll(book: ChatBook, relay: RelayTransport = RelayClient, allowed: () -> Boolean = { true }): Result {
+        return pollBounded(book, relay, allowed, 3)
+    }
+    fun pollOne(book: ChatBook, allowed: () -> Boolean): Result = pollBounded(book, RelayClient, allowed, 1)
+    private fun pollBounded(book: ChatBook, relay: RelayTransport, allowed: () -> Boolean, maximum: Int): Result {
         val cancellable = object : RelayTransport {
             override fun scope(endpoint: String, room: String, bootstrap: String, capability: String): Boolean {
                 check(allowed()) { "Receiving paused" }; return relay.scope(endpoint, room, bootstrap, capability)
@@ -14,7 +18,7 @@ class ReceiveCycle {
             }
         }
         val chats = book.chats(); var attempted = 0; var failed = 0; var newMessages = false
-        repeat(minOf(3, chats.size)) {
+        repeat(minOf(maximum, chats.size)) {
             if (allowed()) {
                 val chat = chats[(nextChat++).mod(chats.size)]
                 try {

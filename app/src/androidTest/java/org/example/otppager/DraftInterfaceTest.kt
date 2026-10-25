@@ -51,7 +51,7 @@ class DraftInterfaceTest {
                 composer(a).setText("Draft for Alpha")
                 NetworkActivity::class.java.getDeclaredMethod("switchChat", String::class.java).apply { isAccessible = true }.invoke(a, beta.id)
             }
-            await { views(a).filterIsInstance<Button>().any { it.text.toString().startsWith("Beta ▾") } && composer(a).isEnabled && composer(a).text.isEmpty() }
+            await { views(a).filterIsInstance<Button>().any { it.text.toString() == "Beta" } && composer(a).isEnabled && composer(a).text.isEmpty() }
             instrumentation.runOnMainSync { composer(a).setText("Draft for Beta") }
             close(a); activity = null
             val b = open(); activity = b

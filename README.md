@@ -184,3 +184,5 @@ Both devices need the same private Wi-Fi; physical NFC/HCE and Kompakt interoper
 USB remains the preferred controlled exchange. These changes are pending merge, not a server deployment.
 
 v0.13 improves [everyday messaging and encrypted drafts](docs/PAGER_V013.md): preserve drafts per friend, keep new typing when Send finishes, simplify paired settings, and label days in the conversation.
+
+v0.14 introduces a larger [chats-first UI redesign](docs/PAGER_V014.md): a full chat list, a focused conversation, friend details, and guided Add friend pairing, with the existing technical tools moved behind Advanced setup.

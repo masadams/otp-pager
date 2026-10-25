@@ -71,16 +71,23 @@ class CablePairActivity : Activity() {
         manager = getSystemService(UsbManager::class.java)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 48, 32, 24); setBackgroundColor(Color.WHITE) }
         fun label(value: String, size: Float = 17f) = TextView(this).apply { text = value; textSize = size; setTextColor(Color.BLACK); typeface = Typeface.MONOSPACE; setPadding(0, 12, 0, 20) }
-        root.addView(label(if (renewal) "RENEW CHAT PAD" else "PAIR DEVICES", 25f))
+        root.addView(label(if (renewal) "Renew message keys" else "Pair devices", 25f))
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val scroll = ScrollView(this).apply { addView(body) }; root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        body.addView(label("Open this screen on both devices, then connect a USB data cable. At least one station must have its relay address and access token saved. Approve Android's USB prompts. After both confirm, roles, fresh secret, pad and identities transfer automatically over an encrypted USB session. Both devices need version 0.11 or later. The USB host selects the pad size."))
-        if (renewal) body.addView(label("Select Renew pad for the SAME friend on both devices. Outstanding messages are confirmed over USB before renewal. Your history and verified identities stay in place. If interrupted, reconnect both on this screen to recover. Pad choice: ${padSize / PadProtocol.MATERIAL_BYTES} MiB."))
-        status = label("Waiting for the other device…"); body.addView(status)
-        confirm = Button(this).apply { text = if (renewal) "Codes match · Renew pad" else "Codes match · Pair devices"; isEnabled = false; filterTouchesWhenObscured = true
+        body.addView(label("Open pairing on both devices and connect a USB data cable. Keep both screens open. You will compare codes before anything is paired."))
+        if (renewal) body.addView(label("Choose the same friend on both devices. Your saved history and verified device identities stay in place."))
+        body.addView(label("Message keys: ${padSize / PadProtocol.MATERIAL_BYTES} MiB", 14f))
+        status = label("Waiting for your friend's device…"); body.addView(status)
+        body.addView(Button(this).apply { text = "About USB pairing"; setOnClickListener {
+            val dialog = AlertDialog.Builder(this@CablePairActivity).setTitle("Physical pairing")
+                .setMessage("One device needs the server address and access token saved. Approve Android's USB permission prompts. Compare every group of the confirmation code on BOTH physical screens.\n\nAfter both approve, the encrypted connection exchanges server setup, fresh message keys and public device identities. Private signing keys remain on their own device. USB host direction selects pad size. Both devices need version 0.11 or later.\n\nA data cable and compatible Android USB host/accessory modes are required. This experimental protocol uses conventional encryption and is not independently audited or post-quantum secure. If renewal is interrupted, reconnect both devices on this screen to recover.")
+                .setPositiveButton("Close", null).create()
+            dialog.window?.protectPrivateContent(); dialog.show()
+        } })
+        confirm = Button(this).apply { text = if (renewal) "Codes match · Renew" else "Codes match · Pair"; isEnabled = false; filterTouchesWhenObscured = true
             setOnClickListener { approved = true; isEnabled = false; confirmation?.countDown() } }; root.addView(confirm)
         finish = Button(this).apply { text = "Cancel"; setOnClickListener { finish() } }; root.addView(finish)
-        body.addView(label("A data-capable cable and compatible USB host/accessory modes are required. No USB debugging. Cancel if the full confirmation codes differ.", 13f))
+        body.addView(label("Approve Android's USB prompts. Cancel if the full codes differ.", 13f))
         setContentView(root)
         val events = IntentFilter(permissionAction).apply { addAction(UsbManager.ACTION_USB_DEVICE_DETACHED); addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED) }
         androidx.core.content.ContextCompat.registerReceiver(this, receiver, events, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
@@ -124,13 +131,13 @@ class CablePairActivity : Activity() {
                     CableProtocol.run(host, it.input, it.output, station, review = { code, endpoint ->
                         val latch = CountDownLatch(1); confirmation = latch
                         runOnUiThread { if (active && !cancelled.get()) {
-                            status.text = "COMPARE ON BOTH DEVICES\\n\\n$code\\n\\nRelay: $endpoint\\n\\nConfirm only if ALL groups match the other physical device. This verifies the pad and both device identities together.".replace("\\n", "\n")
+                            status.text = "Compare every group on both screens:\n\n$code\n\nServer: $endpoint\n\nApprove only if every group matches."
                             confirm.isEnabled = true
                         } }
                         check(latch.await(90, TimeUnit.SECONDS) && approved && !cancelled.get()) { "Confirmation cancelled or timed out" }
                     }, progress = ::note, renew = renewal, size = padSize)
                 }
-                runOnUiThread { if (active && !cancelled.get()) { finish.text = "Done · open messages"; confirm.isEnabled = false } }
+                runOnUiThread { if (active && !cancelled.get()) { status.text = if (renewal) "Keys renewed. Your chat is ready." else "Paired. You're ready to chat."; finish.text = "Open conversation"; confirm.isEnabled = false } }
             } catch (failure: Exception) {
                 val saved = engine?.state?.has("pad") == true
                 note(if (failure is CableProtocol.UpgradeRequired) "${failure.message}. Close this screen and update both devices before retrying."

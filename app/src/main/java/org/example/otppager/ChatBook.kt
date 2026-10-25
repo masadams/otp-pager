@@ -19,7 +19,7 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
         }
     private var roundRobin = 0
     data class Chat(val id: String, val name: String)
-    data class Summary(val unread: Int = 0, val queued: Int = 0, val problem: Boolean = false, val draft: Boolean = false)
+    data class Summary(val unread: Int = 0, val queued: Int = 0, val problem: Boolean = false, val draft: Boolean = false, val paired: Boolean = false, val eligible: Boolean = true)
     private val summaries = java.util.concurrent.ConcurrentHashMap<String, Summary>()
     init { validate(data); refreshSummaries() }
     private fun validate(value: JSONObject) {
@@ -80,7 +80,9 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
             } catch (_: Exception) { false } // A damaged draft never blocks receiving this chat.
             summaries[id] = Summary(
                 (if (inbox == null) 0 else (0 until inbox.length()).count { live(inbox.getJSONObject(it)) && !inbox.getJSONObject(it).optBoolean("read") }) + (s?.optJSONArray("history")?.let { history -> (0 until history.length()).count { live(history.getJSONObject(it)) && history.getJSONObject(it).optBoolean("unread") } } ?: 0),
-                if (out == null) 0 else (0 until out.length()).count { live(out.getJSONObject(it)) && out.getJSONObject(it).getString("status") == "queued" }, draft = draft)
+                if (out == null) 0 else (0 until out.length()).count { live(out.getJSONObject(it)) && out.getJSONObject(it).getString("status") == "queued" }, draft = draft,
+                paired = s != null && s.has("pad") && s.has("peerDevice") && s.optBoolean("padVerified") && s.optBoolean("peerReady") && s.optBoolean("cableComplete", true) && !s.optBoolean("renewalPaused") && !s.optBoolean("relayRevoked"),
+                eligible = s == null || (!s.has("pad") && s.getLong("counter") == 0L && s.getLong("high") == 0L && s.getJSONArray("inbox").length() == 0 && s.getJSONArray("outbox").length() == 0))
         } catch (_: Exception) { summaries[id] = Summary(problem = true) }
     }
     private fun refreshSummaries() { chats().forEach { refresh(it.id) } }

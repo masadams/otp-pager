@@ -38,10 +38,21 @@ class InterfaceTest {
         instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Switch>().forEach { it.isChecked = false } }
     }
     private fun tap(instrumentation: Instrumentation, activity: Activity, label: String) {
-        instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == label }.performClick() }
+        instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == label && it.isShown }.performClick() }
         instrumentation.waitForIdleSync()
     }
-    private fun capture(instrumentation: Instrumentation, activity: Activity, name: String, windowOnly: Boolean = false) {
+    private fun option(instrumentation: Instrumentation, activity: Activity, label: String) {
+        instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.contentDescription?.toString() == "Conversation options" && it.isShown }.performClick() }
+        instrumentation.waitForIdleSync()
+        instrumentation.runOnMainSync {
+            @Suppress("UNCHECKED_CAST")
+            val dialogs = NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }.get(activity) as List<android.app.AlertDialog>
+            val dialog = dialogs.last { it.isShowing }; val index = (0 until dialog.listView.adapter.count).first { dialog.listView.adapter.getItem(it).toString() == label }
+            dialog.listView.performItemClick(dialog.listView.getChildAt(index), index, index.toLong())
+        }
+        instrumentation.waitForIdleSync()
+    }
+    internal fun capture(instrumentation: Instrumentation, activity: Activity, name: String, windowOnly: Boolean = false) {
         val context = instrumentation.targetContext
         @Suppress("UNCHECKED_CAST")
         val dialogs = if (activity is NetworkActivity) (NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }
@@ -117,17 +128,17 @@ class InterfaceTest {
             awaitStation(instrumentation, activity)
             instrumentation.runOnMainSync {
                 val views = all(content(activity))
-                assertTrue(views.filterIsInstance<TextView>().any { it.text.toString() == "Make a private connection." })
+                assertTrue(views.filterIsInstance<TextView>().any { it.text.toString() == "Pair with your friend." })
                 assertFalse("Unpaired chat offered AES sending", views.filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
-                assertTrue(views.filterIsInstance<Button>().any { it.text.toString() == "Set up this chat" && it.isShown })
+                assertTrue(views.filterIsInstance<Button>().any { it.text.toString() == "Pair devices" && it.isShown })
                 views.filterIsInstance<EditText>().forEach {
                     assertTrue(it.imeOptions and android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING != 0)
                     assertTrue(it.imeOptions and android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI != 0)
                 }
             }
             capture(instrumentation, activity, "unpaired-chat")
-            tap(instrumentation, activity, "Set up this chat")
-            instrumentation.runOnMainSync { assertTrue(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Save server settings" }.isShown) }
+            tap(instrumentation, activity, "Pair devices")
+            instrumentation.runOnMainSync { assertTrue(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Use a USB cable" }.isShown) }
         } finally { instrumentation.runOnMainSync { activity.finish() }; store.forget(); store.sibling("pads").forget() }
     }
     @Test fun capturesActualEinkInterfaceWithFictionalTraffic() {
@@ -166,17 +177,8 @@ class InterfaceTest {
                 fields.forEach { assertTrue("Credential field must be masked", it.transformationMethod is PasswordTransformationMethod) }
             }
             capture(instrumentation, activity, "messages")
-            instrumentation.runOnMainSync {
-                all(content(activity)).filterIsInstance<Button>().first { it.text.toString().contains("▾") }.performClick()
-            }
-            capture(instrumentation, activity, "chats")
-            instrumentation.runOnMainSync {
-                @Suppress("UNCHECKED_CAST")
-                val dialogs = NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }.get(activity) as List<android.app.AlertDialog>
-                assertTrue(dialogs.last().isShowing)
-                dialogs.last().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick()
-            }
-            tap(instrumentation, activity, "Link"); capture(instrumentation, activity, "link")
+            option(instrumentation, activity, "Advanced setup")
+            capture(instrumentation, activity, "link")
             tap(instrumentation, activity, "Pad"); capture(instrumentation, activity, "pad")
             instrumentation.runOnMainSync {
                 assertTrue(all(content(activity)).filterIsInstance<Button>().any { it.text.toString() == "Send readiness again" })
@@ -203,8 +205,9 @@ class InterfaceTest {
             awaitStation(instrumentation, activity)
             instrumentation.runOnMainSync {
                 assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
-                assertTrue(all(content(activity)).filterIsInstance<TextView>().any { it.text.toString().contains("DEVICE EXCHANGE INCOMPLETE") || it.text.toString().contains("FINISH DEVICE EXCHANGE") })
+                assertTrue(all(content(activity)).filterIsInstance<TextView>().any { it.text.toString() == "Pairing is not finished" })
             }
+            option(instrumentation, activity, "Advanced setup")
             tap(instrumentation, activity, "Device")
             instrumentation.runOnMainSync {
                 val views = all(content(activity))
@@ -231,8 +234,9 @@ class InterfaceTest {
             instrumentation.runOnMainSync {
                 val views = all(content(activity))
                 assertFalse(views.filterIsInstance<Button>().first { it.text.toString() == "Send" }.isEnabled)
-                assertTrue(views.filterIsInstance<TextView>().any { it.text.toString().contains("COMPARE CODES IN PERSON") })
+                assertTrue(views.filterIsInstance<TextView>().any { it.text.toString().contains("Pair your devices") })
             }
+            option(instrumentation, activity, "Advanced setup")
             tap(instrumentation, activity, "Pad")
             instrumentation.runOnMainSync {
                 val views = all(content(activity))
@@ -344,21 +348,21 @@ class InterfaceTest {
                 StationRuntime.worker.submit {}.get(10, java.util.concurrent.TimeUnit.SECONDS)
                 instrumentation.waitForIdleSync()
                 capture(instrumentation, activity, "messages-draft")
-                instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.text.toString().contains("▾") }.performClick() }
-                instrumentation.waitForIdleSync()
+                instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.contentDescription?.toString() == "Back to chats" && it.isShown }.performClick() }
                 capture(instrumentation, activity, "chat-chooser")
+                instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.isShown && it.contentDescription?.toString()?.endsWith(". Draft saved") == true }.performClick() }
+                instrumentation.waitForIdleSync()
                 instrumentation.runOnMainSync {
-                    latestDialog().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick()
                     all(content(activity)).filterIsInstance<EditText>().first { it.hint?.toString() == "Write a message…" }.text.clear()
                     NetworkActivity::class.java.getDeclaredMethod("persistDraft").apply { isAccessible = true }.invoke(activity)
                 }
-                tap(instrumentation, activity, "Receive")
+                option(instrumentation, activity, "Receiving & battery")
                 instrumentation.runOnMainSync { assertEquals("Turn on", latestDialog().getButton(android.app.AlertDialog.BUTTON_POSITIVE).text.toString()) }
                 capture(instrumentation, activity, "receiving-settings")
                 instrumentation.runOnMainSync { latestDialog().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick() }
                 instrumentation.runOnMainSync {
                     val strip = NetworkActivity::class.java.getDeclaredField("indicators").apply { isAccessible = true }.get(activity) as TextView
-                    assertTrue(strip.text.toString().contains("Private chat"))
+                    assertTrue(strip.contentDescription.toString().contains("Private chat"))
                     strip.performClick()
                 }
                 instrumentation.waitForIdleSync()
@@ -379,26 +383,19 @@ class InterfaceTest {
                 }
                 assertFalse(StationEngine(store).view().relayRevoked) // Opening/cancelling confirmation never revokes.
 
+                option(instrumentation, activity, "Friend details")
                 instrumentation.runOnMainSync {
-                    all(content(activity)).filterIsInstance<Button>().first { it.text.toString().contains("▾") }.performClick()
-                    @Suppress("UNCHECKED_CAST")
-                    val dialogs = NetworkActivity::class.java.getDeclaredField("openDialogs").apply { isAccessible = true }.get(activity) as List<android.app.AlertDialog>
-                    val dialog = dialogs.last()
-                    val index = (0 until dialog.listView.adapter.count).first { dialog.listView.adapter.getItem(it).toString() == "Chat settings" }
-                    dialog.listView.performItemClick(dialog.listView.getChildAt(index), index, index.toLong())
-                }
-                instrumentation.waitForIdleSync()
-                instrumentation.runOnMainSync {
-                    assertTrue(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Settings" }.isShown)
                     assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Pad" }.isShown)
                     assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Device" }.isShown)
                 }
                 capture(instrumentation, activity, "settings-paired")
-                tap(instrumentation, activity, "Renew pad · USB")
+                tap(instrumentation, activity, "Renew message keys")
+                instrumentation.runOnMainSync { latestDialog().getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick() }
+                instrumentation.waitForIdleSync()
                 instrumentation.runOnMainSync { assertEquals(3, latestDialog().listView.adapter.count) }
                 capture(instrumentation, activity, "pad-size")
                 instrumentation.runOnMainSync { latestDialog().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick() }
-                tap(instrumentation, activity, "Messages")
+                instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.contentDescription?.toString() == "Back" && it.isShown }.performClick() }
                 instrumentation.runOnMainSync {
                     assertFalse(all(content(activity)).filterIsInstance<Button>().first { it.text.toString() == "Settings" }.isShown)
                 }

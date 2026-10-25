@@ -51,7 +51,12 @@ class NetworkActivity : Activity() {
     @Volatile private var unlocked = false
     private var needsTerminal = true
     private var backoff = 15000L
-    private var tab = 0
+    @Volatile private var tab = 0 // 0 conversation; 1/2/3 advanced; 4 inbox; 5 pairing; 6 friend details.
+    private lateinit var screens: PagerScreens
+    private lateinit var chrome: LinearLayout
+    private val inboxCycle = ReceiveCycle()
+    private var pendingFriend: Pair<String, Int>? = null
+    private var pendingAdd = false
     private var latest: StationEngine.View? = null
     private var rendered: List<StationEngine.Message>? = null
     private var renderedSetupComplete: Boolean? = null
@@ -122,7 +127,14 @@ class NetworkActivity : Activity() {
     private val poll = object : Runnable {
         override fun run() {
             if (active && unlocked) updateIndicators()
-            if (active && unlocked && automatic && !busy && !errorLoading && latest != null && latest?.role != "—" && latest?.pairingComplete == true && latest?.relayRevoked != true) runTask(network = true) { syncChats() }
+            if (active && unlocked && automatic && !busy && !errorLoading && tab == 4 && book != null) {
+                runTask {
+                    val contacts = checkNotNull(book)
+                    inboxCycle.pollOne(contacts) { active && unlocked && tab == 4 }
+                    engine = contacts.engine()
+                    "Chats updated"
+                }
+            } else if (active && unlocked && automatic && !busy && !errorLoading && tab != 5 && latest != null && latest?.role != "—" && latest?.pairingComplete == true && latest?.relayRevoked != true) runTask(network = true) { syncChats() }
             else if (active && unlocked) handler.postDelayed(this, 5000)
         }
     }
@@ -169,6 +181,7 @@ class NetworkActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         selectedPadSize = getSharedPreferences("receiving", MODE_PRIVATE).getInt("padSize", 4 * PadProtocol.MATERIAL_BYTES).takeIf { PadProtocol.validSize(it) } ?: 4 * PadProtocol.MATERIAL_BYTES
+        if (intent.action == Intent.ACTION_MAIN || intent.getBooleanExtra("showInbox", false)) { tab = 4; intent.removeExtra("showInbox") }
         window.protectPrivateContent()
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         window.statusBarColor = paper; window.navigationBarColor = paper
@@ -184,9 +197,9 @@ class NetworkActivity : Activity() {
     private fun showUnlock() {
         busy = false
         val lock = column().apply { setBackgroundColor(paper); setPadding(dp(28), dp(80), dp(28), dp(24)) }
-        lock.addView(text("FIELD / 07", 28f, ink, true))
-        lock.addView(text("Your station is locked.", 18f).apply { setPadding(0, dp(20), 0, dp(20)) })
-        lock.addView(button("Unlock station", true) {
+        lock.addView(text("Field", 28f, ink, true))
+        lock.addView(text("Unlock your chats.", 18f).apply { setPadding(0, dp(20), 0, dp(20)) })
+        lock.addView(button("Unlock", true) {
             val guard = getSystemService(KeyguardManager::class.java)
             val intent = guard.createConfirmDeviceCredentialIntent("Unlock Field", "Use your device screen lock")
             if (intent != null) startActivityForResult(intent, 71)
@@ -195,9 +208,12 @@ class NetworkActivity : Activity() {
     }
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent); setIntent(intent)
+        if (intent.action == Intent.ACTION_MAIN || intent.getBooleanExtra("showInbox", false)) {
+            tab = 4; intent.removeExtra("showInbox"); needsTerminal = true; return
+        }
         if (::composer.isInitialized && active && composer.text.isNotEmpty()) {
             intent.removeExtra("openUnread"); report("New messages are available in Chats")
-        } else needsTerminal = true
+        } else { tab = 0; needsTerminal = true }
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -225,20 +241,20 @@ class NetworkActivity : Activity() {
         root.setOnApplyWindowInsetsListener { view, insets ->
             view.setPadding(dp(if (compact) 12 else 20), insets.systemWindowInsetTop + dp(8), dp(if (compact) 12 else 20), insets.systemWindowInsetBottom + dp(6)); insets
         }
-        val chrome = column(); root.addView(chrome)
+        chrome = column(); root.addView(chrome)
         val header = row()
-        chatButton = button("Chats ▾") { showChats() }.apply {
+        header.addView(button("‹") { selectTab(4) }.apply { contentDescription = "Back to chats" }, LinearLayout.LayoutParams(dp(44), dp(44)))
+        chatButton = button("Conversation") { selectTab(6) }.apply {
             textSize = if (compact) 15f else 18f; typeface = Typeface.create("monospace", Typeface.BOLD)
             maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.START or Gravity.CENTER_VERTICAL
             setPadding(0, 0, dp(6), 0); background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
         }
         header.addView(chatButton, LinearLayout.LayoutParams(0, -2, 1f))
         stationLabel = text("STATION —", 11f, green, true); header.addView(stationLabel)
-        receiveButton = button("Receive") { showReceiving() }.apply { textSize = 11f; minWidth = 0; minimumWidth = 0 }
+        receiveButton = button("⋮") { showConversationMenu() }.apply { textSize = 22f; minWidth = 0; minimumWidth = 0; contentDescription = "Conversation options" }
         header.addView(receiveButton); chrome.addView(header)
-        if (!compact) chrome.addView(text("PRIVATE MESSAGES", 10f, muted, true))
         indicators = text("○ Not checked yet", 11f, ink, true).apply {
-            setPadding(dp(10), dp(if (compact) 5 else 8), dp(10), dp(if (compact) 5 else 8)); background = surface(paper, 2, ink)
+            setPadding(dp(4), dp(2), dp(4), dp(6))
             contentDescription = "Station status. Tap for connection, delivery and security details."
             setOnClickListener { showStationStatus() }
         }
@@ -253,7 +269,7 @@ class NetworkActivity : Activity() {
         tabs.addView(trafficTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(linkTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(padTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(deviceTab, LinearLayout.LayoutParams(0, -2, 1f)); chrome.addView(tabs)
         status = text("Opening station…", 11f, muted, true).apply { setPadding(dp(2), dp(2), 0, dp(4)); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setOnClickListener { showStationStatus() } }; chrome.addView(status)
         traffic = column()
-        setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, ink); setOnClickListener { selectTab(if (latest?.relayRevoked == true || latest?.pairingComplete == false) 1 else if (latest?.ownDevice != null && latest?.peerDevice == null) 3 else if (latest?.padCheck == null) 1 else 2) } }; traffic.addView(setupHint)
+        setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, lineColor); setOnClickListener { selectTab(if (latest?.setupComplete == true) 6 else 5) } }; traffic.addView(setupHint)
         newMessagesButton = button("New messages · Jump to latest") {
             messageScroll.fullScroll(View.FOCUS_DOWN)
             ackVisibleMessages()
@@ -274,6 +290,7 @@ class NetworkActivity : Activity() {
         val composeActions = row()
         count = text("0 / 2048 bytes", 10f, muted, true); composeActions.addView(count, LinearLayout.LayoutParams(0, -2, 1f))
         syncButton = button("Sync") { runTask(network = true) { syncChats() } }; composeActions.addView(syncButton)
+        syncButton.visibility = View.GONE
         sendButton = button("Send", true) {
             val value = composer.text.toString()
             val id = checkNotNull(draftChatId); val room = checkNotNull(draftRoom); val submittedId = draftId
@@ -463,10 +480,27 @@ class NetworkActivity : Activity() {
         root.viewTreeObserver.addOnGlobalLayoutListener {
             val visible = android.graphics.Rect(); root.getWindowVisibleDisplayFrame(visible)
             val keyboardVisible = root.rootView.height - visible.bottom > dp(150)
-            val next = if (compact && tab == 0 && keyboardVisible) View.GONE else View.VISIBLE
+            val next = if (tab >= 4 || (compact && tab == 0 && keyboardVisible)) View.GONE else View.VISIBLE
             if (chrome.visibility != next) chrome.visibility = next
         }
-        root.addView(traffic, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(linkScroll, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(padScroll, LinearLayout.LayoutParams(-1, 0, 1f)); root.addView(deviceScroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        screens = PagerScreens(this, object : PagerScreens.Actions {
+            override fun back(destination: Int) { selectTab(destination) }
+            override fun appMenu() { showAppMenu() }
+            override fun addFriend() {
+                if (busy) { pendingAdd = true; pendingFriend = null; screens.opening("Opening setup…") } else editChatName(create = true)
+            }
+            override fun openFriend(id: String, paired: Boolean) { this@NetworkActivity.openFriend(id, if (paired) 0 else 5) }
+            override fun saveServer(address: String, token: String) { saveGuidedServer(address, token) }
+            override fun cable() { if (!busy) beginCablePairing(false) }
+            override fun nearby() { if (!busy) launchNearbyPairing(false) }
+            override fun padSize() { if (!busy) choosePadSize(false, launch = false) }
+            override fun advanced() { advancedShown = true; selectTab(1); latest?.let(::render) }
+            override fun renew() { showRenewalMethods() }
+            override fun receiving() { if (!busy) showReceiving() }
+            override fun rename() { if (!busy) editChatName(false) }
+            override fun status() { if (!busy) showStationStatus() }
+        })
+        for (panel in listOf(traffic, linkScroll, padScroll, deviceScroll, screens.inbox, screens.setup, screens.details)) root.addView(panel, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root); root.requestApplyInsets(); selectTab(tab)
         var loadedInvite: PairingInvite? = null
         val scanResult = pendingScan; pendingScan = null
@@ -480,6 +514,7 @@ class NetworkActivity : Activity() {
             finally { restoringDraft = false }
             draftId = restoredDraft?.id ?: java.util.UUID.randomUUID().toString()
             draftSaved = restoredDraft != null; updateComposerCount(); updateSendButton()
+            if (tab == 5 && latest?.setupComplete == true) selectTab(0)
             if (draftProblem) report("Saved draft unavailable · use Chats → Clear draft to discard it")
         }, onSuccess = { loadedInvite?.let(::previewSetupQr) }, publicTransfer = pendingDocument?.first in listOf(83, 84), qrTransfer = pendingDocument?.first == 85) {
             book = null; engine = null
@@ -547,11 +582,19 @@ class NetworkActivity : Activity() {
         }
     }
     private fun selectTab(value: Int) {
+        if (value == 4 && tab == 0) persistDraft()
         root.requestFocus()
         getSystemService(android.view.inputmethod.InputMethodManager::class.java).hideSoftInputFromWindow(root.windowToken, 0)
         tab = value; updateNavigation(); traffic.visibility = if (value == 0) View.VISIBLE else View.GONE; linkScroll.visibility = if (value == 1) View.VISIBLE else View.GONE
         padScroll.visibility = if (value == 2) View.VISIBLE else View.GONE
         deviceScroll.visibility = if (value == 3) View.VISIBLE else View.GONE
+        if (::screens.isInitialized) {
+            screens.inbox.visibility = if (value == 4) View.VISIBLE else View.GONE
+            screens.setup.visibility = if (value == 5) View.VISIBLE else View.GONE
+            screens.details.visibility = if (value == 6) View.VISIBLE else View.GONE
+            renderSimpleScreens()
+        }
+        chrome.visibility = if (value in 0..3) View.VISIBLE else View.GONE
         for ((index, button) in listOf(trafficTab, linkTab, padTab, deviceTab).withIndex()) {
             button.setTextColor(if (value == index) Color.WHITE else ink)
             button.backgroundTintList = ColorStateList.valueOf(if (value == index) ink else Color.TRANSPARENT)
@@ -578,12 +621,90 @@ class NetworkActivity : Activity() {
     private fun beginRadioPairing(renew: Boolean) {
         confirm(if (renew) "Renew over local Wi-Fi?" else "Pair over local Wi-Fi?",
             "Both devices need version 0.12, NFC and the same private Wi-Fi. Tap to share a temporary secret, then compare codes before the encrypted pad transfer. No pad goes to the relay. Keep the tap private; use USB if you prefer a cable. Existing pairings are preserved. Pad size on this device: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB.") {
-            runTask(onSuccess = { startActivity(Intent(this, RadioPairActivity::class.java)
-                .putExtra("chat", checkNotNull(book).active().id).putExtra("renew", renew).putExtra("padSize", selectedPadSize)) }) {
-                if (renew) checkNotNull(engine).requireRenewalIdentity() else checkNotNull(engine).requireCableEligible()
-                "Opening nearby transfer"
-            }
+            launchNearbyPairing(renew)
         }
+    }
+    private fun launchNearbyPairing(renew: Boolean) {
+        runTask(onSuccess = { startActivity(Intent(this, RadioPairActivity::class.java)
+            .putExtra("chat", checkNotNull(book).active().id).putExtra("renew", renew).putExtra("padSize", selectedPadSize)) }) {
+            if (renew) checkNotNull(engine).requireRenewalIdentity() else checkNotNull(engine).requireCableEligible()
+            "Opening nearby transfer"
+        }
+    }
+    private fun saveGuidedServer(address: String, token: String) {
+        runTask(load = true, onSuccess = { screens.resetSetup(); selectTab(5) }) {
+            val station = checkNotNull(engine); station.requireCableEligible()
+            val previous = station.state
+            station.configure(address, token, previous?.getString("secret") ?: Protocol.randomSecret(), previous?.getString("role") ?: "A")
+            "Server saved"
+        }
+    }
+    private fun renderSimpleScreens() {
+        if (!::screens.isInitialized) return
+        if (errorLoading) { screens.showProblem(); return }
+        val contacts = book ?: return; val view = latest ?: return
+        if (tab == 4) {
+            val all = contacts.chats()
+            val friends = all.filterNot { all.size == 1 && it.name == "Chat 1" && contacts.summary(it.id).eligible }.map { chat ->
+                val state = contacts.summary(chat.id)
+                PagerScreens.Friend(chat.id, chat.name, when {
+                    state.problem -> "Needs attention"
+                    !state.paired -> "Finish pairing"
+                    state.unread > 0 -> "${state.unread} new ${if (state.unread == 1) "message" else "messages"}"
+                    state.draft -> "Draft saved"
+                    state.queued > 0 -> "Waiting to send"
+                    else -> "No new messages"
+                }, state.paired, state.unread > 0)
+            }
+            screens.renderInbox(friends, ReceiveService.running, busy)
+        }
+        if (tab in listOf(5, 6)) screens.renderFriend(contacts.active().name, view, selectedPadSize)
+    }
+    private fun openFriend(id: String, destination: Int) {
+        if (busy) { pendingFriend = id to destination; pendingAdd = false; screens.opening("Opening conversation…"); return }
+        screens.resetSetup()
+        if (id == book?.active()?.id) { selectTab(destination); return }
+        preserveDraftThen {
+            runTask(onSuccess = { reopenChat(destination) }) { checkNotNull(book).select(id); "Conversation opened" }
+        }
+    }
+    private fun showAppMenu() {
+        if (busy) return
+        AlertDialog.Builder(this).setTitle("Field")
+            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help")) { _, which ->
+                when (which) {
+                    0 -> showReceiving()
+                    1 -> runTask {
+                        val contacts = checkNotNull(book); inboxCycle.pollOne(contacts) { active && unlocked && tab == 4 }
+                        engine = contacts.engine(); "Chats updated"
+                    }
+                    else -> AlertDialog.Builder(this).setTitle("Getting started")
+                        .setMessage("Add a friend and pair your devices together. Only one device needs the server address and token. USB transfers the setup, message keys and device identities after you compare the codes.\n\nOpen a chat to write. Delivery appears under each message. For messages while the screen is off, turn on background receiving; it uses more battery.\n\nThis is an experimental messenger. Keep physical pairing private and use Advanced setup only when you need it.")
+                        .setPositiveButton("Close", null).create().also(::secureShow)
+                }
+            }.setNegativeButton("Close", null).create().also(::secureShow)
+    }
+    private fun showConversationMenu() {
+        if (busy) return
+        AlertDialog.Builder(this).setTitle(book?.active()?.name ?: "Conversation")
+            .setItems(arrayOf("Friend details", "Check now", "Receiving & battery", "Clear draft", "Clear message history", "Advanced setup")) { _, which ->
+                when (which) {
+                    0 -> selectTab(6)
+                    1 -> runTask(network = true) { syncChats() }
+                    2 -> showReceiving()
+                    3 -> clearDraft()
+                    4 -> confirm("Clear local messages?", "Pending messages stay queued. Saved receipt recovery is removed with history. Replay protection stays active.") { runTask { checkNotNull(engine).clearHistory(); "Message history cleared" } }
+                    else -> { advancedShown = true; selectTab(1); latest?.let(::render) }
+                }
+            }.setNegativeButton("Close", null).create().also(::secureShow)
+    }
+    private fun showRenewalMethods() {
+        if (busy) return
+        AlertDialog.Builder(this).setTitle("Renew message keys")
+            .setMessage("Your friend's identity and saved history stay in place. Open renewal for this conversation on both devices.")
+            .setPositiveButton("USB cable") { _, _ -> choosePadSize(true) }
+            .setNeutralButton("Tap + Wi-Fi") { _, _ -> beginRadioPairing(true) }
+            .setNegativeButton("Cancel", null).create().also(::secureShow)
     }
     private fun choosePadSize(renew: Boolean, launch: Boolean = true) {
         val choices = arrayOf("1 MiB · 127 slots each way", "2 MiB · 254 slots each way", "4 MiB · 508 slots each way")
@@ -594,7 +715,7 @@ class NetworkActivity : Activity() {
             .setPositiveButton(if (launch) "Continue by USB" else "Save") { _, _ ->
                 selectedPadSize = sizes[selected]
                 getSharedPreferences("receiving", MODE_PRIVATE).edit().putInt("padSize", selectedPadSize).apply()
-                if (launch) beginCablePairing(false, renew) else report("Pad size: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB")
+                if (launch) beginCablePairing(false, renew) else { renderSimpleScreens(); report("Pad size: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB") }
             }.setNegativeButton("Cancel", null).create().also(::secureShow)
     }
     private fun showReceiving() {
@@ -722,10 +843,12 @@ class NetworkActivity : Activity() {
     private fun report(message: String) {
         if (!active || !unlocked || !::status.isInitialized) return
         if (status.text.toString() != message) status.text = message
-        status.visibility = if (latest?.setupComplete == true && message in listOf("STATION READY", "LATEST MESSAGES", "Connected")) View.GONE else View.VISIBLE
+        status.visibility = if (tab == 0 && !connectionFailed && !errorLoading && (message in listOf("STATION READY", "LATEST MESSAGES", "Connected", "Message queued · checking delivery") || message.startsWith("Connected"))) View.GONE else View.VISIBLE
+        if (tab >= 4 && message !in listOf("STATION READY", "LATEST MESSAGES", "Chats updated", "Conversation opened") && !message.startsWith("Connected"))
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
     private fun updateNavigation() {
-        if (::navigation.isInitialized) navigation.visibility = if (latest?.setupComplete == true && tab == 0) View.GONE else View.VISIBLE
+        if (::navigation.isInitialized) navigation.visibility = if (tab == 0 || tab >= 4) View.GONE else View.VISIBLE
         if (::padTab.isInitialized) {
             val technical = latest?.setupComplete != true || advancedShown || tab in listOf(2, 3)
             padTab.visibility = if (technical) View.VISIBLE else View.GONE
@@ -764,7 +887,7 @@ class NetworkActivity : Activity() {
     }
     private fun updateComposerCount() {
         val bytes = composer.text.toString().toByteArray(Charsets.UTF_8).size
-        count.text = "$bytes / 2048 bytes" + if (bytes > 0) if (draftSaved) " · Draft saved" else " · Draft" else ""
+        count.text = when { bytes > 2048 -> "${bytes - 2048} bytes too long"; bytes >= 1800 -> "${2048 - bytes} bytes left"; bytes > 0 -> if (draftSaved) "Draft saved" else "Draft"; else -> "" }
         count.setTextColor(if (bytes > 2048) Color.rgb(145, 57, 39) else muted)
     }
     private fun persistDraft() {
@@ -777,6 +900,7 @@ class NetworkActivity : Activity() {
             runOnUiThread {
                 if (active && unlocked && visibleGeneration == generation && draftChatId == id && draftId == revision) {
                     draftSaved = saved && value.isNotEmpty(); updateComposerCount()
+                    if (tab == 4) renderSimpleScreens()
                     if (!saved) report("Draft not saved · keep this screen open or retry")
                 }
             }
@@ -786,8 +910,8 @@ class NetworkActivity : Activity() {
         if (!::indicators.isInitialized) return
         val v = latest
         if (::receiveButton.isInitialized) {
-            receiveButton.text = if (ReceiveService.running) "Receiving ●" else if (ReceiveService.enabled(this)) "Resume" else "Receive"
-            receiveButton.contentDescription = "Background receiving. " + if (ReceiveService.running) "On" else "Off or paused"
+            receiveButton.text = "⋮"
+            receiveButton.contentDescription = "Conversation options"
         }
         val connection = when {
             v == null || v.role == "—" -> "○ Set up this chat"
@@ -811,35 +935,22 @@ class NetworkActivity : Activity() {
             v?.pending?.takeIf { it > 0 }?.let { "$it waiting to send" },
             v?.awaitingReceipt?.takeIf { it > 0 }?.let { "$it awaiting delivery" }
         ).joinToString(" · ").ifEmpty { "No unread messages" }
-        val value = "$connection$accessBadge${if (!automatic) " · Manual" else ""}\n$details"
+        val value = when {
+            v == null || v.role == "—" || !v.setupComplete -> "Pairing is not finished"
+            networkBusy -> "Checking messages…"
+            connectionFailed -> "Offline · your messages stay saved"
+            lastContact == 0L -> "Private conversation"
+            android.os.SystemClock.elapsedRealtime() - lastContact > 60000 -> "Last checked ${((android.os.SystemClock.elapsedRealtime() - lastContact) / 60000).coerceAtLeast(1)} min ago"
+            else -> "● Relay connected"
+        }
         val access = if (v?.relayRevoked == true) "Chat access revoked" else if (v?.relayScoped == true) "Chat access protected" else "Shared relay access; update relay to protect this chat"
-        indicators.contentDescription = "$value. $security. $access. Tap for details."
+        indicators.contentDescription = "$value. $connection$accessBadge. $details. $security. $access. Tap for details."
         if (indicators.text.toString() != value) indicators.text = value
+        if (::screens.isInitialized && tab == 4) renderSimpleScreens()
     }
     private fun syncChats(): String {
         try { return checkNotNull(engine).sync() }
         finally { book?.refresh(); book?.syncAnother() }
-    }
-    private fun showChats() {
-        val chats = book?.chats() ?: return
-        val rows = chats.map { chat ->
-            val summary = checkNotNull(book).summary(chat.id)
-            "${if (chat.id == book?.active()?.id) "● " else ""}${chat.name}" +
-                if (summary.problem) "\nNeeds attention" else "\n${if (summary.unread > 0) "${summary.unread} new messages" else "No new messages"}${if (summary.queued > 0) " · ${summary.queued} waiting to send" else ""}${if (summary.draft) " · Draft" else ""}"
-        }.toMutableList().apply { add("Chat settings"); add("Rename chat") }.toTypedArray()
-        val adapter = object : ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, rows) {
-            override fun getView(position: Int, recycled: View?, parent: ViewGroup): View = (super.getView(position, recycled, parent) as TextView).apply {
-                textSize = 15f; setTextColor(ink); minHeight = dp(64); setPadding(dp(20), dp(14), dp(20), dp(14))
-                typeface = Typeface.create("monospace", if (position < chats.size && (book?.summary(chats[position].id)?.unread ?: 0) > 0) Typeface.BOLD else Typeface.NORMAL)
-            }
-        }
-        AlertDialog.Builder(this).setTitle("Chats · two devices each")
-            .setAdapter(adapter) { _, which ->
-                when (which) { chats.size -> selectTab(1); chats.size + 1 -> editChatName(create = false); else -> switchChat(chats[which].id) }
-            }
-            .setPositiveButton("New chat") { _, _ -> editChatName(create = true) }
-            .setNeutralButton("Clear draft") { _, _ -> clearDraft() }
-            .setNegativeButton("Close", null).create().also(::secureShow)
     }
     private fun editChatName(create: Boolean) {
         val input = field("Friend's name").apply {
@@ -847,18 +958,20 @@ class NetworkActivity : Activity() {
             filters = arrayOf(android.text.InputFilter.LengthFilter(32))
             if (!create) setText(book?.active()?.name ?: "")
         }
-        val dialog = AlertDialog.Builder(this).setTitle(if (create) "New private chat" else "Rename chat")
-            .setMessage(if (create) "Each chat pairs with one friend and gets fresh keys. Only the relay address and access token are copied from this chat." else "This name stays on this device.")
-            .setView(input).setNegativeButton("Cancel", null).setPositiveButton("Save", null).create()
+        val destination = if (create) 5 else if (tab == 6) 6 else 0
+        val dialog = AlertDialog.Builder(this).setTitle(if (create) "Add friend" else "Rename friend")
+            .setMessage(if (create) "Choose a name for this conversation." else "This name stays on this device.")
+            .setView(input).setNegativeButton("Cancel", null).setPositiveButton(if (create) "Continue" else "Save", null).create()
         dialog.setOnShowListener { dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             val value = input.text.toString()
             if (value.isBlank()) { input.error = "Enter a name"; return@setOnClickListener }
             dialog.dismiss()
             preserveDraftThen {
-                runTask(onSuccess = { reopenChat() }) {
+                runTask(onSuccess = { screens.resetSetup(); reopenChat(destination) }) {
                     val contacts = checkNotNull(book)
-                    if (create) contacts.select(contacts.add(value).id) else contacts.rename(value)
-                    "CHAT SAVED"
+                    val reuseFirst = create && contacts.chats().size == 1 && contacts.active().name == "Chat 1" && checkNotNull(engine).view().cableEligible
+                    if (!create || reuseFirst) contacts.rename(value) else contacts.select(contacts.add(value).id)
+                    "Conversation saved"
                 }
             }
         } }
@@ -882,11 +995,11 @@ class NetworkActivity : Activity() {
             runTask(onSuccess = { reopenChat() }) { checkNotNull(book).select(id); "CHAT SELECTED" }
         }
     }
-    private fun reopenChat() {
+    private fun reopenChat(destination: Int = 0) {
         persistDraft()
         draftChatId = null; draftRoom = null; restoringDraft = true
         try { composer.text.clear() } finally { restoringDraft = false }
-        lastContact = 0L; connectionFailed = false; backoff = 15000L; tab = 0
+        lastContact = 0L; connectionFailed = false; backoff = 15000L; tab = destination
         showTerminal()
     }
     private fun showRelayAccess() {
@@ -932,32 +1045,29 @@ class NetworkActivity : Activity() {
         pairingHelp.visibility = if (paired) View.GONE else View.VISIBLE
         settingsIntro.text = if (paired) "Your friend's device is verified. Renew its pad here while keeping your history and identities." else "Save server details on one device, then pair by USB or tap for an encrypted local Wi-Fi transfer."
         pairedOptions.visibility = if (view.padCheck != null) View.VISIBLE else View.GONE
-        stationLabel.visibility = if (view.setupComplete && tab == 0) View.GONE else View.VISIBLE
+        stationLabel.visibility = if (tab == 0) View.GONE else View.VISIBLE
         renewButton.isEnabled = !busy && view.peerDevice != null && !view.relayRevoked
 
         val current = book?.active()
-        val elsewhere = book?.unreadElsewhere() ?: 0
-        val chatLabel = "${current?.name ?: "Chats"} ▾${if (elsewhere > 0) " · $elsewhere new" else ""}"
+        val chatLabel = current?.name ?: "Conversation"
         if (chatButton.text.toString() != chatLabel) chatButton.text = chatLabel
+        chatButton.contentDescription = "Friend details for $chatLabel"
         val tabLabel = if (compact) "Messages" else if (view.unread > 0) "Messages (${view.unread})" else "Messages"
         if (trafficTab.text.toString() != tabLabel) trafficTab.text = tabLabel
         updateIndicators()
         newMessagesButton.visibility = if (view.unread > 0) View.VISIBLE else View.GONE
         newMessagesButton.text = "${view.unread} new · Jump to latest"
         val hint = when {
-            view.role == "—" -> "SET UP YOUR STATION → Link"
-            view.relayRevoked -> "CHAT ACCESS REVOKED · open chat settings to pair afresh"
-            !view.pairingComplete -> "USB exchange paused · reconnect both devices to recover"
-            view.padCheck == null -> "PAIR WITH YOUR FRIEND → Link · USB pairs keys and pad together"
-            view.padRemaining == 0 -> "Pad empty · renew by USB. You can still receive and retry saved messages."
-            !view.padVerified -> "COMPARE CODES IN PERSON → Pad"
-            !view.peerReady -> "WAITING FOR PEER VERIFICATION · Sync both stations"
-            view.ownDevice != null && view.peerDevice == null -> "FINISH DEVICE EXCHANGE → Device"
-            (view.padRemaining ?: Int.MAX_VALUE) <= 10 -> "Pad running low · open Chat settings → Renew pad"
+            view.relayRevoked -> "Access was revoked. Open friend details."
+            !view.pairingComplete -> "Pairing was interrupted. Tap for help."
+            !view.setupComplete -> "Pair your devices to start this conversation."
+            view.padRemaining == 0 -> "Message keys used up. Tap to renew."
+            (view.padRemaining ?: Int.MAX_VALUE) <= 10 -> "Message keys are running low. Tap to renew."
             else -> ""
         }
         setupHint.visibility = if (hint.isEmpty()) View.GONE else View.VISIBLE
         if (setupHint.text.toString() != hint) setupHint.text = hint
+        renderSimpleScreens()
         val verifyLabel = if (view.padVerified) "Send readiness again" else "Verify codes & announce"
         if (verifyButton.text.toString() != verifyLabel) verifyButton.text = verifyLabel
         val padLabel = view.padCheck?.let { "PAD CHECK\n${it.chunked(4).joinToString(" ")}\n${view.padRemaining} outgoing slots remaining" } ?: "AES-GCM · no pad installed"
@@ -981,9 +1091,9 @@ class NetworkActivity : Activity() {
         val wasAtBottom = atBottom()
         rendered = view.messages; messages.removeAllViews()
         if (view.messages.isEmpty()) {
-            messages.addView(text(if (view.setupComplete) "Ready for your friend." else "Make a private connection.", if (compact) 20f else 24f).apply { setPadding(dp(10), dp(40), 0, dp(10)) })
-            messages.addView(text(if (view.setupComplete) "Send a message below. Delivery updates appear beside each message." else "Save relay details on one device, then connect both with USB and compare the on-screen codes.", 14f, muted).apply { setPadding(dp(10), 0, 0, 0) })
-            if (!view.setupComplete) messages.addView(button("Set up this chat") { selectTab(1) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
+            messages.addView(text(if (view.setupComplete) "Say hello." else "Pair with your friend.", if (compact) 22f else 26f).apply { setPadding(dp(10), dp(40), 0, dp(10)) })
+            messages.addView(text(if (view.setupComplete) "Your conversation starts here." else "Connect your devices once, then just write.", 14f, muted).apply { setPadding(dp(10), 0, 0, 0) })
+            if (!view.setupComplete) messages.addView(button("Pair devices") { selectTab(5) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
         }
         val timeFormat = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
         val yesterday = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DAY_OF_YEAR, -1) }.time.let(dayFormat::format)
@@ -997,11 +1107,11 @@ class NetworkActivity : Activity() {
             }
             val card = column().apply {
                 setPadding(dp(14), dp(11), dp(14), dp(12))
-                background = surface(Color.WHITE, 2, if (m.incoming) ink else lineColor)
+                background = surface(Color.WHITE, 2, lineColor)
             }
-            val label = if (m.incoming) (if (m.unread) "● New · ${current?.name ?: "Friend"}" else current?.name ?: "Friend") else when (m.status) { "queued" -> "Waiting to send"; "relayed" -> "Sent · awaiting delivery"; "delivered" -> "✓ Delivered to device"; else -> "Expired" }
-            card.addView(text("$label  /  ${timeFormat.format(java.util.Date(m.time))}${if (m.deviceVerified) "" else " · Unverified device"}", 10f, muted, true))
-            card.addView(text(m.text, 16f, ink, true).apply { setPadding(0, dp(5), 0, 0); isSaveEnabled = false })
+            val label = if (m.incoming) (if (m.unread) "New" else "Received") else when (m.status) { "queued" -> "Waiting to send"; "relayed" -> "Sent · awaiting delivery"; "delivered" -> "Delivered to device"; else -> "Expired" }
+            card.addView(text(m.text, 16f, ink, true).apply { isSaveEnabled = false })
+            card.addView(text("${timeFormat.format(java.util.Date(m.time))} · $label${if (m.deviceVerified) "" else " · Unverified device"}", 10f, muted, true).apply { setPadding(0, dp(6), 0, 0) })
             messages.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
                 topMargin = dp(10); if (m.incoming) rightMargin = dp(24) else leftMargin = dp(24)
             })
@@ -1056,10 +1166,21 @@ class NetworkActivity : Activity() {
                 view?.let(::render)
                 if (draftChatId != null && draftRoom == null && configuredRoom != null) draftRoom = configuredRoom
                 if (clearComposer && success && composer.text.toString() == submittedText && draftId == submittedId) composer.text.clear()
-                if (errorLoading) note = "VAULT UNAVAILABLE // data preserved; see Link → Forget pairing to reset"
+                if (errorLoading) {
+                    note = "Saved chat unavailable. Data is preserved; open recovery tools."
+                    pendingAdd = false; pendingFriend = null
+                    selectTab(4)
+                }
                 report(note); setBusy(false); schedule(if (clearComposer && success) 100 else backoff)
                 onComplete?.invoke()
                 if (success) onSuccess?.invoke()
+                if (pendingAdd || pendingFriend != null) handler.post {
+                    if (active && unlocked && !busy && !errorLoading && tab == 4) {
+                        val next = pendingFriend; val add = pendingAdd
+                        pendingFriend = null; pendingAdd = false
+                        if (add) editChatName(true) else next?.let { openFriend(it.first, it.second) }
+                    }
+                }
                 // Check current visibility AFTER rendering/network completion, not before a slow sync.
                 messageScroll.post {
                     if (success && !errorLoading && active && unlocked && taskGeneration == generation && tab == 0 && !busy && (latest?.unread ?: 0) > 0 && atBottom()) ackVisibleMessages()
@@ -1086,20 +1207,31 @@ class NetworkActivity : Activity() {
         handler.removeCallbacks(poll)
         if (active && unlocked && !isFinishing && !errorLoading) handler.postDelayed(poll, delay)
     }
+    @Suppress("DEPRECATION")
+    override fun onBackPressed() {
+        if (unlocked && ::screens.isInitialized && tab != 4) selectTab(when (tab) { 6 -> 0; 1, 2, 3 -> if (latest?.setupComplete == true) 6 else 5; else -> 4 })
+        else super.onBackPressed()
+    }
     override fun onStop() {
         if (::composer.isInitialized) persistDraft()
         openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
         pairingDialog?.dismiss(); pairingDialog = null
         generation++; active = false; StationRuntime.uiVisible = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
+        pendingFriend = null; pendingAdd = false
         draftChatId = null; draftRoom = null; restoringDraft = true
         if (::composer.isInitialized) composer.text.clear()
         restoringDraft = false; handler.removeCallbacks(saveDraft)
         lastContact = 0L; connectionFailed = false
         if (::messages.isInitialized) messages.removeAllViews()
+        if (::screens.isInitialized) screens.clearPrivate()
         if (::chatButton.isInitialized) chatButton.text = "Chats"
         if (::tokenField.isInitialized) { tokenField.text.clear(); secretField.text.clear() }
         latest = null; rendered = null; importedDeviceCard = null
         if (::peerCardField.isInitialized) peerCardField.text.clear()
+        if (::identityCard.isInitialized) identityCard.text = ""
+        if (::identityStatus.isInitialized) identityStatus.text = ""
+        if (::padStatus.isInitialized) padStatus.text = ""
+        if (::pairingCode.isInitialized) pairingCode.text = ""
         worker.execute { engine = null; book = null }
         super.onStop()
     }
