@@ -39,11 +39,17 @@ class VaultRetirementAndroidTest {
             neighbor.save(JSONObject().put("version", 2).put("text", "Other contact"))
             val ledger = File(context.noBackupFilesDir, "$root-pads.bin")
             val ledgerBytes = ledger.readBytes()
+            for (slot in listOf(root, "$root-draft")) {
+                val file = File(context.noBackupFilesDir, "$slot.bin")
+                for (suffix in listOf(".bak", ".new")) File(file.path + suffix).writeBytes(file.readBytes())
+            }
             val result = VaultRetirement.retireContact(context, root)
             assertTrue(result.failures.toString(), result.completed); assertTrue(result.terminalDurable)
             val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
             for (alias in listOf("otp-pager-$root", "otp-pager-$root-draft", "otp-pager-$root-device"))
                 assertFalse(keys.containsAlias(alias))
+            for (slot in listOf(root, "$root-draft"))
+                assertTrue(VaultLifecycle.variants(File(context.noBackupFilesDir, "$slot.bin")).none { it.exists() })
             assertArrayEquals(ledgerBytes, ledger.readBytes())
             assertEquals("Other contact", neighbor.load()!!.getString("text"))
             rejected { store.load() }; rejected { SecureStore(context, root).save(staleState) }

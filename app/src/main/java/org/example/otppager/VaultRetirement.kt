@@ -74,6 +74,8 @@ internal object VaultRetirement {
                 fun deleteFiles(slot: String) {
                     val base = File(directory, "$slot.bin")
                     AtomicFile(base).delete()
+                    // Older Android AtomicFile implementations do not know the newer .new variant.
+                    VaultLifecycle.variants(base).forEach { if (it.exists()) check(it.delete()) { "Vault file deletion incomplete" } }
                     check(VaultLifecycle.variants(base).none { it.exists() }) { "Vault file deletion incomplete" }
                 }
                 // Pad ledgers and global reuse claims deliberately survive: identifiers/counters only.
