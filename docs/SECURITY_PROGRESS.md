@@ -65,8 +65,12 @@ records generation identity, terminal journal, key boundaries, cancellation/lock
 restart recovery, orphan/wipe-all handling and the required fault matrix. None of
 that destructive behavior is implemented yet.
 
-Validation: local whitespace/link checks and relay baseline results recorded in the
-implementation PR. Android SDK/Gradle/emulator are not installed in this workspace;
+Validation: local whitespace/link checks passed, relay 13/13 and signing-policy
+7/7 tests passed. First Android 10 run built/linted successfully but pad tests crashed
+at a 16 MiB heap limit. Logs show upstream emulator-runner v2 writes `hw.heapSize`,
+an unrecognized property (upstream PR #480). CI now sets `vm.heapSize=256` before
+boot in both Android workflows; this does not change production app heap policy.
+The corrected CI run must pass; the failed run is not counted as validation. Android SDK/Gradle/emulator are not installed in this workspace;
 Android execution is delegated to the existing GitHub CI workflows, not claimed
 as locally passing. No security-critical merge until CI and invariant review complete.
 
