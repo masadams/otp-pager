@@ -4,13 +4,21 @@ Experimental, open-source, physically paired text messenger. Android, including 
 
 > **Security status: NOT AUDITED. NOT READY FOR SENSITIVE COMMUNICATIONS.** This repository begins with specifications and testable scaffolding, not a claim of secure or Jericho-compatible messaging.
 
-## Current merged build: v0.10
+## Current merged build: v0.14
 
 `main` includes encrypted USB pairing, separate friend chats, device signatures,
 used-pad cleanup, compatible signed updates, per-chat relay access/revocation and
-compact Android/e-ink UI improvements. The signed v0.10 test APK has been delivered
-privately using the same saved temporary signer as previous signed test builds.
-Production signer custody and independent review remain pending.
+compact Android/e-ink UI improvements. Versions 0.11–0.14 add opt-in background
+receiving, recoverable pad renewal, selectable pads, experimental NFC-assisted
+Wi-Fi pairing, encrypted drafts and a Chats-first interface. See
+[v0.14 behavior and limits](docs/PAGER_V014.md). Test APK signing and production
+signer custody are distinct; independent review remains pending.
+
+The active [security and data-lifecycle development plan](docs/SECURITY_DEVELOPMENT_PLAN.md)
+tracks the next work, with [progress and next steps](docs/SECURITY_PROGRESS.md) and
+[v0.14 inventory/findings](docs/SECURITY_INVENTORY_V014.md). Emergency local/peer
+wiping is planned, not implemented. Historical version sections below are not
+descriptions of the current interface.
 
 Update **both clients first**, then pull/redeploy the existing Portainer stack using
 `refs/heads/main` and `deploy/portainer-stack.yml`, preserving its data volume and token.
@@ -35,6 +43,9 @@ as historical material; its debug APK is not the current installation path.
 - No telemetry, analytics, or automatic cloud backup. The offline QR scanner uses the open-source ZXing SDK; see [third-party notices](docs/THIRD_PARTY_NOTICES.md).
 
 ## Documents
+- [Active security development plan](docs/SECURITY_DEVELOPMENT_PLAN.md)
+- [Security progress and next task](docs/SECURITY_PROGRESS.md)
+- [v0.14 security inventory and findings](docs/SECURITY_INVENTORY_V014.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Protocol sketch](docs/PROTOCOL.md)
 - [Jericho review](docs/JERICHO_REVIEW.md)
