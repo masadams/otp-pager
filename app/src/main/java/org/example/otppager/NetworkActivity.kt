@@ -242,9 +242,10 @@ class NetworkActivity : Activity() {
     }
     private fun showTerminal() {
         if (::composer.isInitialized) persistDraft()
-        visibleContact?.close(); visibleContact = null
-        needsTerminal = false
         generation++
+        closeVisibleContact()
+        val openingGeneration = generation
+        needsTerminal = false
         latest = null; rendered = null; busy = false; errorLoading = false
         draftChatId = null; draftRoom = null; draftSaved = false
         root = column().apply { isFocusableInTouchMode = true; setBackgroundColor(paper); setPadding(dp(if (compact) 12 else 20), dp(8), dp(if (compact) 12 else 20), dp(6)) }
@@ -534,8 +535,11 @@ class NetworkActivity : Activity() {
                 intent.removeExtra("openUnread")
             }
             loadedChat = book!!.active().id
-            val lease = SecureStore(this, loadedChat!!).operation()
-            visibleContact = lease
+            val lease = synchronized(VaultLifecycle.lock) {
+                check(active && unlocked && generation == openingGeneration) { "Conversation screen closed" }
+                visibleContact?.close()
+                SecureStore(this, loadedChat!!).operation().also { visibleContact = it }
+            }
             lease.onInvalidate { handler.post { if (visibleContact === lease) closeRetiredConversation() } }
             engine = checkNotNull(book).engine()
             engine?.state?.let { s ->
@@ -1175,7 +1179,7 @@ class NetworkActivity : Activity() {
             runOnUiThread {
                 if (!active || !unlocked || isFinishing || taskGeneration != generation) return@runOnUiThread
                 if (visibleContact?.cancelled == true) { closeRetiredConversation(); return@runOnUiThread }
-                val publish = {
+                val publish: () -> Unit = {
                     if (config != null) {
                         urlField.setText(config!!.getString("endpoint")); tokenField.setText(config!!.getString("token"))
                         secretField.setText(config!!.getString("secret")); roleGroup.check(if (config!!.getString("role") == "A") R.id.station_a else R.id.station_b)
@@ -1247,17 +1251,20 @@ class NetworkActivity : Activity() {
         pairingDialog?.dismiss(); pairingDialog = null
         generation++; active = false; StationRuntime.uiVisible = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
         systemBack?.close(); systemBack = null
-        visibleContact?.close(); visibleContact = null
+        closeVisibleContact()
         clearPrivateState()
         worker.execute { engine = null; book = null }
         super.onStop()
+    }
+    private fun closeVisibleContact() = synchronized(VaultLifecycle.lock) {
+        visibleContact?.close(); visibleContact = null
     }
     /** Main-thread disposal; queued work cannot publish after the generation changes. */
     private fun closeRetiredConversation() {
         generation++; handler.removeCallbacks(poll); handler.removeCallbacks(saveDraft)
         openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
         pairingDialog?.dismiss(); pairingDialog = null
-        visibleContact?.close(); visibleContact = null
+        closeVisibleContact()
         engine = null; book = null
         clearPrivateState()
         // Recovery/fresh-pairing status UI is a later slice; never leave a stale conversation visible.
