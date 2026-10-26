@@ -63,7 +63,7 @@ class RetirementUiTest {
             await { a.isDestroyed }
             instrumentation.runOnMainSync {
                 assertFalse(dialog.isShowing)
-                for (name in listOf("composer", "tokenField", "secretField", "peerCardField"))
+                for (name in listOf("composer", "urlField", "tokenField", "secretField", "peerCardField"))
                     assertEquals("Retained text in $name", "", (field(a, name) as EditText).text.toString())
                 assertNull(field(a, "engine")); assertNull(field(a, "latest")); assertNull(field(a, "rendered"))
                 assertNull(field(a, "draftChatId")); assertNull(field(a, "draftRoom"))

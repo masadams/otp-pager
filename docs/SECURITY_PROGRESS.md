@@ -148,7 +148,13 @@ invalidation with a deliberately blocked normal worker. Signed-upgrade checks no
 verify the exact old index after reversing only the documented metadata migration;
 operational state remains byte/hash checked. Latest-head CI must validate this slice;
 earlier green results do not cover it. Local relay 13/13, Python syntax and whitespace
-passed. Results and exact head are recorded in PR #10.
+passed. The first new-slice Android10 run found two fixture failures: an existing
+corruption test queried the now-invalid durable index during cleanup, and the new
+unknown-index test tried to reread a version rejected by SecureStore itself. Cleanup
+now uses pre-corruption IDs; the unknown-index test uses version 4 (supported by the
+outer vault but invalid for a contact index). Neither failure is counted as validation.
+The same head passed signed-upgrade checks. Fresh CI is required after fixture fixes
+and extended UI metadata clearing. Results and exact head are recorded in PR #10.
 
 No user-facing retirement/replacement control is exposed yet. The current open screen
 closes on internal retirement; the dedicated retired-contact/recovery status screen

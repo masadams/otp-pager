@@ -119,6 +119,7 @@ class ChatBookTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val index = "index-test"; val legacy = "index-legacy"
         var book: ChatBook? = null
+        var cleanupIds = emptyList<String>()
         try {
             SecureStore(context, index).forget(); SecureStore(context, "$index-claims").forget()
             SecureStore(context, legacy).forget(); SecureStore(context, legacy).sibling("pads").forget()
@@ -128,12 +129,14 @@ class ChatBookTest {
             try { book.add("Alice\u202e", null); fail("Bidi name accepted") } catch (_: IllegalArgumentException) {}
             for (i in 2..ChatBook.MAX_CHATS) book.add("Friend $i", null)
             try { book.add("Overflow", null); fail("Unbounded chat count") } catch (_: IllegalStateException) {}
+            cleanupIds = book.chats().map { it.id }
             val saved = SecureStore(context, index).load()!!
             SecureStore(context, index).save(JSONObject(saved.toString()).put("active", "unknown-chat"))
             try { ChatBook(context, index, legacy); fail("Damaged index silently reset") } catch (_: IllegalStateException) {}
             assertEquals("unknown-chat", SecureStore(context, index).load()!!.getString("active"))
         } finally {
-            book?.chats()?.forEach { SecureStore(context, it.id).forget(); SecureStore(context, it.id).sibling("pads").forget() }
+            // Cleanup cannot query the deliberately corrupted index through a live ChatBook.
+            (cleanupIds.ifEmpty { book?.chats()?.map { it.id } ?: emptyList() }).forEach { SecureStore(context, it).forget(); SecureStore(context, it).sibling("pads").forget() }
             SecureStore(context, index).forget(); SecureStore(context, "$index-claims").forget()
         }
     }

@@ -1280,7 +1280,12 @@ class NetworkActivity : Activity() {
         if (::messages.isInitialized) messages.removeAllViews()
         if (::screens.isInitialized) screens.clearPrivate()
         if (::chatButton.isInitialized) chatButton.text = "Chats"
+        if (::urlField.isInitialized) urlField.text.clear()
         if (::tokenField.isInitialized) { tokenField.text.clear(); secretField.text.clear() }
+        if (::status.isInitialized) status.text = ""
+        if (::stationLabel.isInitialized) stationLabel.text = ""
+        if (::indicators.isInitialized) indicators.text = ""
+        if (::count.isInitialized) count.text = ""
         latest = null; rendered = null; importedDeviceCard = null
         if (::peerCardField.isInitialized) peerCardField.text.clear()
         if (::identityCard.isInitialized) identityCard.text = ""

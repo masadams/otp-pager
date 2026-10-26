@@ -37,9 +37,9 @@ class RetiredContactTest {
             assertEquals(3, SecureStore(context, index).load()!!.getInt("version"))
             assertArrayEquals(vault, File(context.noBackupFilesDir, "$id.bin").readBytes())
             assertArrayEquals(ledger, File(context.noBackupFilesDir, "$id-pads.bin").readBytes())
-            SecureStore(context, index).save(old.put("version", 99))
+            SecureStore(context, index).save(old.put("version", 4))
             try { ChatBook(context, index, id); fail("Unknown index reset") } catch (_: IllegalStateException) {}
-            assertEquals(99, SecureStore(context, index).load()!!.getInt("version"))
+            assertEquals(4, SecureStore(context, index).load()!!.getInt("version"))
         } finally { cleanup(index, listOf(id)) }
     }
     @Test fun replacementIsEmptyKeepsStableEntryAndClaimsAndCannotBeUndoneByStaleBook() {
