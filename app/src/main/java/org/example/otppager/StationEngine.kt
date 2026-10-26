@@ -13,10 +13,10 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     private var cacheExpiry = 0L
     init { state?.let { validate(it); claims?.migrate(store); transaction { next -> if (next.has("pad") && next.getInt("version") == 2) next.put("version", 3).put("cursor", 0L).put("epoch", ""); prune(next) } } }
     private fun validate(s: JSONObject) {
-        check(s.getInt("version") in 2..5)
-        check(s.getInt("version") !in listOf(3, 5) || s.has("pad"))
+        check(s.getInt("version") in 2..6)
+        check(s.getInt("version") !in listOf(3, 5, 6) || s.has("pad"))
         if (s.has("ownDevice")) {
-            check(s.getInt("version") in 4..5 && s.has("pad"))
+            check(s.getInt("version") in 4..6 && s.has("pad"))
             identity.check(s.getString("ownDevice"))
             if (s.has("peerDevice")) {
                 IdentityProtocol.publicKey(s.getString("peerDevice"))
@@ -32,7 +32,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         if (s.has("pad")) {
             val pad = java.util.Base64.getDecoder().decode(s.getString("pad"))
             try {
-                check(pad.size == PadProtocol.MATERIAL_BYTES)
+                check(PadProtocol.validSize(pad.size))
                 check(Regex("[a-f0-9]{32}").matches(s.getString("padId")))
                 // Schema 5's original ID is authenticated by the vault; retired material no longer hashes to it.
                 if (s.getInt("version") < 5) check(PadProtocol.hex(PadProtocol.id(pad)) == s.getString("padId"))
@@ -40,7 +40,9 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             }
             finally { pad.fill(0) }
         }
+        check((s.optJSONObject("acceptedPackets")?.length() ?: 0) <= PadProtocol.MAX_SLOTS)
         check(s.getJSONArray("outbox").length() <= 150 && s.getJSONArray("inbox").length() <= 100)
+        check(!s.has("lastSentDraft") || ChatDraft.validId(s.getString("lastSentDraft")))
     }
     private fun transaction(change: (JSONObject) -> Unit) {
         val next = JSONObject(checkNotNull(state).toString())
@@ -80,6 +82,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         validate(next); store.save(next); state = next; cachedView = null
     }
     private var stagedCable: JSONObject? = null
+    private var stagedRenewal = false
     /** Only after the user explicitly approves replacing the current conversation. */
     fun resetForCable() {
         val previous = checkNotNull(state)
@@ -98,13 +101,92 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             "This station already has a pairing or traffic. Preserve it; start a fresh pairing on both devices before replacing it."
         }
     }
-    fun cableIdentity(): String { requireCableEligible(); return identity.card(create = true) }
+    fun requireRenewalIdentity() {
+        val s = checkNotNull(state) { "Pair this chat first" }
+        check(s.has("pad") && s.has("ownDevice") && s.has("peerDevice") && !s.optBoolean("relayRevoked")) { "A verified paired chat is required" }
+        identity.check(s.getString("ownDevice"))
+    }
+    fun requireRenewalEligible() {
+        requireRenewalIdentity()
+        check(items(state!!.getJSONArray("outbox")).none { it.getString("kind") == "text" && it.getString("status") in listOf("queued", "relayed") && System.currentTimeMillis() - it.getLong("time") < 86400000 }) { "Confirm outstanding messages over USB before renewing" }
+    }
+    private fun packetHash(wire: String) = PadProtocol.hex(java.security.MessageDigest.getInstance("SHA-256").digest(wire.toByteArray(Charsets.US_ASCII)))
+    private fun rememberPacket(s: JSONObject, id: String, wire: String) {
+        val hashes = s.optJSONObject("acceptedPackets") ?: JSONObject().also { s.put("acceptedPackets", it) }
+        hashes.put(id, packetHash(wire))
+    }
+    fun renewalTraffic(): JSONArray {
+        requireRenewalIdentity(); transaction(::prune)
+        return JSONArray(items(state!!.getJSONArray("outbox")).filter { it.getString("kind") == "text" && it.getString("status") in listOf("queued", "relayed") }.map { it.getString("packet") })
+    }
+    /** Existing device-authenticated USB session only. No receipt/pad allocation is needed. */
+    fun receiveRenewalTraffic(packets: JSONArray): JSONArray {
+        requireRenewalIdentity(); require(packets.length() <= 150)
+        val acknowledged = JSONArray()
+        transaction { next ->
+            val role = if (next.getString("role") == "A") 'B' else 'A'
+            val master = Protocol.master(next.getString("secret"))
+            try {
+                for (i in 0 until packets.length()) {
+                    val wire = packets.getString(i); require(wire.length <= 5600 && packetRole(next, wire) == role)
+                    val known = items(next.getJSONArray("inbox")).firstOrNull { it.getString("packet") == wire }
+                    val hash = packetHash(wire)
+                    val hashes = next.optJSONObject("acceptedPackets")
+                    val knownId = known?.getString("id") ?: hashes?.let { map -> map.keys().asSequence().firstOrNull { map.getString(it) == hash } }
+                    if (knownId != null) { acknowledged.put(knownId); continue }
+                    val decoded = open(next, master, wire, role)
+                    val payload = JSONObject(deviceBody(next, decoded, role, enforce = true))
+                    require(payload.optString("kind") == "text" && payload.opt("text") is String && payload.getString("text").toByteArray(Charsets.UTF_8).size in 1..2048)
+                    check(window(next).accepts(decoded.counter)) { "Saved evidence for this old packet is unavailable; keep the current pad and sync or let the pending message expire" }
+                    next.getJSONArray("inbox").put(JSONObject().put("packet", wire).put("id", decoded.id).put("read", false).put("time", System.currentTimeMillis()))
+                    cacheOpened(next, wire, decoded); rememberPacket(next, decoded.id, wire)
+                    setWindow(next, window(next).accept(decoded.counter)); acknowledged.put(decoded.id)
+                }
+                prune(next)
+            } finally { master.fill(0) }
+        }
+        return acknowledged
+    }
+    fun acknowledgeRenewalTraffic(ack: JSONArray, sent: JSONArray) {
+        require(ack.length() <= 150 && sent.length() <= 150)
+        val wires = (0 until sent.length()).map { sent.getString(it) }.toSet()
+        val expected = items(state!!.getJSONArray("outbox")).filter { it.getString("kind") == "text" && it.getString("packet") in wires }.map { it.getString("id") }.toSet()
+        val received = (0 until ack.length()).map { ack.getString(it) }.toSet()
+        check(expected == received && ack.length() == received.size && expected.size == wires.size) { "USB message confirmation did not match" }
+        transaction { next -> items(next.getJSONArray("outbox")).filter { it.getString("id") in received && it.getString("kind") == "text" }.forEach { it.put("status", "delivered") } }
+    }
+    fun beginRenewal() { requireRenewalEligible(); transaction { it.put("version", 6).put("renewalPaused", true) } }
+    fun cableIdentity(renew: Boolean = false): String {
+        if (renew) { requireRenewalIdentity(); return state!!.getString("ownDevice") }
+        requireCableEligible(); return identity.card(create = true)
+    }
+    fun stageRenewal(setup: JSONObject, peer: String) {
+        requireRenewalEligible()
+        val old = checkNotNull(state)
+        check(old.optBoolean("renewalPaused") && peer == old.getString("peerDevice"))
+        check(setup.getString("secret") == old.getString("secret") && setup.getString("endpoint") == old.getString("endpoint"))
+        val history = JSONArray(view().messages.map { m -> JSONObject().put("incoming", m.incoming).put("text", m.text).put("status", m.status)
+            .put("time", m.time).put("unread", m.unread).put("deviceVerified", m.deviceVerified) })
+        val master = Protocol.master(old.getString("secret"))
+        val bundle = java.util.Base64.getDecoder().decode(setup.getString("pad"))
+        val pad = try { PadProtocol.material(bundle, PadProtocol.binding(master)) } finally { bundle.fill(0); master.fill(0) }
+        try {
+            val id = PadProtocol.hex(PadProtocol.id(pad))
+            check(id != old.getString("padId"))
+            claims?.pad(id, store.namespace); padLedger.register(id, PadProtocol.slots(pad))
+            stagedCable = JSONObject(old.toString()).put("version", 6).put("history", history).put("padId", id)
+                .put("pad", java.util.Base64.getEncoder().encodeToString(pad)).put("counter", 0).put("high", 0).put("seen", JSONArray())
+                .put("inbox", JSONArray()).put("outbox", JSONArray()).put("opened", JSONObject()).put("acceptedPackets", JSONObject()).put("cableComplete", false)
+            stagedCable!!.remove("readyPacket"); stagedCable!!.remove("readyId")
+            stagedRenewal = true
+        } finally { pad.fill(0) }
+    }
     fun signCable(bytes: ByteArray) = identity.sign(bytes)
     fun stageCable(setup: JSONObject, role: String, peer: String) {
         requireCableEligible(); check(stagedCable == null)
         val endpoint = Protocol.endpoint(setup.getString("endpoint")); val token = Protocol.token(setup.getString("token"))
         val secret = setup.getString("secret"); val master = Protocol.master(secret)
-        require(setup.getString("pad").length <= 1400000)
+        require(setup.getString("pad").length <= 5600000)
         val bundle = java.util.Base64.getDecoder().decode(setup.getString("pad"))
         val pad = try { PadProtocol.material(bundle, PadProtocol.binding(master)) } finally { master.fill(0); bundle.fill(0) }
         try {
@@ -112,8 +194,8 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             val own = identity.card(); require(peer != own)
             val id = PadProtocol.hex(PadProtocol.id(pad))
             claims?.room(secret, store.namespace, existing = false); claims?.pad(id, store.namespace)
-            padLedger.register(id)
-            stagedCable = JSONObject().put("version", 4).put("endpoint", endpoint).put("token", token).put("secret", secret)
+            padLedger.register(id, PadProtocol.slots(pad))
+            stagedCable = JSONObject().put("version", if (pad.size > PadProtocol.MATERIAL_BYTES) 6 else 4).put("endpoint", endpoint).put("token", token).put("secret", secret)
                 .put("role", role).put("counter", 0L).put("cursor", 0L).put("high", 0L).put("seen", JSONArray())
                 .put("outbox", JSONArray()).put("inbox", JSONArray()).put("epoch", "")
                 .put("pad", java.util.Base64.getEncoder().encodeToString(pad)).put("padId", id)
@@ -122,11 +204,11 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         } finally { pad.fill(0) }
     }
     fun commitCable(complete: Boolean) {
-        requireCableEligible()
+        if (stagedRenewal) requireRenewalEligible() else requireCableEligible()
         val next = checkNotNull(stagedCable) { "No staged pairing" }.put("cableComplete", complete)
-        validate(next); store.save(next); state = next; stagedCable = null; cachedView = null
+        validate(next); store.save(next); state = next; stagedCable = null; stagedRenewal = false; cachedView = null
     }
-    fun finishCable() = transaction { it.put("cableComplete", true) }
+    fun finishCable() = transaction { it.put("cableComplete", true).remove("renewalPaused") }
     fun pairingInvite(): PairingInvite {
         val s = checkNotNull(state) { "Save this station's link first" }
         return PairingInvite(s.getString("endpoint"), s.getString("token"), s.getString("secret"), if (s.getString("role") == "A") "B" else "A")
@@ -140,14 +222,15 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         try {
             val id = PadProtocol.hex(PadProtocol.id(pad))
             claims?.pad(id, store.namespace)
-            padLedger.register(id) // A failed installation retires the bundle, never makes it reusable.
-            transaction { it.put("version", 3).put("pad", java.util.Base64.getEncoder().encodeToString(pad)).put("padId", id).put("cursor", 0L).put("epoch", "") }
+            padLedger.register(id, PadProtocol.slots(pad)) // A failed installation retires the bundle, never makes it reusable.
+            transaction { it.put("version", if (pad.size > PadProtocol.MATERIAL_BYTES) 6 else 3).put("pad", java.util.Base64.getEncoder().encodeToString(pad)).put("padId", id).put("cursor", 0L).put("epoch", "") }
         } finally { pad.fill(0) }
     }
-    fun generatePad(): ByteArray {
+    fun generatePad(): ByteArray = generatePad(PadProtocol.MATERIAL_BYTES)
+    fun generatePad(size: Int): ByteArray {
         val s = checkNotNull(state); require(s.getString("role") == "A") { "Generate on Station A; import on Station B" }
         val master = Protocol.master(s.getString("secret"))
-        val bundle = try { PadProtocol.generate(PadProtocol.binding(master)) } finally { master.fill(0) }
+        val bundle = try { PadProtocol.generate(PadProtocol.binding(master), size) } finally { master.fill(0) }
         try { installPad(bundle); return bundle } catch (e: Exception) { bundle.fill(0); throw e }
     }
     /** Local identity exchange uses public cards only. No relay, pad slots, or liveness claim. */
@@ -209,8 +292,8 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             }
         }
     }
-    fun markRead() { if (state?.let { items(it.getJSONArray("inbox")).any { entry -> !entry.optBoolean("read", false) } } == true)
-        transaction { s -> items(s.getJSONArray("inbox")).forEach { it.put("read", true) } } }
+    fun markRead() { if ((state?.let { items(it.getJSONArray("inbox")).any { entry -> !entry.optBoolean("read", false) } || items(it.optJSONArray("history") ?: JSONArray()).any { entry -> entry.optBoolean("unread") } }) == true)
+        transaction { s -> items(s.getJSONArray("inbox")).forEach { it.put("read", true) }; items(s.optJSONArray("history") ?: JSONArray()).forEach { it.put("unread", false) } } }
     private fun packetRole(s: JSONObject, wire: String) = if (s.has("pad")) PadProtocol.role(wire) else Protocol.role(wire)
     private fun open(s: JSONObject, master: ByteArray, wire: String, role: Char): Protocol.Opened {
         if (!s.has("pad")) return Protocol.open(master, wire, role)
@@ -224,7 +307,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     }
     private fun retained(s: JSONObject, master: ByteArray, wire: String, role: Char): Protocol.Opened {
         val cached = s.optJSONObject("opened")?.optJSONObject(wire)
-        if (cached != null && s.getInt("version") == 5)
+        if (cached != null && s.getInt("version") >= 5)
             return Protocol.Opened(cached.getLong("counter"), cached.getString("id"), cached.getString("payload"))
         return open(s, master, wire, role)
     }
@@ -239,7 +322,8 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
                 entry.optJSONObject("receipt")?.let { wires.add(it.getString("packet")) }
             }
             if (s.has("readyPacket")) wires.add(s.getString("readyPacket"))
-            val previous = if (s.getInt("version") == 5) s.optJSONObject("opened") else null
+            for (entry in items(s.getJSONArray("inbox"))) rememberPacket(s, entry.getString("id"), entry.getString("packet"))
+            val previous = if (s.getInt("version") >= 5) s.optJSONObject("opened") else null
             val kept = JSONObject()
             for (wire in wires) {
                 val cached = previous?.optJSONObject(wire)
@@ -251,7 +335,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             for (counter in 1..padLedger.high(s.getString("padId"))) PadProtocol.retire(pad, own, counter)
             val peer = if (own == 'A') 'B' else 'A'
             for (counter in window(s).received) PadProtocol.retire(pad, peer, counter)
-            s.put("opened", kept).put("pad", java.util.Base64.getEncoder().encodeToString(pad)).put("version", 5)
+            s.put("opened", kept).put("pad", java.util.Base64.getEncoder().encodeToString(pad)).put("version", maxOf(5, s.getInt("version")))
         } finally { pad.fill(0) }
     }
     fun forget() { store.forget(); state = null; cachedView = null }
@@ -303,6 +387,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     }
     private fun prune(s: JSONObject) {
         val now = System.currentTimeMillis()
+        if (s.has("history")) s.put("history", JSONArray(items(s.getJSONArray("history")).filter { now - it.getLong("time") < 86400000 }.takeLast(100)))
         val out = items(s.getJSONArray("outbox"))
         out.filter { it.getString("status") == "queued" && now - it.getLong("time") >= 86400000 }
             .forEach { it.put("status", "expired") }
@@ -311,15 +396,22 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         s.put("outbox", JSONArray((final + pending).sortedBy { it.getLong("time") }))
         s.put("inbox", JSONArray(items(s.getJSONArray("inbox")).filter { now - it.getLong("time") < 86400000 }.takeLast(100)))
     }
-    fun send(text: String) {
+    fun send(text: String) = sendText(text, null)
+    /** Accepted draft ID commits with its ciphertext, so failed draft cleanup cannot resurrect a sent draft. */
+    fun sendDraft(text: String, draftId: String) {
+        require(ChatDraft.validId(draftId)); sendText(text, draftId)
+    }
+    private fun sendText(text: String, draftId: String?) {
         require(text.toByteArray(Charsets.UTF_8).size in 1..2048) { "Message must be 1–2048 UTF-8 bytes" }
         transaction { s ->
+            check(!s.optBoolean("renewalPaused")) { "Finish USB pad renewal on both devices first" }
             check(!s.optBoolean("relayRevoked")) { "Chat access revoked; pair a fresh chat on both devices" }
             check(s.optBoolean("cableComplete", true)) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }
             check(!s.has("pad") || (s.optBoolean("padVerified") && s.optBoolean("peerReady"))) { "Open Pad: compare codes and wait for the other station to verify and sync" }
             check(!s.has("ownDevice") || s.has("peerDevice")) { "Finish physical device verification before sending" }
             prune(s)
             queue(s, JSONObject().put("kind", "text").put("text", text), "text")
+            if (draftId != null) s.put("lastSentDraft", draftId)
         }
     }
     /** Repost retained ciphertext, preserving IDs, pad reservations and original expiry. */
@@ -366,6 +458,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         received.put("receiptRetryAt", now)
     }
     fun clearHistory() = transaction { s ->
+        s.remove("history")
         s.put("inbox", JSONArray())
         s.put("outbox", JSONArray(items(s.getJSONArray("outbox")).filter { it.getString("status") == "queued" }))
         // Do not clear the counter or replay window when removing message history.
@@ -381,6 +474,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         } finally { master.fill(0) }
     }
     fun sync(): String {
+        check(state?.optBoolean("renewalPaused") != true) { "USB renewal paused; reconnect both devices to recover" }
         check(state?.optBoolean("relayRevoked") != true) { "Chat access revoked; pair a fresh chat on both devices" }
         check(state?.optBoolean("cableComplete", true) != false) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }
         if (state != null) transaction(::prune)
@@ -445,7 +539,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
                                 if (next.has("pad")) cacheOpened(next, wire, decoded)
                                 next.getJSONArray("inbox").put(received)
                                 // Exhaustion must not prevent receiving. Last available slots can acknowledge only a finite number of messages.
-                                if (!next.has("pad") || padLedger.high(next.getString("padId")) < PadProtocol.SLOTS)
+                                if (!next.has("pad") || padLedger.high(next.getString("padId")) < padCapacity(next))
                                     received.put("receipt", JSONObject(queue(next, JSONObject().put("kind", "receipt").put("for", decoded.id), "receipt").toString()))
                                 setWindow(next, window(next).accept(decoded.counter))
                             } else if (kind == "ready" && next.has("pad") && payload?.optInt("protocol") == 4) {
@@ -482,6 +576,10 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         val setupComplete: Boolean get() = pairingComplete && padCheck != null && padVerified && peerReady && peerDevice != null
         val canSend: Boolean get() = !relayRevoked && pairingComplete && role != "—" && padRemaining != 0 && (padCheck == null || (padVerified && peerReady)) && (ownDevice == null || peerDevice != null)
     }
+    private fun padCapacity(s: JSONObject): Int {
+        val pad = java.util.Base64.getDecoder().decode(s.getString("pad"))
+        return try { PadProtocol.slots(pad) } finally { pad.fill(0) }
+    }
     fun view(): View {
         cachedView?.let { if (System.currentTimeMillis() < cacheExpiry) return it }
         val s = state ?: return View("—", "NOT PAIRED", emptyList(), 0)
@@ -489,6 +587,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         return try {
             val own = s.getString("role")[0]; val peer = if (own == 'A') 'B' else 'A'
             val rows = mutableListOf<Message>()
+            for (entry in items(s.optJSONArray("history") ?: JSONArray()).filter { System.currentTimeMillis() - it.getLong("time") < 86400000 }) rows.add(Message(entry.getBoolean("incoming"), entry.getString("text"), entry.getString("status"), entry.getLong("time"), entry.optBoolean("unread"), entry.optBoolean("deviceVerified")))
             for (entry in items(s.getJSONArray("inbox"))) {
                 if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
                 val decoded = retained(s, master, entry.getString("packet"), peer)
@@ -504,11 +603,11 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             cacheExpiry = rows.minOfOrNull { it.time + 86400000L } ?: Long.MAX_VALUE
             View(own.toString(), Protocol.fingerprint(master), rows.sortedBy { it.time }.takeLast(100),
                 items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" },
-                items(s.getJSONArray("inbox")).count { !it.optBoolean("read", false) },
-                if (s.has("pad")) PadProtocol.SLOTS - padLedger.high(s.getString("padId")).toInt() else null,
+                items(s.getJSONArray("inbox")).count { !it.optBoolean("read", false) } + items(s.optJSONArray("history") ?: JSONArray()).count { it.optBoolean("unread") },
+                if (s.has("pad")) padCapacity(s) - padLedger.high(s.getString("padId")).toInt() else null,
                 s.optString("padId").takeIf { it.isNotEmpty() }, s.optBoolean("padVerified"), s.optBoolean("peerReady"),
                 s.optString("ownDevice").takeIf { it.isNotEmpty() }, s.optString("peerDevice").takeIf { it.isNotEmpty() },
-                if (s.has("ownDevice")) identity.protection() else null, s.optBoolean("cableComplete", true),
+                if (s.has("ownDevice")) identity.protection() else null, s.optBoolean("cableComplete", true) && !s.optBoolean("renewalPaused"),
                 !s.has("pad") && s.getLong("counter") == 0L && s.getLong("high") == 0L && s.getJSONArray("outbox").length() == 0 && s.getJSONArray("inbox").length() == 0,
                 rows.count { !it.incoming && it.status == "relayed" }, s.optBoolean("relayScoped"), s.optBoolean("relayRevoked")).also { cachedView = it }
         } finally { master.fill(0) }

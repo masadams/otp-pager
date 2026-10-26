@@ -42,12 +42,12 @@ def main():
             for key, value in prior_env.items():
                 if value is None: os.environ.pop(key, None)
                 else: os.environ[key] = value
-        # Preserve the newly built release, then install the actual previous v0.9 source
+        # Preserve the newly built release, then install the actual previous v0.13 source
         # under the same disposable signer. No owner signing material enters CI.
         second_apk = root / "second.apk"
         shutil.copyfile("app/build/outputs/apk/release/app-release.apk", second_apk)
         baseline = root / "baseline"
-        run(["git", "worktree", "add", "--detach", baseline, "4308ac9c82d1384ca71a73b76aa3648611e14ac4"])
+        run(["git", "worktree", "add", "--detach", baseline, "382a83811721d2665bb15a3ac6526e9dd4cf74c7"])
         subprocess.run(["gradle", "--no-daemon", "-p", str(baseline), ":app:assembleRelease"], env=env, check=True)
         first_apk = root / "first.apk"
         shutil.copyfile(baseline / "app/build/outputs/apk/release/app-release.apk", first_apk)

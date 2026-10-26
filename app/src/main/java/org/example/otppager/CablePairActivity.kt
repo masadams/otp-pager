@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 /** Foreground-only physical pairing wizard. Never starts merely because a cable is attached. */
 class CablePairActivity : Activity() {
     private val handler = Handler(Looper.getMainLooper())
-    private val worker = Executors.newSingleThreadExecutor()
+    private val worker = StationRuntime.worker
     private val cancelled = AtomicBoolean(false)
     private lateinit var manager: UsbManager
     private lateinit var status: TextView
@@ -37,6 +37,8 @@ class CablePairActivity : Activity() {
     @Volatile private var approved = false
     private var expireAt = 0L
     private lateinit var chatId: String
+    private var renewal = false
+    private var padSize = PadProtocol.MATERIAL_BYTES
     private val permissionAction get() = "$packageName.USB_PAIR_PERMISSION"
     private fun note(value: String) { runOnUiThread { if (active && !cancelled.get()) status.text = value } }
     private val receiver = object : BroadcastReceiver() {
@@ -59,21 +61,33 @@ class CablePairActivity : Activity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        renewal = intent.getBooleanExtra("renew", false)
+        padSize = intent.getIntExtra("padSize", PadProtocol.MATERIAL_BYTES)
+        require(PadProtocol.validSize(padSize))
         chatId = intent.getStringExtra("chat") ?: run { finish(); return }
+        StationRuntime.pairingOpen = true
         window.protectPrivateContent()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         manager = getSystemService(UsbManager::class.java)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 48, 32, 24); setBackgroundColor(Color.WHITE) }
         fun label(value: String, size: Float = 17f) = TextView(this).apply { text = value; textSize = size; setTextColor(Color.BLACK); typeface = Typeface.MONOSPACE; setPadding(0, 12, 0, 20) }
-        root.addView(label("PAIR DEVICES", 25f))
+        root.addView(label(if (renewal) "Renew message keys" else "Pair devices", 25f))
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val scroll = ScrollView(this).apply { addView(body) }; root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
-        body.addView(label("Open this screen on both devices, then connect a USB data cable. At least one station must have its relay address and access token saved. Approve Android's USB prompts. After both confirm, roles, fresh secret, pad and identities transfer automatically over an encrypted USB session. Both devices need version 0.8 or later."))
-        status = label("Waiting for the other device…"); body.addView(status)
-        confirm = Button(this).apply { text = "Codes match · Pair devices"; isEnabled = false; filterTouchesWhenObscured = true
+        body.addView(label("Open pairing on both devices and connect a USB data cable. Keep both screens open. You will compare codes before anything is paired."))
+        if (renewal) body.addView(label("Choose the same friend on both devices. Your saved history and verified device identities stay in place."))
+        body.addView(label("Message keys: ${padSize / PadProtocol.MATERIAL_BYTES} MiB", 14f))
+        status = label("Waiting for your friend's device…"); body.addView(status)
+        body.addView(Button(this).apply { text = "About USB pairing"; setOnClickListener {
+            val dialog = AlertDialog.Builder(this@CablePairActivity).setTitle("Physical pairing")
+                .setMessage("One device needs the server address and access token saved. Approve Android's USB permission prompts. Compare every group of the confirmation code on BOTH physical screens.\n\nAfter both approve, the encrypted connection exchanges server setup, fresh message keys and public device identities. Private signing keys remain on their own device. USB host direction selects pad size. Both devices need version 0.11 or later.\n\nA data cable and compatible Android USB host/accessory modes are required. This experimental protocol uses conventional encryption and is not independently audited or post-quantum secure. If renewal is interrupted, reconnect both devices on this screen to recover.")
+                .setPositiveButton("Close", null).create()
+            dialog.window?.protectPrivateContent(); dialog.show()
+        } })
+        confirm = Button(this).apply { text = if (renewal) "Codes match · Renew" else "Codes match · Pair"; isEnabled = false; filterTouchesWhenObscured = true
             setOnClickListener { approved = true; isEnabled = false; confirmation?.countDown() } }; root.addView(confirm)
         finish = Button(this).apply { text = "Cancel"; setOnClickListener { finish() } }; root.addView(finish)
-        body.addView(label("A data-capable cable and compatible USB host/accessory modes are required. No USB debugging. Cancel if the full confirmation codes differ.", 13f))
+        body.addView(label("Approve Android's USB prompts. Cancel if the full codes differ.", 13f))
         setContentView(root)
         val events = IntentFilter(permissionAction).apply { addAction(UsbManager.ACTION_USB_DEVICE_DETACHED); addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED) }
         androidx.core.content.ContextCompat.registerReceiver(this, receiver, events, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
@@ -110,23 +124,24 @@ class CablePairActivity : Activity() {
             var engine: StationEngine? = null
             try {
                 val station = ChatBook(this).engine(chatId); engine = station
-                station.requireCableEligible()
+                if (renewal) station.requireRenewalIdentity() else station.requireCableEligible()
                 val link = open(); channel = link
                 if (cancelled.get()) { link.close(); error("Cancelled") }
                 link.use {
                     CableProtocol.run(host, it.input, it.output, station, review = { code, endpoint ->
                         val latch = CountDownLatch(1); confirmation = latch
                         runOnUiThread { if (active && !cancelled.get()) {
-                            status.text = "COMPARE ON BOTH DEVICES\\n\\n$code\\n\\nRelay: $endpoint\\n\\nConfirm only if ALL groups match the other physical device. This verifies the pad and both device identities together.".replace("\\n", "\n")
+                            status.text = "Compare every group on both screens:\n\n$code\n\nServer: $endpoint\n\nApprove only if every group matches."
                             confirm.isEnabled = true
                         } }
                         check(latch.await(90, TimeUnit.SECONDS) && approved && !cancelled.get()) { "Confirmation cancelled or timed out" }
-                    }, progress = ::note)
+                    }, progress = ::note, renew = renewal, size = padSize)
                 }
-                runOnUiThread { if (active && !cancelled.get()) { finish.text = "Done · open messages"; confirm.isEnabled = false } }
+                runOnUiThread { if (active && !cancelled.get()) { status.text = if (renewal) "Keys renewed. Your chat is ready." else "Paired. You're ready to chat."; finish.text = "Open conversation"; confirm.isEnabled = false } }
             } catch (failure: Exception) {
                 val saved = engine?.state?.has("pad") == true
                 note(if (failure is CableProtocol.UpgradeRequired) "${failure.message}. Close this screen and update both devices before retrying."
+                    else if (renewal) "Renewal paused. History and identities are retained. Reopen Renew pad for this friend on BOTH devices and reconnect USB to recover. No saved message is silently discarded."
                     else if (saved) "Connection interrupted after saving locally. Keep both devices offline and start a FRESH pairing on BOTH before use; do not reuse the transferred pad."
                     else "Pairing did not finish. No link was activated here. Close and retry; any exposed pad is retired automatically.")
                 runOnUiThread { confirm.isEnabled = false }
@@ -135,8 +150,9 @@ class CablePairActivity : Activity() {
     }
     override fun onStop() {
         active = false; cancelled.set(true); handler.removeCallbacksAndMessages(null); confirmation?.countDown(); channel?.close()
+        worker.execute { StationRuntime.pairingOpen = false }
         if (!isFinishing) finish()
         super.onStop()
     }
-    override fun onDestroy() { try { unregisterReceiver(receiver) } catch (_: Exception) {}; worker.shutdownNow(); super.onDestroy() }
+    override fun onDestroy() { try { unregisterReceiver(receiver) } catch (_: Exception) {}; super.onDestroy() }
 }

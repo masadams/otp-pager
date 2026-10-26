@@ -14,25 +14,31 @@ object PadProtocol {
     const val STRIDE = BLOCK + 32
     const val SLOTS = MATERIAL_BYTES / 2 / STRIDE // 127 per direction; unused tail is never allocated.
     const val BUNDLE_BYTES = 8 + 32 + MATERIAL_BYTES
+    const val MAX_MATERIAL_BYTES = 4 * MATERIAL_BYTES
+    const val MAX_BUNDLE_BYTES = 40 + MAX_MATERIAL_BYTES
+    const val MAX_SLOTS = MAX_MATERIAL_BYTES / 2 / STRIDE
+    fun validSize(size: Int) = size in listOf(MATERIAL_BYTES, 2 * MATERIAL_BYTES, 4 * MATERIAL_BYTES)
+    fun slots(pad: ByteArray): Int { require(validSize(pad.size)); return pad.size / 2 / STRIDE }
+    fun bundle(pad: ByteArray, binding: ByteArray): ByteArray { require(validSize(pad.size) && binding.size == 32); return magic + binding + pad }
     private val magic = "FIELDP03".toByteArray(Charsets.US_ASCII)
     private val b64 = Base64.getEncoder()
-    fun generate(binding: ByteArray): ByteArray = magic + binding.also { require(it.size == 32) } + ByteArray(MATERIAL_BYTES).also { SecureRandom().nextBytes(it) }
+    fun generate(binding: ByteArray, size: Int = MATERIAL_BYTES): ByteArray { require(validSize(size)); return magic + binding.also { require(it.size == 32) } + ByteArray(size).also { SecureRandom().nextBytes(it) } }
     fun binding(master: ByteArray): ByteArray = MessageDigest.getInstance("SHA-256").digest("Field pad binding v3".toByteArray() + master)
     fun material(bundle: ByteArray, binding: ByteArray): ByteArray {
-        require(bundle.size == BUNDLE_BYTES && bundle.copyOfRange(0, 8).contentEquals(magic)) { "Invalid pad file" }
+        require(validSize(bundle.size - 40) && bundle.copyOfRange(0, 8).contentEquals(magic)) { "Invalid pad file" }
         require(MessageDigest.isEqual(binding, bundle.copyOfRange(8, 40))) { "Pad file belongs to a different pairing" }
         return bundle.copyOfRange(40, bundle.size)
     }
-    fun id(pad: ByteArray): ByteArray { require(pad.size == MATERIAL_BYTES); return MessageDigest.getInstance("SHA-256").digest(pad).copyOf(16) }
+    fun id(pad: ByteArray): ByteArray { require(validSize(pad.size)); return MessageDigest.getInstance("SHA-256").digest(pad).copyOf(16) }
     fun hex(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(it) }
-    private fun offset(role: Char, counter: Long): Int {
-        require(role == 'A' || role == 'B'); require(counter in 1..SLOTS.toLong()) { "Pad exhausted; exchange a fresh pad" }
-        return (if (role == 'A') 0 else MATERIAL_BYTES / 2) + (counter.toInt() - 1) * STRIDE
+    private fun offset(pad: ByteArray, role: Char, counter: Long): Int {
+        require(role == 'A' || role == 'B'); require(counter in 1..slots(pad).toLong()) { "Pad exhausted; exchange a fresh pad" }
+        return (if (role == 'A') 0 else pad.size / 2) + (counter.toInt() - 1) * STRIDE
     }
     /** Logical removal only: old flash pages, backups and retained history are separate concerns. */
     fun retire(pad: ByteArray, role: Char, counter: Long) {
-        require(pad.size == MATERIAL_BYTES)
-        val at = offset(role, counter)
+        require(validSize(pad.size))
+        val at = offset(pad, role, counter)
         pad.fill(0, at, at + STRIDE)
     }
     private fun requireAvailable(pad: ByteArray, at: Int) {
@@ -40,10 +46,10 @@ object PadProtocol {
     }
     fun authenticate(key: ByteArray, bytes: ByteArray): ByteArray = Mac.getInstance("HmacSHA256").run { init(SecretKeySpec(key, "HmacSHA256")); doFinal(bytes) }
     fun seal(pad: ByteArray, role: Char, counter: Long, payload: String, stableId: ByteArray = id(pad)): Pair<String, String> {
-        require(pad.size == MATERIAL_BYTES && stableId.size == 16)
+        require(validSize(pad.size) && stableId.size == 16)
         val data = payload.toByteArray(Charsets.UTF_8)
         require(data.size <= BLOCK - 2) { "Encoded message too large for a pad slot" }
-        val at = offset(role, counter)
+        val at = offset(pad, role, counter)
         requireAvailable(pad, at)
         val header = ByteBuffer.allocate(26).put(3).put(role.code.toByte()).putLong(counter).put(stableId).array()
         val clear = ByteBuffer.allocate(BLOCK).putShort(data.size.toShort()).put(data).array()
@@ -60,13 +66,13 @@ object PadProtocol {
         if (bytes.size == 26 + BLOCK + 32 && bytes[0] == 3.toByte() && bytes[1].toInt().toChar() in listOf('A', 'B')) bytes[1].toInt().toChar() else null
     } catch (_: Exception) { null }
     fun open(pad: ByteArray, wire: String, role: Char, stableId: ByteArray = id(pad)): Protocol.Opened {
-        require(pad.size == MATERIAL_BYTES && stableId.size == 16)
+        require(validSize(pad.size) && stableId.size == 16)
         require(wire.length <= 5600)
         val bytes = Base64.getDecoder().decode(wire)
         require(bytes.size == 26 + BLOCK + 32 && bytes[0] == 3.toByte() && bytes[1] == role.code.toByte())
         require(MessageDigest.isEqual(stableId, bytes.copyOfRange(10, 26))) { "Wrong pad" }
         val counter = ByteBuffer.wrap(bytes, 2, 8).long
-        val at = offset(role, counter); requireAvailable(pad, at); val key = pad.copyOfRange(at + BLOCK, at + STRIDE)
+        val at = offset(pad, role, counter); requireAvailable(pad, at); val key = pad.copyOfRange(at + BLOCK, at + STRIDE)
         try { require(MessageDigest.isEqual(authenticate(key, bytes.copyOfRange(0, 26 + BLOCK)), bytes.copyOfRange(26 + BLOCK, bytes.size))) { "Invalid pad authentication" } }
         finally { key.fill(0) }
         val clear = ByteArray(BLOCK) { (bytes[26 + it].toInt() xor pad[at + it].toInt()).toByte() }

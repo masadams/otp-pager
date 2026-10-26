@@ -1,7 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.NFC"/>
+    <uses-feature android:name="android.hardware.nfc" android:required="false"/>
+    <uses-feature android:name="android.hardware.nfc.hce" android:required="false"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
     <uses-feature android:name="android.hardware.usb.host" android:required="false"/>
@@ -10,12 +18,19 @@
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:allowBackup="false"
         android:usesCleartextTraffic="false">
-        <activity android:name=".NetworkActivity" android:exported="true" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize">
+        <activity android:name=".NetworkActivity" android:exported="true" android:launchMode="singleTask" android:enableOnBackInvokedCallback="true" android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <service android:name=".ReceiveService" android:exported="false" android:foregroundServiceType="remoteMessaging"/>
+        <activity android:name=".NfcSetupActivity" android:exported="false"/>
+        <activity android:name=".RadioPairActivity" android:exported="false"/>
+        <service android:name=".NfcSetupCard" android:exported="true" android:permission="android.permission.BIND_NFC_SERVICE">
+            <intent-filter><action android:name="android.nfc.cardemulation.action.HOST_APDU_SERVICE"/></intent-filter>
+            <meta-data android:name="android.nfc.cardemulation.host_apdu_service" android:resource="@xml/nfc_setup"/>
+        </service>
         <activity android:name=".CablePairActivity" android:exported="false"/>
         <activity android:name=".PairingScannerActivity" android:exported="false" android:screenOrientation="portrait" android:theme="@style/zxing_CaptureTheme"/>
         <activity android:name=".MainActivity" android:exported="false"/>
