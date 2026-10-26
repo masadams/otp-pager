@@ -58,7 +58,18 @@ class UpgradeStateTest {
             assertEquals(reference.getString("active"), book.active().id)
             assertEquals(listOf("First friend", "Second friend"), book.chats().map { it.name })
             for (name in listOf("$first-pads", index, "$index-claims", book.active().id)) {
-                assertEquals("Update changed $name", reference.getString(name), digest(checkNotNull(SecureStore(context, name).load())))
+                val saved = checkNotNull(SecureStore(context, name).load())
+                if (name == index) {
+                    assertEquals(3, saved.getInt("version"))
+                    val entries = saved.getJSONArray("chats")
+                    for (i in 0 until entries.length()) {
+                        val entry = entries.getJSONObject(i)
+                        assertEquals(entry.getString("id"), entry.getString("entryId"))
+                        entry.remove("entryId")
+                    }
+                    saved.put("version", 2)
+                }
+                assertEquals("Update changed $name beyond the index metadata migration", reference.getString(name), digest(saved))
             }
             val station = book.engine(first)
             assertTrue(station.view().setupComplete)

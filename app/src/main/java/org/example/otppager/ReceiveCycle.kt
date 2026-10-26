@@ -18,7 +18,7 @@ class ReceiveCycle {
                 check(allowed()) { "Receiving paused" }; return base.request(endpoint, room, token, method, body, cursor)
             }
         }
-        val chats = book.chats(); var attempted = 0; var failed = 0; var newMessages = false
+        val chats = book.chats().filterNot { book.summary(it.id).retired }; var attempted = 0; var failed = 0; var newMessages = false
         repeat(minOf(maximum, chats.size)) {
             if (allowed()) {
                 val chat = chats[(nextChat++).mod(chats.size)]

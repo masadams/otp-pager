@@ -25,8 +25,9 @@ import java.util.concurrent.Executors
 class NetworkActivity : Activity() {
     private val worker = StationRuntime.worker
     private val handler = Handler(Looper.getMainLooper())
-    private var engine: StationEngine? = null // worker-thread owned
-    private var book: ChatBook? = null
+    @Volatile private var engine: StationEngine? = null // worker-owned except terminal invalidation
+    @Volatile private var book: ChatBook? = null
+    @Volatile private var visibleContact: ContactOperations.Lease? = null
     private lateinit var chatButton: Button
     private lateinit var receiveButton: Button
     private lateinit var renewButton: Button
@@ -241,6 +242,7 @@ class NetworkActivity : Activity() {
     }
     private fun showTerminal() {
         if (::composer.isInitialized) persistDraft()
+        visibleContact?.close(); visibleContact = null
         needsTerminal = false
         generation++
         latest = null; rendered = null; busy = false; errorLoading = false
@@ -531,8 +533,11 @@ class NetworkActivity : Activity() {
                 book!!.chats().firstOrNull { book!!.summary(it.id).unread > 0 }?.let { book!!.select(it.id) }
                 intent.removeExtra("openUnread")
             }
-            engine = checkNotNull(book).engine()
             loadedChat = book!!.active().id
+            val lease = SecureStore(this, loadedChat!!).operation()
+            visibleContact = lease
+            lease.onInvalidate { handler.post { if (visibleContact === lease) closeRetiredConversation() } }
+            engine = checkNotNull(book).engine()
             engine?.state?.let { s ->
                 val master = Protocol.master(s.getString("secret"))
                 loadedRoom = try { Protocol.room(master) } finally { master.fill(0) }
@@ -906,6 +911,7 @@ class NetworkActivity : Activity() {
     }
     private fun persistDraft() {
         handler.removeCallbacks(saveDraft)
+        if (visibleContact?.cancelled == true) return
         val id = draftChatId ?: return; val room = draftRoom ?: return
         val value = composer.text.toString(); val revision = draftId; val visibleGeneration = generation
         worker.execute {
@@ -1168,37 +1174,42 @@ class NetworkActivity : Activity() {
             }
             runOnUiThread {
                 if (!active || !unlocked || isFinishing || taskGeneration != generation) return@runOnUiThread
-                if (config != null) {
-                    urlField.setText(config!!.getString("endpoint")); tokenField.setText(config!!.getString("token"))
-                    secretField.setText(config!!.getString("secret")); roleGroup.check(if (config!!.getString("role") == "A") R.id.station_a else R.id.station_b)
-                }
-                if (network && success) { lastContact = android.os.SystemClock.elapsedRealtime(); connectionFailed = false }
-                else if (relayFailure) {
-                    connectionFailed = true
-                    connectionProblem = failureLabel
-                }
-                view?.let(::render)
-                if (draftChatId != null && draftRoom == null && configuredRoom != null) draftRoom = configuredRoom
-                if (clearComposer && success && composer.text.toString() == submittedText && draftId == submittedId) composer.text.clear()
-                if (errorLoading) {
-                    note = "Saved chat unavailable. Data is preserved; open recovery tools."
-                    pendingAdd = false; pendingFriend = null
-                    selectTab(4)
-                }
-                report(note); setBusy(false); schedule(if (clearComposer && success) 100 else backoff)
-                onComplete?.invoke()
-                if (success) onSuccess?.invoke()
-                if (pendingAdd || pendingFriend != null) handler.post {
-                    if (active && unlocked && !busy && !errorLoading && tab == 4) {
-                        val next = pendingFriend; val add = pendingAdd
-                        pendingFriend = null; pendingAdd = false
-                        if (add) editChatName(true) else next?.let { openFriend(it.first, it.second) }
+                if (visibleContact?.cancelled == true) { closeRetiredConversation(); return@runOnUiThread }
+                val publish = {
+                    if (config != null) {
+                        urlField.setText(config!!.getString("endpoint")); tokenField.setText(config!!.getString("token"))
+                        secretField.setText(config!!.getString("secret")); roleGroup.check(if (config!!.getString("role") == "A") R.id.station_a else R.id.station_b)
+                    }
+                    if (network && success) { lastContact = android.os.SystemClock.elapsedRealtime(); connectionFailed = false }
+                    else if (relayFailure) {
+                        connectionFailed = true
+                        connectionProblem = failureLabel
+                    }
+                    view?.let(::render)
+                    if (draftChatId != null && draftRoom == null && configuredRoom != null) draftRoom = configuredRoom
+                    if (clearComposer && success && composer.text.toString() == submittedText && draftId == submittedId) composer.text.clear()
+                    if (errorLoading) {
+                        note = "Saved chat unavailable. Data is preserved; open recovery tools."
+                        pendingAdd = false; pendingFriend = null
+                        selectTab(4)
+                    }
+                    report(note); setBusy(false); schedule(if (clearComposer && success) 100 else backoff)
+                    onComplete?.invoke()
+                    if (success) onSuccess?.invoke()
+                    if (pendingAdd || pendingFriend != null) handler.post {
+                        if (active && unlocked && !busy && !errorLoading && tab == 4) {
+                            val next = pendingFriend; val add = pendingAdd
+                            pendingFriend = null; pendingAdd = false
+                            if (add) editChatName(true) else next?.let { openFriend(it.first, it.second) }
+                        }
+                    }
+                    // Check current visibility AFTER rendering/network completion, not before a slow sync.
+                    messageScroll.post {
+                        if (success && !errorLoading && active && unlocked && taskGeneration == generation && tab == 0 && !busy && (latest?.unread ?: 0) > 0 && atBottom()) ackVisibleMessages()
                     }
                 }
-                // Check current visibility AFTER rendering/network completion, not before a slow sync.
-                messageScroll.post {
-                    if (success && !errorLoading && active && unlocked && taskGeneration == generation && tab == 0 && !busy && (latest?.unread ?: 0) > 0 && atBottom()) ackVisibleMessages()
-                }
+                val lease = visibleContact
+                if (lease == null) publish() else if (!lease.publish(publish)) closeRetiredConversation()
             }
         }
     }
@@ -1236,6 +1247,24 @@ class NetworkActivity : Activity() {
         pairingDialog?.dismiss(); pairingDialog = null
         generation++; active = false; StationRuntime.uiVisible = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
         systemBack?.close(); systemBack = null
+        visibleContact?.close(); visibleContact = null
+        clearPrivateState()
+        worker.execute { engine = null; book = null }
+        super.onStop()
+    }
+    /** Main-thread disposal; queued work cannot publish after the generation changes. */
+    private fun closeRetiredConversation() {
+        generation++; handler.removeCallbacks(poll); handler.removeCallbacks(saveDraft)
+        openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
+        pairingDialog?.dismiss(); pairingDialog = null
+        visibleContact?.close(); visibleContact = null
+        engine = null; book = null
+        clearPrivateState()
+        // Recovery/fresh-pairing status UI is a later slice; never leave a stale conversation visible.
+        setContentView(text("This local pairing is retired. No remote wipe has been requested.", 18f))
+        finish()
+    }
+    private fun clearPrivateState() {
         pendingFriend = null; pendingAdd = false
         draftChatId = null; draftRoom = null; restoringDraft = true
         if (::composer.isInitialized) composer.text.clear()
@@ -1251,8 +1280,8 @@ class NetworkActivity : Activity() {
         if (::identityStatus.isInitialized) identityStatus.text = ""
         if (::padStatus.isInitialized) padStatus.text = ""
         if (::pairingCode.isInitialized) pairingCode.text = ""
-        worker.execute { engine = null; book = null }
-        super.onStop()
+        pendingScan = null; pendingDeviceScan = null; pendingDocument = null
+        identityScan = false; renderedSetupComplete = null; renderedDay = ""
     }
     override fun onDestroy() { handler.removeCallbacksAndMessages(null); super.onDestroy() }
 }

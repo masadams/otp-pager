@@ -45,4 +45,21 @@ class ContactOperationsTest {
             }
         } finally { release.countDown(); assertTrue(done.await(5, TimeUnit.SECONDS)); lease.close() }
     }
+    @Test fun memoryInvalidationDoesNotWaitForBlockedClosesAndCannotPublishAfterwards() {
+        val root = key(); val lease = ContactOperations.open(root) {}
+        var invalidated = false
+        lease.onInvalidate { invalidated = true }
+        ContactOperations.cancel(root)
+        assertTrue(invalidated)
+        assertFalse(lease.publish { fail("Stale UI published") })
+        var late = false
+        lease.onInvalidate { late = true }
+        assertTrue(late)
+        lease.close()
+        val normal = ContactOperations.open(key()) {}
+        var completed = false
+        normal.onInvalidate { completed = true }; normal.close()
+        assertFalse(completed)
+    }
+
 }

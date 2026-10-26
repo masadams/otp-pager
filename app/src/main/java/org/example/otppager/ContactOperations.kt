@@ -12,10 +12,11 @@ internal object ContactOperations {
             private set
         private var closed = false
         private val callbacks = mutableListOf<() -> Unit>()
+        private val invalidators = mutableListOf<() -> Unit>()
         fun check() = synchronized(VaultLifecycle.lock) {
             check(!cancelled && !closed) { "Pairing operation cancelled" }; requireActive()
         }
-        /** Only short local publication belongs here; never perform network I/O in this callback. */
+        /** Local publication only; never perform network I/O or wait for a worker in this callback. */
         fun publish(action: () -> Unit): Boolean = synchronized(VaultLifecycle.lock) {
             if (cancelled || closed) return@synchronized false
             try { requireActive() } catch (_: IllegalStateException) { return@synchronized false }
@@ -27,12 +28,18 @@ internal object ContactOperations {
             }
             if (run) dispatch(action)
         }
+        /** Short nonblocking memory invalidation or UI posting only. No I/O, waits or direct UI work. */
+        fun onInvalidate(action: () -> Unit) = synchronized(VaultLifecycle.lock) {
+            if (cancelled) notifyInvalidation(action) else if (!closed) invalidators.add(action)
+        }
+        private fun notifyInvalidation(action: () -> Unit) { try { action() } catch (_: Exception) {} }
         internal fun cancelLocked(): List<() -> Unit> {
             cancelled = true
+            invalidators.forEach(::notifyInvalidation); invalidators.clear()
             return callbacks.toList().also { callbacks.clear() }
         }
         override fun close() { synchronized(VaultLifecycle.lock) {
-            closed = true; callbacks.clear()
+            closed = true; callbacks.clear(); invalidators.clear()
             active[key]?.let { it.remove(this); if (it.isEmpty()) active.remove(key) }
         } }
     }

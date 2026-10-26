@@ -9,7 +9,7 @@ handoff record; never infer feature completion from a plan or passing baseline C
 - Phase 1: initial inventory plus expanded authentication/provisioning and persistence review recorded.
 - Phase 2: OTP-only new-text engine guard merged (PR #9); local retirement primitive under review.
 - Phases 3–8: not implemented. No emergency wipe or peer-destruction claim.
-- No relay deployment, APK/signing change, key migration or destructive protocol change.
+- No relay deployment, APK/signing change, operational-key migration or destructive peer protocol change.
 
 ## Decisions recorded 2026-10-26
 
@@ -113,14 +113,58 @@ No destructive UI, fresh-generation index migration, wipe-all, remote command,
 independent history-key erasure or physical power-loss validation is included.
 Already-sent ciphertext and managed-memory copies remain explicit limits.
 
+### 2026-10-26 — fresh generations and stale content disposal
+
+Cancellation/startup head `5e3af6179d5f3bbe274e2cdbadf14d1c8f15f357` passed Android
+API29/31/35 with cold-process restart (40367037080, attempt 2), signed upgrades
+(40367037336), and relay checks (40367037120). Android12 required a retry after an
+emulator ZIP download failure; failed attempts are not counted as validation.
+
+The next slice migrates contact index metadata v2 → v3, preserving existing vault
+namespaces, ciphertext, keys, pad ledgers and claims. Each visible contact gains a
+stable `entryId`; its `id` remains the immutable operational namespace. Explicit
+`replaceRetired` retries local cleanup, requires durable completion, and atomically
+publishes a fresh empty namespace while preserving the entry/name and unrelated
+contacts. It copies no credentials, history, pad, peer identity or draft. Fresh
+setup/physical pairing remains necessary. Terminal markers and reuse claims remain.
+Unknown index versions fail closed. Lost index + retired legacy root cannot silently
+create a default pairing. Index operations reload durable state under the lifecycle
+lock, preventing stale objects overwriting replacement metadata.
+
+Live engine owners are weakly tracked; retirement drops their snapshot, cached view
+and staged pairing references synchronously under the lifecycle gate. Later state,
+view-cache and staged-pairing publication checks the same gate. A foreground contact
+lease posts private UI disposal directly to the main looper, independently of blocked
+transport closers or the station worker. It clears drafts, displayed messages,
+credentials, pending scans/documents and dialogs, invalidates queued UI results and
+finishes the stale screen. UI-result publication is gated against retirement.
+This reduces reachable copies; externally retained JSON/Strings, active stack locals,
+queued closures, OS/IME/clipboard and flash are not claimed to be erased.
+
+Added Android tests for metadata-only migration, unknown versions, stale index
+objects, fresh empty generations, preserved neighbor/ledger/claims, old-secret reuse,
+restored older indexes, incomplete cleanup/retry, lost indexes, and foreground UI
+invalidation with a deliberately blocked normal worker. Signed-upgrade checks now
+verify the exact old index after reversing only the documented metadata migration;
+operational state remains byte/hash checked. Latest-head CI must validate this slice;
+earlier green results do not cover it. Local relay 13/13, Python syntax and whitespace
+passed. Results and exact head are recorded in PR #10.
+
+No user-facing retirement/replacement control is exposed yet. The current open screen
+closes on internal retirement; the dedicated retired-contact/recovery status screen
+and its explicit fresh-pairing action are the next integration work, before any wipe
+control is offered. No remote command or destruction acknowledgement exists.
+
 ## Next task
 
-Validate latest-head cancellation, pairing regressions and actual process restart
-across Android versions. Then implement fresh-generation contact-index migration,
-local retirement/recovery status and memory/UI invalidation before exposing any
-destructive controls. Complete wipe-all scope and independent history-key erasure
-as separately reviewed changes. Physical USB/NFC cancellation and target hardware
-still need testing; do not claim an end-to-end emergency wipe.
+Validate latest-head generation migration, memory/UI disposal, signed upgrade and
+all existing two-engine/pairing/restart regressions. Then add honest per-contact
+local retirement/recovery status and explicit fresh-pairing UI, including an intact
+path to other contacts when the active generation is retired. Do not expose emergency
+wipe controls until local lifecycle integration is reviewed. Complete wipe-all scope
+and independent history-key erasure as separately reviewed changes. Physical USB/NFC
+cancellation and target hardware still need testing; do not claim an end-to-end
+emergency wipe.
 
 Do not implement the peer-wipe packet format until Phase 3 resolves control keys,
 generation binding, dispatch authority, acknowledgement and migration semantics.

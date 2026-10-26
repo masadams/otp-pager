@@ -6,11 +6,31 @@ import org.json.JSONObject
 /** Call only from the single station worker. Save snapshot before publishing it in memory. */
 class StationEngine(private val store: SecureStore, relay: RelayTransport = RelayClient, private val claims: PairingClaims? = null) {
     private val relay = relay.forContact(store)
-    var state: JSONObject? = store.load()
-        private set
+    companion object {
+        // Weak owners avoid retaining every short-lived background receiver engine.
+        private val live = java.util.WeakHashMap<StationEngine, String>()
+        internal fun invalidateRetired(key: String) = synchronized(VaultLifecycle.lock) {
+            live.entries.filter { it.value == key }.map { it.key }.forEach { engine ->
+                engine.state = null; engine.cachedView = null; engine.stagedCable = null; engine.stagedRenewal = false
+            }
+        }
+    }
+    @Volatile private var snapshot: JSONObject? = store.load()
+    var state: JSONObject?
+        get() = snapshot
+        private set(value) = synchronized(VaultLifecycle.lock) {
+            if (value != null) store.requireActive()
+            snapshot = value
+        }
     private val padLedger = PadLedger(store.sibling("pads"))
     private val identity = store.identity()
-    private var cachedView: View? = null
+    private var cached: View? = null
+    private var cachedView: View?
+        get() = cached
+        set(value) = synchronized(VaultLifecycle.lock) {
+            if (value != null) store.requireActive()
+            cached = value
+        }
     private var cacheExpiry = 0L
     init { state?.let { validate(it); claims?.migrate(store); transaction { next -> if (next.has("pad") && next.getInt("version") == 2) next.put("version", 3).put("cursor", 0L).put("epoch", ""); prune(next) } } }
     private fun validate(s: JSONObject) {
@@ -86,8 +106,15 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         claims?.room(invite.secret, store.namespace, existing = false)
         validate(next); store.save(next); state = next; cachedView = null
     }
-    private var stagedCable: JSONObject? = null
+    private var staged: JSONObject? = null
+    private var stagedCable: JSONObject?
+        get() = staged
+        set(value) = synchronized(VaultLifecycle.lock) {
+            if (value != null) store.requireActive()
+            staged = value
+        }
     private var stagedRenewal = false
+    init { synchronized(VaultLifecycle.lock) { store.requireActive(); live[this] = store.operationKey } }
     /** Only after the user explicitly approves replacing the current conversation. */
     fun resetForCable() {
         val previous = checkNotNull(state)

@@ -11,62 +11,122 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
     private val context = context.applicationContext
     private val index = SecureStore(context, indexNamespace)
     private val claims = PairingClaims(SecureStore(context, "$indexNamespace-claims"))
-    private var data = index.load() ?: JSONObject().put("version", 2).put("active", legacyNamespace)
-        .put("chats", JSONArray().put(JSONObject().put("id", legacyNamespace).put("name", "Chat 1"))).also {
-            // Bring all previous pad retirements into the cross-chat guard before enabling new chats.
-            claims.migrate(SecureStore(context, legacyNamespace))
-            index.save(it)
-        }
+    // Reload durable state for every operation: stale UI/receiver objects cannot overwrite a replacement.
+    private val data: JSONObject get() = checkNotNull(index.load()) { "Contact index unavailable" }.also(::validate)
     private var roundRobin = 0
-    data class Chat(val id: String, val name: String)
-    data class Summary(val unread: Int = 0, val queued: Int = 0, val problem: Boolean = false, val draft: Boolean = false, val paired: Boolean = false, val eligible: Boolean = true)
+    data class Chat(val id: String, val name: String, val entryId: String) {
+        constructor(id: String, name: String) : this(id, name, id)
+    }
+    data class Summary(val unread: Int = 0, val queued: Int = 0, val problem: Boolean = false, val draft: Boolean = false, val paired: Boolean = false, val eligible: Boolean = true, val retired: Boolean = false)
     private val summaries = java.util.concurrent.ConcurrentHashMap<String, Summary>()
-    init { validate(data); refreshSummaries() }
+    init {
+        synchronized(VaultLifecycle.lock) {
+            val saved = index.load()
+            if (saved == null) {
+                // A lost index must not silently reopen a terminal legacy generation.
+                VaultLifecycle.requireActive(context.noBackupFilesDir, legacyNamespace)
+                claims.migrate(SecureStore(context, legacyNamespace))
+                save(JSONObject().put("version", 3).put("active", legacyNamespace).put("chats", JSONArray()
+                    .put(JSONObject().put("id", legacyNamespace).put("entryId", legacyNamespace).put("name", "Chat 1"))))
+            } else {
+                validate(saved)
+                if (saved.getInt("version") == 2) {
+                    val next = JSONObject(saved.toString()).put("version", 3)
+                    val entries = next.getJSONArray("chats")
+                    for (i in 0 until entries.length()) entries.getJSONObject(i).put("entryId", entries.getJSONObject(i).getString("id"))
+                    save(next) // Only index metadata changes; vaults, identities and pad owners stay in place.
+                }
+            }
+        }
+        refreshSummaries()
+    }
     private fun validate(value: JSONObject) {
+        check(value.getInt("version") in 2..3) { "Unsupported contact index version" }
         val chats = value.getJSONArray("chats")
         check(chats.length() in 1..MAX_CHATS)
-        val ids = mutableSetOf<String>(); val names = mutableSetOf<String>()
+        val ids = mutableSetOf<String>(); val names = mutableSetOf<String>(); val entries = mutableSetOf<String>()
         for (i in 0 until chats.length()) {
             val chat = chats.getJSONObject(i)
             check(Regex("[a-z0-9-]{1,30}").matches(chat.getString("id")) && ids.add(chat.getString("id")))
+            if (value.getInt("version") == 3) check(Regex("[a-z0-9-]{1,30}").matches(chat.getString("entryId")) && entries.add(chat.getString("entryId")))
             check(name(chat.getString("name")) == chat.getString("name") && names.add(chat.getString("name").lowercase(java.util.Locale.ROOT)))
         }
         check(value.getString("active") in ids)
     }
-    private fun save(next: JSONObject) { validate(next); index.save(next); data = next }
+    private fun save(next: JSONObject) { validate(next); index.save(next) }
     private fun name(value: String) = value.trim().also {
         require(it.length in 1..32 && it.none { c -> c.isISOControl() || Character.getType(c) == Character.FORMAT.toInt() }) { "Use a chat name of 1–32 characters without control characters" }
     }
-    fun chats(): List<Chat> = data.getJSONArray("chats").let { list -> (0 until list.length()).map { Chat(list.getJSONObject(it).getString("id"), list.getJSONObject(it).getString("name")) } }
-    fun active(): Chat = chats().first { it.id == data.getString("active") }
-    fun select(id: String) { require(chats().any { it.id == id }); save(JSONObject(data.toString()).put("active", id)) }
-    fun rename(value: String) {
+    fun chats(): List<Chat> = synchronized(VaultLifecycle.lock) { data.getJSONArray("chats").let { list -> (0 until list.length()).map { Chat(list.getJSONObject(it).getString("id"), list.getJSONObject(it).getString("name"), list.getJSONObject(it).optString("entryId", list.getJSONObject(it).getString("id"))) } } }
+    fun active(): Chat = synchronized(VaultLifecycle.lock) { chats().first { it.id == data.getString("active") } }
+    fun select(id: String) = synchronized(VaultLifecycle.lock) { require(chats().any { it.id == id }); save(JSONObject(data.toString()).put("active", id)) }
+    fun rename(value: String) = synchronized(VaultLifecycle.lock) {
         val clean = name(value)
         require(chats().none { it.id != active().id && it.name.equals(clean, ignoreCase = true) }) { "Another chat already uses that name" }
         val next = JSONObject(data.toString()); val entries = next.getJSONArray("chats")
         for (i in 0 until entries.length()) if (entries.getJSONObject(i).getString("id") == active().id) entries.getJSONObject(i).put("name", clean)
         save(next)
     }
-    fun add(value: String, copyServerFrom: String? = active().id): Chat {
+    fun add(value: String, copyServerFrom: String? = active().id): Chat = synchronized(VaultLifecycle.lock) {
         check(chats().size < MAX_CHATS) { "This version supports up to $MAX_CHATS separate chats" }
         val clean = name(value)
         require(chats().none { it.name.equals(clean, ignoreCase = true) }) { "Another chat already uses that name" }
         val source = copyServerFrom?.let { id -> require(chats().any { it.id == id }); SecureStore(context, id).load() }
-        val chat = Chat("chat-" + UUID.randomUUID().toString().replace("-", "").take(20), clean)
-        val next = JSONObject(data.toString()); next.getJSONArray("chats").put(JSONObject().put("id", chat.id).put("name", chat.name))
+        val chat = Chat(freshNamespace(), clean)
+        val next = JSONObject(data.toString()); next.getJSONArray("chats").put(JSONObject().put("id", chat.id).put("entryId", chat.entryId).put("name", chat.name))
         save(next) // A failure afterward leaves a recoverable empty chat, never a second owner of old key material.
         if (source != null) engine(chat.id).configure(source.getString("endpoint"), source.getString("token"), Protocol.randomSecret(), "A")
-        refresh(chat.id); return chat
+        refresh(chat.id); chat
     }
-    fun engine(id: String = active().id, relay: RelayTransport = RelayClient): StationEngine {
+    fun engine(id: String = active().id, relay: RelayTransport = RelayClient): StationEngine = synchronized(VaultLifecycle.lock) {
         require(chats().any { it.id == id }) { "Unknown chat" }
-        return StationEngine(SecureStore(context, id), relay, claims)
+        StationEngine(SecureStore(context, id), relay, claims)
     }
-    fun forgetActive() { ChatDraft(SecureStore(context, active().id).sibling("draft")).clear(); SecureStore(context, active().id).forget(); refresh() }
-    fun summary(id: String) = summaries[id] ?: Summary()
-    fun unreadElsewhere() = summaries.filterKeys { it != active().id }.values.sumOf { it.unread }
+    private fun freshNamespace(): String {
+        val directory = context.noBackupFilesDir
+        val files = checkNotNull(directory.listFiles()) { "Contact storage unavailable" }.map { it.name }
+        val keys = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val aliases = keys.aliases().toList()
+        return generateSequence { "chat-" + UUID.randomUUID().toString().replace("-", "").take(20) }.first { candidate ->
+            chats().none { it.id == candidate || it.entryId == candidate } &&
+                files.none { it.startsWith("$candidate.") || it.startsWith("$candidate-") } &&
+                aliases.none { it == "otp-pager-$candidate" || it.startsWith("otp-pager-$candidate-") }
+        }
+    }
+    /** Explicit local-only replacement. Never copies credentials, pads, history or peer identity. */
+    internal fun replaceRetired(id: String): Chat {
+        synchronized(VaultLifecycle.lock) {
+            require(chats().any { it.id == id }) { "Unknown chat" }
+            check(VaultLifecycle.isContact(id) && VaultLifecycle.isRetired(context.noBackupFilesDir, id)) { "Pairing is not retired" }
+        }
+        // Recovery may dispatch cancellation; never do this while holding an outer lifecycle lock.
+        val result = VaultRetirement.retireContact(context, id)
+        check(result.terminalDurable && result.completed) { "Local destruction incomplete; retry recovery before fresh pairing" }
+        return synchronized(VaultLifecycle.lock) {
+            val next = JSONObject(data.toString()); val entries = next.getJSONArray("chats")
+            val position = (0 until entries.length()).firstOrNull { entries.getJSONObject(it).getString("id") == id }
+                ?: error("Contact generation changed; reload chats")
+            val entry = entries.getJSONObject(position)
+            val replacement = Chat(freshNamespace(), entry.getString("name"), entry.getString("entryId"))
+            entry.put("id", replacement.id)
+            if (next.getString("active") == id) next.put("active", replacement.id)
+            save(next) // Atomic index commit is the only publication boundary; an interrupted retry remains safe.
+            summaries.remove(id); refresh(replacement.id)
+            replacement
+        }
+    }
+    fun forgetActive() = synchronized(VaultLifecycle.lock) { ChatDraft(SecureStore(context, active().id).sibling("draft")).clear(); SecureStore(context, active().id).forget(); refresh() }
+    fun summary(id: String): Summary {
+        if (VaultLifecycle.isRetired(context.noBackupFilesDir, id)) return Summary(eligible = false, retired = true)
+        return summaries[id] ?: Summary()
+    }
+    fun unreadElsewhere() = chats().filter { it.id != active().id }.sumOf { summary(it.id).unread }
     fun refresh(id: String = active().id) {
         try {
+            if (VaultLifecycle.isRetired(context.noBackupFilesDir, id)) {
+                summaries[id] = Summary(eligible = false, retired = true)
+                return
+            }
             val s = SecureStore(context, id).load()
             val now = System.currentTimeMillis()
             fun live(entry: JSONObject) = now - entry.getLong("time") < 86400000
@@ -88,7 +148,7 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
     private fun refreshSummaries() { chats().forEach { refresh(it.id) } }
     /** One inactive chat per foreground poll bounds battery/network cost. An offline chat does not block others. */
     fun syncAnother(relay: RelayTransport = RelayClient) {
-        val others = chats().filter { it.id != active().id }
+        val others = chats().filter { it.id != active().id && !VaultLifecycle.isRetired(context.noBackupFilesDir, it.id) }
         if (others.isEmpty()) return
         val chat = others[roundRobin.mod(others.size)]; roundRobin = (roundRobin + 1).mod(others.size)
         try {

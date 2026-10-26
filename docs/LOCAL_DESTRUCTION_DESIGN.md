@@ -35,11 +35,11 @@ contacts. No user-facing caller invokes retirement yet; normal Forget retains it
 existing semantics.
 
 This is not complete emergency destruction. Already-captured in-flight ciphertext,
-process-memory clearing, terminal index/UI migration, wipe-all initiation, sealed remote dispatch,
+complete memory erasure, finished recovery UI, wipe-all initiation, sealed remote dispatch,
 remote acknowledgements, history-key separation and physical rollback/erasure remain
 separate work. Cancellation/recovery integration is described below; its physical
-hardware behavior still needs validation. A cached internal engine state object may still contain secrets until
-its owner drops it; Keystore/file deletion cannot erase those objects.
+hardware behavior still needs validation. Live engines now drop owned state/staged/cache references at retirement; separately
+retained objects and active task locals remain outside this disposal boundary.
 
 ## Required storage identities
 
@@ -174,3 +174,34 @@ and a host-driven seed → force-stop → fresh instrumentation run. The latter 
 that Application startup deletes contact/draft/signing keys and files before access,
 while another contact and reuse metadata survive. This is not physical power loss
 or proof of firmware/flash erasure.
+
+
+## Generation replacement and content disposal
+
+Index schema 3 adds a stable `entryId`, initially the previous namespace; `id` stays
+the operational namespace used by stores, pad owners and existing worker intents.
+Migration changes only the encrypted index metadata. It leaves all operational
+vaults/keys/ledgers/claims in place and rejects unknown index versions. Every index
+read/mutation reloads durable metadata under the shared lifecycle lock; old object
+snapshots cannot overwrite a newer generation. Full OS/index+marker rollback remains
+outside this protection.
+
+`replaceRetired` is an internal explicit action, not automatic startup behavior. It
+requires a known terminal contact, retries cleanup and requires verified durable
+completion before an atomic index replacement. The entry/name and selection survive;
+the replacement namespace starts empty with no copied secrets, identity or history.
+Candidates exclude known index entries and file/key namespaces. Old marker and reuse
+guards survive permanently. An interrupted/unpublished replacement can be retried;
+restoring an older index still cannot open a terminal namespace. An unreadable/missing
+index with a retired legacy root fails closed, rather than resetting the application.
+
+Weak live-engine ownership avoids retaining short-lived receivers. Terminal marking
+clears owned snapshots, staged pairing and view caches synchronously; setters gate
+later publication to prevent an in-flight calculation repopulating these owners.
+A foreground lease posts invalidation independently of socket-close workers. The UI
+clears message/composer/configuration/scan/document/dialog state, advances its display
+generation and finishes; normal queued result publication uses the same lifecycle
+gate. Tests deliberately block the station worker during UI disposal. No destructive
+or replacement control is exposed before the dedicated recovery/status UI is added.
+Managed strings, external references, in-flight task locals, queued closures and OS
+copies cannot be guaranteed erased. This is reference disposal, not forensic erasure.

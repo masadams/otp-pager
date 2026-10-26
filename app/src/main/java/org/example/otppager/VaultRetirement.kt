@@ -18,10 +18,13 @@ internal object VaultLifecycle {
     fun marker(directory: File, root: String) = File(directory, "$root.retired")
     fun variants(file: File) = listOf(file, File(file.path + ".bak"), File(file.path + ".new"))
     fun deny(directory: File, root: String) { denied.add(marker(directory, root).absolutePath) }
+    fun isRetired(directory: File, namespace: String): Boolean = synchronized(lock) {
+        val marker = marker(directory, root(namespace))
+        marker.absolutePath in denied || variants(marker).any { it.exists() }
+    }
     fun requireActive(directory: File, namespace: String) = synchronized(lock) {
         check(!RetirementStartup.failed) { "Local retirement recovery unavailable; operation disabled" }
-        val marker = marker(directory, root(namespace))
-        check(marker.absolutePath !in denied && variants(marker).none { it.exists() }) {
+        check(!isRetired(directory, namespace)) {
             "This local pairing generation is retired; create a new friend pairing"
         }
     }
@@ -56,7 +59,10 @@ internal object VaultRetirement {
         require(VaultLifecycle.isContact(namespace)) { "Not an operational contact namespace" }
         val directory = context.noBackupFilesDir
         // Disable new work before dispatching cancellation; cleanup never waits on socket/USB close.
-        synchronized(VaultLifecycle.lock) { VaultLifecycle.deny(directory, namespace) }
+        synchronized(VaultLifecycle.lock) {
+            VaultLifecycle.deny(directory, namespace)
+            StationEngine.invalidateRetired(VaultLifecycle.marker(directory, namespace).absolutePath)
+        }
         ContactOperations.cancel(VaultLifecycle.marker(directory, namespace).absolutePath)
         return synchronized(VaultLifecycle.lock) { retireLocked(directory, namespace) }
     }
