@@ -70,6 +70,11 @@ jobs:
           profile: ${{ matrix.profile }}
           ram-size: 2048M
           heap-size: 256M
+          # Upstream v2 writes unrecognized hw.heapSize; see ReactiveCircus/android-emulator-runner#480.
+          # Set the real AVD property before boot; do not change the app's heap policy.
+          pre-emulator-launch-script: |
+            sed -i '/^hw.heapSize=/d; /^vm.heapSize=/d' "$ANDROID_AVD_HOME/test.avd/config.ini"
+            printf '\nvm.heapSize=256\n' >> "$ANDROID_AVD_HOME/test.avd/config.ini"
           disable-animations: true
           script: |
             bash -c 'gradle --no-daemon :app:connectedDebugAndroidTest; otp_tests=$?; adb pull /sdcard/Download/otp-pager-preview app/build/screenshots; otp_capture=$?; if [ "$otp_tests" -ne 0 ]; then exit "$otp_tests"; fi; exit "$otp_capture"'

@@ -35,7 +35,8 @@ class DeliveryTest {
             var a = StationEngine(aStore, relay); var b = StationEngine(bStore, relay)
             a.configure("https://pager.example.com", "t".repeat(43), secret, "A")
             b.configure("https://pager.example.com", "t".repeat(43), secret, "B")
-            a.send("MEET AT 2200")
+            legacyQueuedText(aStore, "MEET AT 2200")
+            a = StationEngine(aStore, relay)
             val original = a.state!!.getJSONArray("outbox").getJSONObject(0).getString("packet")
             try { a.sync(); fail("Lost acknowledgement was ignored") } catch (_: java.io.IOException) {}
             assertEquals(1, relay.packets.size)
@@ -282,7 +283,8 @@ class DeliveryTest {
         try {
             var engine = StationEngine(store, relay)
             engine.configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "A")
-            engine.send("ORIGINAL")
+            legacyQueuedText(store, "ORIGINAL")
+            engine = StationEngine(store, relay)
             val sample = JSONObject(engine.state!!.getJSONArray("outbox").getJSONObject(0).toString())
             val out = JSONArray()
             for (i in 0 until 60) out.put(JSONObject(sample.toString()).put("id", "%032x".format(i))

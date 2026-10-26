@@ -45,6 +45,11 @@ jobs:
           profile: Nexus S
           ram-size: 2048M
           heap-size: 256M
+          # Upstream v2 writes unrecognized hw.heapSize; see ReactiveCircus/android-emulator-runner#480.
+          # Set the real AVD property before boot; do not change the app's heap policy.
+          pre-emulator-launch-script: |
+            sed -i '/^hw.heapSize=/d; /^vm.heapSize=/d' "$ANDROID_AVD_HOME/test.avd/config.ini"
+            printf '\nvm.heapSize=256\n' >> "$ANDROID_AVD_HOME/test.avd/config.ini"
           disable-animations: true
           script: python3 scripts/verify_android_upgrade.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
