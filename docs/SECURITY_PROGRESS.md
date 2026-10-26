@@ -88,16 +88,39 @@ failure and interruption boundaries; Android tests cover keys/drafts, preserved
 reuse metadata and unrelated contacts, malformed markers, restored snapshots,
 stale objects and a queued writer. CI results belong to the implementation PR.
 
-The primitive has no normal UI/startup invocation. It is not a finished local or
-remote emergency wipe. F01/F03/F04/F07/F09 remain open in part; F02's new-text guard
+The first primitive slice had no UI/startup invocation. It is not a finished local or
+remote emergency wipe; subsequent integration is recorded below. F01/F03/F04/F07/F09 remain open in part; F02's new-text guard
 is validated, while legacy receipt/recovery cryptography remains explicit.
+
+### 2026-10-26 — operation cancellation and cold-start recovery
+
+PR #10 foundation at `4a5ce344acb0017fad416b3393549b3b9458ee70` passed Android API29/31/35,
+signed upgrades and relay checks (Android 40359977417, upgrade 40359977495,
+relay 40359977474). PR #10 remains draft while integration continues.
+
+Added per-contact cancellation leases and asynchronous bounded close dispatch;
+retirement does not wait for socket/USB close. Bound production HTTPS traffic,
+including background receiving wrappers, and pairing/NFC resources to those leases.
+Owned NFC offers prevent cancellation of one contact clearing another's offer.
+Added Application startup recovery before activities/services can access vaults;
+startup enumeration failure disables vault access, while an incomplete contact
+remains isolated and blocked. Added JVM cancellation tests, blocked-HTTPS cleanup
+and NFC isolation Android tests, and a host-driven cold process restart test in
+all Android CI jobs. These new checks require latest-head CI, not the earlier
+foundation result. Relay baseline locally 13/13, Python syntax and whitespace pass.
+
+No destructive UI, fresh-generation index migration, wipe-all, remote command,
+independent history-key erasure or physical power-loss validation is included.
+Already-sent ciphertext and managed-memory copies remain explicit limits.
 
 ## Next task
 
-Validate the primitive, review cancellation/lock ownership around actual
-network and provisioning channels, then integrate startup recovery, fresh generation
-index migration and honest local-only status before exposing any destructive UI.
-Keep history-key separation and wipe-all/orphan scope explicit in that design.
+Validate latest-head cancellation, pairing regressions and actual process restart
+across Android versions. Then implement fresh-generation contact-index migration,
+local retirement/recovery status and memory/UI invalidation before exposing any
+destructive controls. Complete wipe-all scope and independent history-key erasure
+as separately reviewed changes. Physical USB/NFC cancellation and target hardware
+still need testing; do not claim an end-to-end emergency wipe.
 
 Do not implement the peer-wipe packet format until Phase 3 resolves control keys,
 generation binding, dispatch authority, acknowledgement and migration semantics.

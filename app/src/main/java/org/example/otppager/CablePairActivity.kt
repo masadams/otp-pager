@@ -25,6 +25,7 @@ class CablePairActivity : Activity() {
     private val handler = Handler(Looper.getMainLooper())
     private val worker = StationRuntime.worker
     private val cancelled = AtomicBoolean(false)
+    private var operation: ContactOperations.Lease? = null
     private lateinit var manager: UsbManager
     private lateinit var status: TextView
     private lateinit var confirm: Button
@@ -40,7 +41,7 @@ class CablePairActivity : Activity() {
     private var renewal = false
     private var padSize = PadProtocol.MATERIAL_BYTES
     private val permissionAction get() = "$packageName.USB_PAIR_PERMISSION"
-    private fun note(value: String) { runOnUiThread { if (active && !cancelled.get()) status.text = value } }
+    private fun note(value: String) { runOnUiThread { if (active && !cancelled.get() && operation?.cancelled != true) status.text = value } }
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action in listOf(UsbManager.ACTION_USB_DEVICE_DETACHED, UsbManager.ACTION_USB_ACCESSORY_DETACHED) && channel != null) {
@@ -65,6 +66,13 @@ class CablePairActivity : Activity() {
         padSize = intent.getIntExtra("padSize", PadProtocol.MATERIAL_BYTES)
         require(PadProtocol.validSize(padSize))
         chatId = intent.getStringExtra("chat") ?: run { finish(); return }
+        try {
+            operation = SecureStore(this, chatId).operation().also { lease -> lease.onCancel {
+                cancelled.set(true); confirmation?.countDown()
+                runOnUiThread { if (active) finish() }
+                channel?.close()
+            } }
+        } catch (_: Exception) { finish(); return }
         StationRuntime.pairingOpen = true
         window.protectPrivateContent()
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -93,12 +101,12 @@ class CablePairActivity : Activity() {
         androidx.core.content.ContextCompat.registerReceiver(this, receiver, events, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
         expireAt = android.os.SystemClock.elapsedRealtime() + 180000
     }
-    override fun onResume() { super.onResume(); active = true; handler.post(poll) }
+    override fun onResume() { super.onResume(); if (operation?.cancelled == true) { finish(); return }; active = true; handler.post(poll) }
     private fun permission(): PendingIntent = PendingIntent.getBroadcast(this, 90, Intent(permissionAction).setPackage(packageName),
         PendingIntent.FLAG_UPDATE_CURRENT or if (android.os.Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
     @Suppress("DEPRECATION")
     private fun inspect() {
-        if (busy || awaitingPermission || cancelled.get()) return
+        if (busy || awaitingPermission || cancelled.get() || operation?.cancelled == true) return
         if (android.os.SystemClock.elapsedRealtime() >= expireAt) { busy = true; note("No compatible USB data connection found. Check cable/USB host direction, then close and retry. QR setup remains available."); return }
         val accessory = manager.accessoryList?.firstOrNull { it.manufacturer == "Field" && it.model == "OTP Pager Pairing" }
         if (accessory != null) {
@@ -113,7 +121,7 @@ class CablePairActivity : Activity() {
         else {
             busy = true; note("Checking USB accessory support…")
             worker.execute {
-                try { UsbPairChannel.switchToAccessory(manager, device); runOnUiThread { busy = false; note("USB mode changed · waiting for reconnection/permission…") } }
+                try { operation?.check(); UsbPairChannel.switchToAccessory(manager, device); operation?.check(); runOnUiThread { busy = false; note("USB mode changed · waiting for reconnection/permission…") } }
                 catch (_: Exception) { note("Could not establish Android accessory mode. Try reversing USB host direction or use QR setup.") }
             }
         }
@@ -123,18 +131,21 @@ class CablePairActivity : Activity() {
         worker.execute {
             var engine: StationEngine? = null
             try {
+                operation?.check()
                 val station = ChatBook(this).engine(chatId); engine = station
                 if (renewal) station.requireRenewalIdentity() else station.requireCableEligible()
                 val link = open(); channel = link
+                operation?.check()
                 if (cancelled.get()) { link.close(); error("Cancelled") }
                 link.use {
                     CableProtocol.run(host, it.input, it.output, station, review = { code, endpoint ->
                         val latch = CountDownLatch(1); confirmation = latch
+                        if (cancelled.get() || operation?.cancelled == true) latch.countDown()
                         runOnUiThread { if (active && !cancelled.get()) {
                             status.text = "Compare every group on both screens:\n\n$code\n\nServer: $endpoint\n\nApprove only if every group matches."
                             confirm.isEnabled = true
                         } }
-                        check(latch.await(90, TimeUnit.SECONDS) && approved && !cancelled.get()) { "Confirmation cancelled or timed out" }
+                        check(latch.await(90, TimeUnit.SECONDS) && approved && !cancelled.get() && operation?.cancelled != true) { "Confirmation cancelled or timed out" }
                     }, progress = ::note, renew = renewal, size = padSize)
                 }
                 runOnUiThread { if (active && !cancelled.get()) { status.text = if (renewal) "Keys renewed. Your chat is ready." else "Paired. You're ready to chat."; finish.text = "Open conversation"; confirm.isEnabled = false } }
@@ -149,7 +160,7 @@ class CablePairActivity : Activity() {
         }
     }
     override fun onStop() {
-        active = false; cancelled.set(true); handler.removeCallbacksAndMessages(null); confirmation?.countDown(); channel?.close()
+        active = false; cancelled.set(true); operation?.close(); operation = null; handler.removeCallbacksAndMessages(null); confirmation?.countDown(); channel?.close()
         worker.execute { StationRuntime.pairingOpen = false }
         if (!isFinishing) finish()
         super.onStop()

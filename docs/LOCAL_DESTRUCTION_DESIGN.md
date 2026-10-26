@@ -28,14 +28,17 @@ process denies the namespace; durable restart exclusion is not claimed for that 
 `recoverPending` derives validated roots from marker filenames rather than the
 contact index. It retries cleanup idempotently even for complete markers, to remove
 restored ciphertext. Fresh store objects, stale engine views/sends/exports, direct
-child writes and cached signing handles are gated. No startup/UI caller invokes
-retirement or recovery yet; normal Forget retains its existing semantics.
+child writes and cached signing handles are gated. `PagerApplication` now runs recovery
+before activities/services; unreadable journal enumeration disables vault access,
+while individual incomplete contacts remain terminal without blocking unrelated
+contacts. No user-facing caller invokes retirement yet; normal Forget retains its
+existing semantics.
 
-This is not complete emergency destruction. Live transport/provisioning cancellation,
-already-captured in-flight ciphertext, process-memory clearing, terminal index/UI
-migration, wipe-all initiation, automatic startup recovery, sealed remote dispatch,
+This is not complete emergency destruction. Already-captured in-flight ciphertext,
+process-memory clearing, terminal index/UI migration, wipe-all initiation, sealed remote dispatch,
 remote acknowledgements, history-key separation and physical rollback/erasure remain
-separate work. A cached internal engine state object may still contain secrets until
+separate work. Cancellation/recovery integration is described below; its physical
+hardware behavior still needs validation. A cached internal engine state object may still contain secrets until
 its owner drops it; Keystore/file deletion cannot erase those objects.
 
 ## Required storage identities
@@ -137,3 +140,37 @@ generation migration; deletion error enumeration; key separation/rekey protocol;
 transport cancellation ownership; metadata retention; complete-purge behavior; OS
 rollback guarantees. These require a reviewed specification and tests, not assumed
 completion based on CI.
+
+
+## Cancellation and startup integration
+
+`ContactOperations` gives each contact root cancellable leases. Retirement first
+sets the local terminal gate, synchronously flags its leases, and dispatches close
+callbacks on dedicated daemon workers. Potentially blocked disconnect/USB/socket
+close callbacks never run while holding the lifecycle lock and are not awaited by
+key cleanup. Late close registration is handled; normal completion unregisters.
+Other contacts have separate lease sets. The close pool is bounded to two workers;
+if both block, later closes queue, but terminal flags and local cleanup still proceed.
+Underlying Android I/O cancellation is best effort; bytes already sent cannot be
+retracted, and a blocked I/O call may take its timeout to unwind.
+
+The relay binds transport to a contact, including through background receiving's
+wrapper. A lease registers HTTPS disconnect and checks cancellation around I/O and
+before returning a response. USB and Wi-Fi pairing activities register resource
+closure and confirmation-latch release; NFC reads register card close. Short NFC
+publication uses the lifecycle gate. NFC offers have an owner key so cancellation
+of an old activity cannot clear another contact's offer; the card service rejects
+retired owners even before asynchronous cleanup runs.
+
+`PagerApplication.onCreate` recovers terminal roots before ordinary app components
+start. Recovery derives roots from validated journal filenames, not the contact
+index. A directory-enumeration failure leaves operational access disabled for the
+process. Individual cleanup failures leave only those contact roots terminal and
+record an incomplete count. No attempt is made to reset terminal generations.
+
+Tests include registry isolation/late registration/blocked-close fault cases, a
+blocked HTTPS disconnect concurrent with real key cleanup, NFC owner isolation,
+and a host-driven seed → force-stop → fresh instrumentation run. The latter verifies
+that Application startup deletes contact/draft/signing keys and files before access,
+while another contact and reuse metadata survive. This is not physical power loss
+or proof of firmware/flash erasure.

@@ -4,7 +4,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Call only from the single station worker. Save snapshot before publishing it in memory. */
-class StationEngine(private val store: SecureStore, private val relay: RelayTransport = RelayClient, private val claims: PairingClaims? = null) {
+class StationEngine(private val store: SecureStore, relay: RelayTransport = RelayClient, private val claims: PairingClaims? = null) {
+    private val relay = relay.forContact(store)
     var state: JSONObject? = store.load()
         private set
     private val padLedger = PadLedger(store.sibling("pads"))

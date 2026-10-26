@@ -9,12 +9,13 @@ class ReceiveCycle {
     }
     fun pollOne(book: ChatBook, allowed: () -> Boolean): Result = pollBounded(book, RelayClient, allowed, 1)
     private fun pollBounded(book: ChatBook, relay: RelayTransport, allowed: () -> Boolean, maximum: Int): Result {
-        val cancellable = object : RelayTransport {
+        fun cancellable(base: RelayTransport): RelayTransport = object : RelayTransport {
+            override fun forContact(store: SecureStore): RelayTransport = cancellable(base.forContact(store))
             override fun scope(endpoint: String, room: String, bootstrap: String, capability: String): Boolean {
-                check(allowed()) { "Receiving paused" }; return relay.scope(endpoint, room, bootstrap, capability)
+                check(allowed()) { "Receiving paused" }; return base.scope(endpoint, room, bootstrap, capability)
             }
             override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String {
-                check(allowed()) { "Receiving paused" }; return relay.request(endpoint, room, token, method, body, cursor)
+                check(allowed()) { "Receiving paused" }; return base.request(endpoint, room, token, method, body, cursor)
             }
         }
         val chats = book.chats(); var attempted = 0; var failed = 0; var newMessages = false
@@ -22,7 +23,7 @@ class ReceiveCycle {
             if (allowed()) {
                 val chat = chats[(nextChat++).mod(chats.size)]
                 try {
-                    val engine = book.engine(chat.id, cancellable); val view = engine.view()
+                    val engine = book.engine(chat.id, cancellable(relay)); val view = engine.view()
                     if (engine.state != null && view.padCheck != null && view.pairingComplete && !view.relayRevoked) {
                         val before = engine.state!!.getJSONArray("inbox").let { list -> (0 until list.length()).map { list.getJSONObject(it).getString("id") }.toSet() }
                         attempted++; engine.sync()

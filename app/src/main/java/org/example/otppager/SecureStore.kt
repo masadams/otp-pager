@@ -16,6 +16,8 @@ import javax.crypto.spec.GCMParameterSpec
 class SecureStore(context: Context, namespace: String = "station-v2") {
     private val slot = namespace.also { require(Regex("[a-z0-9-]{1,40}").matches(it)) }
     internal val namespace: String get() = slot
+    internal val operationKey: String get() = VaultLifecycle.marker(base.parentFile!!, VaultLifecycle.root(slot)).absolutePath
+    internal fun operation() = ContactOperations.open(operationKey, ::requireActive)
     private val base = File(context.noBackupFilesDir, "$slot.bin")
     private val file = AtomicFile(base)
     fun identity() = DeviceIdentity("otp-pager-$slot-device") { requireActive() }

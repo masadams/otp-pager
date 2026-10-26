@@ -19,6 +19,7 @@ internal object VaultLifecycle {
     fun variants(file: File) = listOf(file, File(file.path + ".bak"), File(file.path + ".new"))
     fun deny(directory: File, root: String) { denied.add(marker(directory, root).absolutePath) }
     fun requireActive(directory: File, namespace: String) = synchronized(lock) {
+        check(!RetirementStartup.failed) { "Local retirement recovery unavailable; operation disabled" }
         val marker = marker(directory, root(namespace))
         check(marker.absolutePath !in denied && variants(marker).none { it.exists() }) {
             "This local pairing generation is retired; create a new friend pairing"
@@ -51,11 +52,17 @@ internal object VaultRetirement {
         return Result(namespace, terminal, complete, failures.toList())
     }
 
-    fun retireContact(context: Context, namespace: String): Result = synchronized(VaultLifecycle.lock) {
+    fun retireContact(context: Context, namespace: String): Result {
         require(VaultLifecycle.isContact(namespace)) { "Not an operational contact namespace" }
         val directory = context.noBackupFilesDir
+        // Disable new work before dispatching cancellation; cleanup never waits on socket/USB close.
+        synchronized(VaultLifecycle.lock) { VaultLifecycle.deny(directory, namespace) }
+        ContactOperations.cancel(VaultLifecycle.marker(directory, namespace).absolutePath)
+        return synchronized(VaultLifecycle.lock) { retireLocked(directory, namespace) }
+    }
+    private fun retireLocked(directory: File, namespace: String): Result {
         val marker = AtomicFile(VaultLifecycle.marker(directory, namespace))
-        perform(namespace, object : Operations {
+        return perform(namespace, object : Operations {
             override fun denyInProcess() = VaultLifecycle.deny(directory, namespace)
             override fun writeMarker(complete: Boolean) {
                 val bytes = ("OTP Pager retirement v1\n" + if (complete) "complete\n" else "pending\n").toByteArray(Charsets.US_ASCII)
@@ -93,13 +100,13 @@ internal object VaultRetirement {
     }
 
     /** Derive targets from validated filenames, never from a readable contact index or marker payload. */
-    fun recoverPending(context: Context): List<Result> = synchronized(VaultLifecycle.lock) {
+    fun recoverPending(context: Context): List<Result> {
         val directory = context.noBackupFilesDir
         val targets = checkNotNull(directory.listFiles()) { "Retirement directory unavailable" }.mapNotNull { file ->
             val name = file.name.removeSuffix(".bak").removeSuffix(".new")
             if (!name.endsWith(".retired")) null else name.removeSuffix(".retired").takeIf(VaultLifecycle::isContact)
         }.distinct().sorted()
         // Recheck even a completed marker: restored ciphertext must remain disabled and be cleaned again.
-        targets.map { retireContact(context, it) }
+        return targets.map { retireContact(context, it) }
     }
 }
