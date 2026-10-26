@@ -1,8 +1,42 @@
 # Local destruction design — review draft
 
 Targets: F01/F03/F04/F07/F09 and S03/S05/S07/S09/S12 in
-[the security plan](SECURITY_DEVELOPMENT_PLAN.md). No implementation or emergency
-wipe guarantee is established by this document. No peer-control format is selected.
+[the security plan](SECURITY_DEVELOPMENT_PLAN.md). The local prerequisite prototype
+below is under implementation review; no emergency wipe guarantee or peer-control
+format is established by this document.
+
+## First implementation slice: local contact retirement primitive
+
+`VaultRetirement` accepts only current contact root namespaces (`station-v2` or
+`chat-<20 hex>`). An AtomicFile `<root>.retired` outside the encrypted content records
+version 1 pending/complete; file and directory are fsynced and contents checked.
+Any marker variant, including malformed `.new`/`.bak`, disables that generation.
+The marker is app-private plaintext metadata without secrets; filesystem write
+access can cause denial/destruction, an explicit compromised-endpoint boundary.
+There is no reset/unretire API. Future fresh pairing needs a new namespace.
+
+One process-wide reentrant lock (also used by pad reservation and reuse claims to
+avoid lock-order inversion) orders terminal marking, vault load/save/key creation,
+device-key operations and engine transactions; no network is performed under that
+lock. Contact root detection also gates direct draft/ledger constructors. Cleanup
+attempts vault/draft wrapping keys, signing keys and vault/draft AtomicFile variants
+independently, then directory sync. Pad ledger and global reuse claims survive.
+Completion is reported only after all steps and durable completion-marker success.
+If marker persistence fails, cleanup still attempts key destruction and the running
+process denies the namespace; durable restart exclusion is not claimed for that case.
+
+`recoverPending` derives validated roots from marker filenames rather than the
+contact index. It retries cleanup idempotently even for complete markers, to remove
+restored ciphertext. Fresh store objects, stale engine views/sends/exports, direct
+child writes and cached signing handles are gated. No startup/UI caller invokes
+retirement or recovery yet; normal Forget retains its existing semantics.
+
+This is not complete emergency destruction. Live transport/provisioning cancellation,
+already-captured in-flight ciphertext, process-memory clearing, terminal index/UI
+migration, wipe-all initiation, automatic startup recovery, sealed remote dispatch,
+remote acknowledgements, history-key separation and physical rollback/erasure remain
+separate work. A cached internal engine state object may still contain secrets until
+its owner drops it; Keystore/file deletion cannot erase those objects.
 
 ## Required storage identities
 

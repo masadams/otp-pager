@@ -7,7 +7,7 @@ handoff record; never infer feature completion from a plan or passing baseline C
 
 - Baseline: merged v0.14, `cfe01af255bebbd195337b9d1b0c72017e39f7c1`.
 - Phase 1: initial inventory plus expanded authentication/provisioning and persistence review recorded.
-- Phase 2: OTP-only new-text engine guard implemented for review; local destruction design drafted.
+- Phase 2: OTP-only new-text engine guard merged (PR #9); local retirement primitive under review.
 - Phases 3–8: not implemented. No emergency wipe or peer-destruction claim.
 - No relay deployment, APK/signing change, key migration or destructive protocol change.
 
@@ -74,13 +74,30 @@ The corrected CI run must pass; the failed run is not counted as validation. And
 Android execution is delegated to the existing GitHub CI workflows, not claimed
 as locally passing. No security-critical merge until CI and invariant review complete.
 
+### 2026-10-26 — validated send guard and local retirement primitive
+
+PR #9 merged at `27872a78d99320f541ba3fe8e60726357c27f222` after developer invariant
+review and passing Android API29/31/35 suites, signed v0.13 upgrade preservation,
+wrong-signer/downgrade rejection and relay checks at `460ebb42e286f81456d25052b5efbeb350296ac5`.
+Evidence: Android run 40334727375, upgrade 40334727372, relay 40334727387.
+
+The next slice implements `VaultRetirement`: durable terminal marker, best-effort
+independent cleanup, idempotent recovery without a contact index, and storage/identity
+gates under one local lock. New JVM fault tests cover marker/deletion/completion
+failure and interruption boundaries; Android tests cover keys/drafts, preserved
+reuse metadata and unrelated contacts, malformed markers, restored snapshots,
+stale objects and a queued writer. CI results belong to the implementation PR.
+
+The primitive has no normal UI/startup invocation. It is not a finished local or
+remote emergency wipe. F01/F03/F04/F07/F09 remain open in part; F02's new-text guard
+is validated, while legacy receipt/recovery cryptography remains explicit.
+
 ## Next task
 
-Review CI for the OTP-only guard, including legacy recovery and signed upgrades.
-Resolve the local destruction draft's journal format, namespace migration, key
-separation, lock order and cancellation ownership, then implement small reviewed
-lifecycle changes with failure injection. F01/F03/F04/F07/F09 remain open; F02 is
-implemented pending Android validation and review, not independently audited.
+Validate the primitive, review cancellation/lock ownership around actual
+network and provisioning channels, then integrate startup recovery, fresh generation
+index migration and honest local-only status before exposing any destructive UI.
+Keep history-key separation and wipe-all/orphan scope explicit in that design.
 
 Do not implement the peer-wipe packet format until Phase 3 resolves control keys,
 generation binding, dispatch authority, acknowledgement and migration semantics.

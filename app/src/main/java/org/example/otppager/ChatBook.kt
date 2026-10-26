@@ -101,7 +101,7 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
 
 /** A pad or mailbox secret can never be assigned to two local chats. Retained on Forget pairing. */
 class PairingClaims(private val store: SecureStore) {
-    companion object { private val lock = Any() }
+    companion object { private val lock = VaultLifecycle.lock }
     private var failed = false
     private fun claim(kind: String, key: String, owner: String, existing: Boolean) = synchronized(lock) {
         check(!failed) { "Pairing registry write failed; restart the app" }

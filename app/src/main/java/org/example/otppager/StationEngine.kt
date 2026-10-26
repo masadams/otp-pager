@@ -44,13 +44,17 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         check(s.getJSONArray("outbox").length() <= 150 && s.getJSONArray("inbox").length() <= 100)
         check(!s.has("lastSentDraft") || ChatDraft.validId(s.getString("lastSentDraft")))
     }
-    private fun transaction(change: (JSONObject) -> Unit) {
+    private fun transaction(change: (JSONObject) -> Unit) = synchronized(VaultLifecycle.lock) {
+        store.requireActive(); transactionActive(change)
+    }
+    private fun transactionActive(change: (JSONObject) -> Unit) {
         val next = JSONObject(checkNotNull(state).toString())
         change(next); retireUsed(next); validate(next)
         if (next.toString() == state!!.toString()) return
         store.save(next); state = next; cachedView = null
     }
     fun configure(endpoint: String, token: String, secret: String, role: String) {
+        store.requireActive()
         val url = Protocol.endpoint(endpoint); val access = Protocol.token(token)
         Protocol.master(secret).fill(0); require(role == "A" || role == "B")
         val previous = state
@@ -95,6 +99,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         // The separate retirement/reservation ledger and non-exportable device key remain intact.
     }
     fun requireCableEligible() {
+        store.requireActive()
         val s = state ?: return
         check(!s.has("pad") && s.getLong("counter") == 0L && s.getLong("high") == 0L &&
             s.getJSONArray("outbox").length() == 0 && s.getJSONArray("inbox").length() == 0) {
@@ -102,6 +107,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         }
     }
     fun requireRenewalIdentity() {
+        store.requireActive()
         val s = checkNotNull(state) { "Pair this chat first" }
         check(s.has("pad") && s.has("ownDevice") && s.has("peerDevice") && !s.optBoolean("relayRevoked")) { "A verified paired chat is required" }
         identity.check(s.getString("ownDevice"))
@@ -116,6 +122,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         hashes.put(id, packetHash(wire))
     }
     fun renewalTraffic(): JSONArray {
+        store.requireActive()
         requireRenewalIdentity(); transaction(::prune)
         return JSONArray(items(state!!.getJSONArray("outbox")).filter { it.getString("kind") == "text" && it.getString("status") in listOf("queued", "relayed") }.map { it.getString("packet") })
     }
@@ -210,10 +217,12 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     }
     fun finishCable() = transaction { it.put("cableComplete", true).remove("renewalPaused") }
     fun pairingInvite(): PairingInvite {
+        store.requireActive()
         val s = checkNotNull(state) { "Save this station's link first" }
         return PairingInvite(s.getString("endpoint"), s.getString("token"), s.getString("secret"), if (s.getString("role") == "A") "B" else "A")
     }
     fun installPad(bundle: ByteArray) {
+        store.requireActive()
         val current = checkNotNull(state) { "Save the link settings first" }
         check(!current.has("pad")) { "Forget pairing before installing a fresh pad" }
         check(current.getJSONArray("outbox").length() == 0 && current.getJSONArray("inbox").length() == 0 && current.getLong("counter") == 0L && current.getLong("high") == 0L) { "Start a fresh pairing on both stations before installing pads" }
@@ -467,6 +476,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         // Do not clear the counter or replay window when removing message history.
     }
     fun revokeRelayAccess() {
+        store.requireActive()
         val s = checkNotNull(state)
         check(s.optBoolean("relayScoped")) { "Sync with an updated relay before revoking chat access" }
         val master = Protocol.master(s.getString("secret"))
@@ -477,6 +487,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         } finally { master.fill(0) }
     }
     fun sync(): String {
+        store.requireActive()
         check(state?.optBoolean("renewalPaused") != true) { "USB renewal paused; reconnect both devices to recover" }
         check(state?.optBoolean("relayRevoked") != true) { "Chat access revoked; pair a fresh chat on both devices" }
         check(state?.optBoolean("cableComplete", true) != false) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }
@@ -562,6 +573,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
             // Retry the exact durable ciphertext; a timeout never creates a new message ID/counter.
             val pending = items(checkNotNull(state).getJSONArray("outbox")).filter { it.getString("status") == "queued" }.take(10)
             for (entry in pending) {
+                store.requireActive()
                 relay.request(s.getString("endpoint"), room, credential, "POST", JSONObject().put("packet", entry.getString("packet")).toString())
                 transaction { next ->
                     items(next.getJSONArray("outbox")).firstOrNull { it.getString("id") == entry.getString("id") }?.put("status", "relayed")
@@ -584,6 +596,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
         return try { PadProtocol.slots(pad) } finally { pad.fill(0) }
     }
     fun view(): View {
+        store.requireActive()
         cachedView?.let { if (System.currentTimeMillis() < cacheExpiry) return it }
         val s = state ?: return View("—", "NOT PAIRED", emptyList(), 0)
         val master = Protocol.master(s.getString("secret"))

@@ -4,7 +4,7 @@ import org.json.JSONObject
 
 /** Never deleted by Forget pairing. Reservations precede encryption; interrupted sends waste slots. */
 class PadLedger(private val store: SecureStore) {
-    companion object { private val reservationLock = Any() }
+    companion object { private val reservationLock = VaultLifecycle.lock }
     private var failed = false
     private fun save(s: JSONObject) {
         try { store.save(s) } catch (e: Exception) { failed = true; throw e }
