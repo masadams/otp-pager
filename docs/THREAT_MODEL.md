@@ -1,5 +1,10 @@
 # Threat model (draft)
 
+Current v0.14 source inventory, trust boundaries and prioritized findings are in
+[SECURITY_INVENTORY_V014.md](SECURITY_INVENTORY_V014.md). The active
+[development plan](SECURITY_DEVELOPMENT_PLAN.md) defines acceptance invariants and
+review gates. This earlier sketch is retained as background, not completion evidence.
+
 ## Intended protections
 - Passive network interception, relay operators reading ciphertext, and unauthorized remote pairing.
 - Replay, reordering, message tampering, and accidental key reuse.

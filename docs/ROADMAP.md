@@ -1,5 +1,13 @@
 # Roadmap
 
+## Active security work — v0.14 baseline
+
+Use [Security development plan](SECURITY_DEVELOPMENT_PLAN.md) for current security,
+data lifecycle, relay hardening and emergency destruction work. Read
+[progress and next task](SECURITY_PROGRESS.md) and [baseline findings](SECURITY_INVENTORY_V014.md)
+before continuing. The sections below preserve the earlier roadmap and milestone
+history; their version-specific UI and open-task descriptions may be superseded.
+
 Android, including Android e-ink readers, is the primary platform. Dedicated
 hardware is optional future work. Current Android 0.7 supports experimental finite-pad
 traffic, device signatures and USB provisioning; AES-GCM remains a labelled test mode.
