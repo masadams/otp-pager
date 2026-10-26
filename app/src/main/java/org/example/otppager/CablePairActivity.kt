@@ -101,7 +101,7 @@ class CablePairActivity : Activity() {
         androidx.core.content.ContextCompat.registerReceiver(this, receiver, events, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
         expireAt = android.os.SystemClock.elapsedRealtime() + 180000
     }
-    override fun onResume() { super.onResume(); if (operation?.cancelled == true) { finish(); return }; active = true; handler.post(poll) }
+    override fun onResume() { super.onResume(); if (operation == null || cancelled.get() || operation?.cancelled == true) { finish(); return }; active = true; handler.post(poll) }
     private fun permission(): PendingIntent = PendingIntent.getBroadcast(this, 90, Intent(permissionAction).setPackage(packageName),
         PendingIntent.FLAG_UPDATE_CURRENT or if (android.os.Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
     @Suppress("DEPRECATION")
@@ -121,7 +121,7 @@ class CablePairActivity : Activity() {
         else {
             busy = true; note("Checking USB accessory support…")
             worker.execute {
-                try { operation?.check(); UsbPairChannel.switchToAccessory(manager, device); operation?.check(); runOnUiThread { busy = false; note("USB mode changed · waiting for reconnection/permission…") } }
+                try { check(!cancelled.get()); operation?.check(); UsbPairChannel.switchToAccessory(manager, device); operation?.check(); runOnUiThread { busy = false; note("USB mode changed · waiting for reconnection/permission…") } }
                 catch (_: Exception) { note("Could not establish Android accessory mode. Try reversing USB host direction or use QR setup.") }
             }
         }

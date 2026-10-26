@@ -62,7 +62,8 @@ class RetirementCancellationTest {
             NfcSetupExchange.clearFor(first)
             assertArrayEquals(byteArrayOf(7), NfcSetupExchange.payload)
             ContactOperations.cancel(second)
-            val service = NfcSetupCard()
+            lateinit var service: NfcSetupCard
+            InstrumentationRegistry.getInstrumentation().runOnMainSync { service = NfcSetupCard() }
             assertArrayEquals(byteArrayOf(0x69, 0x85.toByte()), service.processCommandApdu(NfcSetupExchange.select, null))
             NfcSetupExchange.clearFor(second); assertNull(NfcSetupExchange.payload)
         } finally { NfcSetupExchange.clear() }
