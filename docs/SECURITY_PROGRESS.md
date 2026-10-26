@@ -6,8 +6,9 @@ handoff record; never infer feature completion from a plan or passing baseline C
 ## Current position
 
 - Baseline: merged v0.14, `cfe01af255bebbd195337b9d1b0c72017e39f7c1`.
-- Phase 1: targeted source inventory and initial prioritized findings drafted.
-- Phases 2–8: not implemented by this work. No emergency wipe or peer-destruction claim.
+- Phase 1: initial inventory plus expanded authentication/provisioning and persistence review recorded.
+- Phase 2: OTP-only new-text engine guard implemented for review; local destruction design drafted.
+- Phases 3–8: not implemented. No emergency wipe or peer-destruction claim.
 - No relay deployment, APK/signing change, key migration or destructive protocol change.
 
 ## Decisions recorded 2026-10-26
@@ -43,14 +44,39 @@ Validation performed:
 This is source/documentation work, not completion of a cryptographic or
 physical-device audit.
 
+### 2026-10-26 — OTP-only engine and local lifecycle design
+
+The plan/inventory PR #8 was merged. Expanded source review covers identity
+transcripts, USB ECDH/approval/commit/recovery, NFC setup and local radio tickets,
+legacy packet decode/receipt paths, all first-party file/Keystore/SharedPreferences
+locations found by source search and existing regression callers. See the inventory
+addendum for scope and limits.
+
+F02/S04: `sendText` and text queueing now reject a missing pad. `View.canSend`
+requires verified, ready pad capacity. Retained legacy packets can still be read,
+retried and acknowledged using the pre-existing conventional receipt path; this is
+explicit compatibility, not new AES text creation. Normal pad allocation and wire
+formats are unchanged. Test-only legacy snapshots replace tests that previously
+created AES texts through the engine. A new Android regression verifies rejection,
+unchanged vault/counter/outbox/draft and persistence across restart.
+
+F01/F03/F04/F07/F09: [local destruction review draft](LOCAL_DESTRUCTION_DESIGN.md)
+records generation identity, terminal journal, key boundaries, cancellation/locking,
+restart recovery, orphan/wipe-all handling and the required fault matrix. None of
+that destructive behavior is implemented yet.
+
+Validation: local whitespace/link checks and relay baseline results recorded in the
+implementation PR. Android SDK/Gradle/emulator are not installed in this workspace;
+Android execution is delegated to the existing GitHub CI workflows, not claimed
+as locally passing. No security-critical merge until CI and invariant review complete.
+
 ## Next task
 
-Finish the Phase 1 review of authentication/provisioning, all persistence/deletion
-callers and existing test coverage. Then draft the Phase 2 local lifecycle design
-against F01–F04/F07/F09 before implementation: durable terminal marker, cleanup
-enumeration, orphan handling, worker cancellation and restart recovery, independently
-erasable key boundaries and explicit OTP-only engine migration. Map each operation
-to S03/S04/S05/S07/S09/S12 and fault-test points.
+Review CI for the OTP-only guard, including legacy recovery and signed upgrades.
+Resolve the local destruction draft's journal format, namespace migration, key
+separation, lock order and cancellation ownership, then implement small reviewed
+lifecycle changes with failure injection. F01/F03/F04/F07/F09 remain open; F02 is
+implemented pending Android validation and review, not independently audited.
 
 Do not implement the peer-wipe packet format until Phase 3 resolves control keys,
 generation binding, dispatch authority, acknowledgement and migration semantics.

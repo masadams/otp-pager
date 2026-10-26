@@ -104,3 +104,29 @@ offline surviving dispatch; independently verified peer acknowledgements; hostil
 relay two-device matrix; real power-loss, firmware/Keystore deletion behavior,
 backups and live server configuration. Phase 1 remains partial until these audit
 boundaries and the broader code/protocol coverage are reviewed.
+
+
+## Expanded review and first implementation follow-up
+
+The following review expands coverage but is not an independent protocol assessment:
+
+| Area | Source observations / boundary | Evidence source |
+| --- | --- | --- |
+| Message authentication | Pad HMAC verified before plaintext decoding; device signature transcript includes room, pad ID, role, counter, both identities and body; binding rejects unsigned traffic once active | `PadProtocol.open`, `IdentityProtocol.transcript/body`, `StationEngine.deviceBody/sync`; `PadProtocolTest`, `DeviceIdentityTest` |
+| USB | Both approvals precede secret setup; ephemeral ECDH/HKDF directional AES-GCM binds transcript, role and sequence; failure poisons session; staged/partial completion requires explicit recovery | `CableProtocol`, `CableSession`, `CablePairActivity`; cable vector and `CableSessionTest`/`CablePairTest` |
+| NFC / radio | Setup NFC is short-lived bearer sharing, not authenticated device pairing; radio ticket is private IPv4 address/port plus secret, mutual fresh challenge and separate encrypted channel containing signed/code-compared pairing | `NfcSetupActivity`, `RadioHandoff`, `RadioPairActivity`; `RadioHandoffTest`, `RadioPairTest`, `ReceiveTest` |
+| Persistent state | First-party direct file writes found in SecureStore; other persistent Android writes use Keystore, receiving/pad-size preferences or explicit document providers | Source search across main Kotlin for file/preferences/key and import/export APIs; OS/dependency stores not exhaustively inspected |
+| Lifetime/concurrency | Single production worker includes networking/provisioning; local wipe must not wait behind it; stale engine/draft/key creation must be gated at storage boundaries | `StationRuntime`, `NetworkActivity.runTask`, `ReceiveService`, `CablePairActivity`, `RadioPairActivity`; local destruction design draft |
+
+First implementation closes the new-text entry path identified in F02: no-pad
+`send`/`sendDraft` and text queueing fail, and `View.canSend` no longer enables
+legacy sending. Existing conventional packet decode, exact retry and receipt
+compatibility remain explicitly supported; no entire-lifecycle OTP-only claim.
+`OtpOnlyEngineTest` covers no-pad rejection across restart without changing durable
+message/draft state. Older recovery tests now load test-only pre-upgrade snapshots
+instead of manufacturing new AES texts through the production engine.
+
+Remaining audit limits include dependency/OS stores, exhaustive malformed protocol
+and cancellation interleavings, independent crypto review, host/signing custody,
+physical devices and real power-loss/rollback. F01/F03–F11 are not resolved by the
+engine guard or the local lifecycle design document.

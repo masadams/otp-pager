@@ -348,6 +348,8 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     }
     private fun items(array: JSONArray) = (0 until array.length()).map { array.getJSONObject(it) }
     private fun queue(s: JSONObject, payload: JSONObject, kind: String): JSONObject {
+        // Legacy receipt/retry support must never become a way to create new AES texts.
+        check(kind != "text" || s.has("pad")) { "Physically pair message keys before sending" }
         require(items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" } < 50) { "Outbox full; sync before sending more" }
         if (s.has("ownDevice")) {
             check(s.has("peerDevice")) { "Verify the other device identity first" }
@@ -404,6 +406,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     private fun sendText(text: String, draftId: String?) {
         require(text.toByteArray(Charsets.UTF_8).size in 1..2048) { "Message must be 1–2048 UTF-8 bytes" }
         transaction { s ->
+            check(s.has("pad")) { "Physically pair message keys before sending" }
             check(!s.optBoolean("renewalPaused")) { "Finish USB pad renewal on both devices first" }
             check(!s.optBoolean("relayRevoked")) { "Chat access revoked; pair a fresh chat on both devices" }
             check(s.optBoolean("cableComplete", true)) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }
@@ -574,7 +577,7 @@ class StationEngine(private val store: SecureStore, private val relay: RelayTran
     data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false)
     data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true, val cableEligible: Boolean = true, val awaitingReceipt: Int = 0, val relayScoped: Boolean = false, val relayRevoked: Boolean = false) {
         val setupComplete: Boolean get() = pairingComplete && padCheck != null && padVerified && peerReady && peerDevice != null
-        val canSend: Boolean get() = !relayRevoked && pairingComplete && role != "—" && padRemaining != 0 && (padCheck == null || (padVerified && peerReady)) && (ownDevice == null || peerDevice != null)
+        val canSend: Boolean get() = !relayRevoked && pairingComplete && role != "—" && padRemaining != null && padRemaining > 0 && padCheck != null && padVerified && peerReady && (ownDevice == null || peerDevice != null)
     }
     private fun padCapacity(s: JSONObject): Int {
         val pad = java.util.Base64.getDecoder().decode(s.getString("pad"))
