@@ -1256,15 +1256,20 @@ class NetworkActivity : Activity() {
         worker.execute { engine = null; book = null }
         super.onStop()
     }
-    private fun closeVisibleContact() = synchronized(VaultLifecycle.lock) {
-        visibleContact?.close(); visibleContact = null
+    private fun closeVisibleContact() {
+        val lease = visibleContact ?: return
+        synchronized(VaultLifecycle.lock) {
+            lease.close()
+            if (visibleContact === lease) visibleContact = null
+        }
     }
     /** Main-thread disposal; queued work cannot publish after the generation changes. */
     private fun closeRetiredConversation() {
         generation++; handler.removeCallbacks(poll); handler.removeCallbacks(saveDraft)
         openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
         pairingDialog?.dismiss(); pairingDialog = null
-        closeVisibleContact()
+        // Cancellation already unregistered this lease. Do not wait behind storage cleanup's lock.
+        visibleContact = null
         engine = null; book = null
         clearPrivateState()
         // Recovery/fresh-pairing status UI is a later slice; never leave a stale conversation visible.

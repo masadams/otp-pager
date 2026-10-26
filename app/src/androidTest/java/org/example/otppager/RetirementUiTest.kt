@@ -37,6 +37,7 @@ class RetirementUiTest {
         val savedIndex = index.load(); val savedClaims = claims.load()
         var activity: NetworkActivity? = null
         val release = java.util.concurrent.CountDownLatch(1)
+        val allowMain = java.util.concurrent.CountDownLatch(1)
         try {
             index.save(JSONObject().put("version", 3).put("active", root).put("chats", JSONArray()
                 .put(JSONObject().put("id", root).put("entryId", root).put("name", "Private friend"))))
@@ -59,7 +60,20 @@ class RetirementUiTest {
             val entered = java.util.concurrent.CountDownLatch(1)
             StationRuntime.worker.execute { entered.countDown(); release.await(15, TimeUnit.SECONDS) }
             assertTrue(entered.await(5, TimeUnit.SECONDS))
+            // Park the main looper so invalidation cannot race ahead of our lock-contention check.
+            val parked = java.util.concurrent.CountDownLatch(1)
+            android.os.Handler(android.os.Looper.getMainLooper()).post { parked.countDown(); allowMain.await(10, TimeUnit.SECONDS) }
+            assertTrue(parked.await(5, TimeUnit.SECONDS))
             assertTrue(VaultRetirement.retireContact(context, root).completed)
+            val cleared = java.util.concurrent.CountDownLatch(1)
+            synchronized(VaultLifecycle.lock) {
+                allowMain.countDown()
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    if (field(a, "engine") == null && field(a, "latest") == null &&
+                        (field(a, "composer") as EditText).text.isEmpty()) cleared.countDown()
+                }
+                assertTrue("Private UI disposal waited behind the storage lifecycle lock", cleared.await(5, TimeUnit.SECONDS))
+            }
             await { a.isDestroyed }
             instrumentation.runOnMainSync {
                 assertFalse(dialog.isShowing)
@@ -72,7 +86,7 @@ class RetirementUiTest {
             }
             assertFalse(java.io.File(context.noBackupFilesDir, "$root-draft.bin").exists())
         } finally {
-            release.countDown()
+            allowMain.countDown(); release.countDown()
             activity?.let { a -> instrumentation.runOnMainSync { if (!a.isFinishing) a.finish() }; await { a.isDestroyed } }
             StationRuntime.worker.submit {}.get(15, TimeUnit.SECONDS)
             listOf(root, "$root-draft", "$root-pads").forEach { SecureStore(context, it).forget() }

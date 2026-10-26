@@ -154,7 +154,12 @@ unknown-index test tried to reread a version rejected by SecureStore itself. Cle
 now uses pre-corruption IDs; the unknown-index test uses version 4 (supported by the
 outer vault but invalid for a contact index). Neither failure is counted as validation.
 The same head passed signed-upgrade checks. Fresh CI is required after fixture fixes
-and extended UI metadata clearing. Results and exact head are recorded in PR #10.
+and extended UI metadata clearing. Concurrency review also removed the foreground
+invalidation callback's wait on the lifecycle lock: cancellation already unregisters
+its lease. The UI regression now parks the main looper, triggers retirement, then
+holds the lifecycle lock while requiring private UI disposal to finish. This covers
+storage-lock contention as well as a blocked app worker. Results and exact head are
+recorded in PR #10.
 
 No user-facing retirement/replacement control is exposed yet. The current open screen
 closes on internal retirement; the dedicated retired-contact/recovery status screen
