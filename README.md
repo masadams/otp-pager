@@ -4,7 +4,7 @@ Experimental, open-source, physically paired text messenger. Android, including 
 
 > **Security status: NOT AUDITED. NOT READY FOR SENSITIVE COMMUNICATIONS.** This repository begins with specifications and testable scaffolding, not a claim of secure or Jericho-compatible messaging.
 
-## Current merged build: v0.14
+## Current development source: v0.14 plus lifecycle foundations
 
 `main` includes encrypted USB pairing, separate friend chats, device signatures,
 used-pad cleanup, compatible signed updates, per-chat relay access/revocation and
@@ -15,10 +15,15 @@ Wi-Fi pairing, encrypted drafts and a Chats-first interface. See
 signer custody are distinct; independent review remains pending.
 
 The active [security and data-lifecycle development plan](docs/SECURITY_DEVELOPMENT_PLAN.md)
-tracks the next work, with [progress and next steps](docs/SECURITY_PROGRESS.md) and
-[v0.14 inventory/findings](docs/SECURITY_INVENTORY_V014.md). Emergency local/peer
-wiping is planned, not implemented. Historical version sections below are not
-descriptions of the current interface.
+tracks the next work, with an [ordered checked task list](docs/SECURITY_CHECKLIST.md),
+[developer handoff](docs/DEVELOPER_HANDOFF.md), [progress](docs/SECURITY_PROGRESS.md)
+and [v0.14 inventory/findings](docs/SECURITY_INVENTORY_V014.md). PRs #9–15 add OTP-only
+new-text enforcement, local/global retirement and recovery, authenticated initial
+provenance and empty enrollment staging. Fresh global enrollment activation,
+active emergency-wipe controls and remote wiping remain unimplemented. These merges
+are development integration; version metadata remains 0.14.0 and no new signed
+release or live deployment is implied. Historical sections below are not descriptions
+of the current interface.
 
 Update **both clients first**, then pull/redeploy the existing Portainer stack using
 `refs/heads/main` and `deploy/portainer-stack.yml`, preserving its data volume and token.
@@ -44,6 +49,8 @@ as historical material; its debug APK is not the current installation path.
 
 ## Documents
 - [Active security development plan](docs/SECURITY_DEVELOPMENT_PLAN.md)
+- [Ordered security checklist](docs/SECURITY_CHECKLIST.md)
+- [Developer handoff](docs/DEVELOPER_HANDOFF.md)
 - [Security progress and next task](docs/SECURITY_PROGRESS.md)
 - [v0.14 security inventory and findings](docs/SECURITY_INVENTORY_V014.md)
 - [Threat model](docs/THREAT_MODEL.md)
@@ -61,8 +68,10 @@ No project-wide code license has been selected yet. Do not copy Jericho source i
 ## Two-phone deployment prototype
 
 See [Docker / Portainer + Nginx setup](docs/DEPLOYMENT.md) and
-[two-device testing](docs/TWO_DEVICE_TEST.md). The Android field terminal currently
-offers experimental AES-GCM test mode and a finite-pad mode described below; validated physical entropy, information-theoretic authentication, and Jericho compatibility remain future work.
+[two-device testing](docs/TWO_DEVICE_TEST.md). The historical prototype offered AES-GCM test mode and a finite-pad mode as described
+below. Current code requires a verified pad for new user text; conventional legacy
+packet/receipt recovery remains explicit compatibility. Validated physical entropy,
+information-theoretic authentication and Jericho compatibility remain future work.
 
 ## Android v0.2 hardening
 

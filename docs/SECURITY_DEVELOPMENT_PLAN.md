@@ -5,6 +5,22 @@ Owner direction: 2026-10-26. Baseline: Android v0.14, main commit
 `cfe01af255bebbd195337b9d1b0c72017e39f7c1`.
 
 For a checked task list in build order, see [the security checklist](SECURITY_CHECKLIST.md).
+For continuation without chat history, read [the developer handoff](DEVELOPER_HANDOFF.md).
+
+## Current delivery status — 2026-10-27
+
+PRs #9–15 are merged. Phase 1's initial source audit and Phase 2's local retirement,
+global cleanup/recovery, authenticated initial evidence and empty storage staging
+are implemented/tested in their documented scope. Phase 2 remains open: no ACTIVE
+epoch, repeat-wipe lineage, global fresh enrollment or history-key migration yet.
+Phases 3–8 remain outstanding. Remote wipe and active emergency controls are not
+implemented; no production-readiness decision or live deployment follows from merging.
+
+The handoff contains exact merged commits, final-head CI evidence, source entry
+points, test commands, known limitations and ordered continuation criteria. The
+checklist is the current task state; historical log entries retain their original
+status for traceability.
+
 
 Start here on every continuation: read this plan, [progress](SECURITY_PROGRESS.md),
 and the [baseline inventory and findings](SECURITY_INVENTORY_V014.md). Record the
@@ -182,16 +198,15 @@ No live server deployment or production-readiness claim follows from this plan a
 
 ## Remaining work packages and continuation cadence
 
-Planning estimate: roughly 8–12 development rounds from the local-recovery slice,
-plus physical-device evidence and independent review. These are work packages, not
-required user approval prompts or a promise of production readiness in that many
-messages. Batch connected work through a reviewable gate; split a package when a
+These are dependency-ordered work packages, not a fixed number of chat turns or
+required user approval prompts. Physical-device evidence and independent review
+remain separate gates; implementation progress alone does not establish readiness. Batch connected work through a reviewable gate; split a package when a
 security finding requires it. Tests alone never satisfy an independent-review gate.
 
 | Package | Scope / natural stopping point |
 | --- | --- |
-| A | Local recovery status, safe fresh-pairing UI, read-only orphan discovery and remaining local design review |
-| B | B1: global terminal freeze, index-independent cleanup, metadata removal and interrupted recovery; B2: global recovery UI, then reviewed enrollment epoch/guard-provenance transition |
+| A — implemented/tested, merged #10 | Local recovery status, safe per-contact fresh-pairing UI and read-only orphan discovery; physical validation remains open |
+| B — partial, merged #11–15 | Global freeze/cleanup/recovery UI, guard reader, initial provenance and empty staging implemented/tested. ACTIVE publication/routing, retained-cohort enforcement and repeat-wipe lineage remain open |
 | C | Independently erasable history and reviewed crash-safe old-key migration |
 | D | Exact emergency-control/dispatch/ack protocol and migration specification; independent review and vectors before code |
 | E | Relay scoped authorization, durable control/tombstone support and recovery/migration tests |
@@ -206,7 +221,7 @@ the implementation PR, rather than asking the user to reconstruct prior messages
 
 
 Current B2 reference: [global enrollment protocol candidate](GLOBAL_ENROLLMENT_PROTOCOL.md).
-Global recovery observation/retry is a separate implemented review slice. Epoch
+Global recovery observation/retry and empty staging are merged development foundations. Epoch
 activation remains unimplemented; v1 terminal journals cannot prove absent reuse
 registry provenance and must never authorize an empty reset. Executable design-model
 checks do not complete package B or replace Android lifecycle/physical evidence.
