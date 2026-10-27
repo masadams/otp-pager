@@ -122,6 +122,17 @@ class RetirementRecoveryTest {
             obstruction.deleteRecursively(); tap(a, "Retry local cleanup")
             await { field(a, "busy") == false && views(a).filterIsInstance<Button>().any { it.isShown && it.text.toString() == "Start fresh pairing" && it.isEnabled } }
             InterfaceTest().capture(instrumentation, a, "15-retired-complete", windowOnly = true)
+            instrumentation.runOnMainSync {
+                ((field(a, "screens") as PagerScreens).retired.getChildAt(1) as android.widget.ScrollView).fullScroll(View.FOCUS_DOWN)
+            }
+            await {
+                listOf("Start fresh pairing", "Back to chats").all { label ->
+                    val button = views(a).filterIsInstance<Button>().first { it.isShown && it.text.toString() == label }
+                    val bounds = android.graphics.Rect()
+                    button.getGlobalVisibleRect(bounds) && bounds.height() == button.height
+                }
+            }
+            InterfaceTest().capture(instrumentation, a, "16-retired-actions", windowOnly = true)
             tap(a, "Start fresh pairing")
             lateinit var dialog: AlertDialog
             instrumentation.runOnMainSync {

@@ -76,13 +76,13 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     private val keys = label("", 14f, true)
     val retired = column()
     private val retiredName = label("Retired pairing", 24f)
-    private val retiredStatus = label("Local cleanup status unavailable", 20f)
+    private val retiredStatus = label("Local cleanup status unavailable", 18f)
     private val retiredNotice = label("", 13f).apply { visibility = View.GONE }
     private val retryRetirementButton = button("Retry local cleanup") { actions.retryRetirement() }.apply { isEnabled = false; alpha = 0.45f }
     private val freshPairingButton = button("Start fresh pairing", true) { actions.freshPairing() }.apply { isEnabled = false; alpha = 0.45f }
     init {
         retired.addView(header("Pairing recovery", back = 4))
-        retired.addView(ScrollView(activity).apply { isFillViewport = true; setPadding(0, 0, dp(8), dp(12)); addView(column().apply {
+        retired.addView(ScrollView(activity).apply { isFillViewport = true; scrollBarStyle = View.SCROLLBARS_INSIDE_INSET; setPadding(0, 0, dp(8), dp(12)); addView(column().apply {
             addView(retiredName.apply { setPadding(0, dp(20), 0, dp(16)) })
             addView(retiredStatus)
             addView(label("This pairing is permanently disabled on this device. No remote wipe has been requested; the other device may still hold its copy.", 15f).apply { setPadding(0, dp(16), 0, dp(16)) })

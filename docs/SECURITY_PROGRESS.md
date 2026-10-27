@@ -199,7 +199,11 @@ First recovery head `6cc0f76fcbbb15a03a51b41b23cadc26c13e6f30` passed API29/31,
 signed upgrades and relay. Visual QA of compact-screen artifacts found disabled
 fresh-pairing styling looked active and a redundant success notice; controls now
 start disabled, show disabled styling, and use improved compact spacing. Fixture
-cleanup explicitly removes AtomicFile variants on older Android. Fresh latest-head
+cleanup explicitly removes AtomicFile variants on older Android. The corrected UI
+passed API29/31 and signed upgrades; a further compact visual review found scrollbar
+overlap at the right text edge. The page now reserves scrollbar space, and the UI
+test scrolls to verify the bottom action buttons are fully visible and captures that
+state. Fresh latest-head
 CI and screenshot review are required after these changes. Local relay
 13/13, signing-policy 7/7 and whitespace passed; latest CI evidence belongs to PR #10.
 
