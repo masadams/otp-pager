@@ -10,16 +10,21 @@ internal object RetirementStartup {
         private set
     @Volatile var global: GlobalRetirementMachine.Result? = null
         private set
-    internal fun recordGlobal(result: GlobalRetirementMachine.Result) {
+    internal fun recordGlobal(context: Context, result: GlobalRetirementMachine.Result) {
         global = result
         incomplete = if (result.completed) 0 else 1
         failed = false // Global access remains terminal even when retry succeeds.
+        try { RetirementEvidence.recordCleanup(context, result) } catch (_: Exception) { /* No repair or retrospective capture. */ }
     }
     fun recover(context: Context) {
         failed = true
         try {
+            val presence = RetirementEvidence.probe(context.noBackupFilesDir)
+            check(presence != RetirementEvidence.Presence.UNAVAILABLE || GlobalRetirement.hasLegacyIntent(context.noBackupFilesDir)) {
+                "Cannot establish terminal intent; block access without initiating destruction"
+            }
             if (GlobalRetirement.isFrozen(context.noBackupFilesDir)) {
-                recordGlobal(GlobalRetirement.recover(context))
+                recordGlobal(context, GlobalRetirement.recover(context))
             } else {
                 global = null
                 incomplete = VaultRetirement.recoverPending(context).count { !it.completed }
