@@ -195,7 +195,12 @@ permission prompts.
 New tests cover read-only status vs restored files/keys/malformed journals/unavailable
 directory, active-contact retry rejection, isolated navigation/retry/confirmation/
 empty fresh pairing, screenshots, and orphan discovery/exclusions/capacity errors.
-Latest-head CI is required; prior results do not validate this slice. Local relay
+First recovery head `6cc0f76fcbbb15a03a51b41b23cadc26c13e6f30` passed API29/31,
+signed upgrades and relay. Visual QA of compact-screen artifacts found disabled
+fresh-pairing styling looked active and a redundant success notice; controls now
+start disabled, show disabled styling, and use improved compact spacing. Fixture
+cleanup explicitly removes AtomicFile variants on older Android. Fresh latest-head
+CI and screenshot review are required after these changes. Local relay
 13/13, signing-policy 7/7 and whitespace passed; latest CI evidence belongs to PR #10.
 
 ## Next task

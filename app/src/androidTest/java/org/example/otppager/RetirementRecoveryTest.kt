@@ -25,7 +25,10 @@ class RetirementRecoveryTest {
     private val context get() = instrumentation.targetContext
     private fun root() = "chat-" + UUID.randomUUID().toString().replace("-", "").take(20)
     private fun cleanup(id: String) {
-        listOf(id, "$id-draft", "$id-pads").forEach { SecureStore(context, it).forget() }
+        listOf(id, "$id-draft", "$id-pads").forEach { slot ->
+            SecureStore(context, slot).forget()
+            VaultLifecycle.variants(File(context.noBackupFilesDir, "$slot.bin")).forEach { it.delete() }
+        }
         VaultLifecycle.variants(VaultLifecycle.marker(context.noBackupFilesDir, id)).forEach { it.delete() }
     }
     private fun field(a: NetworkActivity, name: String) = NetworkActivity::class.java.getDeclaredField(name).apply { isAccessible = true }.get(a)
@@ -105,7 +108,10 @@ class RetirementRecoveryTest {
             await { field(a, "busy") == false && views(a).filterIsInstance<Button>().any { it.isShown && it.contentDescription?.toString() == "Alice. Retired on this device" } }
             instrumentation.runOnMainSync { views(a).filterIsInstance<Button>().first { it.contentDescription?.toString() == "Alice. Retired on this device" }.performClick() }
             await { views(a).filterIsInstance<TextView>().any { it.isShown && it.text.toString() == "Local cleanup incomplete" } }
-            instrumentation.runOnMainSync { assertFalse(views(a).filterIsInstance<Button>().first { it.text.toString() == "Start fresh pairing" }.isEnabled) }
+            instrumentation.runOnMainSync {
+                val freshButton = views(a).filterIsInstance<Button>().first { it.text.toString() == "Start fresh pairing" }
+                assertFalse(freshButton.isEnabled); assertTrue(freshButton.alpha < 0.5f)
+            }
             InterfaceTest().capture(instrumentation, a, "14-retired-incomplete", windowOnly = true)
             tap(a, "Back to chats")
             instrumentation.runOnMainSync { views(a).filterIsInstance<Button>().first { it.isShown && it.contentDescription?.toString()?.startsWith("Bob.") == true }.performClick() }

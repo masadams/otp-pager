@@ -78,11 +78,11 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     private val retiredName = label("Retired pairing", 24f)
     private val retiredStatus = label("Local cleanup status unavailable", 20f)
     private val retiredNotice = label("", 13f).apply { visibility = View.GONE }
-    private val retryRetirementButton = button("Retry local cleanup") { actions.retryRetirement() }
-    private val freshPairingButton = button("Start fresh pairing", true) { actions.freshPairing() }
+    private val retryRetirementButton = button("Retry local cleanup") { actions.retryRetirement() }.apply { isEnabled = false; alpha = 0.45f }
+    private val freshPairingButton = button("Start fresh pairing", true) { actions.freshPairing() }.apply { isEnabled = false; alpha = 0.45f }
     init {
-        retired.addView(header("Local pairing recovery", back = 4))
-        retired.addView(ScrollView(activity).apply { addView(column().apply {
+        retired.addView(header("Pairing recovery", back = 4))
+        retired.addView(ScrollView(activity).apply { isFillViewport = true; setPadding(0, 0, dp(8), dp(12)); addView(column().apply {
             addView(retiredName.apply { setPadding(0, dp(20), 0, dp(16)) })
             addView(retiredStatus)
             addView(label("This pairing is permanently disabled on this device. No remote wipe has been requested; the other device may still hold its copy.", 15f).apply { setPadding(0, dp(16), 0, dp(16)) })
@@ -181,6 +181,8 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         }
         retryRetirementButton.isEnabled = !busy
         freshPairingButton.isEnabled = !busy && status.state == VaultRetirement.LocalState.COMPLETE
+        retryRetirementButton.alpha = if (retryRetirementButton.isEnabled) 1f else 0.45f
+        freshPairingButton.alpha = if (freshPairingButton.isEnabled) 1f else 0.45f
     }
     fun resetSetup() { skipServer = false }
     fun showProblem() {

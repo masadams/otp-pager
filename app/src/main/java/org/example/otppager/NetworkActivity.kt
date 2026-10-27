@@ -717,6 +717,7 @@ class NetworkActivity : Activity() {
     }
     private fun retryLocalRetirement() {
         val id = retiredChat?.id ?: return
+        screens.clearNotices()
         var observed: VaultRetirement.Status? = null
         runTask(onComplete = { observed?.let { retirementStatus = it }; renderSimpleScreens() }) {
             val result = checkNotNull(book).recoverRetired(id)
@@ -917,7 +918,7 @@ class NetworkActivity : Activity() {
         if (!active || !unlocked || !::status.isInitialized) return
         if (status.text.toString() != message) status.text = message
         status.visibility = if (tab == 0 && !connectionFailed && !errorLoading && (message in listOf("STATION READY", "LATEST MESSAGES", "Connected", "Message queued · checking delivery") || message.startsWith("Connected"))) View.GONE else View.VISIBLE
-        if (::screens.isInitialized && tab >= 4 && !errorLoading && message !in listOf("STATION READY", "LATEST MESSAGES", "Chats updated", "Conversation opened", "Conversation saved", "Server saved") && !message.startsWith("Connected") && !message.startsWith("Pad size:"))
+        if (::screens.isInitialized && tab >= 4 && !errorLoading && message !in listOf("STATION READY", "LATEST MESSAGES", "Chats updated", "Conversation opened", "Conversation saved", "Server saved", "Local cleanup completed", "Pairing retired locally") && !message.startsWith("Connected") && !message.startsWith("Pad size:"))
             screens.notice(message, tab)
     }
     private fun updateNavigation() {
