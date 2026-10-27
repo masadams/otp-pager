@@ -216,7 +216,10 @@ That foundation remains draft PR #10; global work is a separate stacked change.
 
 Added a directory-wide terminal gate, synchronous live-engine/lease invalidation,
 coalesced dedicated cleanup executor, bounded pending/complete global root journal,
-independent partial disk/key discovery, index/name-key deletion and receiving stop.
+independent partial disk/key discovery, index/name-key deletion, receiving stop and
+notification cleanup. Late receiver notification publication is gated against the
+freeze, recovery pages hold an index lease for private-UI invalidation, and NFC
+offers are cleared/denied independently of lease registration.
 All known contact targets and metadata steps are attempted despite individual errors.
 Complete requires durable full-scope recording, successful cleanup and a complete
 post-scan with no newly discovered roots. Malformed journal variants remain frozen
@@ -229,6 +232,12 @@ key/file orphans, one failed contact while others clean, blocked worker and clos
 restored artifacts, preserved reuse hashes and malformed-journal refusal. This is
 source work pending latest-head CI, not a completed or deployable emergency feature.
 Local relay 13/13, signing-policy 7/7, Python syntax and whitespace passed.
+The initial backend head `7ccd21d84a23e341a378dbfc02d8b5984123f0e9` passed API29/31
+including the exclusive global host test (40434991510). Review then closed late
+notification and recovery-page label publication paths, and made the destruction
+Future non-cancellable. The host test now covers global clearing of an already
+retired recovery screen and rejection of late notifications. Fresh latest-head CI
+is required for those additions; results belong to the stacked PR.
 
 Review found a further enrollment invariant: stale global index/claims objects need
 a durable epoch gate before a fresh index can be published. The local design now

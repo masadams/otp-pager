@@ -25,6 +25,17 @@ class GlobalRetirementRestartTest {
         FileOutputStream(file).use { it.write(text.toByteArray(Charsets.UTF_8)); it.fd.sync() }
         VaultLifecycle.syncDirectory(context.noBackupFilesDir)
     }
+    private fun awaitMain(test: () -> Boolean) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val deadline = System.currentTimeMillis() + 15000; var ready = false
+        while (!ready && System.currentTimeMillis() < deadline) {
+            instrumentation.runOnMainSync { ready = test() }
+            if (!ready) Thread.sleep(40)
+        }
+        assertTrue("Global UI did not reach expected state", ready)
+    }
+    private fun field(activity: NetworkActivity, name: String) = NetworkActivity::class.java.getDeclaredField(name)
+        .apply { isAccessible = true }.get(activity)
     private fun blocked(action: () -> Unit) {
         try { action(); fail("Global freeze allowed operational work") } catch (_: IllegalStateException) {}
     }
@@ -49,6 +60,9 @@ class GlobalRetirementRestartTest {
         assertEquals(reference.getString("claims"), hash(File(context.noBackupFilesDir, "chat-index-claims.bin")))
         assertTrue(keys.containsAlias("otp-pager-chat-index-claims"))
         assertFalse(ReceiveService.enabled(context))
+        var notified = false
+        assertFalse(ReceiveService.publishIfActive(context) { notified = true })
+        assertFalse(notified)
         blocked { ChatBook(context) }
         blocked { SecureStore(context, root(36)).save(JSONObject().put("version", 2)) }
         blocked { SecureStore(context, root(31)).identity().card(true) }
@@ -80,6 +94,13 @@ class GlobalRetirementRestartTest {
                 val reference = JSONObject().put("ledger", hash(File(directory, "${root(31)}-pads.bin")))
                     .put("claims", hash(File(directory, "chat-index-claims.bin")))
                 write(referenceFile, reference.toString())
+                // Recovery pages have no active contact vault; their index lease must still clear private UI.
+                assertTrue(VaultRetirement.retireContact(context, root(32)).completed)
+                book.select(root(32))
+                val instrumentation = InstrumentationRegistry.getInstrumentation()
+                val activity = instrumentation.startActivitySync(android.content.Intent(context, NetworkActivity::class.java)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) as NetworkActivity
+                awaitMain { field(activity, "retiredChat") != null && field(activity, "busy") == false }
                 write(File(directory, "chat-index.bin"), "damaged encrypted index")
                 ReceiveService.enabled(context, true)
                 NfcSetupExchange.publish("fixture offer".toByteArray(), android.os.SystemClock.elapsedRealtime() + 60000,
@@ -89,6 +110,8 @@ class GlobalRetirementRestartTest {
                     .apply { isAccessible = true }.invoke(GlobalRetirement, context)
                 assertTrue(liveEngines.all { it.state == null })
                 assertNull(NfcSetupExchange.payload)
+                awaitMain { activity.isDestroyed }
+                assertNull(field(activity, "retiredChat"))
                 // Power loss after global intent but before scope enumeration/key cleanup.
                 write(GlobalRetirement.marker(directory), JSONObject().put("version", 1).put("state", "pending")
                     .put("roots", JSONArray().put(root(31))).toString())
@@ -117,6 +140,7 @@ class GlobalRetirementRestartTest {
                 try {
                     assertTrue(workerEntered.await(5, TimeUnit.SECONDS))
                     val future = GlobalRetirement.submit(context)
+                    assertFalse(future.cancel(true))
                     assertTrue(lease.cancelled)
                     assertTrue(closeEntered.await(5, TimeUnit.SECONDS))
                     val result = future.get(20, TimeUnit.SECONDS)

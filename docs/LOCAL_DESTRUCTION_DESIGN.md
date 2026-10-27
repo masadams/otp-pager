@@ -302,8 +302,9 @@ Neither global wipe-all nor independent-history migration is implemented by this
 on the contact-recovery foundation. It exposes no active-conversation wipe button,
 peer command or unfreeze API. `submit` immediately latches a directory-wide gate,
 drops live engine snapshots/staging/cache references, clears NFC offers and synchronously
-cancels matching operation leases. The HCE service also checks the global gate for
-an owned offer even if its lease is no longer registered. Close callbacks run separately. Coalesced cleanup uses
+cancels matching operation leases. Recovery pages hold an index lease as well, so
+their retained contact labels are cleared even without an active contact engine. The HCE service also checks the global gate for
+an owned offer even if its lease is no longer registered. Close callbacks run separately. Coalesced cleanup cannot be cancelled by its result Future and uses
 its own daemon executor, independent of `StationRuntime.worker` and network I/O.
 
 The gate covers **all** SecureStore-backed namespaces, including contact index and
@@ -312,7 +313,9 @@ reserved default `station-v2` generation is included even when empty. Cleanup ke
 pad ledgers, their wrapping keys, global reuse claims and all terminal records. It
 independently removes operational contact/draft/signing keys and files, index/name
 vault and identity keys plus AtomicFile variants, disables receiving preference,
-and attempts service stop. Pad-size preference and external exports are outside
+attempts service stop, and clears this app's notifications. Notification publication
+(including foreground registration) is serialized against the global gate so a stale
+receiver cannot post after cleanup. Pad-size preference and external exports are outside
 this scoped operation. Neither service-close timing nor already-sent bytes are an
 erasure guarantee.
 

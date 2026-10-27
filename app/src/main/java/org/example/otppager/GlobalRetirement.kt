@@ -45,8 +45,16 @@ internal object GlobalRetirement {
         freeze(app)
         return synchronized(VaultLifecycle.lock) {
             val directory = app.noBackupFilesDir.absolutePath
-            running[directory]?.takeIf { !it.isDone } ?: executor.submit<GlobalRetirementMachine.Result> { recover(app) }
-                .also { running[directory] = it }
+            val existing = running[directory]
+            if (existing != null && !existing.isDone) existing else {
+                val task = executor.submit<GlobalRetirementMachine.Result> { recover(app) }
+                // Closing a screen or cancelling a result wait must never cancel local destruction.
+                val result = object : Future<GlobalRetirementMachine.Result> by task {
+                    override fun cancel(mayInterruptIfRunning: Boolean) = false
+                }
+                running[directory] = result
+                result
+            }
         }
     }
     /** Only startup recovery of an existing global intent, or the explicit internal submit path, calls this. */
@@ -66,6 +74,7 @@ internal object GlobalRetirement {
                     check(context.getSharedPreferences("receiving", Context.MODE_PRIVATE).edit().putBoolean("enabled", false).commit())
                 },
                 "receiving-service" to { context.stopService(Intent(context, ReceiveService::class.java)); Unit },
+                "notifications" to { context.getSystemService(android.app.NotificationManager::class.java).cancelAll() },
                 "global-directory-sync" to { VaultLifecycle.syncDirectory(directory) }
             )
         })
