@@ -70,10 +70,17 @@ objects/workers and preserves reuse metadata. Recovery can retry an already reti
 contact and explicitly replace it with an empty fresh physical-pairing generation.
 Unrelated contacts remain usable. Ordinary Forget is not emergency destruction.
 
+Package A2 (#17, in review) adds a protected local-only **Wipe this chat from this
+phone** action (⋮ menu and Friend details, typed `WIPE` confirmation). It runs the same
+retirement on its own thread, never behind the station worker, drops private UI state
+first and reports only local evidence; the peer is never contacted or described as
+wiped. See [LOCAL_WIPE_CONTROL.md](LOCAL_WIPE_CONTROL.md).
+
 Global backend cleanup freezes all stores and metadata, attempts independent roots
 and metadata steps despite failures, and recovers on cold startup. Recovery UI
 checks actual keys/files and exact scope instead of trusting a completion flag.
-There is no active-contact or wipe-all emergency initiation control.
+There is no wipe-all initiation control: until fresh enrollment exists, a global
+wipe has no exit except clearing app storage, which also removes reuse protection.
 
 Initial authenticated evidence binds the pre-cleanup retained guard inventory.
 Empty staging is backend-only and confirmation-bound. PREPARED never means ACTIVE.
@@ -88,6 +95,7 @@ All paths below are under `app/src/main/java/org/example/otppager/`.
 | Files | Responsibility / rule |
 | --- | --- |
 | `VaultRetirement.kt`, `GlobalRetirementMachine.kt`, `GlobalRetirement.kt` | Terminal contact/global gates; independent best-effort cleanup; durable scope; no wait for network/transport close; no unretire transition |
+| `LocalWipe.kt`, `ChatBook.wipeLocal`, `NetworkActivity.confirmWipe/wipeChat` | User-initiated local-only contact wipe: listed contact roots only, own thread (never `StationRuntime.worker`), UI disposal before storage work, never cancelled, honest local-only result |
 | `PagerApplication.kt` | Recovery before components open vaults. Uncertain intent/provider state blocks access without inventing destruction |
 | `ContactInventory.kt` | Bounded file/key orphan discovery independent of readable index |
 | `ContactOperations.kt`, `StationEngine.kt`, `NetworkActivity.kt`, `ReceiveService.kt` | Cancellation, owner checks, stale cache/UI/notification publication prevention. Never wait for worker/socket closure under lifecycle lock |
@@ -105,6 +113,9 @@ External Strings/JSON, active stack locals, OS/IME/clipboard, flash and exported
 are outside any claim of guaranteed erasure.
 
 ## Next implementation package — finish Phase 2/B before enrollment UI
+
+In parallel (documentation only, no destructive code): start the Phase 3/D peer-wipe
+specification so independent protocol review — the long-lead gate — can begin early.
 
 1. Design/review ACTIVE capability and durable namespace allowlist. Bind every
    store, sibling, identity, lease, NFC offer and UI publication to one immutable

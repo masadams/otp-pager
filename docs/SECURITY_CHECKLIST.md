@@ -32,6 +32,8 @@ physical validation, deployment or production readiness. Phase 2 remains open.
 - [x] Bind cleanup completion to the exact authenticated root scope (#14).
 - [x] Prepare fresh empty storage with one-use confirmation and captured owner capabilities (#15).
 - [x] Recover/abandon interrupted staging without reusing reserved generations (#15).
+- [x] Expose a protected, local-only "wipe this chat from this phone" control on the
+      existing retirement primitive (#17; emulator CI only, see [design](LOCAL_WIPE_CONTROL.md)).
 - [ ] Implement ACTIVE epoch capabilities, namespace allowlists and current-index routing.
 - [ ] Enforce immutable retained-cohort exclusions during active pairing/messaging.
 - [ ] Implement repeat-wipe/forward lineage and preserve every prior exclusion/reservation.
@@ -53,7 +55,8 @@ physical validation, deployment or production readiness. Phase 2 remains open.
 
 ## 5. Android emergency wipe
 
-- [ ] Add selected-conversation and all-conversation emergency actions.
+- [ ] Add selected-conversation and all-conversation emergency actions (local-only
+      selected-conversation wipe exists; peer command and wipe-all remain).
 - [ ] Implement authenticated peer destruction and honest local/remote status.
 - [ ] Verify two-device connected/offline/interrupted/malicious-relay behavior.
 
@@ -75,7 +78,7 @@ physical validation, deployment or production readiness. Phase 2 remains open.
 - [ ] Physical-device, power-loss, entropy and full two-device testing.
 - [ ] Signing/update/supply-chain review and production-readiness decision.
 
-Phase 2 remains open. Remote wiping has not been implemented. Source tests and
+Phase 2 remains open. Remote wiping and wipe-all initiation have not been implemented. Source tests and
 emulators do not establish physical erasure, compromised-peer compliance, trusted
 rollback resistance or live-host security. Earlier usability/version work is not a
 completion claim for these security phases.

@@ -21,6 +21,10 @@ import android.view.WindowManager
 import android.widget.*
 import java.util.concurrent.Executors
 
+private const val LOCAL_WIPE_WARNING = "This permanently deletes this chat's messages, drafts, message keys and pairing on THIS phone. It cannot be undone.\n\n" +
+    "Your friend's phone is NOT wiped. It keeps its copy of the conversation, and nothing is sent to it.\n\n" +
+    "Other chats are not affected. To talk again, you'll need to pair both phones in person.\n\nType WIPE to confirm."
+
 /** Isolated two-device chats with explicit receiving and physical pairing controls. */
 class NetworkActivity : Activity() {
     private val worker = StationRuntime.worker
@@ -67,6 +71,7 @@ class NetworkActivity : Activity() {
     }
     private var retiredChat: ChatBook.Chat? = null // UI-owned metadata, never message secrets
     private var retirementStatus: VaultRetirement.Status? = null
+    private var openChat: ChatBook.Chat? = null // Open, non-retired chat; captured by the worker, no I/O on the UI thread
     private var latest: StationEngine.View? = null
     private var rendered: List<StationEngine.Message>? = null
     private var renderedSetupComplete: Boolean? = null
@@ -261,7 +266,7 @@ class NetworkActivity : Activity() {
         closeVisibleContact()
         val openingGeneration = generation
         needsTerminal = false
-        latest = null; rendered = null; retiredChat = null; retirementStatus = null; busy = false; errorLoading = false
+        latest = null; rendered = null; retiredChat = null; retirementStatus = null; openChat = null; busy = false; errorLoading = false
         draftChatId = null; draftRoom = null; draftSaved = false
         root = column().apply { isFocusableInTouchMode = true; setBackgroundColor(paper); setPadding(dp(if (compact) 12 else 20), dp(8), dp(if (compact) 12 else 20), dp(6)) }
         root.setOnApplyWindowInsetsListener { view, insets ->
@@ -277,7 +282,10 @@ class NetworkActivity : Activity() {
         }
         header.addView(chatButton, LinearLayout.LayoutParams(0, -2, 1f))
         stationLabel = text("STATION —", 11f, green, true); header.addView(stationLabel)
-        receiveButton = button("⋮") { showConversationMenu() }.apply { textSize = 22f; minWidth = 0; minimumWidth = 0; contentDescription = "Conversation options" }
+        receiveButton = button("⋮") { showConversationMenu() }.apply {
+            textSize = 22f; minWidth = 0; minimumWidth = 0; contentDescription = "Conversation options"
+            setOnClickListener { showConversationMenu() } // Not busy-gated: the menu holds the local wipe.
+        }
         header.addView(receiveButton); chrome.addView(header)
         indicators = text("○ Not checked yet", 11f, ink, true).apply {
             setPadding(dp(4), dp(2), dp(4), dp(6))
@@ -527,6 +535,7 @@ class NetworkActivity : Activity() {
             override fun retryRetirement() { retryLocalRetirement() }
             override fun freshPairing() { startFreshPairing() }
             override fun status() { if (!busy) showStationStatus() }
+            override fun wipe() { confirmWipe() }
         })
         for (panel in listOf(traffic, linkScroll, padScroll, deviceScroll, screens.inbox, screens.setup, screens.details, screens.retired)) root.addView(panel, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root); root.requestApplyInsets(); selectTab(tab)
@@ -536,9 +545,10 @@ class NetworkActivity : Activity() {
         var restoredDraft: ChatDraft.Entry? = null
         var loadedRetired: ChatBook.Chat? = null
         var loadedRetirementStatus: VaultRetirement.Status? = null
+        var loadedOpen: ChatBook.Chat? = null
         var loadedChat: String? = null; var loadedRoom: String? = null; var draftProblem = false
         runTask(load = true, onComplete = {
-            retiredChat = loadedRetired; retirementStatus = loadedRetirementStatus
+            retiredChat = loadedRetired; retirementStatus = loadedRetirementStatus; openChat = loadedOpen
             if (loadedRetired != null) {
                 draftChatId = null; draftRoom = null
                 pendingScan = null; pendingDeviceScan = null; pendingDocument = null; importedDeviceCard = null
@@ -570,6 +580,7 @@ class NetworkActivity : Activity() {
                 return@runTask "Pairing retired locally"
             }
             observeStore(loadedChat!!, openingGeneration)
+            loadedOpen = selected
             engine = checkNotNull(book).engine()
             engine?.state?.let { s ->
                 val master = Protocol.master(s.getString("secret"))
@@ -775,18 +786,92 @@ class NetworkActivity : Activity() {
             }.setNegativeButton("Close", null).create().also(::secureShow)
     }
     private fun showConversationMenu() {
-        if (busy) return
-        AlertDialog.Builder(this).setTitle(book?.active()?.name ?: "Conversation")
-            .setItems(arrayOf("Friend details", "Check now", "Receiving & battery", "Clear draft", "Clear message history", "Advanced setup")) { _, which ->
+        // Stays available while a check is running so the local wipe is never blocked by networking.
+        // Every other entry either opens a screen/dialog or is itself ignored while busy.
+        AlertDialog.Builder(this).setTitle(openChat?.name ?: "Conversation")
+            .setItems(arrayOf("Friend details", "Check now", "Receiving & battery", "Clear draft", "Clear message history", "Advanced setup", "Wipe this chat from this phone")) { _, which ->
                 when (which) {
                     0 -> selectTab(6)
                     1 -> runTask(network = true) { syncChats() }
                     2 -> showReceiving()
                     3 -> clearDraft()
                     4 -> confirm("Clear local messages?", "Pending messages stay queued. Saved receipt recovery is removed with history. Replay protection stays active.") { runTask { checkNotNull(engine).clearHistory(); "Message history cleared" } }
-                    else -> { advancedShown = true; selectTab(1); latest?.let(::render) }
+                    5 -> { advancedShown = true; selectTab(1); latest?.let(::render) }
+                    else -> confirmWipe()
                 }
             }.setNegativeButton("Close", null).create().also(::secureShow)
+    }
+    private fun confirmWipe() {
+        val chat = openChat ?: run { report("This chat is still opening · try again in a moment"); return }
+        val input = field("Type WIPE").apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+            contentDescription = "Type WIPE to confirm"
+        }
+        val dialog = AlertDialog.Builder(this).setTitle("Wipe ${chat.name} from this phone?")
+            .setMessage(LOCAL_WIPE_WARNING)
+            .setView(input).setNegativeButton("Cancel", null).setPositiveButton("Wipe", null).create()
+        dialog.setOnShowListener {
+            val wipe = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            fun armed() = input.text.toString().trim().equals("WIPE", ignoreCase = true)
+            fun refresh() { wipe.isEnabled = armed(); wipe.alpha = if (wipe.isEnabled) 1f else 0.45f }
+            refresh()
+            input.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: Editable?) { refresh() }
+            })
+            // Deliberately not gated on [busy]: a stuck network check must never delay a wipe.
+            wipe.setOnClickListener { if (armed()) { dialog.dismiss(); wipeChat(chat) } }
+        }
+        secureShow(dialog)
+    }
+    /**
+     * Local-first: private UI state is dropped on the main thread before destruction starts,
+     * and destruction runs on [LocalWipe]'s own thread, never behind the station worker.
+     */
+    private fun wipeChat(chat: ChatBook.Chat) {
+        val contacts = book ?: run { report("Chats are still opening · try again in a moment"); return }
+        generation++ // Results and publications queued for this chat are discarded.
+        val wipeGeneration = generation
+        handler.removeCallbacks(poll); handler.removeCallbacks(saveDraft)
+        openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
+        pairingDialog?.dismiss(); pairingDialog = null
+        // Close our own lease first, so its cancellation doesn't close the whole activity.
+        closeVisibleContact()
+        clearPrivateState() // Drops composer text and draft ownership without saving the draft again.
+        engine = null; busy = true; tab = 4; updateNavigation()
+        showWipeScreen("Wiping ${chat.name}…", "Deleting this chat's keys and files on this phone. Nothing is sent to your friend.", null)
+        LocalWipe.submit(contacts, chat.id) { outcome ->
+            runOnUiThread {
+                if (active && unlocked && !isFinishing && !isDestroyed && generation == wipeGeneration) showWipeOutcome(chat.name, outcome)
+            }
+        }
+    }
+    private fun showWipeOutcome(name: String, outcome: Result<VaultRetirement.Result>) {
+        busy = false
+        val result = outcome.getOrNull()
+        // Report only what local evidence supports; the friend's device is never described as wiped.
+        val (title, detail) = when {
+            result == null -> "Wipe did not start" to "${(outcome.exceptionOrNull()?.message ?: "This chat could not be checked").trimEnd('.')}. Continue to check this chat."
+            result.completed -> "Wiped from this phone" to "$name's messages, drafts, message keys and pairing were deleted on this phone. Your friend's phone was not changed and still has its copy. To talk again, pair both phones in person."
+            result.terminalDurable -> "Wipe not finished" to "This chat is permanently disabled on this phone, but some cleanup did not finish. Continue to retry. Your friend's phone was not changed."
+            else -> "Wipe not recorded" to "This chat is disabled until the app closes, but the wipe could not be saved and some data may remain. Continue and retry now. Your friend's phone was not changed."
+        }
+        showWipeScreen(title, detail) { reopenChat(if (result == null) 0 else 7) }
+    }
+    private fun showWipeScreen(title: String, detail: String, next: (() -> Unit)?) {
+        val screen = column().apply { setPadding(dp(24), dp(48), dp(24), dp(24)) }
+        screen.addView(text(title, 24f, ink, true))
+        screen.addView(text(detail, 15f).apply { setPadding(0, dp(16), 0, dp(16)) })
+        screen.addView(text("Exported pad files, screenshots, backups and the other phone are outside this wipe. Minimal records of used pads stay so old keys can never be reused.", 12f, muted))
+        if (next != null) screen.addView(button("Continue", true) { next() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(24) })
+        val scroll = ScrollView(this).apply {
+            setBackgroundColor(paper); isFillViewport = true; addView(screen)
+            setOnApplyWindowInsetsListener { view, insets ->
+                view.setPadding(0, insets.systemWindowInsetTop, 0, insets.systemWindowInsetBottom); insets
+            }
+        }
+        setContentView(scroll); scroll.requestApplyInsets()
     }
     private fun showRenewalMethods() {
         if (busy) return
@@ -1364,7 +1449,7 @@ class NetworkActivity : Activity() {
         if (::stationLabel.isInitialized) stationLabel.text = ""
         if (::indicators.isInitialized) indicators.text = ""
         if (::count.isInitialized) count.text = ""
-        latest = null; rendered = null; retiredChat = null; retirementStatus = null; importedDeviceCard = null
+        latest = null; rendered = null; retiredChat = null; retirementStatus = null; openChat = null; importedDeviceCard = null
         if (::peerCardField.isInitialized) peerCardField.text.clear()
         if (::identityCard.isInitialized) identityCard.text = ""
         if (::identityStatus.isInitialized) identityStatus.text = ""

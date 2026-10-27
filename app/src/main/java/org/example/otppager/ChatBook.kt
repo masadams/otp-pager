@@ -119,6 +119,21 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
             replacement
         }
     }
+    /**
+     * User-initiated local-only wipe of one listed conversation generation. Other contacts,
+     * pad ledgers, reuse claims and the contact entry/name stay in place; the peer is not
+     * contacted. Repeating it on an already retired generation retries cleanup idempotently.
+     */
+    internal fun wipeLocal(id: String): VaultRetirement.Result {
+        synchronized(VaultLifecycle.lock) {
+            require(VaultLifecycle.isContact(id)) { "Not a conversation" }
+            require(chats().any { it.id == id }) { "Unknown chat" }
+        }
+        // Retirement dispatches cancellation; never call it while holding an outer lifecycle lock.
+        val result = VaultRetirement.retireContact(context, id)
+        refresh(id)
+        return result
+    }
     fun forgetActive() = synchronized(VaultLifecycle.lock) { ChatDraft(SecureStore(context, active().id).sibling("draft")).clear(); SecureStore(context, active().id).forget(); refresh() }
     fun summary(id: String): Summary {
         if (VaultLifecycle.isRetired(context.noBackupFilesDir, id)) return Summary(eligible = false, retired = true)

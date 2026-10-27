@@ -27,6 +27,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         fun retryRetirement()
         fun freshPairing()
         fun status()
+        fun wipe()
     }
     data class Friend(val id: String, val name: String, val detail: String, val paired: Boolean, val unread: Boolean)
     private val ink = Color.rgb(20, 20, 20)
@@ -134,6 +135,10 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         body.addView(button("Receiving & battery") { actions.receiving() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
         body.addView(label("Messages and drafts stay locally for up to 24 hours. Delivery means saved on the other device, not read by a person.", 13f, true).apply { setPadding(0, dp(24), 0, dp(18)) })
         body.addView(button("Advanced setup") { actions.advanced() }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(16) })
+        // Local-only destruction stays last and visually separate from everyday options.
+        body.addView(button("Wipe this chat from this phone") { actions.wipe() }.apply {
+            contentDescription = "Wipe this chat from this phone. Your friend's phone is not changed."
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8); bottomMargin = dp(16) })
     }
     private fun field(hint: String, secret: Boolean) = EditText(activity).apply {
         this.hint = hint; textSize = 16f; typeface = Typeface.MONOSPACE; setSingleLine(true)

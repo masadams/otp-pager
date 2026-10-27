@@ -12,7 +12,9 @@ handoff record; never infer feature completion from a plan or passing baseline C
   authenticated initial provenance and confirmation-bound empty staging.
 - Phase 2 is **not complete**: ACTIVE epochs, forward/repeat-wipe lineage, fresh
   enrollment UI and independent history-key/old-key migration remain open.
-- Phases 3–8 are outstanding. No peer wipe protocol, active emergency-wipe controls,
+- Package A2 (#17, in review): protected local-only per-conversation wipe control on
+  the retirement primitive. No peer command, wipe-all control or fresh enrollment.
+- Phases 3–8 are outstanding. No peer wipe protocol, wipe-all control,
   remote acknowledgement, new release/version/signing decision or live deployment.
 - Start with [the developer handoff](DEVELOPER_HANDOFF.md) for exact commits,
   validation, known blockers and ordered next steps. Earlier work-log statements
@@ -405,9 +407,29 @@ Added a self-contained developer handoff, refreshed the ordered checklist and pl
 and linked them from README. Physical validation, independent review and release
 readiness remain open. No live deployment or owner-signed APK release was performed.
 
+### 2026-10-27 — order review and package A2 (local-only conversation wipe)
+
+Reviewed plan order against the merged code. Kept the overall gates (local before
+remote, specification review before destructive peer code, small invariant-tied PRs).
+Pulled forward A2 because retirement, restart recovery and fresh-pairing replacement
+were merged but unreachable, while the only user-facing destructive action was the
+non-durable Forget path (F04). Deferred wipe-all initiation (no enrollment exit; clearing
+storage removes reuse guards) as an owner decision. Recommended starting the package D
+specification in parallel for review lead time.
+
+Implemented `LocalWipe` (own daemon executor), `ChatBook.wipeLocal` (listed contact roots
+only, retirement outside the outer lock), ⋮ menu and Friend details entry points not
+gated on `busy`, typed `WIPE` confirmation, main-thread private-state disposal before
+storage work and a local-evidence-only result screen leading to the existing recovery
+screen. Removed a UI-thread index read from the conversation menu title.
+`LocalWipeTest` covers worker-blocked completion, neighbour/ledger/claims preservation,
+refusal of non-listed/non-contact namespaces and the full UI flow. Local Kotlin
+type-check of main/unit/instrumentation sources against API 35 passed in the editing
+workspace; Android build, lint and emulator results belong to #17's CI runs.
+
 ## Next task
 
-Implement reviewed ACTIVE epoch capability/namespace allowlist publication and
+After #17 review/merge: implement reviewed ACTIVE epoch capability/namespace allowlist publication and
 current-index routing together with immutable retained-cohort checks during normal
 pairing/messaging and repeat-wipe/forward-lineage handling. Follow the staged
 acceptance tasks in [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md). Do not enable fresh

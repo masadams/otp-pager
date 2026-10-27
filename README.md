@@ -19,8 +19,10 @@ tracks the next work, with an [ordered checked task list](docs/SECURITY_CHECKLIS
 [developer handoff](docs/DEVELOPER_HANDOFF.md), [progress](docs/SECURITY_PROGRESS.md)
 and [v0.14 inventory/findings](docs/SECURITY_INVENTORY_V014.md). PRs #9–15 add OTP-only
 new-text enforcement, local/global retirement and recovery, authenticated initial
-provenance and empty enrollment staging. Fresh global enrollment activation,
-active emergency-wipe controls and remote wiping remain unimplemented. These merges
+provenance and empty enrollment staging. A protected, local-only **Wipe this chat
+from this phone** action ([design](docs/LOCAL_WIPE_CONTROL.md)) is in development review;
+it never wipes the friend's phone. Fresh global enrollment activation, wipe-all and
+remote wiping remain unimplemented. These merges
 are development integration; version metadata remains 0.14.0 and no new signed
 release or live deployment is implied. Historical sections below are not descriptions
 of the current interface.
