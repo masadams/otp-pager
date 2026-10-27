@@ -155,3 +155,40 @@ legacy upgrades, second wipe/enrollment, post-wipe secret-reuse attempts, and ex
 fresh-generation two-device pairing/message/recovery behavior. Independent storage
 review and physical power-loss tests remain required. Keep the UI's fresh enrollment
 action disabled until this implementation and evidence exist.
+
+
+## Implemented adapter slice: retained guard reader
+
+`RetainedGuardReader` is a narrow, read-only prerequisite under review. It is not
+called by normal messaging or enrollment; the app still cannot activate a fresh
+post-global-wipe epoch. `readFrozen` requires an existing directory freeze, an exact
+production guard namespace (`chat-index-claims`, `station-v2-pads`, or a production
+`chat-<20 hex>-pads`) and a caller-supplied SHA-256 ciphertext commitment. It never
+opens an operational contact/index/draft vault, creates a key, invokes AtomicFile
+recovery, or provides an `ignoreFreeze` flag. Missing files/keys never become empty
+state. A commitment supplied after cleanup is only an observation, not provenance.
+
+The adapter opens only a regular non-symlink base file, refuses any backup/new
+variant, bounds ciphertext to 1 MiB, matches the commitment and authenticates the
+existing v2 AES-GCM vault envelope with its existing Keystore key. A fixed-depth
+strict streaming UTF-8/JSON schema rejects duplicates, unknown fields, coercions,
+invalid owners/IDs, trailing data and invalid counters/capacities. Each record is
+bounded to 4096 map entries across all its maps; a counter and capacity entry each
+consume one entry. Parsed results contain only immutable hash/owner/reservation
+metadata; decrypted byte buffers are cleared. Managed runtime copies remain a limit.
+
+Cohort consistency requires one claims record, unique guard namespaces, declared
+known owners, matching pad ownership in both claims and ledgers and at most 4096
+ledger pad entries in total. It does not establish complete discovery, guard
+provenance, immutable-cohort persistence, epoch capabilities or safe activation.
+Those require the lifecycle manifest transaction; no validator return value may
+substitute for that authority. Missing room-only owners in the declared scope also
+fail. Existing guard versions other than schema 2 fail closed.
+
+Tests use actual Android Keystore ciphertext, altered valid older snapshots,
+missing file/key combinations, AEAD tampering, side variants, symlinks, oversized
+files, parser ambiguities, budget boundaries, unknown/mismatched owners and unchanged
+file/key evidence. The exclusive global cold-start fixture additionally checks that
+retained guards still authenticate after restart and operational-key cleanup. Its
+v1 reference hashes are test observations, never retrospective enrollment evidence.
+Latest-head results belong to the implementation PR. Independent review remains open.

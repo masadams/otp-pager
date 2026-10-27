@@ -4,6 +4,8 @@ Status: active development reference; security features below are requirements, 
 Owner direction: 2026-10-26. Baseline: Android v0.14, main commit
 `cfe01af255bebbd195337b9d1b0c72017e39f7c1`.
 
+For a checked task list in build order, see [the security checklist](SECURITY_CHECKLIST.md).
+
 Start here on every continuation: read this plan, [progress](SECURITY_PROGRESS.md),
 and the [baseline inventory and findings](SECURITY_INVENTORY_V014.md). Record the
 next task, decisions, evidence and unresolved risks before ending a work session.
