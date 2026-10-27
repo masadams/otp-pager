@@ -296,17 +296,37 @@ heading and scrolls to the result after a check/retry. The host fixture asserts 
 header is fully visible before result capture. Latest-head validation is required
 for this final usability correction; earlier results do not substitute for it.
 
+### 2026-10-27 — retained guard reader and ordered task checklist
+
+Recovery head `c188a8ab9c96a42a9a69e63fdd17ac81e7d49558` passed API29/31/35,
+both restart fixtures (40491434853), signed upgrades (40491434826), relay
+(40491434816) and final compact screenshot review (artifact 12728989056). Exact
+results/developer review are in PR #12. No security implementation PR was merged.
+
+Added [an ordered checked task list](SECURITY_CHECKLIST.md) at the owner's request.
+Checked items distinguish implemented/tested scope from draft, independent review,
+physical validation and production readiness. Phase 2 and remote wiping remain open.
+
+The next implementation slice adds a frozen-only, bounded read-only guard adapter
+with exact namespaces/commitments, no key creation or AtomicFile repair, strict
+UTF-8/JSON schema and bidirectional cohort ownership validation. It returns immutable
+minimal reuse metadata and never opens operational vaults. Actual Keystore tests
+cover missing/restored/tampered/ambiguous/oversized data and unchanged files/keys;
+Aggregate cohort byte/entry budgets are enforced while assembling authenticated
+records; the validator is private. The existing exclusive host fixture now also reads retained guards after process
+restart and operational key deletion. This is implementation pending latest-head CI.
+See the enrollment design for exact bounds, scope and explicit non-authority.
+
 ## Next task
 
-Validate this slice's global recovery screen and extended exclusive fixture on
-API29/31/35, review compact screenshots and verify signed upgrades/relay regressions.
-Record exact head/results in the implementation PR. Then review and implement the
-B2 epoch candidate, including manifest/cohort encoding, bounded scoped guard reads,
-pre-cleanup provenance, staged key/index commit, stale metadata owners and actual
-cold-start failure adapters. Current v1 states deliberately remain frozen; package B
-is not complete. Phase 2 stays open.
+Validate this adapter on API29/31/35 with ordinary, per-contact/global cold-start,
+signed-upgrade and relay regressions. Review namespace confinement, read-only effects,
+parser/size bounds and ownership/commitment validation; record exact head in the PR.
+Then implement the authenticated lifecycle record/complete inventory and pre-cleanup
+provenance capture, with confirmation bound to the terminal manifest/generation.
+After that: actual durable epoch capabilities, staged index/claims keys, abandoned
+stage recovery and explicit activation. The adapter does not make any v1 terminal
+state eligible for an empty reset. History-key migration remains separate work.
 
-Do not implement peer-wipe packets until package D / Phase 3 resolves independent
-control keys, generation binding, dispatch authority, acknowledgement and migration,
-with the required independent review and vectors. Physical two-device testing and
-independent readiness review remain external gates, not additional automated passes.
+No peer-wipe packets before the reviewed control/dispatch/ack protocol and independent
+vectors. Physical two-device/power-loss and independent readiness reviews stay open.

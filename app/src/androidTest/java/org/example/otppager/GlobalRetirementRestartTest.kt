@@ -81,6 +81,15 @@ class GlobalRetirementRestartTest {
         assertEquals(reference.getString("claims"), hash(File(context.noBackupFilesDir, "chat-index-claims.bin")))
         assertTrue(keys.containsAlias("otp-pager-chat-index-claims"))
         assertTrue(keys.containsAlias("otp-pager-${root(31)}-pads"))
+        // Real Keystore-backed reads still work after process restart/global key cleanup.
+        // v1 hashes are test references, NOT pre-cleanup provenance or enrollment authority.
+        val retainedClaims = RetainedGuardReader.readFrozen(context,
+            RetainedGuardReader.Reference("chat-index-claims", reference.getString("claims")))
+        val retainedLedger = RetainedGuardReader.readFrozen(context,
+            RetainedGuardReader.Reference("${root(31)}-pads", reference.getString("ledger")))
+        assertTrue((retainedClaims.guard as RetainedGuardReader.Guard.Claims).pads.isNotEmpty())
+        assertEquals(root(31), (retainedLedger.guard as RetainedGuardReader.Guard.Ledger).owner)
+
         assertFalse(ReceiveService.enabled(context))
         var notified = false
         assertFalse(ReceiveService.publishIfActive(context) { notified = true })
