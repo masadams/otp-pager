@@ -208,3 +208,14 @@ implemented; a successful seal does not complete package B. Legacy v1 terminal
 journals remain ineligible for retrospective capture. The full multi-epoch lifecycle
 manifest described above remains a candidate; this initial terminal record is its
 bounded prerequisite, not an implementation of every proposed phase.
+
+
+## Prepared-storage transaction and captured owners
+
+The next implementation slice is documented in
+[confirmation-bound enrollment staging](ENROLLMENT_STAGING.md). It reserves a new
+attempt, authenticates PREPARING, creates verified empty index/delta keys/files and
+commits PREPARED without activation. Interrupted attempts are abandoned, never resumed
+with the same keys. Captured store/identity/lease/sibling capabilities prevent implicit
+rebinding. It does not implement the full proposed ACTIVE multi-epoch manifest, current
+index routing, immutable cohort access during messaging or a user-facing fresh action.

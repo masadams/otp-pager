@@ -341,16 +341,42 @@ disposable emulator's synthetic app data between scenarios; no production reset 
 Latest-head Android/upgrade/relay validation is pending, not inherited from PR #13.
 No active epoch, enrollment button, peer command, signing/version change or deployment.
 
+### 2026-10-27 — confirmation-bound empty enrollment staging
+
+Authenticated capture head `f7a0fa2a990e62f20c30e700b4b813ad81779652` passed API29/31/35
+with all three host restart fixtures (40503430055), signed upgrades (40503430063)
+and relay (40503430046). Exact final root-scope binding/developer review is in PR #14.
+
+The next slice reserves authenticated per-attempt epochs tied to current terminal
+proof and one-use local confirmation, creates only new empty index/claims keys/files,
+and records PREPARED without activation. Interrupted attempts are abandoned before
+old global scope discovery. Reservation keys/records survive abandonment and block
+nonce reuse or a silently dropped attempt; unknown/partial/tampered state never
+becomes an empty index. It supports up to 32 attempts in the initial frozen lineage.
+
+SecureStore now captures a generation capability at construction; sibling stores
+inherit it, and identity callbacks/resets plus operation leases keep that owner
+boundary. Constructor ABIs remain for signed-upgrade testing. There is no ACTIVE
+capability or UI action: ordinary stores remain globally blocked after staging.
+See [the staging contract and format](ENROLLMENT_STAGING.md) for exact scope, bounds,
+recovery behavior and limitations. Current code is pending latest-head CI.
+
+Added pure codec checks, a Keystore-backed owner/sibling/reset/lease regression, and
+an exclusive host matrix covering prepared restart, abandon/new epoch, interrupted
+and restored attempts, proof/cancellation/forged-token refusal, orphan/tamper/variant
+state, missing slots and unknown metadata. It clears only disposable app fixtures;
+all earlier restart/signing/pairing/message checks remain required. No deployment,
+version/signing change, remote packet or normal-message format change.
+
 ## Next task
 
-Validate the new authenticated capture, restart matrix and legacy regressions on
-API29/31/35 plus signed upgrades/relay. Record exact head, invariant review and limits
-in the implementation PR. Then specify/implement the forward multi-epoch chain and
-confirmation bound to the terminal generation/manifest commitment, scoped active
-retained-guard capabilities, staged fresh index/claims keys, abandoned-stage recovery
-and actual activation. One initial terminal lineage is not a complete enrollment
-system; v1 journals still cannot be retroactively promoted. Phase 2 stays open.
+Validate latest-head API29/31/35, signed upgrades, relay and all four host restart
+fixtures. Review generation/namespace confinement, consent binding, key-before-file
+failure, abandonment scope, constructor compatibility and no activation. Record
+exact final evidence in the PR. Then implement reviewed ACTIVE epoch capability and
+allowlist publication, current index routing, immutable retained-cohort checks during
+messaging, and repeat-wipe/forward-lineage handling before enabling user-facing fresh
+enrollment. PREPARED is not ACTIVE, and v1 terminal states remain ineligible.
 
-History-key migration remains separate. No peer packets before protocol review and
-independent vectors. Physical power-loss/two-device and independent readiness evidence
-remain external gates, not implied by emulator results.
+History-key migration and the separately reviewed peer protocol remain later work.
+Physical device/power-loss/two-device and independent validation gates remain open.

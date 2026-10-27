@@ -32,6 +32,8 @@ signed upgrades, relay and compact screenshot review passed).
   The frozen-only guard reader passed in draft PR #13. Initial authenticated capture
   is the next review slice; multi-epoch provenance and enrollment remain unfinished.
 - [ ] Implement durable enrollment generations and reject stale metadata writers.
+  Confirmation-bound empty staging and captured owner capabilities are the current
+  review slice; ACTIVE publication, routing and multi-epoch operation remain open.
 - [ ] Safely enable fresh enrollment after global destruction.
 - [ ] Separate erasable history keys and safely migrate older storage/operational keys.
 - [ ] Complete local-protection invariant review and remaining fault/upgrade tests.

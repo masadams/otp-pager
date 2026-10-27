@@ -13,15 +13,17 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 /** One encrypted, atomic snapshot: pairing, counters, inbox and outbox commit together. */
-class SecureStore(context: Context, namespace: String = "station-v2") {
+class SecureStore private constructor(context: Context, namespace: String, private val generation: VaultGeneration.Capability) {
+    // Keep the two-argument/default constructor ABI used by signed-upgrade fixtures.
+    constructor(context: Context, namespace: String = "station-v2") : this(context, namespace, VaultGeneration.capture(context.noBackupFilesDir))
     private val slot = namespace.also { require(Regex("[a-z0-9-]{1,40}").matches(it)) }
     internal val namespace: String get() = slot
     internal val operationKey: String get() = VaultLifecycle.marker(base.parentFile!!, VaultLifecycle.root(slot)).absolutePath
     internal fun operation() = ContactOperations.open(operationKey, ::requireActive)
     private val base = File(context.noBackupFilesDir, "$slot.bin")
     private val file = AtomicFile(base)
-    fun identity() = DeviceIdentity("otp-pager-$slot-device") { requireActive() }
-    fun sibling(suffix: String): SecureStore = SecureStore(contextRef, "$slot-$suffix")
+    fun identity() = DeviceIdentity.scoped("otp-pager-$slot-device", ::requireActive, ::requireResettable)
+    fun sibling(suffix: String): SecureStore = SecureStore(contextRef, "$slot-$suffix", generation)
     private val contextRef = context.applicationContext
     private val alias = "otp-pager-$slot"
     private val aad = "OTP Pager local vault v2".toByteArray()
@@ -37,7 +39,10 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
             generateKey()
         }
     }
-    internal fun requireActive() = VaultLifecycle.requireActive(base.parentFile!!, slot)
+    internal fun requireActive() {
+        VaultGeneration.requireCurrent(base.parentFile!!, generation)
+        VaultLifecycle.requireActive(base.parentFile!!, slot)
+    }
     fun load(): JSONObject? = synchronized(VaultLifecycle.lock) { requireActive(); loadActive() }
     private fun loadActive(): JSONObject? {
         if (!base.exists() && !File(base.path + ".bak").exists() && !File(base.path + ".new").exists()) {
@@ -68,9 +73,13 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
             try { android.system.Os.fsync(directory) } finally { android.system.Os.close(directory) } }
         catch (e: Exception) { file.failWrite(stream); throw IllegalStateException("Local storage commit failed. No new packet will be sent; restart the station before retrying.", e) }
     }
+    private fun requireResettable() {
+        VaultGeneration.requireCurrent(base.parentFile!!, generation)
+        check(!GlobalRetirement.isFrozen(base.parentFile!!)) { "Global retirement blocks ordinary storage reset" }
+    }
     fun forget() = synchronized(VaultLifecycle.lock) {
         // Global cleanup uses its explicit raw scope; stale ordinary resets cannot delete reuse guards.
-        check(!GlobalRetirement.isFrozen(base.parentFile!!)) { "Global retirement blocks ordinary storage reset" }
+        requireResettable()
         // Invalidate the key first: if the process dies, old data cannot be reopened.
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         identity().forget()
