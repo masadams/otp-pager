@@ -244,6 +244,18 @@ class NetworkActivity : Activity() {
         if (requestCode == 71 && resultCode == RESULT_OK) { unlocked = true; needsTerminal = true }
     }
     private fun showTerminal() {
+        if (GlobalRetirement.isFrozen(noBackupFilesDir)) {
+            generation++
+            closeVisibleContact()
+            clearPrivateState()
+            engine = null; book = null; busy = false; errorLoading = true; needsTerminal = false
+            handler.removeCallbacks(poll)
+            val screenGeneration = generation
+            GlobalRecoveryScreen(this) {
+                active && unlocked && !isFinishing && !isDestroyed && generation == screenGeneration
+            }.show()
+            return
+        }
         if (::composer.isInitialized) persistDraft()
         generation++
         closeVisibleContact()
@@ -1333,7 +1345,7 @@ class NetworkActivity : Activity() {
         visibleContact = null
         engine = null; book = null
         clearPrivateState()
-        // Recovery/fresh-pairing status UI is a later slice; never leave a stale conversation visible.
+        // Reopening routes through fresh local status; never leave a stale conversation visible.
         setContentView(text("This local pairing is retired. No remote wipe has been requested.", 18f))
         finish()
     }

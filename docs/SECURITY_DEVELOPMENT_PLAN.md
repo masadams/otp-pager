@@ -189,7 +189,7 @@ security finding requires it. Tests alone never satisfy an independent-review ga
 | Package | Scope / natural stopping point |
 | --- | --- |
 | A | Local recovery status, safe fresh-pairing UI, read-only orphan discovery and remaining local design review |
-| B | B1: global terminal freeze, index-independent cleanup, metadata removal and interrupted recovery; B2: explicit enrollment epoch and global recovery UI |
+| B | B1: global terminal freeze, index-independent cleanup, metadata removal and interrupted recovery; B2: global recovery UI, then reviewed enrollment epoch/guard-provenance transition |
 | C | Independently erasable history and reviewed crash-safe old-key migration |
 | D | Exact emergency-control/dispatch/ack protocol and migration specification; independent review and vectors before code |
 | E | Relay scoped authorization, durable control/tombstone support and recovery/migration tests |
@@ -201,3 +201,10 @@ Packages B/C remain Phase 2 requirements. Read-only inventory or a design draft 
 not complete them. Remote destruction implementation stays behind package D's
 review gate. Keep exact completion and test evidence in SECURITY_PROGRESS.md and
 the implementation PR, rather than asking the user to reconstruct prior messages.
+
+
+Current B2 reference: [global enrollment protocol candidate](GLOBAL_ENROLLMENT_PROTOCOL.md).
+Global recovery observation/retry is a separate implemented review slice. Epoch
+activation remains unimplemented; v1 terminal journals cannot prove absent reuse
+registry provenance and must never authorize an empty reset. Executable design-model
+checks do not complete package B or replace Android lifecycle/physical evidence.

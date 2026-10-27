@@ -10,7 +10,7 @@ import java.security.KeyStore
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 
-/** Global local-only terminal state. No active UI trigger or unfreeze/enrollment API. */
+/** Global local-only terminal state. No active wipe trigger or unfreeze/enrollment API. */
 internal object GlobalRetirement {
     const val JOURNAL = "global-retirement-v1.json"
     private const val MAX_BYTES = 256 * 1024
@@ -21,6 +21,46 @@ internal object GlobalRetirement {
     fun marker(directory: File) = File(directory, JOURNAL)
     fun isFrozen(directory: File): Boolean = synchronized(VaultLifecycle.lock) {
         directory.absolutePath in denied || VaultLifecycle.variants(marker(directory)).any { it.exists() }
+    }
+    enum class LocalState { NOT_FROZEN, INCOMPLETE, COMPLETE, UNAVAILABLE }
+    data class Status(val state: LocalState)
+
+    /** Observation only. A completed journal is evidence to check, never proof by itself. */
+    fun inspect(context: Context): Status = synchronized(VaultLifecycle.lock) {
+        val directory = context.noBackupFilesDir.absoluteFile
+        try {
+            check(directory.isDirectory && directory.list() != null)
+            if (!isFrozen(directory)) return@synchronized Status(LocalState.NOT_FROZEN)
+            if (RetirementStartup.failed) return@synchronized Status(LocalState.UNAVAILABLE)
+            val previous = read(directory)
+            val marker = marker(directory)
+            val clean = previous.usable && marker.isFile &&
+                VaultLifecycle.variants(marker).drop(1).none { it.exists() } &&
+                JSONObject(marker.readText(Charsets.UTF_8)).getString("state") == "complete"
+            if (!clean || "station-v2" !in previous.roots) return@synchronized Status(LocalState.INCOMPLETE)
+            val scope = ContactInventory.scanBestEffort(context)
+            if (!scope.complete) return@synchronized Status(LocalState.UNAVAILABLE)
+            if (!previous.roots.containsAll(scope.roots)) return@synchronized Status(LocalState.INCOMPLETE)
+            for (root in previous.roots) {
+                when (VaultRetirement.inspect(context, root).state) {
+                    VaultRetirement.LocalState.UNAVAILABLE -> return@synchronized Status(LocalState.UNAVAILABLE)
+                    VaultRetirement.LocalState.COMPLETE -> Unit
+                    else -> return@synchronized Status(LocalState.INCOMPLETE)
+                }
+            }
+            val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+            val metadataGone = listOf("otp-pager-chat-index", "otp-pager-chat-index-device").none(keys::containsAlias) &&
+                VaultLifecycle.variants(File(directory, "chat-index.bin")).none { it.exists() }
+            val notifications = context.getSystemService(android.app.NotificationManager::class.java)
+            Status(if (metadataGone && !ReceiveService.enabled(context) && notifications.activeNotifications.isEmpty())
+                LocalState.COMPLETE else LocalState.INCOMPLETE)
+        } catch (_: Exception) { Status(LocalState.UNAVAILABLE) }
+    }
+
+    /** Recovery controls may retry an existing terminal intent, never initiate destruction. */
+    fun retryExisting(context: Context): Future<GlobalRetirementMachine.Result> {
+        check(isFrozen(context.noBackupFilesDir)) { "No existing global retirement to recover" }
+        return submit(context)
     }
     private fun freeze(context: Context): Set<String> {
         val directory = context.noBackupFilesDir.absoluteFile
@@ -47,7 +87,9 @@ internal object GlobalRetirement {
             val directory = app.noBackupFilesDir.absolutePath
             val existing = running[directory]
             if (existing != null && !existing.isDone) existing else {
-                val task = executor.submit<GlobalRetirementMachine.Result> { recover(app) }
+                val task = executor.submit<GlobalRetirementMachine.Result> {
+                    recover(app).also(RetirementStartup::recordGlobal)
+                }
                 // Closing a screen or cancelling a result wait must never cancel local destruction.
                 val result = object : Future<GlobalRetirementMachine.Result> by task {
                     override fun cancel(mayInterruptIfRunning: Boolean) = false

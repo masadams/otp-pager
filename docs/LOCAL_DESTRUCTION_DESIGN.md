@@ -358,7 +358,7 @@ emulator app is intentionally left frozen; production has no test reset path.
 ### Next gate: explicit enrollment after global retirement (package B2)
 
 Cleanup completion does **not** authorize deleting the global record or recreating a
-default index. Global recovery/status UI and new enrollment remain unimplemented.
+default index. Global recovery/status UI now observes/retries already-terminal cleanup; new enrollment remains unimplemented.
 Before enrollment code, specify a persistent epoch/allowlist transition that blocks
 pre-wipe **index and claims objects** as well as old contacts. Per-contact markers
 alone do not prevent stale metadata writers repopulating a newly created index.
@@ -368,3 +368,25 @@ forward-only epoch publication, with no fallback to old pad/counter snapshots.
 A later journal version may need explicit retained-guard evidence. Current v1 means
 frozen permanently, including after complete. Coordinated full OS rollback and
 forensic erasure remain outside the guarantee.
+
+
+### Global recovery observation and enrollment review candidate
+
+The frozen app now routes to `GlobalRecoveryScreen`, outside the normal contact/index
+loading path. It uses a dedicated status worker and permits only `retryExisting`;
+that entry point rejects an app without an existing global freeze before any intent
+is created. Status checks do not repair/erase anything: they require a clean complete
+journal including the reserved default root, complete bounded disk/key inventory,
+no roots outside recorded scope, verified per-contact completion, absent index/name
+keys/files, receiving disabled and no active app notifications. A restored artifact
+or malformed variant invalidates completion. Unavailable storage is not completion.
+“Local cleanup verified” describes this scoped observation, not forensic erasure,
+validity of retained reuse guards, remote destruction or readiness for enrollment.
+
+The UI cannot activate wipe-all or fresh enrollment. All pairings stay disabled.
+Retries refresh startup result metadata, never the terminal gate; result publication
+is discarded after the screen's activity/generation stops. No status or retry work
+queues behind `StationRuntime.worker`. See the
+[global enrollment protocol candidate](GLOBAL_ENROLLMENT_PROTOCOL.md) for the next
+review boundary and v1 guard-provenance limitation. The executable specification is
+a design oracle, not a production implementation or Android adapter test.

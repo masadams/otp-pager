@@ -10,12 +10,16 @@ internal object RetirementStartup {
         private set
     @Volatile var global: GlobalRetirementMachine.Result? = null
         private set
+    internal fun recordGlobal(result: GlobalRetirementMachine.Result) {
+        global = result
+        incomplete = if (result.completed) 0 else 1
+        failed = false // Global access remains terminal even when retry succeeds.
+    }
     fun recover(context: Context) {
         failed = true
         try {
             if (GlobalRetirement.isFrozen(context.noBackupFilesDir)) {
-                global = GlobalRetirement.recover(context)
-                incomplete = if (global!!.completed) 0 else 1
+                recordGlobal(GlobalRetirement.recover(context))
             } else {
                 global = null
                 incomplete = VaultRetirement.recoverPending(context).count { !it.completed }

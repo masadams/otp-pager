@@ -247,14 +247,57 @@ a durable epoch gate before a fresh index can be published. The local design now
 records package B2's required transition. No global destructive UI, fresh enrollment,
 history-key migration, peer command or production-readiness claim is included.
 
+### 2026-10-27 — global recovery UI and enrollment protocol candidate (package B2)
+
+B1 head `5bedce4a05f271fcf5c37399d42a97b637a4fc5a` passed API29/31/35 including
+both cold-process fixtures (40437956455), signed upgrade/rejection (40437956751)
+and relay (40437956639). Those results belong to PR #11, not this new slice.
+
+Added a global recovery screen that does not construct ChatBook/StationEngine or
+read the encrypted index. It works through a dedicated status worker while the
+messaging worker is blocked, distinguishes verified/incomplete/unavailable local
+cleanup and clearly states that no remote request exists. Only already-terminal
+cleanup can be retried. Closing a screen cannot cancel cleanup; stale screen results
+are generation-gated. Fresh enrollment stays unavailable, with no clear-data/reset
+shortcut. A successful retry refreshes startup recovery metadata without opening
+the global gate.
+
+Read-only global status independently verifies full journal/root scope, every
+contact's operational keys/files, index/name artifacts, receiving preference and
+active app notifications. It never repairs journals, creates keys, or clears restored
+artifacts. Unknown roots, malformed variants or restored metadata invalidate a
+completion claim; storage/enumeration failures report unavailable. Retained reuse
+records and forensic-erasure limits are explicit; this does not prove those retained
+records sufficient for fresh enrollment.
+
+The [enrollment protocol candidate](GLOBAL_ENROLLMENT_PROTOCOL.md) now specifies
+freeze/evidence capture, immutable retained-guard cohorts, explicit staged fresh
+index/claims namespaces, last-commit activation, captured epoch capabilities,
+abandoned-epoch retirement and second-wipe behavior. Review found that v1 lacks
+pre-cleanup guard provenance: an absent registry cannot safely imply an empty one.
+No v1-to-empty enrollment migration is allowed. Added a nine-test executable design
+model for staging/interruption, missing/altered evidence, stale owners, artifact loss,
+abandoned epochs and repeat freeze. These are model checks, **not implemented
+Android enrollment tests**. Actual epoch activation, guard reader/encoding/adapters,
+physical pairing evidence and independent review remain outstanding.
+
+Expanded exclusive Android host checks for read-only completion refusal, frozen-app
+UI retry/reopen while messaging/close callbacks block, restored index keys and unknown
+roots, malformed-journal retry, compact-screen action visibility and screenshots.
+Added normal instrumentation tests for no-intent recovery refusal and unavailable
+storage. Exclusive screenshots are now pulled after the host fixture too. Latest
+head CI and visual QA are required; exact results belong to the new stacked PR.
+Local model 9/9, signing-policy 7/7, relay 13/13 and Python syntax passed.
+
 ## Next task
 
-Validate the global backend and exclusive cold-process test on API29/31/35 plus all
-existing pairing, message, signed-upgrade and restart regressions. Record exact head
-and CI evidence in the stacked implementation PR. Review S02/S03/S05/S07/S09/S12.
-Then specify and implement package B2's global recovery/status and explicit durable
-enrollment epoch, including stale metadata writers and missing reuse registry tests.
-Package C's history/key migration remains separately reviewed work. Phase 2 stays open.
+Validate this slice's global recovery screen and extended exclusive fixture on
+API29/31/35, review compact screenshots and verify signed upgrades/relay regressions.
+Record exact head/results in the implementation PR. Then review and implement the
+B2 epoch candidate, including manifest/cohort encoding, bounded scoped guard reads,
+pre-cleanup provenance, staged key/index commit, stale metadata owners and actual
+cold-start failure adapters. Current v1 states deliberately remain frozen; package B
+is not complete. Phase 2 stays open.
 
 Do not implement peer-wipe packets until package D / Phase 3 resolves independent
 control keys, generation binding, dispatch authority, acknowledgement and migration,
