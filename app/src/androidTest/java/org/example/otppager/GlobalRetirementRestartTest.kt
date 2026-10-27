@@ -181,6 +181,11 @@ class GlobalRetirementRestartTest {
                     assertEquals(1L, release.count) // Both unrelated waits are still blocked.
                     verify(reference, observed = result)
                     assertEquals(GlobalRetirement.LocalState.COMPLETE, GlobalRetirement.inspect(context).state)
+                    awaitMain {
+                        val label = views(recovery).filterIsInstance<android.widget.TextView>().first { it.text.toString() == "Local recovery" }
+                        val bounds = android.graphics.Rect()
+                        label.getGlobalVisibleRect(bounds) && bounds.height() == label.height
+                    }
                     capture(recovery, "18-global-complete")
                     InstrumentationRegistry.getInstrumentation().runOnMainSync {
                         views(recovery).filterIsInstance<android.widget.ScrollView>().first().fullScroll(android.view.View.FOCUS_DOWN)

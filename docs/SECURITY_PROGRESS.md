@@ -288,6 +288,13 @@ Added normal instrumentation tests for no-intent recovery refusal and unavailabl
 storage. Exclusive screenshots are now pulled after the host fixture too. Latest
 head CI and visual QA are required; exact results belong to the new stacked PR.
 Local model 9/9, signing-policy 7/7, relay 13/13 and Python syntax passed.
+Initial UI head `847dc30d7687b0857aea39eb266ea87956318bce` passed API29/31 including
+both host fixtures, signed upgrades and relay. Compact screenshot review found the
+retry result could stay partly above the visible area and controls were too low.
+The screen now places actions before the long explanation, removes a redundant
+heading and scrolls to the result after a check/retry. The host fixture asserts the
+header is fully visible before result capture. Latest-head validation is required
+for this final usability correction; earlier results do not substitute for it.
 
 ## Next task
 

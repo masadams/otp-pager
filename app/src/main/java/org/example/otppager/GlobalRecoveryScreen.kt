@@ -35,19 +35,19 @@ internal class GlobalRecoveryScreen(private val activity: Activity, private val 
     private val retry = button("Retry local cleanup") { refresh(retryCleanup = true) }
     private val check = button("Check status") { refresh() }
     private var pending = false
+    private lateinit var scroll: ScrollView
     fun show() {
         val body = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(12), dp(20), dp(20))
             addView(label("Local recovery", 25f))
-            addView(label("All pairings are disabled", 21f))
             addView(status)
             addView(label("No remote wipe has been requested. Other devices may still hold their conversations."))
-            addView(label("Local cleanup removes conversation and draft keys, files and contact names. Minimal pad-reuse and retirement records remain. Flash, memory, backups and exported copies cannot be guaranteed erased.", 14f))
             addView(retry, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
             addView(check, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+            addView(label("Local cleanup removes conversation and draft keys, files and contact names. Minimal pad-reuse and retirement records remain. Flash, memory, backups and exported copies cannot be guaranteed erased.", 14f).apply { setPadding(0, dp(22), 0, dp(8)) })
             addView(label("Fresh enrollment is not available in this build. Retained security records must stay in place; clearing app data would remove local reuse protection.", 14f).apply { setPadding(0, dp(22), 0, dp(8)) })
         }
-        val scroll = ScrollView(activity).apply {
+        scroll = ScrollView(activity).apply {
             setBackgroundColor(Color.rgb(250, 249, 246)); isFillViewport = true
             scrollBarStyle = View.SCROLLBARS_INSIDE_INSET
             setPadding(0, 0, dp(8), 0); addView(body)
@@ -82,6 +82,8 @@ internal class GlobalRecoveryScreen(private val activity: Activity, private val 
                 retry.isEnabled = observed.state != GlobalRetirement.LocalState.NOT_FROZEN && observed.state != GlobalRetirement.LocalState.COMPLETE
                 retry.alpha = if (retry.isEnabled) 1f else 0.45f
                 check.isEnabled = true; check.alpha = 1f
+                // A retry is usually tapped after scrolling. Bring its result back into view.
+                scroll.post { if (isCurrent()) scroll.scrollTo(0, 0) }
             }
         }
     }
