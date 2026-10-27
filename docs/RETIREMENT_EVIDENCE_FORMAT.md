@@ -42,7 +42,9 @@ There is no v1-to-empty migration or retrospective evidence capture.
 CLEANED is historical evidence, not a reusable authorization token or current erasure
 proof. `verifyCompleted` checks authentication, unchanged complete guard scope and
 commitments, CLEANED phase, and actual local cleanup observation. Restored keys/files,
-new roots, missing/old/corrupt guards or record variants make this fail. It still does
+new roots, missing/old/corrupt guards or record variants make this fail. The ordinary
+cleanup journal must have exactly the authenticated root scope, so a partial restore
+that also loses an old retirement marker cannot bless an underdeclared journal. It still does
 not activate enrollment. The eventual confirmation must bind this generation and
 manifest commitment; that confirmation/capability transaction is not implemented.
 

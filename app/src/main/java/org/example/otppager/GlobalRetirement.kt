@@ -38,15 +38,20 @@ internal object GlobalRetirement {
             check(directory.isDirectory && directory.list() != null)
             if (!isFrozen(directory)) return@synchronized Status(LocalState.NOT_FROZEN)
             if (RetirementStartup.failed) return@synchronized Status(LocalState.UNAVAILABLE)
+            var sealedRoots: Set<String>? = null
             when (RetirementEvidence.presence(directory)) {
                 RetirementEvidence.Presence.UNAVAILABLE -> return@synchronized Status(LocalState.UNAVAILABLE)
                 RetirementEvidence.Presence.PRESENT -> {
                     val evidence = RetirementEvidence.read(directory)
-                    if (evidence.phase != RetirementEvidenceCodec.Phase.INTENT) RetirementEvidence.verifyFrozen(context)
+                    if (evidence.phase != RetirementEvidenceCodec.Phase.INTENT) {
+                        RetirementEvidence.verifyFrozen(context)
+                        sealedRoots = evidence.roots
+                    }
                 }
                 RetirementEvidence.Presence.NONE -> Unit
             }
             val previous = read(directory)
+            if (sealedRoots != null && previous.roots != sealedRoots) return@synchronized Status(LocalState.UNAVAILABLE)
             val marker = marker(directory)
             val clean = previous.usable && marker.isFile &&
                 VaultLifecycle.variants(marker).drop(1).none { it.exists() } &&

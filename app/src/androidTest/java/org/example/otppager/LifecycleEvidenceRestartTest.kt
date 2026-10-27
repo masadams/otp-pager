@@ -93,7 +93,17 @@ class LifecycleEvidenceRestartTest {
                 rejected { RetirementEvidence.beginFresh(context) }
                 val forged = RetirementEvidence.Ticket(context, record.generation)
                 rejected { RetirementEvidence.seal(forged, RetainedGuardInventory.Snapshot(record.roots, record.guards)) }
-                if (phase == "sealed-verify") File(dir, "${root(41)}-pads.bin").writeBytes(File(dir, "fixture-old-ledger.bin").readBytes())
+                if (phase == "sealed-verify") {
+                    val journal = GlobalRetirement.marker(dir); val journalBytes = journal.readBytes()
+                    val marker = VaultLifecycle.marker(dir, root(42)); val markerBytes = marker.readBytes()
+                    val underdeclared = JSONObject(journal.readText()).put("roots", JSONArray(record.roots.filter { it != root(42) }.sorted()))
+                    journal.writeText(underdeclared.toString()); check(marker.delete())
+                    rejected { RetirementEvidence.verifyCompleted(context) }
+                    assertEquals(GlobalRetirement.LocalState.UNAVAILABLE, GlobalRetirement.inspect(context).state)
+                    journal.writeBytes(journalBytes); marker.writeBytes(markerBytes)
+                    RetirementEvidence.verifyCompleted(context)
+                    File(dir, "${root(41)}-pads.bin").writeBytes(File(dir, "fixture-old-ledger.bin").readBytes())
+                }
             }
             "restored" -> {
                 localGone()
