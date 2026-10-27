@@ -29,8 +29,8 @@ signed upgrades, relay and compact screenshot review passed).
 - [x] Add global recovery UI with independently verified local cleanup status.
 - [x] Draft the fresh-enrollment protocol and executable failure model (design only).
 - [ ] Validate retained reuse-protection records and bind complete inventory/provenance.
-  A frozen-only guard reader is the current implementation slice; it cannot by itself
-  establish pre-cleanup provenance or authorize enrollment.
+  The frozen-only guard reader passed in draft PR #13. Initial authenticated capture
+  is the next review slice; multi-epoch provenance and enrollment remain unfinished.
 - [ ] Implement durable enrollment generations and reject stale metadata writers.
 - [ ] Safely enable fresh enrollment after global destruction.
 - [ ] Separate erasable history keys and safely migrate older storage/operational keys.

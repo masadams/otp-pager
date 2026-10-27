@@ -317,16 +317,40 @@ records; the validator is private. The existing exclusive host fixture now also 
 restart and operational key deletion. This is implementation pending latest-head CI.
 See the enrollment design for exact bounds, scope and explicit non-authority.
 
+### 2026-10-27 — authenticated initial capture and cleanup evidence
+
+Guard reader head `77a4d1c67203dd4e782c0fb9c800367800098ca0` passed API29/31/35,
+both restart fixtures (40495068317), signed upgrades (40495068447) and relay
+(40495068319). Exact developer review and tree evidence are in PR #13.
+
+The next slice connects authenticated terminal evidence to initial backend submission:
+a unique generation and one-use in-process capture ticket, HMAC-SHA256 canonical
+bounded binary record, independent complete disk/key inventory and authenticated
+guard commitments, followed by ordinary cleanup. Evidence errors never prevent
+local cleanup; startup can complete a pre-existing seal but never invent capture
+from an INTENT/legacy state. All capture tickets are invalidated when cleanup begins.
+Key-only interruption stays terminal; unknown key-provider availability without a
+known intent blocks access without initiating destruction. Missing keys/records,
+ambiguous variants, old guards and scope growth cannot authorize a reset.
+
+Added exact format/authority/failure documentation and codec/Keystore tests. A new
+exclusive host fixture, after all earlier tests, exercises sealed restart, real
+submit/restart, failed/interrupted capture, old-guard rejection, key-only freeze and
+cleanup of unexpected roots without extending a prior seal. It clears only the
+disposable emulator's synthetic app data between scenarios; no production reset API.
+Latest-head Android/upgrade/relay validation is pending, not inherited from PR #13.
+No active epoch, enrollment button, peer command, signing/version change or deployment.
+
 ## Next task
 
-Validate this adapter on API29/31/35 with ordinary, per-contact/global cold-start,
-signed-upgrade and relay regressions. Review namespace confinement, read-only effects,
-parser/size bounds and ownership/commitment validation; record exact head in the PR.
-Then implement the authenticated lifecycle record/complete inventory and pre-cleanup
-provenance capture, with confirmation bound to the terminal manifest/generation.
-After that: actual durable epoch capabilities, staged index/claims keys, abandoned
-stage recovery and explicit activation. The adapter does not make any v1 terminal
-state eligible for an empty reset. History-key migration remains separate work.
+Validate the new authenticated capture, restart matrix and legacy regressions on
+API29/31/35 plus signed upgrades/relay. Record exact head, invariant review and limits
+in the implementation PR. Then specify/implement the forward multi-epoch chain and
+confirmation bound to the terminal generation/manifest commitment, scoped active
+retained-guard capabilities, staged fresh index/claims keys, abandoned-stage recovery
+and actual activation. One initial terminal lineage is not a complete enrollment
+system; v1 journals still cannot be retroactively promoted. Phase 2 stays open.
 
-No peer-wipe packets before the reviewed control/dispatch/ack protocol and independent
-vectors. Physical two-device/power-loss and independent readiness reviews stay open.
+History-key migration remains separate. No peer packets before protocol review and
+independent vectors. Physical power-loss/two-device and independent readiness evidence
+remain external gates, not implied by emulator results.

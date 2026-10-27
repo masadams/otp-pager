@@ -196,3 +196,15 @@ file/key evidence. The exclusive global cold-start fixture additionally checks t
 retained guards still authenticate after restart and operational-key cleanup. Its
 v1 reference hashes are test observations, never retrospective enrollment evidence.
 Latest-head results belong to the implementation PR. Independent review remains open.
+
+
+## Initial authenticated capture implementation
+
+See [the exact terminal-evidence format and state machine](RETIREMENT_EVIDENCE_FORMAT.md).
+The backend now attempts authenticated initial INTENT → SEALED evidence before local
+cleanup and records matching observed cleanup afterward. Interrupted/failed capture
+cannot gain retrospective provenance on restart. No ACTIVE/enrollment transition is
+implemented; a successful seal does not complete package B. Legacy v1 terminal
+journals remain ineligible for retrospective capture. The full multi-epoch lifecycle
+manifest described above remains a candidate; this initial terminal record is its
+bounded prerequisite, not an implementation of every proposed phase.

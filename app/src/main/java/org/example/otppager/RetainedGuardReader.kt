@@ -44,29 +44,36 @@ internal object RetainedGuardReader {
     data class Verified(val reference: Reference, val guard: Guard, val ciphertextBytes: Int)
 
     /** Requires an exact caller-supplied commitment. It is NOT proof of when that commitment was made. */
-    fun readFrozen(context: Context, reference: Reference): Verified = synchronized(VaultLifecycle.lock) {
+    fun readFrozen(context: Context, reference: Reference): Verified = read(context, reference.namespace, reference.sha256)
+    /** Observation only; only a fresh terminal transaction may seal this as pre-cleanup evidence. */
+    fun observeFrozen(context: Context, namespace: String): Verified {
+        Reference(namespace, "0".repeat(64)) // Confine the namespace before I/O, just like expected-hash reads.
+        return read(context, namespace, null)
+    }
+    private fun read(context: Context, namespace: String, expected: String?): Verified = synchronized(VaultLifecycle.lock) {
         val directory = context.noBackupFilesDir
         check(GlobalRetirement.isFrozen(directory)) { "Retained guard inspection requires global freeze" }
         try {
-            val base = File(directory, "${reference.namespace}.bin")
+            val base = File(directory, "${namespace}.bin")
             check(VaultLifecycle.variants(base).drop(1).none { Files.exists(it.toPath(), LinkOption.NOFOLLOW_LINKS) })
             check(Files.isRegularFile(base.toPath(), LinkOption.NOFOLLOW_LINKS))
             val bytes = readBounded(base)
             try {
-                check(PadProtocol.hex(MessageDigest.getInstance("SHA-256").digest(bytes)) == reference.sha256)
+                val commitment = PadProtocol.hex(MessageDigest.getInstance("SHA-256").digest(bytes))
+                check(expected == null || commitment == expected)
                 check(bytes.size >= 29 && bytes[0] == 2.toByte())
                 val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
                 // No key creation, AtomicFile recovery, SecureStore, identity, or contact-vault access.
-                val key = keys.getKey("otp-pager-${reference.namespace}", null) as? SecretKey
+                val key = keys.getKey("otp-pager-${namespace}", null) as? SecretKey
                     ?: error("Guard key unavailable")
                 val cipher = Cipher.getInstance("AES/GCM/NoPadding")
                 cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, bytes.copyOfRange(1, 13)))
                 cipher.updateAAD(aad)
                 val clear = cipher.doFinal(bytes, 13, bytes.size - 13)
                 try {
-                    val guard = parse(reference.namespace, clear)
+                    val guard = parse(namespace, clear)
                     check(VaultLifecycle.variants(base).drop(1).none { Files.exists(it.toPath(), LinkOption.NOFOLLOW_LINKS) })
-                    Verified(reference, guard, bytes.size)
+                    Verified(Reference(namespace, commitment), guard, bytes.size)
                 } finally { clear.fill(0) }
             } finally { bytes.fill(0) }
         } catch (_: Exception) {

@@ -82,6 +82,7 @@ jobs:
             bash -c 'gradle --no-daemon :app:connectedDebugAndroidTest; otp_tests=$?; adb pull /sdcard/Download/otp-pager-preview app/build/screenshots; otp_capture=$?; if [ "$otp_tests" -ne 0 ]; then exit "$otp_tests"; fi; exit "$otp_capture"'
             python3 scripts/verify_retirement_restart.py
             python3 scripts/verify_global_retirement_restart.py
+            python3 scripts/verify_lifecycle_evidence_restart.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

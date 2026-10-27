@@ -16,11 +16,17 @@ internal object GlobalRetirement {
     private const val MAX_BYTES = 256 * 1024
     private val denied = mutableSetOf<String>()
     private val known = mutableMapOf<String, MutableSet<String>>()
+    private val captureAttempted = mutableSetOf<String>()
     private val running = mutableMapOf<String, Future<GlobalRetirementMachine.Result>>()
     private val executor = Executors.newSingleThreadExecutor { task -> Thread(task, "pager-retire-all").apply { isDaemon = true } }
     fun marker(directory: File) = File(directory, JOURNAL)
     fun isFrozen(directory: File): Boolean = synchronized(VaultLifecycle.lock) {
-        directory.absolutePath in denied || VaultLifecycle.variants(marker(directory)).any { it.exists() }
+        hasLegacyIntent(directory) || RetirementEvidence.presence(directory) != RetirementEvidence.Presence.NONE
+    }
+    internal fun hasLegacyIntent(directory: File): Boolean = synchronized(VaultLifecycle.lock) {
+        directory.absolutePath in denied || VaultLifecycle.variants(marker(directory)).any {
+            java.nio.file.Files.exists(it.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS)
+        }
     }
     enum class LocalState { NOT_FROZEN, INCOMPLETE, COMPLETE, UNAVAILABLE }
     data class Status(val state: LocalState)
@@ -32,6 +38,14 @@ internal object GlobalRetirement {
             check(directory.isDirectory && directory.list() != null)
             if (!isFrozen(directory)) return@synchronized Status(LocalState.NOT_FROZEN)
             if (RetirementStartup.failed) return@synchronized Status(LocalState.UNAVAILABLE)
+            when (RetirementEvidence.presence(directory)) {
+                RetirementEvidence.Presence.UNAVAILABLE -> return@synchronized Status(LocalState.UNAVAILABLE)
+                RetirementEvidence.Presence.PRESENT -> {
+                    val evidence = RetirementEvidence.read(directory)
+                    if (evidence.phase != RetirementEvidenceCodec.Phase.INTENT) RetirementEvidence.verifyFrozen(context)
+                }
+                RetirementEvidence.Presence.NONE -> Unit
+            }
             val previous = read(directory)
             val marker = marker(directory)
             val clean = previous.usable && marker.isFile &&
@@ -59,7 +73,9 @@ internal object GlobalRetirement {
 
     /** Recovery controls may retry an existing terminal intent, never initiate destruction. */
     fun retryExisting(context: Context): Future<GlobalRetirementMachine.Result> {
-        check(isFrozen(context.noBackupFilesDir)) { "No existing global retirement to recover" }
+        check(hasLegacyIntent(context.noBackupFilesDir) || RetirementEvidence.probe(context.noBackupFilesDir) == RetirementEvidence.Presence.PRESENT) {
+            "No existing global retirement to recover"
+        }
         return submit(context)
     }
     private fun freeze(context: Context): Set<String> {
@@ -87,8 +103,10 @@ internal object GlobalRetirement {
             val directory = app.noBackupFilesDir.absolutePath
             val existing = running[directory]
             if (existing != null && !existing.isDone) existing else {
+                val firstAttempt = captureAttempted.add(directory)
                 val task = executor.submit<GlobalRetirementMachine.Result> {
-                    recover(app).also(RetirementStartup::recordGlobal)
+                    if (firstAttempt) captureInitialEvidence(app)
+                    recover(app).also { RetirementStartup.recordGlobal(app, it) }
                 }
                 // Closing a screen or cancelling a result wait must never cancel local destruction.
                 val result = object : Future<GlobalRetirementMachine.Result> by task {
@@ -99,10 +117,26 @@ internal object GlobalRetirement {
             }
         }
     }
+    private fun captureInitialEvidence(context: Context) {
+        var ticket: RetirementEvidence.Ticket? = null
+        try {
+            ticket = RetirementEvidence.beginFresh(context)
+            val roots = synchronized(VaultLifecycle.lock) { known[context.noBackupFilesDir.absolutePath]?.toSet() ?: emptySet() }
+            val snapshot = RetainedGuardInventory.captureFresh(context, roots)
+            RetirementEvidence.seal(ticket, snapshot)
+        } catch (_: Exception) {
+            // No evidence failure, absent registry or key-provider error may prevent local cleanup.
+        } finally { ticket?.let(RetirementEvidence::close) }
+    }
     /** Only startup recovery of an existing global intent, or the explicit internal submit path, calls this. */
     fun recover(context: Context): GlobalRetirementMachine.Result {
         val directory = context.noBackupFilesDir.absoluteFile
-        return GlobalRetirementMachine.perform(object : GlobalRetirementMachine.Operations {
+        RetirementEvidence.retireCaptureWindow(directory)
+        try {
+            val evidence = RetirementEvidence.read(directory)
+            synchronized(VaultLifecycle.lock) { known.getOrPut(directory.path) { mutableSetOf() }.addAll(evidence.roots) }
+        } catch (_: Exception) { /* Invalid/missing evidence blocks enrollment, not best-effort local cleanup. */ }
+        val result = GlobalRetirementMachine.perform(object : GlobalRetirementMachine.Operations {
             override fun freeze() = freeze(context)
             override fun previous(): GlobalRetirementMachine.Previous = synchronized(VaultLifecycle.lock) { read(directory) }
             override fun write(roots: Set<String>, complete: Boolean) = synchronized(VaultLifecycle.lock) { write(directory, roots, complete) }
@@ -120,6 +154,7 @@ internal object GlobalRetirement {
                 "global-directory-sync" to { VaultLifecycle.syncDirectory(directory) }
             )
         })
+        return result
     }
     private fun read(directory: File): GlobalRetirementMachine.Previous {
         val roots = mutableSetOf<String>(); var usable = true
