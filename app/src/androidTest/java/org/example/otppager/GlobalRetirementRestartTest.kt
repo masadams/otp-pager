@@ -175,13 +175,11 @@ class GlobalRetirementRestartTest {
                     tap(recovery, "Retry local cleanup")
                     assertTrue(closeEntered.await(5, TimeUnit.SECONDS))
                     assertTrue(lease.cancelled)
-                    val future = GlobalRetirement.submit(context) // Coalesce; the UI wait cannot cancel destruction.
-                    assertFalse(future.cancel(true))
-                    val result = future.get(20, TimeUnit.SECONDS)
+                    awaitMain { hasStatus(recovery, "Local cleanup verified. All pairings remain disabled.") }
+                    val result = checkNotNull(RetirementStartup.global)
                     assertTrue(result.failures.toString(), result.completed)
                     assertEquals(1L, release.count) // Both unrelated waits are still blocked.
                     verify(reference, observed = result)
-                    awaitMain { hasStatus(recovery, "Local cleanup verified. All pairings remain disabled.") }
                     assertEquals(GlobalRetirement.LocalState.COMPLETE, GlobalRetirement.inspect(context).state)
                     capture(recovery, "18-global-complete")
                     InstrumentationRegistry.getInstrumentation().runOnMainSync {
@@ -207,7 +205,9 @@ class GlobalRetirementRestartTest {
                 DeviceIdentity("otp-pager-chat-index-device").card(true)
                 DeviceIdentity("otp-pager-${root(37)}-device").card(true)
                 assertEquals(GlobalRetirement.LocalState.INCOMPLETE, GlobalRetirement.inspect(context).state)
-                val recovered = GlobalRetirement.retryExisting(context).get(20, TimeUnit.SECONDS)
+                val recoveryFuture = GlobalRetirement.retryExisting(context)
+                assertFalse(recoveryFuture.cancel(true))
+                val recovered = recoveryFuture.get(20, TimeUnit.SECONDS)
                 assertTrue(recovered.completed); assertTrue(root(37) in recovered.roots)
                 assertEquals(GlobalRetirement.LocalState.COMPLETE, GlobalRetirement.inspect(context).state)
                 // A later restore must be swept again by startup, even though the journal says complete.
