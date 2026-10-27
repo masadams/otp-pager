@@ -1,13 +1,12 @@
 # Security development checklist
 
-In build order. Checked means implemented and tested in the stated scope, **not
-merged, independently reviewed, deployed, or production-ready**. Local retirement,
-global cleanup and recovery remain draft PRs #10–12. Latest validated recovery head:
-`c188a8ab9c96a42a9a69e63fdd17ac81e7d49558` (API29/31/35, both restart fixtures,
-signed upgrades, relay and compact screenshot review passed).
+Updated 2026-10-27. Checked means implemented and tested in the stated scope.
+PRs #9–15 are merged into `main`; a check does **not** imply independent review,
+physical validation, deployment or production readiness. Phase 2 remains open.
 
+[Developer handoff and exact evidence](DEVELOPER_HANDOFF.md) ·
 [Canonical development plan](SECURITY_DEVELOPMENT_PLAN.md) ·
-[Detailed progress/evidence](SECURITY_PROGRESS.md) ·
+[Historical progress](SECURITY_PROGRESS.md) ·
 [Fresh enrollment design](GLOBAL_ENROLLMENT_PROTOCOL.md)
 
 ## 1. Audit and threat model — initial source review done
@@ -28,12 +27,14 @@ signed upgrades, relay and compact screenshot review passed).
 - [x] Implement global freeze, orphan discovery and cleanup despite individual failures.
 - [x] Add global recovery UI with independently verified local cleanup status.
 - [x] Draft the fresh-enrollment protocol and executable failure model (design only).
-- [ ] Validate retained reuse-protection records and bind complete inventory/provenance.
-  The frozen-only guard reader passed in draft PR #13. Initial authenticated capture
-  is the next review slice; multi-epoch provenance and enrollment remain unfinished.
-- [ ] Implement durable enrollment generations and reject stale metadata writers.
-  Confirmation-bound empty staging and captured owner capabilities are the current
-  review slice; ACTIVE publication, routing and multi-epoch operation remain open.
+- [x] Authenticate retained reuse guards with bounded frozen-only reads and cohort validation (#13).
+- [x] Capture initial guard inventory/provenance before cleanup and authenticate terminal evidence (#14).
+- [x] Bind cleanup completion to the exact authenticated root scope (#14).
+- [x] Prepare fresh empty storage with one-use confirmation and captured owner capabilities (#15).
+- [x] Recover/abandon interrupted staging without reusing reserved generations (#15).
+- [ ] Implement ACTIVE epoch capabilities, namespace allowlists and current-index routing.
+- [ ] Enforce immutable retained-cohort exclusions during active pairing/messaging.
+- [ ] Implement repeat-wipe/forward lineage and preserve every prior exclusion/reservation.
 - [ ] Safely enable fresh enrollment after global destruction.
 - [ ] Separate erasable history keys and safely migrate older storage/operational keys.
 - [ ] Complete local-protection invariant review and remaining fault/upgrade tests.

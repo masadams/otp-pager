@@ -3,13 +3,21 @@
 Read [the development plan](SECURITY_DEVELOPMENT_PLAN.md) first. This file is the
 handoff record; never infer feature completion from a plan or passing baseline CI.
 
-## Current position
+## Current position — updated 2026-10-27
 
-- Baseline: merged v0.14, `cfe01af255bebbd195337b9d1b0c72017e39f7c1`.
-- Phase 1: initial inventory plus expanded authentication/provisioning and persistence review recorded.
-- Phase 2: OTP-only new-text engine guard merged (PR #9); local retirement primitive under review.
-- Phases 3–8: not implemented. No emergency wipe or peer-destruction claim.
-- No relay deployment, APK/signing change, operational-key migration or destructive peer protocol change.
+- PRs #9–15 are merged into `main`. Integration endpoint before this documentation
+  refresh: `574576d0a39108a641386ca260788c3ef7df578e`.
+- Phase 1 initial source inventory is recorded; live host/hardware validation remains open.
+- Phase 2 includes OTP-only new-text enforcement, local/global retirement/recovery,
+  authenticated initial provenance and confirmation-bound empty staging.
+- Phase 2 is **not complete**: ACTIVE epochs, forward/repeat-wipe lineage, fresh
+  enrollment UI and independent history-key/old-key migration remain open.
+- Phases 3–8 are outstanding. No peer wipe protocol, active emergency-wipe controls,
+  remote acknowledgement, new release/version/signing decision or live deployment.
+- Start with [the developer handoff](DEVELOPER_HANDOFF.md) for exact commits,
+  validation, known blockers and ordered next steps. Earlier work-log statements
+  such as “draft” or “pending latest-head CI” describe their historical slice;
+  the integration record below and handoff supersede those status statements.
 
 ## Decisions recorded 2026-10-26
 
@@ -368,15 +376,44 @@ state, missing slots and unknown metadata. It clears only disposable app fixture
 all earlier restart/signing/pairing/message checks remain required. No deployment,
 version/signing change, remote packet or normal-message format change.
 
+### 2026-10-27 — owner-requested development integration and handoff
+
+Merged #10, #11, #12, #13, #14 and #15 in dependency order using merge commits,
+retargeting each successor to main. Final integrated implementation commit:
+`574576d0a39108a641386ca260788c3ef7df578e`; tree
+`03113c36ff76a0dbf73885b264efd22d3e49aa55`, identical to validated #15's tree.
+No runtime code was changed during integration. Every original head's Android,
+signed-upgrade and relay checks was rechecked; none had submitted reviews or inline
+review comments. This is developer-reviewed integration requested by the owner,
+not an independent approval or completed emergency feature.
+
+Final implementation evidence at #15 head
+`397851573cea8b314517f80b95dcd8a098c9eaab`: Android 40553219484,
+API29/31/35 jobs 122362251466 / 122362251667 / 122362250872, respectively
+90 / 89 / 90 tests, all four host restart fixtures PASS; signed upgrade
+40553219658 PASS; relay 40553219400 PASS. New main workflows run separately;
+inspect their actual results rather than relabelling feature-head evidence.
+
+Developer invariant review re-read terminal gates, store/identity ownership,
+cancellation, global orchestration, exact root/provenance binding and staging
+creation/recovery. Cleanup does not await networking, reuse guards survive,
+unknown state cannot create an empty replacement, and PREPARED has no activation
+capability. Review and automated evidence do not establish physical erasure,
+full two-device emergency behavior or independent protocol security.
+
+Added a self-contained developer handoff, refreshed the ordered checklist and plan,
+and linked them from README. Physical validation, independent review and release
+readiness remain open. No live deployment or owner-signed APK release was performed.
+
 ## Next task
 
-Validate latest-head API29/31/35, signed upgrades, relay and all four host restart
-fixtures. Review generation/namespace confinement, consent binding, key-before-file
-failure, abandonment scope, constructor compatibility and no activation. Record
-exact final evidence in the PR. Then implement reviewed ACTIVE epoch capability and
-allowlist publication, current index routing, immutable retained-cohort checks during
-messaging, and repeat-wipe/forward-lineage handling before enabling user-facing fresh
-enrollment. PREPARED is not ACTIVE, and v1 terminal states remain ineligible.
+Implement reviewed ACTIVE epoch capability/namespace allowlist publication and
+current-index routing together with immutable retained-cohort checks during normal
+pairing/messaging and repeat-wipe/forward-lineage handling. Follow the staged
+acceptance tasks in [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md). Do not enable fresh
+enrollment UI before those gates pass. PREPARED is not ACTIVE; legacy v1 terminal
+states cannot gain retrospective provenance or authorize an empty reset.
 
-History-key migration and the separately reviewed peer protocol remain later work.
-Physical device/power-loss/two-device and independent validation gates remain open.
+Then complete history-key migration and the independently reviewed emergency peer
+protocol in plan order. Physical device/power-loss/two-device and independent
+validation gates remain open.

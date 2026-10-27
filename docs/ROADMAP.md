@@ -2,6 +2,10 @@
 
 ## Active security work — v0.14 baseline
 
+PRs #9–15 are merged development foundations. See the [ordered checklist](SECURITY_CHECKLIST.md)
+and [developer handoff](DEVELOPER_HANDOFF.md) for current completion, evidence and blockers.
+Phase 2 remains open; remote wiping is not implemented.
+
 Use [Security development plan](SECURITY_DEVELOPMENT_PLAN.md) for current security,
 data lifecycle, relay hardening and emergency destruction work. Read
 [progress and next task](SECURITY_PROGRESS.md) and [baseline findings](SECURITY_INVENTORY_V014.md)
