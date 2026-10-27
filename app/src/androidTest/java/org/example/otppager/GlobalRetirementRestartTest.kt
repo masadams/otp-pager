@@ -36,6 +36,27 @@ class GlobalRetirementRestartTest {
     }
     private fun field(activity: NetworkActivity, name: String) = NetworkActivity::class.java.getDeclaredField(name)
         .apply { isAccessible = true }.get(activity)
+    private fun views(v: android.view.View): List<android.view.View> = listOf(v) +
+        if (v is android.view.ViewGroup) (0 until v.childCount).flatMap { views(v.getChildAt(it)) } else emptyList()
+    private fun views(a: NetworkActivity) = views(a.findViewById(android.R.id.content))
+    private fun hasStatus(a: NetworkActivity, text: String) = views(a).filterIsInstance<android.widget.TextView>()
+        .any { it.isShown && it.text.toString() == text }
+    private fun openRecovery(): NetworkActivity {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        return instrumentation.startActivitySync(android.content.Intent(context, NetworkActivity::class.java)
+            .setAction(android.content.Intent.ACTION_MAIN).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) as NetworkActivity
+    }
+    private fun tap(a: NetworkActivity, label: String) {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            val button = views(a).filterIsInstance<android.widget.Button>().first { it.isShown && it.text.toString() == label }
+            assertTrue(button.isEnabled); button.performClick()
+        }
+    }
+    private fun capture(a: NetworkActivity, name: String) = InterfaceTest().capture(InstrumentationRegistry.getInstrumentation(), a, name, windowOnly = true)
+    private fun close(a: NetworkActivity) {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { a.finish() }
+        awaitMain { a.isDestroyed }
+    }
     private fun blocked(action: () -> Unit) {
         try { action(); fail("Global freeze allowed operational work") } catch (_: IllegalStateException) {}
     }
@@ -77,6 +98,9 @@ class GlobalRetirementRestartTest {
         when (phase) {
             "seed" -> {
                 assertFalse(GlobalRetirement.isFrozen(directory))
+                assertEquals(GlobalRetirement.LocalState.NOT_FROZEN, GlobalRetirement.inspect(context).state)
+                blocked { GlobalRetirement.retryExisting(context) }
+                assertFalse(GlobalRetirement.marker(directory).exists())
                 SecureStore(context, "chat-index").save(JSONObject().put("version", 3).put("active", root(31))
                     .put("chats", JSONArray((31..32).map { n -> JSONObject().put("id", root(n)).put("entryId", root(n)).put("name", "Fixture $n") })))
                 val book = ChatBook(context)
@@ -121,6 +145,13 @@ class GlobalRetirementRestartTest {
             }
             "verify" -> {
                 val reference = JSONObject(referenceFile.readText()); verify(reference, expectedComplete = false)
+                val journal = GlobalRetirement.marker(directory).readBytes()
+                repeat(2) { assertEquals(GlobalRetirement.LocalState.INCOMPLETE, GlobalRetirement.inspect(context).state) }
+                assertArrayEquals(journal, GlobalRetirement.marker(directory).readBytes())
+                val recovery = openRecovery()
+                awaitMain { hasStatus(recovery, "Local cleanup is incomplete. All pairings remain disabled.") }
+                assertNull(field(recovery, "book")); assertNull(field(recovery, "engine"))
+                capture(recovery, "17-global-incomplete")
                 // A stale offer without a registered lease must still be rejected by the HCE service.
                 NfcSetupExchange.publish("late fixture offer".toByteArray(), android.os.SystemClock.elapsedRealtime() + 60000,
                     VaultLifecycle.marker(directory, root(36)).absolutePath)
@@ -141,19 +172,54 @@ class GlobalRetirementRestartTest {
                 StationRuntime.worker.execute { workerEntered.countDown(); release.await(45, TimeUnit.SECONDS) }
                 try {
                     assertTrue(workerEntered.await(5, TimeUnit.SECONDS))
-                    val future = GlobalRetirement.submit(context)
-                    assertFalse(future.cancel(true))
-                    assertTrue(lease.cancelled)
+                    tap(recovery, "Retry local cleanup")
                     assertTrue(closeEntered.await(5, TimeUnit.SECONDS))
-                    val result = future.get(20, TimeUnit.SECONDS)
+                    assertTrue(lease.cancelled)
+                    awaitMain { hasStatus(recovery, "Local cleanup verified. All pairings remain disabled.") }
+                    val result = checkNotNull(RetirementStartup.global)
                     assertTrue(result.failures.toString(), result.completed)
                     assertEquals(1L, release.count) // Both unrelated waits are still blocked.
                     verify(reference, observed = result)
+                    assertEquals(GlobalRetirement.LocalState.COMPLETE, GlobalRetirement.inspect(context).state)
+                    awaitMain {
+                        val label = views(recovery).filterIsInstance<android.widget.TextView>().first { it.text.toString() == "Local recovery" }
+                        val bounds = android.graphics.Rect()
+                        label.getGlobalVisibleRect(bounds) && bounds.height() == label.height
+                    }
+                    capture(recovery, "18-global-complete")
+                    InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                        views(recovery).filterIsInstance<android.widget.ScrollView>().first().fullScroll(android.view.View.FOCUS_DOWN)
+                    }
+                    awaitMain {
+                        val button = views(recovery).filterIsInstance<android.widget.Button>().first { it.text.toString() == "Check status" }
+                        val bounds = android.graphics.Rect()
+                        button.getGlobalVisibleRect(bounds) && bounds.height() == button.height
+                    }
+                    capture(recovery, "19-global-actions")
+                    close(recovery)
+                    // Reopening the frozen app does not queue status behind the blocked message worker.
+                    val reopened = openRecovery()
+                    awaitMain { hasStatus(reopened, "Local cleanup verified. All pairings remain disabled.") }
+                    assertEquals(1L, release.count)
+                    tap(reopened, "Check status")
+                    awaitMain { hasStatus(reopened, "Local cleanup verified. All pairings remain disabled.") }
+                    close(reopened)
                     assertFalse(KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.containsAlias("otp-pager-${root(35)}-device"))
                 } finally { release.countDown(); closed.await(5, TimeUnit.SECONDS); lease.close() }
+                // A completed journal cannot hide restored index keys or an unknown contact root.
+                DeviceIdentity("otp-pager-chat-index-device").card(true)
+                DeviceIdentity("otp-pager-${root(37)}-device").card(true)
+                assertEquals(GlobalRetirement.LocalState.INCOMPLETE, GlobalRetirement.inspect(context).state)
+                val recoveryFuture = GlobalRetirement.retryExisting(context)
+                assertFalse(recoveryFuture.cancel(true))
+                val recovered = recoveryFuture.get(20, TimeUnit.SECONDS)
+                assertTrue(recovered.completed); assertTrue(root(37) in recovered.roots)
+                assertEquals(GlobalRetirement.LocalState.COMPLETE, GlobalRetirement.inspect(context).state)
                 // A later restore must be swept again by startup, even though the journal says complete.
                 write(File(directory, "${root(31)}.bin.new"), "restored ciphertext")
                 DeviceIdentity("otp-pager-${root(36)}-device").card(true)
+                assertEquals(GlobalRetirement.LocalState.INCOMPLETE, GlobalRetirement.inspect(context).state)
+                assertEquals("restored ciphertext", File(directory, "${root(31)}.bin.new").readText())
             }
             "restored" -> {
                 verify(JSONObject(referenceFile.readText()))
@@ -165,6 +231,14 @@ class GlobalRetirementRestartTest {
                 assertTrue(GlobalRetirement.isFrozen(directory))
                 assertEquals("unknown partial journal", File(GlobalRetirement.marker(directory).path + ".new").readText())
                 blocked { ChatBook(context) }
+                assertEquals(GlobalRetirement.LocalState.INCOMPLETE, GlobalRetirement.inspect(context).state)
+                val a = openRecovery()
+                awaitMain { hasStatus(a, "Local cleanup is incomplete. All pairings remain disabled.") }
+                tap(a, "Retry local cleanup")
+                awaitMain { hasStatus(a, "Local cleanup is incomplete. All pairings remain disabled.") }
+                assertEquals("unknown partial journal", File(GlobalRetirement.marker(directory).path + ".new").readText())
+                capture(a, "20-global-malformed")
+                close(a)
             }
         }
     }

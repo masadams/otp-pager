@@ -36,6 +36,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Check enrollment protocol design model (not Android activation)
+        run: python3 scripts/test_enrollment_protocol.py
       - name: Assemble debug APK
         run: gradle --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
       - uses: actions/upload-artifact@v4
@@ -89,3 +91,4 @@ jobs:
             app/build/reports/androidTests/
             app/build/reports/lint-results-debug.html
             app/build/screenshots/
+            app/build/global-recovery-screenshots/
