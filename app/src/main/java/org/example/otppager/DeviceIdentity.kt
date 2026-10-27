@@ -11,9 +11,13 @@ import java.security.spec.ECGenParameterSpec
 import java.util.Base64
 
 /** Never silently replaces a missing identity after its public key has been saved. */
-class DeviceIdentity(private val alias: String, private val requireActive: () -> Unit) {
-    // Keep the original one-argument ABI used by signed upgrade instrumentation on older APKs.
-    constructor(alias: String) : this(alias, {})
+class DeviceIdentity private constructor(private val alias: String, private val requireActive: () -> Unit, private val requireForget: () -> Unit) {
+    // Keep both existing constructor ABIs, including old signed-upgrade instrumentation.
+    constructor(alias: String) : this(alias, {}, {})
+    constructor(alias: String, requireActive: () -> Unit) : this(alias, requireActive, requireActive)
+    companion object {
+        internal fun scoped(alias: String, requireActive: () -> Unit, requireForget: () -> Unit) = DeviceIdentity(alias, requireActive, requireForget)
+    }
     private fun keys() = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
     fun card(create: Boolean = false): String = synchronized(VaultLifecycle.lock) { requireActive(); cardActive(create) }
     private fun cardActive(create: Boolean): String {
@@ -42,5 +46,5 @@ class DeviceIdentity(private val alias: String, private val requireActive: () ->
         val info = KeyFactory.getInstance(key.algorithm, "AndroidKeyStore").getKeySpec(key, KeyInfo::class.java)
         return if (info.isInsideSecureHardware) "HARDWARE KEYSTORE" else "SOFTWARE KEYSTORE"
     }
-    fun forget() = synchronized(VaultLifecycle.lock) { keys().deleteEntry(alias) }
+    fun forget() = synchronized(VaultLifecycle.lock) { requireForget(); keys().deleteEntry(alias) }
 }

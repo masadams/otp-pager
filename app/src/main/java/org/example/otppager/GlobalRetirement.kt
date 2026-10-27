@@ -21,7 +21,8 @@ internal object GlobalRetirement {
     private val executor = Executors.newSingleThreadExecutor { task -> Thread(task, "pager-retire-all").apply { isDaemon = true } }
     fun marker(directory: File) = File(directory, JOURNAL)
     fun isFrozen(directory: File): Boolean = synchronized(VaultLifecycle.lock) {
-        hasLegacyIntent(directory) || RetirementEvidence.presence(directory) != RetirementEvidence.Presence.NONE
+        hasLegacyIntent(directory) || RetirementEvidence.presence(directory) != RetirementEvidence.Presence.NONE ||
+            EnrollmentStaging.presence(directory) != EnrollmentStaging.Presence.NONE
     }
     internal fun hasLegacyIntent(directory: File): Boolean = synchronized(VaultLifecycle.lock) {
         directory.absolutePath in denied || VaultLifecycle.variants(marker(directory)).any {
@@ -78,7 +79,8 @@ internal object GlobalRetirement {
 
     /** Recovery controls may retry an existing terminal intent, never initiate destruction. */
     fun retryExisting(context: Context): Future<GlobalRetirementMachine.Result> {
-        check(hasLegacyIntent(context.noBackupFilesDir) || RetirementEvidence.probe(context.noBackupFilesDir) == RetirementEvidence.Presence.PRESENT) {
+        check(hasLegacyIntent(context.noBackupFilesDir) || RetirementEvidence.probe(context.noBackupFilesDir) == RetirementEvidence.Presence.PRESENT ||
+            EnrollmentStaging.probe(context.noBackupFilesDir) == EnrollmentStaging.Presence.PRESENT) {
             "No existing global retirement to recover"
         }
         return submit(context)
@@ -137,6 +139,7 @@ internal object GlobalRetirement {
     fun recover(context: Context): GlobalRetirementMachine.Result {
         val directory = context.noBackupFilesDir.absoluteFile
         RetirementEvidence.retireCaptureWindow(directory)
+        try { EnrollmentStaging.recoverInterrupted(context) } catch (_: Exception) { /* Keep blocked; old local cleanup still proceeds. */ }
         try {
             val evidence = RetirementEvidence.read(directory)
             synchronized(VaultLifecycle.lock) { known.getOrPut(directory.path) { mutableSetOf() }.addAll(evidence.roots) }

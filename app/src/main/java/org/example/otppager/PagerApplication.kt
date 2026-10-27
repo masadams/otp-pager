@@ -20,7 +20,9 @@ internal object RetirementStartup {
         failed = true
         try {
             val presence = RetirementEvidence.probe(context.noBackupFilesDir)
-            check(presence != RetirementEvidence.Presence.UNAVAILABLE || GlobalRetirement.hasLegacyIntent(context.noBackupFilesDir)) {
+            val staging = EnrollmentStaging.probe(context.noBackupFilesDir)
+            val knownIntent = GlobalRetirement.hasLegacyIntent(context.noBackupFilesDir) || presence == RetirementEvidence.Presence.PRESENT || staging == EnrollmentStaging.Presence.PRESENT
+            check((presence != RetirementEvidence.Presence.UNAVAILABLE && staging != EnrollmentStaging.Presence.UNAVAILABLE) || knownIntent) {
                 "Cannot establish terminal intent; block access without initiating destruction"
             }
             if (GlobalRetirement.isFrozen(context.noBackupFilesDir)) {

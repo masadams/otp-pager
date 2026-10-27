@@ -119,6 +119,11 @@ internal object RetirementEvidence {
         if (current.phase != RetirementEvidenceCodec.Phase.CLEANED) write(context.noBackupFilesDir,
             RetirementEvidenceCodec.record(current.generation, RetirementEvidenceCodec.Phase.CLEANED, current.roots, current.guards))
     }
+    /** Hash of the exact authenticated terminal envelope, for confirmation/staging binding. */
+    fun commitment(directory: File): String = synchronized(VaultLifecycle.lock) {
+        read(directory)
+        PadProtocol.hex(MessageDigest.getInstance("SHA-256").digest(readBounded(marker(directory))))
+    }
     private fun mac(directory: File, payload: ByteArray): ByteArray {
         val key = keys().getKey(alias(directory), null) as? SecretKey ?: error("Terminal authentication key missing")
         return Mac.getInstance("HmacSHA256").run { init(key); doFinal(payload) }
