@@ -38,6 +38,34 @@ internal object VaultLifecycle {
 internal object VaultRetirement {
     data class Result(val namespace: String, val terminalDurable: Boolean, val completed: Boolean, val failures: List<String>)
 
+    enum class LocalState { ACTIVE, INCOMPLETE, COMPLETE, UNAVAILABLE }
+    data class Status(val state: LocalState)
+    private fun keyAliases(namespace: String) = listOf(
+        "vault-key" to "otp-pager-$namespace", "draft-key" to "otp-pager-$namespace-draft",
+        "device-key" to "otp-pager-$namespace-device", "draft-device-key" to "otp-pager-$namespace-draft-device")
+    private fun vaultSlots(namespace: String) = listOf("vault-files" to namespace, "draft-files" to "$namespace-draft")
+
+    /** Observation only: never repairs a journal, creates a key, or treats a marker alone as cleanup proof. */
+    fun inspect(context: Context, namespace: String): Status = synchronized(VaultLifecycle.lock) {
+        require(VaultLifecycle.isContact(namespace)) { "Not an operational contact namespace" }
+        if (RetirementStartup.failed) return@synchronized Status(LocalState.UNAVAILABLE)
+        val directory = context.noBackupFilesDir
+        try {
+            val names = checkNotNull(directory.list()) { "Retirement directory unavailable" }.toSet()
+            if (!VaultLifecycle.isRetired(directory, namespace)) return@synchronized Status(LocalState.ACTIVE)
+            val marker = VaultLifecycle.marker(directory, namespace)
+            val cleanMarker = marker.isFile && marker.length() <= 128 &&
+                VaultLifecycle.variants(marker).drop(1).none { it.exists() } &&
+                marker.readText(Charsets.US_ASCII) == "OTP Pager retirement v1\ncomplete\n"
+            val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+            val keysGone = keyAliases(namespace).none { keys.containsAlias(it.second) }
+            val filesGone = vaultSlots(namespace).all { (_, slot) ->
+                VaultLifecycle.variants(File(directory, "$slot.bin")).none { it.name in names }
+            }
+            Status(if (cleanMarker && keysGone && filesGone) LocalState.COMPLETE else LocalState.INCOMPLETE)
+        } catch (_: Exception) { Status(LocalState.UNAVAILABLE) }
+    }
+
     /** All cleanup steps are attempted, even if a marker/key/file operation fails. */
     internal interface Operations {
         fun denyInProcess()
@@ -92,15 +120,9 @@ internal object VaultRetirement {
                     check(VaultLifecycle.variants(base).none { it.exists() }) { "Vault file deletion incomplete" }
                 }
                 // Pad ledgers and global reuse claims deliberately survive: identifiers/counters only.
-                return listOf(
-                    "vault-key" to { deleteKey("otp-pager-$namespace") },
-                    "draft-key" to { deleteKey("otp-pager-$namespace-draft") },
-                    "device-key" to { deleteKey("otp-pager-$namespace-device") },
-                    "draft-device-key" to { deleteKey("otp-pager-$namespace-draft-device") },
-                    "vault-files" to { deleteFiles(namespace) },
-                    "draft-files" to { deleteFiles("$namespace-draft") },
-                    "directory-sync" to { VaultLifecycle.syncDirectory(directory) }
-                )
+                return keyAliases(namespace).map { (label, alias) -> label to { deleteKey(alias) } } +
+                    vaultSlots(namespace).map { (label, slot) -> label to { deleteFiles(slot) } } +
+                    listOf("directory-sync" to { VaultLifecycle.syncDirectory(directory) })
             }
         })
     }

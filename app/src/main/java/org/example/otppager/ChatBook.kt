@@ -93,14 +93,18 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
                 aliases.none { it == "otp-pager-$candidate" || it.startsWith("otp-pager-$candidate-") }
         }
     }
-    /** Explicit local-only replacement. Never copies credentials, pads, history or peer identity. */
-    internal fun replaceRetired(id: String): Chat {
+    /** A recovery action can only retry a known terminal generation, never retire an active contact. */
+    internal fun recoverRetired(id: String): VaultRetirement.Result {
         synchronized(VaultLifecycle.lock) {
             require(chats().any { it.id == id }) { "Unknown chat" }
             check(VaultLifecycle.isContact(id) && VaultLifecycle.isRetired(context.noBackupFilesDir, id)) { "Pairing is not retired" }
         }
+        return VaultRetirement.retireContact(context, id)
+    }
+    /** Explicit local-only replacement. Never copies credentials, pads, history or peer identity. */
+    internal fun replaceRetired(id: String): Chat {
         // Recovery may dispatch cancellation; never do this while holding an outer lifecycle lock.
-        val result = VaultRetirement.retireContact(context, id)
+        val result = recoverRetired(id)
         check(result.terminalDurable && result.completed) { "Local destruction incomplete; retry recovery before fresh pairing" }
         return synchronized(VaultLifecycle.lock) {
             val next = JSONObject(data.toString()); val entries = next.getJSONArray("chats")

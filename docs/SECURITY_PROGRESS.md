@@ -166,16 +166,48 @@ closes on internal retirement; the dedicated retired-contact/recovery status scr
 and its explicit fresh-pairing action are the next integration work, before any wipe
 control is offered. No remote command or destruction acknowledgement exists.
 
+### 2026-10-26 — local recovery UI and bounded orphan inventory
+
+Generation/disposal head `eef6cd511bd6cfd83eabaf3945f2c5d6fc07c0eb` passed Android
+API29/31/35 including cold restart (40419920887), signed upgrade/rejection checks
+(40419920885) and relay (40419920895). Android15's test suite was slower, but passed
+without retry. PR #10 records exact evidence and developer invariant review.
+
+Added read-only local status observation that verifies the completion record AND
+absence of operational keys and contact/draft files, failing closed on unavailable
+storage. The recovery UI exposes incomplete/completed/unavailable states, clearly
+states no remote request exists, retains a path to other contacts, and permits only
+retry of already terminal contacts. Explicit confirmed fresh pairing rechecks cleanup
+and publishes an empty generation; old scans/documents/secrets are not carried over.
+Normal receiving/polling no longer tries to open the retired active engine. Adding
+another contact while a retired one is selected does not copy its credentials.
+
+Added bounded, read-only orphan discovery from exact production filenames/aliases,
+without index or vault decryption. It discovers key-only/damaged-file contacts and
+rejects partial/capacity failures. This is a wipe-all prerequisite, not wipe-all.
+Expanded the local design with concrete global-freeze/index/reuse-scope decisions
+and the history migration blockers: plaintext lives in both `opened` and renewal
+`history`, so simply adding a history key would leave recoverable copies. Old-key
+rotation and interrupted migration need review before coding. The canonical plan
+now contains remaining packages A–H to support longer batches without repeated
+permission prompts.
+
+New tests cover read-only status vs restored files/keys/malformed journals/unavailable
+directory, active-contact retry rejection, isolated navigation/retry/confirmation/
+empty fresh pairing, screenshots, and orphan discovery/exclusions/capacity errors.
+Latest-head CI is required; prior results do not validate this slice. Local relay
+13/13, signing-policy 7/7 and whitespace passed; latest CI evidence belongs to PR #10.
+
 ## Next task
 
-Validate latest-head generation migration, memory/UI disposal, signed upgrade and
-all existing two-engine/pairing/restart regressions. Then add honest per-contact
-local retirement/recovery status and explicit fresh-pairing UI, including an intact
-path to other contacts when the active generation is retired. Do not expose emergency
-wipe controls until local lifecycle integration is reviewed. Complete wipe-all scope
-and independent history-key erasure as separately reviewed changes. Physical USB/NFC
-cancellation and target hardware still need testing; do not claim an end-to-end
-emergency wipe.
+Validate this recovery/orphan-inventory slice on API29/31/35, signed upgrade and
+cold restart, inspect the new recovery screenshots and review S02/S05/S07/S09/S10.
+Then implement package B's global terminal freeze and wipe-all recovery with full
+fault tests, followed by package C's separately reviewed history/key migration.
+No emergency-wipe initiation UI or remote control packet exists yet. Do not call
+Phase 2 complete while those requirements remain open.
 
-Do not implement the peer-wipe packet format until Phase 3 resolves control keys,
-generation binding, dispatch authority, acknowledgement and migration semantics.
+Do not implement peer-wipe packets until package D / Phase 3 resolves independent
+control keys, generation binding, dispatch authority, acknowledgement and migration,
+with the required independent review and vectors. Physical two-device testing and
+independent readiness review remain external gates, not additional automated passes.
