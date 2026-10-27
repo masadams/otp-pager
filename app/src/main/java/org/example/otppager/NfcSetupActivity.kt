@@ -32,11 +32,18 @@ object NfcSetupExchange {
     val select = byteArrayOf(0, 0xa4.toByte(), 4, 0, 7, 0xf0.toByte(), 0x46, 0x49, 0x45, 0x4c, 0x44, 1, 0)
     @Volatile var payload: ByteArray? = null
     @Volatile var expires = 0L
-    fun clear() { payload?.fill(0); payload = null; expires = 0 }
+    @Volatile var owner: String? = null
+        private set
+    @Synchronized fun clear() { payload?.fill(0); payload = null; expires = 0; owner = null }
+    @Synchronized fun publish(bytes: ByteArray, until: Long, key: String) {
+        clear(); payload = bytes; expires = until; owner = key
+    }
+    @Synchronized fun clearFor(key: String) { if (owner == key) clear() }
 }
 class NfcSetupCard : HostApduService() {
     private var selected = false
     override fun processCommandApdu(command: ByteArray, extras: Bundle?): ByteArray {
+        if (NfcSetupExchange.owner?.let(ContactOperations::isStopped) == true) return byteArrayOf(0x69, 0x85.toByte())
         val payload = NfcSetupExchange.payload
         if (payload == null || android.os.SystemClock.elapsedRealtime() >= NfcSetupExchange.expires) return byteArrayOf(0x69, 0x85.toByte())
         if (command.contentEquals(NfcSetupExchange.select)) { selected = true; return byteArrayOf(0x90.toByte(), 0) }
@@ -52,11 +59,21 @@ class NfcSetupActivity : Activity(), NfcAdapter.ReaderCallback {
     private var adapter: NfcAdapter? = null
     private var active = false
     private var sharing = false
+    private var operation: ContactOperations.Lease? = null
+    private var operationKey: String? = null
+    @Volatile private var retired = false
     private lateinit var chat: String
     private lateinit var status: TextView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState); window.protectPrivateContent()
         chat = intent.getStringExtra("chat") ?: run { finish(); return }
+        try {
+            val store = SecureStore(this, chat); operationKey = store.operationKey
+            operation = store.operation().also { lease -> lease.onCancel {
+                retired = true; NfcSetupExchange.clearFor(store.operationKey)
+                runOnUiThread { if (active) finish() }
+            } }
+        } catch (_: Exception) { finish(); return }
         adapter = NfcAdapter.getDefaultAdapter(this)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(24, 36, 24, 24) }
         fun label(value: String, size: Float) = TextView(this).apply { text = value; textSize = size; setPadding(0, 8, 0, 16) }
@@ -65,7 +82,7 @@ class NfcSetupActivity : Activity(), NfcAdapter.ReaderCallback {
         status = label(if (adapter == null) "NFC is not available. Use USB or QR." else "Choose Share on one device and Read on the other. Both screens must stay open and unlocked.", 15f); root.addView(status)
         root.addView(Button(this).apply { text = "Share setup · 60 seconds"; isEnabled = adapter != null && packageManager.hasSystemFeature("android.hardware.nfc.hce"); setOnClickListener { share() } })
         root.addView(Button(this).apply { text = "Read other device"; isEnabled = adapter != null; setOnClickListener {
-            sharing = false; NfcSetupExchange.clear()
+            sharing = false; operationKey?.let(NfcSetupExchange::clearFor)
             if (adapter?.isEnabled != true) { status.text = "Turn NFC on in Android settings first."; return@setOnClickListener }
             adapter?.enableReaderMode(this@NfcSetupActivity, this@NfcSetupActivity, NfcAdapter.FLAG_READER_NFC_A or NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK, null)
             status.text = "Hold the devices close until setup is read. You will review it before saving."
@@ -73,19 +90,22 @@ class NfcSetupActivity : Activity(), NfcAdapter.ReaderCallback {
         root.addView(Button(this).apply { text = "Done"; setOnClickListener { finish() } })
         setContentView(ScrollView(this).apply { addView(root) })
     }
-    override fun onResume() { super.onResume(); active = true }
+    override fun onResume() { super.onResume(); if (operation == null || retired || operation?.cancelled == true) { finish(); return }; active = true }
     private fun share() {
         if (adapter?.isEnabled != true) { status.text = "Turn NFC on in Android settings first."; return }
         adapter?.disableReaderMode(this)
         StationRuntime.worker.execute {
             try {
+                operation?.check()
                 val engine = ChatBook(this).engine(chat); engine.requireCableEligible()
                 val bytes = engine.pairingInvite().encode().toByteArray(Charsets.UTF_8)
                 runOnUiThread {
                     if (active) {
-                        NfcSetupExchange.clear(); NfcSetupExchange.payload = bytes; NfcSetupExchange.expires = android.os.SystemClock.elapsedRealtime() + 60000
+                        if (operation?.publish { NfcSetupExchange.publish(bytes, android.os.SystemClock.elapsedRealtime() + 60000, checkNotNull(operationKey)) } != true) {
+                            bytes.fill(0); return@runOnUiThread
+                        }
                         sharing = true; status.text = "Sharing secret setup for 60 seconds. Hold the reading device close. USB is still needed for the pad and identities."
-                        handler.postDelayed({ if (android.os.SystemClock.elapsedRealtime() >= NfcSetupExchange.expires) { NfcSetupExchange.clear(); sharing = false; if (active) status.text = "Sharing stopped." } }, 60000)
+                        handler.postDelayed({ if (android.os.SystemClock.elapsedRealtime() >= NfcSetupExchange.expires) { operationKey?.let(NfcSetupExchange::clearFor); sharing = false; if (active) status.text = "Sharing stopped." } }, 60000)
                     } else bytes.fill(0)
                 }
             } catch (e: Exception) { runOnUiThread { if (active) status.text = e.message ?: "Setup unavailable" } }
@@ -94,10 +114,13 @@ class NfcSetupActivity : Activity(), NfcAdapter.ReaderCallback {
     override fun onTagDiscovered(tag: Tag) {
         try {
             val card = IsoDep.get(tag) ?: error("Other device does not support this NFC setup method")
-            val text = card.use { readNfcSetupPayload(it) }
+            val text = SecureStore(this, chat).operation().use { readOperation ->
+                readOperation.onCancel { card.close() }
+                card.use { readNfcSetupPayload(it) }.also { readOperation.check() }
+            }
             val invite = PairingInvite.decode(text)
             runOnUiThread {
-                if (!active || sharing) return@runOnUiThread
+                if (!active || sharing || retired || operation?.cancelled == true) return@runOnUiThread
                 adapter?.disableReaderMode(this)
                 val dialog = AlertDialog.Builder(this).setTitle("Use this setup?")
                     .setMessage("Relay: ${invite.endpoint}\nSetup token and pairing secret included. No pad or private device key included.\n\nOnly accept from your intended physical device. Continue by USB for full pairing.")
@@ -111,5 +134,5 @@ class NfcSetupActivity : Activity(), NfcAdapter.ReaderCallback {
             }
         } catch (_: Exception) { runOnUiThread { if (active) status.text = "NFC setup could not be read. Keep the devices close, or use USB/QR." } }
     }
-    override fun onStop() { active = false; NfcSetupExchange.clear(); adapter?.disableReaderMode(this); handler.removeCallbacksAndMessages(null); if (!isFinishing) finish(); super.onStop() }
+    override fun onStop() { active = false; operation?.close(); operation = null; operationKey?.let(NfcSetupExchange::clearFor); adapter?.disableReaderMode(this); handler.removeCallbacksAndMessages(null); if (!isFinishing) finish(); super.onStop() }
 }

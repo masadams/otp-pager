@@ -1,8 +1,45 @@
 # Local destruction design — review draft
 
 Targets: F01/F03/F04/F07/F09 and S03/S05/S07/S09/S12 in
-[the security plan](SECURITY_DEVELOPMENT_PLAN.md). No implementation or emergency
-wipe guarantee is established by this document. No peer-control format is selected.
+[the security plan](SECURITY_DEVELOPMENT_PLAN.md). The local prerequisite prototype
+below is under implementation review; no emergency wipe guarantee or peer-control
+format is established by this document.
+
+## First implementation slice: local contact retirement primitive
+
+`VaultRetirement` accepts only current contact root namespaces (`station-v2` or
+`chat-<20 hex>`). An AtomicFile `<root>.retired` outside the encrypted content records
+version 1 pending/complete; file and directory are fsynced and contents checked.
+Any marker variant, including malformed `.new`/`.bak`, disables that generation.
+The marker is app-private plaintext metadata without secrets; filesystem write
+access can cause denial/destruction, an explicit compromised-endpoint boundary.
+There is no reset/unretire API. Future fresh pairing needs a new namespace.
+
+One process-wide reentrant lock (also used by pad reservation and reuse claims to
+avoid lock-order inversion) orders terminal marking, vault load/save/key creation,
+device-key operations and engine transactions; no network is performed under that
+lock. Contact root detection also gates direct draft/ledger constructors. Cleanup
+attempts vault/draft wrapping keys, signing keys and vault/draft AtomicFile variants
+independently, then directory sync. Pad ledger and global reuse claims survive.
+Completion is reported only after all steps and durable completion-marker success.
+If marker persistence fails, cleanup still attempts key destruction and the running
+process denies the namespace; durable restart exclusion is not claimed for that case.
+
+`recoverPending` derives validated roots from marker filenames rather than the
+contact index. It retries cleanup idempotently even for complete markers, to remove
+restored ciphertext. Fresh store objects, stale engine views/sends/exports, direct
+child writes and cached signing handles are gated. `PagerApplication` now runs recovery
+before activities/services; unreadable journal enumeration disables vault access,
+while individual incomplete contacts remain terminal without blocking unrelated
+contacts. Recovery UI can retry an already terminal contact; no user-facing caller initiates
+retirement of an active contact. Normal Forget retains its existing semantics.
+
+This is not complete emergency destruction. Already-captured in-flight ciphertext,
+complete memory erasure, wipe-all initiation, sealed remote dispatch,
+remote acknowledgements, history-key separation and physical rollback/erasure remain
+separate work. Cancellation/recovery integration is described below; its physical
+hardware behavior still needs validation. Live engines now drop owned state/staged/cache references at retirement; separately
+retained objects and active task locals remain outside this disposal boundary.
 
 ## Required storage identities
 
@@ -103,3 +140,158 @@ generation migration; deletion error enumeration; key separation/rekey protocol;
 transport cancellation ownership; metadata retention; complete-purge behavior; OS
 rollback guarantees. These require a reviewed specification and tests, not assumed
 completion based on CI.
+
+
+## Cancellation and startup integration
+
+`ContactOperations` gives each contact root cancellable leases. Retirement first
+sets the local terminal gate, synchronously flags its leases, and dispatches close
+callbacks on dedicated daemon workers. Potentially blocked disconnect/USB/socket
+close callbacks never run while holding the lifecycle lock and are not awaited by
+key cleanup. Late close registration is handled; normal completion unregisters.
+Other contacts have separate lease sets. The close pool is bounded to two workers;
+if both block, later closes queue, but terminal flags and local cleanup still proceed.
+Underlying Android I/O cancellation is best effort; bytes already sent cannot be
+retracted, and a blocked I/O call may take its timeout to unwind.
+
+The relay binds transport to a contact, including through background receiving's
+wrapper. A lease registers HTTPS disconnect and checks cancellation around I/O and
+before returning a response. USB and Wi-Fi pairing activities register resource
+closure and confirmation-latch release; NFC reads register card close. Short NFC
+publication uses the lifecycle gate. NFC offers have an owner key so cancellation
+of an old activity cannot clear another contact's offer; the card service rejects
+retired owners even before asynchronous cleanup runs.
+
+`PagerApplication.onCreate` recovers terminal roots before ordinary app components
+start. Recovery derives roots from validated journal filenames, not the contact
+index. A directory-enumeration failure leaves operational access disabled for the
+process. Individual cleanup failures leave only those contact roots terminal and
+record an incomplete count. No attempt is made to reset terminal generations.
+
+Tests include registry isolation/late registration/blocked-close fault cases, a
+blocked HTTPS disconnect concurrent with real key cleanup, NFC owner isolation,
+and a host-driven seed → force-stop → fresh instrumentation run. The latter verifies
+that Application startup deletes contact/draft/signing keys and files before access,
+while another contact and reuse metadata survive. This is not physical power loss
+or proof of firmware/flash erasure.
+
+
+## Generation replacement and content disposal
+
+Index schema 3 adds a stable `entryId`, initially the previous namespace; `id` stays
+the operational namespace used by stores, pad owners and existing worker intents.
+Migration changes only the encrypted index metadata. It leaves all operational
+vaults/keys/ledgers/claims in place and rejects unknown index versions. Every index
+read/mutation reloads durable metadata under the shared lifecycle lock; old object
+snapshots cannot overwrite a newer generation. Full OS/index+marker rollback remains
+outside this protection.
+
+`replaceRetired` is an internal explicit action, not automatic startup behavior. It
+requires a known terminal contact, retries cleanup and requires verified durable
+completion before an atomic index replacement. The entry/name and selection survive;
+the replacement namespace starts empty with no copied secrets, identity or history.
+Candidates exclude known index entries and file/key namespaces. Old marker and reuse
+guards survive permanently. An interrupted/unpublished replacement can be retried;
+restoring an older index still cannot open a terminal namespace. An unreadable/missing
+index with a retired legacy root fails closed, rather than resetting the application.
+
+Weak live-engine ownership avoids retaining short-lived receivers. Terminal marking
+clears owned snapshots, staged pairing and view caches synchronously; setters gate
+later publication to prevent an in-flight calculation repopulating these owners.
+A foreground lease posts invalidation independently of socket-close workers. The UI
+clears message/composer/configuration/scan/document/dialog state, advances its display
+generation and finishes; normal queued result publication uses the same lifecycle
+gate. Tests deliberately block the station worker during UI disposal. The recovery UI now exposes only retries of already terminal contacts and explicit
+fresh-generation replacement; no active-contact destructive control is exposed.
+Managed strings, external references, in-flight task locals, queued closures and OS
+copies cannot be guaranteed erased. This is reference disposal, not forensic erasure.
+
+## Recovery/status interface and orphan-scope prerequisite
+
+The recovery page is reached only for an already terminal indexed generation. It
+shows incomplete/completed/unavailable local status, no remote request, the retained
+name/reuse metadata and erasure limits. `inspect` is read-only: it checks directory
+availability, the exact clean completion record, absence of all four operational
+key aliases, and absence of contact/draft AtomicFile variants. A completion record
+with restored keys/files is incomplete. Malformed/extra journal variants never
+become a completion claim. Observation cannot establish firmware/flash behavior.
+
+`recoverRetired` rechecks both index membership and the terminal gate before retrying;
+it cannot initiate destruction of an active contact. Fresh pairing requires explicit
+confirmation and another cleanup/terminal check, then the existing atomic generation
+replacement. It starts empty, with no queued import/scan/document applied to it.
+Retired contacts remain visible in Chats, and unrelated contacts can be selected even
+when the active contact cannot open an engine. Receiving skips retired roots. The
+foreground still disposes and closes immediately on internal retirement; reopening
+finds the recovery page. No emergency-wipe initiation control is exposed.
+
+`ContactInventory` adds bounded read-only discovery for the later wipe-all operation.
+It finds current production roots from exact vault/draft/pad/journal filenames and
+Keystore aliases, including key-only and damaged-file orphans, without decrypting
+vaults or reading the contact index. Partial/enumeration/capacity failure is an error,
+not a complete empty scope. It does not delete anything or implement wipe-all. New
+persistent contact artifacts must extend both discovery and deletion/status scope
+before they can support a cleanup claim.
+
+## Remaining local implementation batches — decisions before coding
+
+### Global terminal scope and wipe-all
+
+A loop over `ChatBook.chats()` is insufficient. The next destructive batch needs a
+versioned durable global intent, immediate in-process freeze of contact creation/
+replacement, cancellation of every known live root, and a dedicated local executor
+that cannot sit behind networking. Scope combines validated disk/key discovery with
+readable index entries when available; a corrupt index must not suppress orphans.
+Global intent is checked by store/key creation and recovery before any normal app
+component opens. Individual errors do not stop cleanup of other targets.
+
+Retain pad ledgers/global reuse claims and per-generation markers, even after removing
+contact names/index keys. Otherwise a new default index can admit an original pad
+again. Do not delete the index until its names/selection and every operational root
+have an explicit recovery policy; unreadable index and missing reuse-registry cases
+must fail closed. No operation may remove global intent merely because a directory
+scan returns no contacts. Define a separate explicit restart/new-enrollment transition
+that preserves old exclusions and works after interrupted index deletion. Persistent
+registration of each newly allocated generation may be needed to close discovery vs
+creation races; resolve this before adding a wipe-all button.
+
+Fault matrix: interruption before/after global marker and freeze, each root deletion,
+index/name deletion and completion; unreadable index/directory/Keystore; key-only,
+draft-only and journal-only orphans; capacity failure; concurrent add/replacement;
+one failed root with others successfully cleaned; process restart and stale worker
+publication at every boundary. Complete status requires full scope enumeration and
+verified outcomes, not just the number of successful per-contact calls.
+
+### Independently erasable history — migration prerequisite
+
+Source review confirms two primary retained plaintext forms inside the operational
+snapshot: `opened[wire].payload` (`cacheOpened`/`retireUsed`/`retained`) and renewal's
+`history[].text` (`stageRenewal`). `view()` uses both. Current `clearHistory` removes
+history and inbox entries but intentionally keeps queued outbox packets; `retireUsed`
+rebuilds the corresponding opened cache, including delivery/readiness recovery data.
+Drafts already use their own wrapping key. Moving only `history[]` to a separate file
+would therefore leave recoverable messages in `opened` and older snapshots.
+
+Before implementation, partition message payload/history from the minimum immutable
+wire packets, accepted-packet hashes, replay windows, pad reservations and receipt
+retransmission evidence required for safe delivery. Do not delete evidence merely to
+empty a screen; do not keep plaintext in operational recovery records unnecessarily.
+Specify how queued unsent text, receipts and legacy AES packet recovery behave after
+history-key deletion. Queued ciphertext retention is a distinct policy and cannot be
+presented as complete message destruction.
+
+A stronger migration must also retire the old operational wrapping key after a
+crash-safe rewrite excluding historical plaintext and already-consumed pad material.
+Otherwise old ciphertext copies remain readable with the surviving key. This needs
+a versioned envelope/key selection journal, verified destination commits, independent
+reuse ledgers, bounded resume behavior and a rule that never falls back to an older
+pad/counter snapshot. No old key may be destroyed before the required new durable
+state is verified; interrupted/ambiguous transitions must disable messaging rather
+than reset accounting. Exact journal/envelope format and rollback limits need review.
+
+Required tests include every key/file/journal boundary, missing destination key/file,
+old `.bak`/`.new` restoration, queued message and receipt loss, renewal history, legacy
+upgrade, expiry/clock rollback and later compromise of surviving keys. Prove that
+history-key deletion actually removes all intended recovery paths. Retained exports,
+external copies, live-process strings and coordinated OS rollback remain excluded.
+Neither global wipe-all nor independent-history migration is implemented by this PR.

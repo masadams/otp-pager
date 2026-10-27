@@ -68,6 +68,37 @@ class ReceiveTest {
             instrumentation.waitForIdleSync()
         }
     }
+    @Test fun backgroundWrapperPreservesTheContactsBoundTransport() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val slot = "receiver-bind"; val index = "receiver-bind-index"
+        val stores = listOf(SecureStore(context, slot), SecureStore(context, "$slot-pads"),
+            SecureStore(context, index), SecureStore(context, "$index-claims"))
+        stores.forEach { it.forget() }
+        try {
+            val book = ChatBook(context, index, slot)
+            val engine = book.engine()
+            engine.configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "A")
+            engine.generatePad().fill(0)
+            var boundKey: String? = null
+            val relay = object : RelayTransport {
+                override fun forContact(store: SecureStore): RelayTransport {
+                    boundKey = store.operationKey
+                    return object : RelayTransport {
+                        override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String {
+                            store.requireActive()
+                            assertEquals("GET", method)
+                            return "{\"protocol\":2,\"epoch\":\"binding-test\",\"messages\":[]}"
+                        }
+                    }
+                }
+                override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String =
+                    error("Unbound background transport used")
+            }
+            val result = ReceiveCycle().poll(book, relay)
+            assertEquals(1, result.attempted); assertEquals(0, result.failed)
+            assertEquals(SecureStore(context, slot).operationKey, boundKey)
+        } finally { stores.forEach { it.forget() } }
+    }
     @Test fun nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks() {
         lateinit var card: NfcSetupCard
         InstrumentationRegistry.getInstrumentation().runOnMainSync { card = NfcSetupCard() }

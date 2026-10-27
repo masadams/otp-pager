@@ -16,9 +16,11 @@ import javax.crypto.spec.GCMParameterSpec
 class SecureStore(context: Context, namespace: String = "station-v2") {
     private val slot = namespace.also { require(Regex("[a-z0-9-]{1,40}").matches(it)) }
     internal val namespace: String get() = slot
+    internal val operationKey: String get() = VaultLifecycle.marker(base.parentFile!!, VaultLifecycle.root(slot)).absolutePath
+    internal fun operation() = ContactOperations.open(operationKey, ::requireActive)
     private val base = File(context.noBackupFilesDir, "$slot.bin")
     private val file = AtomicFile(base)
-    fun identity() = DeviceIdentity("otp-pager-$slot-device")
+    fun identity() = DeviceIdentity("otp-pager-$slot-device") { requireActive() }
     fun sibling(suffix: String): SecureStore = SecureStore(contextRef, "$slot-$suffix")
     private val contextRef = context.applicationContext
     private val alias = "otp-pager-$slot"
@@ -35,7 +37,9 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
             generateKey()
         }
     }
-    fun load(): JSONObject? {
+    internal fun requireActive() = VaultLifecycle.requireActive(base.parentFile!!, slot)
+    fun load(): JSONObject? = synchronized(VaultLifecycle.lock) { requireActive(); loadActive() }
+    private fun loadActive(): JSONObject? {
         if (!base.exists() && !File(base.path + ".bak").exists() && !File(base.path + ".new").exists()) {
             val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
             check(!keys.containsAlias(alias)) { "Vault file missing; saved key exists. Refusing to reset counters." }
@@ -51,7 +55,8 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
         return try { JSONObject(String(clear, Charsets.UTF_8)).also { check(it.getInt("version") in 2..6) } }
         finally { clear.fill(0) }
     }
-    fun save(state: JSONObject) {
+    fun save(state: JSONObject) = synchronized(VaultLifecycle.lock) { requireActive(); saveActive(state) }
+    private fun saveActive(state: JSONObject) {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, key(true)); cipher.updateAAD(aad)
         val clear = state.toString().toByteArray(Charsets.UTF_8)
@@ -63,7 +68,7 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
             try { android.system.Os.fsync(directory) } finally { android.system.Os.close(directory) } }
         catch (e: Exception) { file.failWrite(stream); throw IllegalStateException("Local storage commit failed. No new packet will be sent; restart the station before retrying.", e) }
     }
-    fun forget() {
+    fun forget() = synchronized(VaultLifecycle.lock) {
         // Invalidate the key first: if the process dies, old data cannot be reopened.
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         identity().forget()

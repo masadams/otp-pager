@@ -23,7 +23,8 @@ class RadioPairTest {
                 assertTrue(activity.window.attributes.flags and android.view.WindowManager.LayoutParams.FLAG_SECURE != 0)
                 RadioPairActivity::class.java.getDeclaredField("listener").apply { isAccessible = true }.set(activity, server)
                 RadioPairActivity::class.java.getDeclaredField("ticket").apply { isAccessible = true }.set(activity, offer)
-                NfcSetupExchange.payload = offer.encode().toByteArray()
+                NfcSetupExchange.publish(offer.encode().toByteArray(), android.os.SystemClock.elapsedRealtime() + 60000,
+                    SecureStore(instrumentation.targetContext, "radio-ui-fixture").operationKey)
                 activity.finish()
                 assertTrue(server.isClosed); assertNull(NfcSetupExchange.payload)
                 assertTrue(offer.secret.all { it == 0.toByte() })

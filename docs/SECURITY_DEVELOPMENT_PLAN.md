@@ -176,3 +176,28 @@ Keep implementation PRs small and tied to finding IDs and invariant IDs. Update
 progress with exact commits, tests actually run, unrun checks and next action.
 Do not weaken a gate or invent a passing result to make progress appear complete.
 No live server deployment or production-readiness claim follows from this plan alone.
+
+
+## Remaining work packages and continuation cadence
+
+Planning estimate: roughly 8–12 development rounds from the local-recovery slice,
+plus physical-device evidence and independent review. These are work packages, not
+required user approval prompts or a promise of production readiness in that many
+messages. Batch connected work through a reviewable gate; split a package when a
+security finding requires it. Tests alone never satisfy an independent-review gate.
+
+| Package | Scope / natural stopping point |
+| --- | --- |
+| A | Local recovery status, safe fresh-pairing UI, read-only orphan discovery and remaining local design review |
+| B | Global terminal freeze, index-independent wipe-all, metadata removal and interrupted recovery |
+| C | Independently erasable history and reviewed crash-safe old-key migration |
+| D | Exact emergency-control/dispatch/ack protocol and migration specification; independent review and vectors before code |
+| E | Relay scoped authorization, durable control/tombstone support and recovery/migration tests |
+| F | Android selected/all peer-wipe integration and full connected/offline/tamper/interruption matrix |
+| G | Relay retention, Docker/Nginx/Portainer/secrets/log/backup hardening and live-host evidence |
+| H | Final phone/e-ink UX, physical provisioning/power-loss checks, independent assessments and readiness decision |
+
+Packages B/C remain Phase 2 requirements. Read-only inventory or a design draft does
+not complete them. Remote destruction implementation stays behind package D's
+review gate. Keep exact completion and test evidence in SECURITY_PROGRESS.md and
+the implementation PR, rather than asking the user to reconstruct prior messages.

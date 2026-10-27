@@ -25,8 +25,9 @@ import java.util.concurrent.Executors
 class NetworkActivity : Activity() {
     private val worker = StationRuntime.worker
     private val handler = Handler(Looper.getMainLooper())
-    private var engine: StationEngine? = null // worker-thread owned
-    private var book: ChatBook? = null
+    @Volatile private var engine: StationEngine? = null // worker-owned except terminal invalidation
+    @Volatile private var book: ChatBook? = null
+    @Volatile private var visibleContact: ContactOperations.Lease? = null
     private lateinit var chatButton: Button
     private lateinit var receiveButton: Button
     private lateinit var renewButton: Button
@@ -64,6 +65,8 @@ class NetworkActivity : Activity() {
         init { activity.onBackInvokedDispatcher.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback) }
         override fun close() { activity.onBackInvokedDispatcher.unregisterOnBackInvokedCallback(callback) }
     }
+    private var retiredChat: ChatBook.Chat? = null // UI-owned metadata, never message secrets
+    private var retirementStatus: VaultRetirement.Status? = null
     private var latest: StationEngine.View? = null
     private var rendered: List<StationEngine.Message>? = null
     private var renderedSetupComplete: Boolean? = null
@@ -138,7 +141,7 @@ class NetworkActivity : Activity() {
                 runTask {
                     val contacts = checkNotNull(book)
                     inboxCycle.pollOne(contacts) { active && unlocked && tab == 4 }
-                    engine = contacts.engine()
+                    engine = if (contacts.summary(contacts.active().id).retired) null else contacts.engine()
                     "Chats updated"
                 }
             } else if (active && unlocked && automatic && !busy && !errorLoading && tab != 5 && latest != null && latest?.role != "—" && latest?.pairingComplete == true && latest?.relayRevoked != true) runTask(network = true) { syncChats() }
@@ -225,6 +228,7 @@ class NetworkActivity : Activity() {
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (isFinishing || isDestroyed) return
         if (requestCode == com.google.zxing.integration.android.IntentIntegrator.REQUEST_CODE) {
             val result = com.google.zxing.integration.android.IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
             val contents = result?.contents?.takeIf { it.length <= 1024 }
@@ -241,9 +245,11 @@ class NetworkActivity : Activity() {
     }
     private fun showTerminal() {
         if (::composer.isInitialized) persistDraft()
-        needsTerminal = false
         generation++
-        latest = null; rendered = null; busy = false; errorLoading = false
+        closeVisibleContact()
+        val openingGeneration = generation
+        needsTerminal = false
+        latest = null; rendered = null; retiredChat = null; retirementStatus = null; busy = false; errorLoading = false
         draftChatId = null; draftRoom = null; draftSaved = false
         root = column().apply { isFocusableInTouchMode = true; setBackgroundColor(paper); setPadding(dp(if (compact) 12 else 20), dp(8), dp(if (compact) 12 else 20), dp(6)) }
         root.setOnApplyWindowInsetsListener { view, insets ->
@@ -506,24 +512,35 @@ class NetworkActivity : Activity() {
             override fun renew() { showRenewalMethods() }
             override fun receiving() { if (!busy) showReceiving() }
             override fun rename() { if (!busy) editChatName(false) }
+            override fun retryRetirement() { retryLocalRetirement() }
+            override fun freshPairing() { startFreshPairing() }
             override fun status() { if (!busy) showStationStatus() }
         })
-        for (panel in listOf(traffic, linkScroll, padScroll, deviceScroll, screens.inbox, screens.setup, screens.details)) root.addView(panel, LinearLayout.LayoutParams(-1, 0, 1f))
+        for (panel in listOf(traffic, linkScroll, padScroll, deviceScroll, screens.inbox, screens.setup, screens.details, screens.retired)) root.addView(panel, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root); root.requestApplyInsets(); selectTab(tab)
         var loadedInvite: PairingInvite? = null
         val scanResult = pendingScan; pendingScan = null
         val deviceScanResult = pendingDeviceScan; pendingDeviceScan = null
         var restoredDraft: ChatDraft.Entry? = null
+        var loadedRetired: ChatBook.Chat? = null
+        var loadedRetirementStatus: VaultRetirement.Status? = null
         var loadedChat: String? = null; var loadedRoom: String? = null; var draftProblem = false
         runTask(load = true, onComplete = {
-            draftChatId = loadedChat; draftRoom = loadedRoom
-            restoringDraft = true
-            try { composer.setText(restoredDraft?.text ?: ""); composer.setSelection(composer.length()) }
-            finally { restoringDraft = false }
-            draftId = restoredDraft?.id ?: java.util.UUID.randomUUID().toString()
-            draftSaved = restoredDraft != null; updateComposerCount(); updateSendButton()
-            if (tab == 5 && latest?.setupComplete == true) selectTab(0)
-            if (draftProblem) report("Saved draft unavailable · use Chats → Clear draft to discard it")
+            retiredChat = loadedRetired; retirementStatus = loadedRetirementStatus
+            if (loadedRetired != null) {
+                draftChatId = null; draftRoom = null
+                pendingScan = null; pendingDeviceScan = null; pendingDocument = null; importedDeviceCard = null
+                if (tab != 4) selectTab(7) else renderSimpleScreens()
+            } else {
+                draftChatId = loadedChat; draftRoom = loadedRoom
+                restoringDraft = true
+                try { composer.setText(restoredDraft?.text ?: ""); composer.setSelection(composer.length()) }
+                finally { restoringDraft = false }
+                draftId = restoredDraft?.id ?: java.util.UUID.randomUUID().toString()
+                draftSaved = restoredDraft != null; updateComposerCount(); updateSendButton()
+                if (tab == 5 && latest?.setupComplete == true) selectTab(0)
+                if (draftProblem) report("Saved draft unavailable · use Chats → Clear draft to discard it")
+            }
         }, onSuccess = { loadedInvite?.let(::previewSetupQr) }, publicTransfer = pendingDocument?.first in listOf(83, 84), qrTransfer = pendingDocument?.first == 85) {
             book = null; engine = null
             book = ChatBook(this)
@@ -531,8 +548,21 @@ class NetworkActivity : Activity() {
                 book!!.chats().firstOrNull { book!!.summary(it.id).unread > 0 }?.let { book!!.select(it.id) }
                 intent.removeExtra("openUnread")
             }
+            val selected = book!!.active()
+            loadedChat = selected.id
+            if (book!!.summary(selected.id).retired) {
+                loadedRetired = selected
+                loadedRetirementStatus = VaultRetirement.inspect(this, selected.id)
+                pendingDocument = null
+                return@runTask "Pairing retired locally"
+            }
+            val lease = synchronized(VaultLifecycle.lock) {
+                check(active && unlocked && generation == openingGeneration) { "Conversation screen closed" }
+                visibleContact?.close()
+                SecureStore(this, loadedChat!!).operation().also { visibleContact = it }
+            }
+            lease.onInvalidate { handler.post { if (visibleContact === lease) closeRetiredConversation() } }
             engine = checkNotNull(book).engine()
-            loadedChat = book!!.active().id
             engine?.state?.let { s ->
                 val master = Protocol.master(s.getString("secret"))
                 loadedRoom = try { Protocol.room(master) } finally { master.fill(0) }
@@ -589,7 +619,8 @@ class NetworkActivity : Activity() {
             }
         }
     }
-    private fun selectTab(value: Int) {
+    private fun selectTab(requested: Int) {
+        val value = if (retiredChat != null && requested in listOf(0, 1, 2, 3, 5, 6)) 7 else requested
         if (value == 4 && tab == 0) persistDraft()
         if (::screens.isInitialized && value != tab) screens.clearNotices()
         root.requestFocus()
@@ -601,6 +632,7 @@ class NetworkActivity : Activity() {
             screens.inbox.visibility = if (value == 4) View.VISIBLE else View.GONE
             screens.setup.visibility = if (value == 5) View.VISIBLE else View.GONE
             screens.details.visibility = if (value == 6) View.VISIBLE else View.GONE
+            screens.retired.visibility = if (value == 7) View.VISIBLE else View.GONE
             renderSimpleScreens()
         }
         chrome.visibility = if (value in 0..3) View.VISIBLE else View.GONE
@@ -651,12 +683,13 @@ class NetworkActivity : Activity() {
     private fun renderSimpleScreens() {
         if (!::screens.isInitialized) return
         if (errorLoading) { screens.showProblem(); return }
-        val contacts = book ?: return; val view = latest ?: return
+        val contacts = book ?: return
         if (tab == 4) {
             val all = contacts.chats()
             val friends = all.filterNot { all.size == 1 && it.name == "Chat 1" && contacts.summary(it.id).eligible }.map { chat ->
                 val state = contacts.summary(chat.id)
                 PagerScreens.Friend(chat.id, chat.name, when {
+                    state.retired -> "Retired on this device"
                     state.problem -> "Needs attention"
                     !state.paired -> "Finish pairing"
                     state.unread > 0 -> "${state.unread} new ${if (state.unread == 1) "message" else "messages"}"
@@ -667,14 +700,46 @@ class NetworkActivity : Activity() {
             }
             screens.renderInbox(friends, ReceiveService.running, busy)
         }
+        if (tab == 7) {
+            val contact = retiredChat; val observed = retirementStatus
+            if (contact != null && observed != null) screens.renderRetired(contact.name, observed, busy)
+        }
+        val view = latest ?: return
         if (tab in listOf(5, 6)) screens.renderFriend(contacts.active().name, view, selectedPadSize)
     }
     private fun openFriend(id: String, destination: Int) {
         if (busy) { pendingFriend = id to destination; pendingAdd = false; screens.opening("Opening conversation…"); return }
         screens.resetSetup()
-        if (id == book?.active()?.id) { selectTab(destination); return }
+        if (id == book?.active()?.id) { selectTab(if (book?.summary(id)?.retired == true) 7 else destination); return }
         preserveDraftThen {
             runTask(onSuccess = { reopenChat(destination) }) { checkNotNull(book).select(id); "Conversation opened" }
+        }
+    }
+    private fun retryLocalRetirement() {
+        val id = retiredChat?.id ?: return
+        screens.clearNotices()
+        var observed: VaultRetirement.Status? = null
+        runTask(onComplete = { observed?.let { retirementStatus = it }; renderSimpleScreens() }) {
+            val result = checkNotNull(book).recoverRetired(id)
+            observed = VaultRetirement.inspect(this, id)
+            if (result.completed) "Local cleanup completed" else "Local cleanup incomplete · retry when storage is available"
+        }
+    }
+    private fun startFreshPairing() {
+        val id = retiredChat?.id ?: return
+        confirm("Start a fresh pairing?", "This starts an empty pairing for this contact. No old messages, keys, credentials or device identity are restored. Set up and physically pair both devices again. Other contacts stay unchanged. No remote wipe is requested.") {
+            var observed: VaultRetirement.Status? = null
+            runTask(onComplete = { observed?.let { retirementStatus = it }; renderSimpleScreens() }, onSuccess = {
+                pendingScan = null; pendingDeviceScan = null; pendingDocument = null; importedDeviceCard = null
+                screens.resetSetup(); reopenChat(5)
+            }) {
+                try {
+                    val contacts = checkNotNull(book)
+                    val fresh = contacts.replaceRetired(id)
+                    contacts.select(fresh.id)
+                    "Fresh pairing created · keep both devices together"
+                } finally { observed = VaultRetirement.inspect(this, id) }
+            }
         }
     }
     private fun showAppMenu() {
@@ -685,7 +750,7 @@ class NetworkActivity : Activity() {
                     0 -> showReceiving()
                     1 -> runTask {
                         val contacts = checkNotNull(book); inboxCycle.pollOne(contacts) { active && unlocked && tab == 4 }
-                        engine = contacts.engine(); "Chats updated"
+                        engine = if (contacts.summary(contacts.active().id).retired) null else contacts.engine(); "Chats updated"
                     }
                     else -> AlertDialog.Builder(this).setTitle("Getting started")
                         .setMessage("Add a friend and pair your devices together. Only one device needs the server address and token. USB transfers the setup, message keys and device identities after you compare the codes.\n\nOpen a chat to write. Delivery appears under each message. For messages while the screen is off, turn on background receiving; it uses more battery.\n\nThis is an experimental messenger. Keep physical pairing private and use Advanced setup only when you need it.")
@@ -853,7 +918,7 @@ class NetworkActivity : Activity() {
         if (!active || !unlocked || !::status.isInitialized) return
         if (status.text.toString() != message) status.text = message
         status.visibility = if (tab == 0 && !connectionFailed && !errorLoading && (message in listOf("STATION READY", "LATEST MESSAGES", "Connected", "Message queued · checking delivery") || message.startsWith("Connected"))) View.GONE else View.VISIBLE
-        if (::screens.isInitialized && tab >= 4 && !errorLoading && message !in listOf("STATION READY", "LATEST MESSAGES", "Chats updated", "Conversation opened", "Conversation saved", "Server saved") && !message.startsWith("Connected") && !message.startsWith("Pad size:"))
+        if (::screens.isInitialized && tab >= 4 && !errorLoading && message !in listOf("STATION READY", "LATEST MESSAGES", "Chats updated", "Conversation opened", "Conversation saved", "Server saved", "Local cleanup completed", "Pairing retired locally") && !message.startsWith("Connected") && !message.startsWith("Pad size:"))
             screens.notice(message, tab)
     }
     private fun updateNavigation() {
@@ -892,6 +957,7 @@ class NetworkActivity : Activity() {
         renewButton.isEnabled = !value && latest?.peerDevice != null && latest?.relayRevoked != true
         verifyButton.isEnabled = !value && latest?.ownDevice == null && latest?.padCheck != null && (latest?.padVerified == true || latest?.padRemaining != 0)
         updateIndicators()
+        if (retiredChat != null) renderSimpleScreens()
     }
     private fun updateSendButton() {
         if (!::sendButton.isInitialized) return
@@ -906,6 +972,7 @@ class NetworkActivity : Activity() {
     }
     private fun persistDraft() {
         handler.removeCallbacks(saveDraft)
+        if (visibleContact?.cancelled == true) return
         val id = draftChatId ?: return; val room = draftRoom ?: return
         val value = composer.text.toString(); val revision = draftId; val visibleGeneration = generation
         worker.execute {
@@ -983,8 +1050,8 @@ class NetworkActivity : Activity() {
             preserveDraftThen {
                 runTask(onSuccess = { screens.resetSetup(); reopenChat(destination) }) {
                     val contacts = checkNotNull(book)
-                    val reuseFirst = create && contacts.chats().size == 1 && contacts.active().name == "Chat 1" && checkNotNull(engine).view().cableEligible
-                    if (!create || reuseFirst) contacts.rename(value) else contacts.select(contacts.add(value).id)
+                    val reuseFirst = create && contacts.chats().size == 1 && contacts.active().name == "Chat 1" && engine?.view()?.cableEligible == true
+                    if (!create || reuseFirst) contacts.rename(value) else contacts.select(contacts.add(value, copyServerFrom = contacts.active().id.takeUnless { contacts.summary(it).retired }).id)
                     "Conversation saved"
                 }
             }
@@ -1168,37 +1235,42 @@ class NetworkActivity : Activity() {
             }
             runOnUiThread {
                 if (!active || !unlocked || isFinishing || taskGeneration != generation) return@runOnUiThread
-                if (config != null) {
-                    urlField.setText(config!!.getString("endpoint")); tokenField.setText(config!!.getString("token"))
-                    secretField.setText(config!!.getString("secret")); roleGroup.check(if (config!!.getString("role") == "A") R.id.station_a else R.id.station_b)
-                }
-                if (network && success) { lastContact = android.os.SystemClock.elapsedRealtime(); connectionFailed = false }
-                else if (relayFailure) {
-                    connectionFailed = true
-                    connectionProblem = failureLabel
-                }
-                view?.let(::render)
-                if (draftChatId != null && draftRoom == null && configuredRoom != null) draftRoom = configuredRoom
-                if (clearComposer && success && composer.text.toString() == submittedText && draftId == submittedId) composer.text.clear()
-                if (errorLoading) {
-                    note = "Saved chat unavailable. Data is preserved; open recovery tools."
-                    pendingAdd = false; pendingFriend = null
-                    selectTab(4)
-                }
-                report(note); setBusy(false); schedule(if (clearComposer && success) 100 else backoff)
-                onComplete?.invoke()
-                if (success) onSuccess?.invoke()
-                if (pendingAdd || pendingFriend != null) handler.post {
-                    if (active && unlocked && !busy && !errorLoading && tab == 4) {
-                        val next = pendingFriend; val add = pendingAdd
-                        pendingFriend = null; pendingAdd = false
-                        if (add) editChatName(true) else next?.let { openFriend(it.first, it.second) }
+                if (visibleContact?.cancelled == true) { closeRetiredConversation(); return@runOnUiThread }
+                val publish: () -> Unit = {
+                    if (config != null) {
+                        urlField.setText(config!!.getString("endpoint")); tokenField.setText(config!!.getString("token"))
+                        secretField.setText(config!!.getString("secret")); roleGroup.check(if (config!!.getString("role") == "A") R.id.station_a else R.id.station_b)
+                    }
+                    if (network && success) { lastContact = android.os.SystemClock.elapsedRealtime(); connectionFailed = false }
+                    else if (relayFailure) {
+                        connectionFailed = true
+                        connectionProblem = failureLabel
+                    }
+                    view?.let(::render)
+                    if (draftChatId != null && draftRoom == null && configuredRoom != null) draftRoom = configuredRoom
+                    if (clearComposer && success && composer.text.toString() == submittedText && draftId == submittedId) composer.text.clear()
+                    if (errorLoading) {
+                        note = "Saved chat unavailable. Data is preserved; open recovery tools."
+                        pendingAdd = false; pendingFriend = null
+                        selectTab(4)
+                    }
+                    report(note); setBusy(false); schedule(if (clearComposer && success) 100 else backoff)
+                    onComplete?.invoke()
+                    if (success) onSuccess?.invoke()
+                    if (pendingAdd || pendingFriend != null) handler.post {
+                        if (active && unlocked && !busy && !errorLoading && tab == 4) {
+                            val next = pendingFriend; val add = pendingAdd
+                            pendingFriend = null; pendingAdd = false
+                            if (add) editChatName(true) else next?.let { openFriend(it.first, it.second) }
+                        }
+                    }
+                    // Check current visibility AFTER rendering/network completion, not before a slow sync.
+                    messageScroll.post {
+                        if (success && !errorLoading && active && unlocked && taskGeneration == generation && tab == 0 && !busy && (latest?.unread ?: 0) > 0 && atBottom()) ackVisibleMessages()
                     }
                 }
-                // Check current visibility AFTER rendering/network completion, not before a slow sync.
-                messageScroll.post {
-                    if (success && !errorLoading && active && unlocked && taskGeneration == generation && tab == 0 && !busy && (latest?.unread ?: 0) > 0 && atBottom()) ackVisibleMessages()
-                }
+                val lease = visibleContact
+                if (lease == null) publish() else if (!lease.publish(publish)) closeRetiredConversation()
             }
         }
     }
@@ -1236,6 +1308,32 @@ class NetworkActivity : Activity() {
         pairingDialog?.dismiss(); pairingDialog = null
         generation++; active = false; StationRuntime.uiVisible = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)
         systemBack?.close(); systemBack = null
+        closeVisibleContact()
+        clearPrivateState()
+        worker.execute { engine = null; book = null }
+        super.onStop()
+    }
+    private fun closeVisibleContact() {
+        val lease = visibleContact ?: return
+        synchronized(VaultLifecycle.lock) {
+            lease.close()
+            if (visibleContact === lease) visibleContact = null
+        }
+    }
+    /** Main-thread disposal; queued work cannot publish after the generation changes. */
+    private fun closeRetiredConversation() {
+        generation++; handler.removeCallbacks(poll); handler.removeCallbacks(saveDraft)
+        openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
+        pairingDialog?.dismiss(); pairingDialog = null
+        // Cancellation already unregistered this lease. Do not wait behind storage cleanup's lock.
+        visibleContact = null
+        engine = null; book = null
+        clearPrivateState()
+        // Recovery/fresh-pairing status UI is a later slice; never leave a stale conversation visible.
+        setContentView(text("This local pairing is retired. No remote wipe has been requested.", 18f))
+        finish()
+    }
+    private fun clearPrivateState() {
         pendingFriend = null; pendingAdd = false
         draftChatId = null; draftRoom = null; restoringDraft = true
         if (::composer.isInitialized) composer.text.clear()
@@ -1244,15 +1342,20 @@ class NetworkActivity : Activity() {
         if (::messages.isInitialized) messages.removeAllViews()
         if (::screens.isInitialized) screens.clearPrivate()
         if (::chatButton.isInitialized) chatButton.text = "Chats"
+        if (::urlField.isInitialized) urlField.text.clear()
         if (::tokenField.isInitialized) { tokenField.text.clear(); secretField.text.clear() }
-        latest = null; rendered = null; importedDeviceCard = null
+        if (::status.isInitialized) status.text = ""
+        if (::stationLabel.isInitialized) stationLabel.text = ""
+        if (::indicators.isInitialized) indicators.text = ""
+        if (::count.isInitialized) count.text = ""
+        latest = null; rendered = null; retiredChat = null; retirementStatus = null; importedDeviceCard = null
         if (::peerCardField.isInitialized) peerCardField.text.clear()
         if (::identityCard.isInitialized) identityCard.text = ""
         if (::identityStatus.isInitialized) identityStatus.text = ""
         if (::padStatus.isInitialized) padStatus.text = ""
         if (::pairingCode.isInitialized) pairingCode.text = ""
-        worker.execute { engine = null; book = null }
-        super.onStop()
+        pendingScan = null; pendingDeviceScan = null; pendingDocument = null
+        identityScan = false; renderedSetupComplete = null; renderedDay = ""
     }
     override fun onDestroy() { handler.removeCallbacksAndMessages(null); super.onDestroy() }
 }

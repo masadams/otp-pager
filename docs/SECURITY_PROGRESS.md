@@ -7,9 +7,9 @@ handoff record; never infer feature completion from a plan or passing baseline C
 
 - Baseline: merged v0.14, `cfe01af255bebbd195337b9d1b0c72017e39f7c1`.
 - Phase 1: initial inventory plus expanded authentication/provisioning and persistence review recorded.
-- Phase 2: OTP-only new-text engine guard implemented for review; local destruction design drafted.
+- Phase 2: OTP-only new-text engine guard merged (PR #9); local retirement primitive under review.
 - Phases 3–8: not implemented. No emergency wipe or peer-destruction claim.
-- No relay deployment, APK/signing change, key migration or destructive protocol change.
+- No relay deployment, APK/signing change, operational-key migration or destructive peer protocol change.
 
 ## Decisions recorded 2026-10-26
 
@@ -74,13 +74,149 @@ The corrected CI run must pass; the failed run is not counted as validation. And
 Android execution is delegated to the existing GitHub CI workflows, not claimed
 as locally passing. No security-critical merge until CI and invariant review complete.
 
+### 2026-10-26 — validated send guard and local retirement primitive
+
+PR #9 merged at `27872a78d99320f541ba3fe8e60726357c27f222` after developer invariant
+review and passing Android API29/31/35 suites, signed v0.13 upgrade preservation,
+wrong-signer/downgrade rejection and relay checks at `460ebb42e286f81456d25052b5efbeb350296ac5`.
+Evidence: Android run 40334727375, upgrade 40334727372, relay 40334727387.
+
+The next slice implements `VaultRetirement`: durable terminal marker, best-effort
+independent cleanup, idempotent recovery without a contact index, and storage/identity
+gates under one local lock. New JVM fault tests cover marker/deletion/completion
+failure and interruption boundaries; Android tests cover keys/drafts, preserved
+reuse metadata and unrelated contacts, malformed markers, restored snapshots,
+stale objects and a queued writer. CI results belong to the implementation PR.
+
+The first primitive slice had no UI/startup invocation. It is not a finished local or
+remote emergency wipe; subsequent integration is recorded below. F01/F03/F04/F07/F09 remain open in part; F02's new-text guard
+is validated, while legacy receipt/recovery cryptography remains explicit.
+
+### 2026-10-26 — operation cancellation and cold-start recovery
+
+PR #10 foundation at `4a5ce344acb0017fad416b3393549b3b9458ee70` passed Android API29/31/35,
+signed upgrades and relay checks (Android 40359977417, upgrade 40359977495,
+relay 40359977474). PR #10 remains draft while integration continues.
+
+Added per-contact cancellation leases and asynchronous bounded close dispatch;
+retirement does not wait for socket/USB close. Bound production HTTPS traffic,
+including background receiving wrappers, and pairing/NFC resources to those leases.
+Owned NFC offers prevent cancellation of one contact clearing another's offer.
+Added Application startup recovery before activities/services can access vaults;
+startup enumeration failure disables vault access, while an incomplete contact
+remains isolated and blocked. Added JVM cancellation tests, blocked-HTTPS cleanup
+and NFC isolation Android tests, and a host-driven cold process restart test in
+all Android CI jobs. These new checks require latest-head CI, not the earlier
+foundation result. Relay baseline locally 13/13, Python syntax and whitespace pass.
+
+No destructive UI, fresh-generation index migration, wipe-all, remote command,
+independent history-key erasure or physical power-loss validation is included.
+Already-sent ciphertext and managed-memory copies remain explicit limits.
+
+### 2026-10-26 — fresh generations and stale content disposal
+
+Cancellation/startup head `5e3af6179d5f3bbe274e2cdbadf14d1c8f15f357` passed Android
+API29/31/35 with cold-process restart (40367037080, attempt 2), signed upgrades
+(40367037336), and relay checks (40367037120). Android12 required a retry after an
+emulator ZIP download failure; failed attempts are not counted as validation.
+
+The next slice migrates contact index metadata v2 → v3, preserving existing vault
+namespaces, ciphertext, keys, pad ledgers and claims. Each visible contact gains a
+stable `entryId`; its `id` remains the immutable operational namespace. Explicit
+`replaceRetired` retries local cleanup, requires durable completion, and atomically
+publishes a fresh empty namespace while preserving the entry/name and unrelated
+contacts. It copies no credentials, history, pad, peer identity or draft. Fresh
+setup/physical pairing remains necessary. Terminal markers and reuse claims remain.
+Unknown index versions fail closed. Lost index + retired legacy root cannot silently
+create a default pairing. Index operations reload durable state under the lifecycle
+lock, preventing stale objects overwriting replacement metadata.
+
+Live engine owners are weakly tracked; retirement drops their snapshot, cached view
+and staged pairing references synchronously under the lifecycle gate. Later state,
+view-cache and staged-pairing publication checks the same gate. A foreground contact
+lease posts private UI disposal directly to the main looper, independently of blocked
+transport closers or the station worker. It clears drafts, displayed messages,
+credentials, pending scans/documents and dialogs, invalidates queued UI results and
+finishes the stale screen. UI-result publication is gated against retirement.
+This reduces reachable copies; externally retained JSON/Strings, active stack locals,
+queued closures, OS/IME/clipboard and flash are not claimed to be erased.
+
+Added Android tests for metadata-only migration, unknown versions, stale index
+objects, fresh empty generations, preserved neighbor/ledger/claims, old-secret reuse,
+restored older indexes, incomplete cleanup/retry, lost indexes, and foreground UI
+invalidation with a deliberately blocked normal worker. Signed-upgrade checks now
+verify the exact old index after reversing only the documented metadata migration;
+operational state remains byte/hash checked. Latest-head CI must validate this slice;
+earlier green results do not cover it. Local relay 13/13, Python syntax and whitespace
+passed. The first new-slice Android10 run found two fixture failures: an existing
+corruption test queried the now-invalid durable index during cleanup, and the new
+unknown-index test tried to reread a version rejected by SecureStore itself. Cleanup
+now uses pre-corruption IDs; the unknown-index test uses version 4 (supported by the
+outer vault but invalid for a contact index). Neither failure is counted as validation.
+The same head passed signed-upgrade checks. Fresh CI is required after fixture fixes
+and extended UI metadata clearing. Concurrency review also removed the foreground
+invalidation callback's wait on the lifecycle lock: cancellation already unregisters
+its lease. The UI regression now parks the main looper, triggers retirement, then
+holds the lifecycle lock while requiring private UI disposal to finish. This covers
+storage-lock contention as well as a blocked app worker. Results and exact head are
+recorded in PR #10.
+
+No user-facing retirement/replacement control is exposed yet. The current open screen
+closes on internal retirement; the dedicated retired-contact/recovery status screen
+and its explicit fresh-pairing action are the next integration work, before any wipe
+control is offered. No remote command or destruction acknowledgement exists.
+
+### 2026-10-26 — local recovery UI and bounded orphan inventory
+
+Generation/disposal head `eef6cd511bd6cfd83eabaf3945f2c5d6fc07c0eb` passed Android
+API29/31/35 including cold restart (40419920887), signed upgrade/rejection checks
+(40419920885) and relay (40419920895). Android15's test suite was slower, but passed
+without retry. PR #10 records exact evidence and developer invariant review.
+
+Added read-only local status observation that verifies the completion record AND
+absence of operational keys and contact/draft files, failing closed on unavailable
+storage. The recovery UI exposes incomplete/completed/unavailable states, clearly
+states no remote request exists, retains a path to other contacts, and permits only
+retry of already terminal contacts. Explicit confirmed fresh pairing rechecks cleanup
+and publishes an empty generation; old scans/documents/secrets are not carried over.
+Normal receiving/polling no longer tries to open the retired active engine. Adding
+another contact while a retired one is selected does not copy its credentials.
+
+Added bounded, read-only orphan discovery from exact production filenames/aliases,
+without index or vault decryption. It discovers key-only/damaged-file contacts and
+rejects partial/capacity failures. This is a wipe-all prerequisite, not wipe-all.
+Expanded the local design with concrete global-freeze/index/reuse-scope decisions
+and the history migration blockers: plaintext lives in both `opened` and renewal
+`history`, so simply adding a history key would leave recoverable copies. Old-key
+rotation and interrupted migration need review before coding. The canonical plan
+now contains remaining packages A–H to support longer batches without repeated
+permission prompts.
+
+New tests cover read-only status vs restored files/keys/malformed journals/unavailable
+directory, active-contact retry rejection, isolated navigation/retry/confirmation/
+empty fresh pairing, screenshots, and orphan discovery/exclusions/capacity errors.
+First recovery head `6cc0f76fcbbb15a03a51b41b23cadc26c13e6f30` passed API29/31,
+signed upgrades and relay. Visual QA of compact-screen artifacts found disabled
+fresh-pairing styling looked active and a redundant success notice; controls now
+start disabled, show disabled styling, and use improved compact spacing. Fixture
+cleanup explicitly removes AtomicFile variants on older Android. The corrected UI
+passed API29/31 and signed upgrades; a further compact visual review found scrollbar
+overlap at the right text edge. The page now reserves scrollbar space, and the UI
+test scrolls to verify the bottom action buttons are fully visible and captures that
+state. Fresh latest-head
+CI and screenshot review are required after these changes. Local relay
+13/13, signing-policy 7/7 and whitespace passed; latest CI evidence belongs to PR #10.
+
 ## Next task
 
-Review CI for the OTP-only guard, including legacy recovery and signed upgrades.
-Resolve the local destruction draft's journal format, namespace migration, key
-separation, lock order and cancellation ownership, then implement small reviewed
-lifecycle changes with failure injection. F01/F03/F04/F07/F09 remain open; F02 is
-implemented pending Android validation and review, not independently audited.
+Validate this recovery/orphan-inventory slice on API29/31/35, signed upgrade and
+cold restart, inspect the new recovery screenshots and review S02/S05/S07/S09/S10.
+Then implement package B's global terminal freeze and wipe-all recovery with full
+fault tests, followed by package C's separately reviewed history/key migration.
+No emergency-wipe initiation UI or remote control packet exists yet. Do not call
+Phase 2 complete while those requirements remain open.
 
-Do not implement the peer-wipe packet format until Phase 3 resolves control keys,
-generation binding, dispatch authority, acknowledgement and migration semantics.
+Do not implement peer-wipe packets until package D / Phase 3 resolves independent
+control keys, generation binding, dispatch authority, acknowledgement and migration,
+with the required independent review and vectors. Physical two-device testing and
+independent readiness review remain external gates, not additional automated passes.

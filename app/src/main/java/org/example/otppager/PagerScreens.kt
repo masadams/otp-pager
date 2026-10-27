@@ -24,6 +24,8 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         fun renew()
         fun receiving()
         fun rename()
+        fun retryRetirement()
+        fun freshPairing()
         fun status()
     }
     data class Friend(val id: String, val name: String, val detail: String, val paired: Boolean, val unread: Boolean)
@@ -72,7 +74,24 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     private val friendName = label("Friend", 26f)
     private val friendState = label("Private conversation", 14f, true)
     private val keys = label("", 14f, true)
+    val retired = column()
+    private val retiredName = label("Retired pairing", 24f)
+    private val retiredStatus = label("Local cleanup status unavailable", 18f)
+    private val retiredNotice = label("", 13f).apply { visibility = View.GONE }
+    private val retryRetirementButton = button("Retry local cleanup") { actions.retryRetirement() }.apply { isEnabled = false; alpha = 0.45f }
+    private val freshPairingButton = button("Start fresh pairing", true) { actions.freshPairing() }.apply { isEnabled = false; alpha = 0.45f }
     init {
+        retired.addView(header("Pairing recovery", back = 4))
+        retired.addView(ScrollView(activity).apply { isFillViewport = true; scrollBarStyle = View.SCROLLBARS_INSIDE_INSET; setPadding(0, 0, dp(8), dp(12)); addView(column().apply {
+            addView(retiredName.apply { setPadding(0, dp(20), 0, dp(16)) })
+            addView(retiredStatus)
+            addView(label("This pairing is permanently disabled on this device. No remote wipe has been requested; the other device may still hold its copy.", 15f).apply { setPadding(0, dp(16), 0, dp(16)) })
+            addView(label("Local cleanup removes this pairing's vault, draft and identity keys and their files. The contact name and minimal reuse/retirement records remain. Flash, memory and exported copies cannot be guaranteed erased.", 13f, true))
+            addView(retiredNotice)
+            addView(retryRetirementButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(20) })
+            addView(freshPairingButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+            addView(button("Back to chats") { actions.back(4) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+        }) }, LinearLayout.LayoutParams(-1, 0, 1f))
         inbox.addView(header("Chats", menu = true))
         inbox.addView(inboxStatus.apply { setPadding(0, dp(2), 0, dp(14)); setOnClickListener { actions.receiving() } })
         inbox.addView(inboxNotice)
@@ -153,6 +172,18 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         recoveryStep.visibility = if (!view.cableEligible) View.VISIBLE else View.GONE
         sizeButton.text = "Pad size · ${padSize / PadProtocol.MATERIAL_BYTES} MiB · Change"
     }
+    fun renderRetired(name: String, status: VaultRetirement.Status, busy: Boolean) {
+        retiredName.text = name
+        retiredStatus.text = when (status.state) {
+            VaultRetirement.LocalState.COMPLETE -> "Local cleanup completed"
+            VaultRetirement.LocalState.INCOMPLETE -> "Local cleanup incomplete"
+            else -> "Local cleanup status unavailable"
+        }
+        retryRetirementButton.isEnabled = !busy
+        freshPairingButton.isEnabled = !busy && status.state == VaultRetirement.LocalState.COMPLETE
+        retryRetirementButton.alpha = if (retryRetirementButton.isEnabled) 1f else 0.45f
+        freshPairingButton.alpha = if (freshPairingButton.isEnabled) 1f else 0.45f
+    }
     fun resetSetup() { skipServer = false }
     fun showProblem() {
         inboxStatus.text = "Saved chats need attention"
@@ -164,9 +195,9 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     }
     fun opening(value: String) { inboxStatus.text = value }
     fun notice(value: String, page: Int) {
-        val target = when (page) { 4 -> inboxNotice; 5 -> setupNotice; 6 -> detailsNotice; else -> return }
+        val target = when (page) { 4 -> inboxNotice; 5 -> setupNotice; 6 -> detailsNotice; 7 -> retiredNotice; else -> return }
         target.text = value; target.visibility = View.VISIBLE; target.setPadding(0, dp(8), 0, dp(12))
     }
-    fun clearNotices() { for (view in listOf(inboxNotice, setupNotice, detailsNotice)) { view.text = ""; view.visibility = View.GONE } }
-    fun clearPrivate() { setupAddress.text.clear(); setupToken.text.clear(); inboxRows.removeAllViews(); shownFriends = null; friendName.text = "Friend"; keys.text = ""; friendState.text = "Private conversation"; setupTitle.text = "Pair with a friend"; clearNotices() }
+    fun clearNotices() { for (view in listOf(inboxNotice, setupNotice, detailsNotice, retiredNotice)) { view.text = ""; view.visibility = View.GONE } }
+    fun clearPrivate() { retiredName.text = "Retired pairing"; retiredStatus.text = "Local cleanup status unavailable"; setupAddress.text.clear(); setupToken.text.clear(); inboxRows.removeAllViews(); shownFriends = null; friendName.text = "Friend"; keys.text = ""; friendState.text = "Private conversation"; setupTitle.text = "Pair with a friend"; clearNotices() }
 }

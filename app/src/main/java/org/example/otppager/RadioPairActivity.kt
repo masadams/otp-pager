@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
     private val handler = Handler(Looper.getMainLooper())
     private val stopped = AtomicBoolean(false)
+    private var operation: ContactOperations.Lease? = null
+    private var operationKey: String? = null
     private val reading = AtomicBoolean(false)
     @Volatile private var listener: ServerSocket? = null
     @Volatile private var socket: Socket? = null
@@ -49,13 +51,21 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
     private lateinit var confirm: Button
     private lateinit var done: Button
     private lateinit var padChoice: Button
-    private fun note(text: String) = runOnUiThread { if (active && !stopped.get()) status.text = text }
+    private fun note(text: String) = runOnUiThread { if (active && !stopped.get() && operation?.cancelled != true) status.text = text }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         chat = intent.getStringExtra("chat") ?: run { finish(); return }
         renew = intent.getBooleanExtra("renew", false)
         size = intent.getIntExtra("padSize", PadProtocol.MATERIAL_BYTES)
         if (!PadProtocol.validSize(size)) { finish(); return }
+        try {
+            val store = SecureStore(this, chat); operationKey = store.operationKey
+            operation = store.operation().also { lease -> lease.onCancel {
+                stopped.set(true); confirmation?.countDown()
+                runOnUiThread { if (active) finish() }
+                closeLinks()
+            } }
+        } catch (_: Exception) { finish(); return }
         StationRuntime.pairingOpen = true
         window.protectPrivateContent(); window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         adapter = NfcAdapter.getDefaultAdapter(this)
@@ -94,7 +104,7 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         setContentView(root)
         handler.postDelayed({ if (!stopped.get() && !complete) { note("Transfer timed out. Close and retry on both devices."); closeLinks(); confirm.isEnabled = false } }, 180000)
     }
-    override fun onResume() { super.onResume(); active = true }
+    override fun onResume() { super.onResume(); if (operation == null || stopped.get() || operation?.cancelled == true) { finish(); return }; active = true }
     private fun ready(): Boolean {
         if (adapter?.isEnabled != true) { status.text = "Turn NFC on in Android settings first."; return false }
         return true
@@ -116,10 +126,12 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         lockChoices(); adapter?.disableReaderMode(this)
         StationRuntime.worker.execute {
             try {
+                operation?.check()
                 val engine = ChatBook(this).engine(chat)
                 if (renew) engine.requireRenewalIdentity() else engine.requireCableEligible()
                 val (_, address) = wifi()
                 val server = ServerSocket(); listener = server
+                operation?.check()
                 server.reuseAddress = false; server.bind(InetSocketAddress(address, 0)); server.soTimeout = 1000
                 if (stopped.get()) { server.close(); return@execute }
                 val offer = RadioTicket.create(address.hostAddress!!, server.localPort); ticket = offer
@@ -127,11 +139,12 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
                 val payload = offer.encode().toByteArray(Charsets.UTF_8)
                 runOnUiThread {
                     if (active && !stopped.get()) {
-                        NfcSetupExchange.clear(); NfcSetupExchange.payload = payload; NfcSetupExchange.expires = expires
-                        status.text = "Ready to tap · choose Read on the other device. Both must use the same Wi-Fi."
+                        if (operation?.publish { NfcSetupExchange.publish(payload, expires, checkNotNull(operationKey)) } == true)
+                            status.text = "Ready to tap · choose Read on the other device. Both must use the same Wi-Fi."
+                        else payload.fill(0)
                     } else payload.fill(0)
                 }
-                while (!stopped.get() && SystemClock.elapsedRealtime() < expires) {
+                while (!stopped.get() && operation?.cancelled != true && SystemClock.elapsedRealtime() < expires) {
                     val connection = try { server.accept() } catch (_: SocketTimeoutException) { continue }
                     socket = connection; connection.soTimeout = 5000
                     if (stopped.get() || SystemClock.elapsedRealtime() >= expires) { connection.close(); break }
@@ -141,7 +154,7 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
                     authenticated = true
                     server.close(); listener = null
                     offer.close(); ticket = null
-                    runOnUiThread { NfcSetupExchange.clear() }
+                    runOnUiThread { operationKey?.let(NfcSetupExchange::clearFor) }
                     connection.soTimeout = 100000
                     envelope.use { transfer(true, it, engine) }
                     return@execute
@@ -153,7 +166,7 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
     }
     private fun startReading() {
         if (!ready()) return
-        lockChoices(); NfcSetupExchange.clear()
+        lockChoices(); operationKey?.let(NfcSetupExchange::clearFor)
         adapter?.enableReaderMode(this, this, NfcAdapter.FLAG_READER_NFC_A or NfcAdapter.FLAG_READER_SKIP_NDEF_CHECK, null)
         status.text = "Touch the sharing device's NFC antenna. Then approve the connection shown here."
     }
@@ -161,9 +174,14 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         if (!reading.compareAndSet(false, true) || stopped.get()) return
         try {
             val card = IsoDep.get(tag) ?: error("NFC card mode unavailable")
-            val offer = card.use { RadioTicket.decode(readNfcSetupPayload(it)) }
+            val offer = SecureStore(this, chat).operation().use { readOperation ->
+                readOperation.onCancel { card.close() }
+                card.use { RadioTicket.decode(readNfcSetupPayload(it)) }.also {
+                    try { readOperation.check() } catch (failure: Exception) { it.close(); throw failure }
+                }
+            }
             runOnUiThread {
-                if (!active || stopped.get()) { offer.close(); return@runOnUiThread }
+                if (!active || stopped.get() || operation?.cancelled == true) { offer.close(); return@runOnUiThread }
                 adapter?.disableReaderMode(this)
                 val dialog = AlertDialog.Builder(this).setTitle("Connect to this device?")
                     .setMessage("Local Wi-Fi: ${offer.address}\n\nOnly continue with the physical device you just tapped. You will compare confirmation codes before any pad or relay credentials transfer.")
@@ -181,10 +199,12 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         StationRuntime.worker.execute {
             try {
                 check(!stopped.get())
+                operation?.check()
                 val engine = ChatBook(this).engine(chat)
                 if (renew) engine.requireRenewalIdentity() else engine.requireCableEligible()
                 val (network, _) = wifi()
                 val connection = network.socketFactory.createSocket(); socket = connection
+                operation?.check()
                 if (stopped.get()) { connection.close(); return@execute }
                 note("Connecting over local Wi-Fi…")
                 connection.connect(InetSocketAddress(offer.address, offer.port), 8000); connection.soTimeout = 8000
@@ -197,15 +217,17 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         }
     }
     private fun transfer(host: Boolean, envelope: RadioHandoff, engine: StationEngine) {
+        operation?.check()
         CableProtocol.run(host, envelope.input, envelope.output, engine, review = { code, endpoint ->
             val latch = CountDownLatch(1); confirmation = latch
-            if (stopped.get()) latch.countDown() // Covers cancellation just before the latch was registered.
+            if (stopped.get() || operation?.cancelled == true) latch.countDown() // Covers cancellation just before the latch was registered.
             runOnUiThread { if (active && !stopped.get()) {
                 status.text = "Compare ALL groups on both devices:\n\n$code\n\n$endpoint\n\nApprove only if every group matches your friend's physical screen."
                 confirm.isEnabled = true
             } }
-            check(latch.await(90, TimeUnit.SECONDS) && approved && !stopped.get()) { "Confirmation cancelled" }
+            check(latch.await(90, TimeUnit.SECONDS) && approved && !stopped.get() && operation?.cancelled != true) { "Confirmation cancelled" }
         }, progress = { note(it.replace("USB", "local Wi-Fi")) }, renew = renew, size = size)
+        operation?.check()
         complete = true
         runOnUiThread { if (active && !stopped.get()) { done.text = "Done · open messages"; confirm.isEnabled = false } }
     }
@@ -219,15 +241,15 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         try { listener?.close() } catch (_: Exception) {}; listener = null
         try { socket?.close() } catch (_: Exception) {}; socket = null
         ticket?.close(); ticket = null; confirmation?.countDown()
-        NfcSetupExchange.clear()
+        operationKey?.let(NfcSetupExchange::clearFor)
     }
     // Explicit Cancel/Back closes sensitive resources before Android's asynchronous onStop.
     override fun finish() {
-        stopped.set(true); closeLinks()
+        stopped.set(true); operation?.close(); operation = null; closeLinks()
         super.finish()
     }
     override fun onStop() {
-        active = false; stopped.set(true); closeLinks(); adapter?.disableReaderMode(this); handler.removeCallbacksAndMessages(null)
+        active = false; stopped.set(true); operation?.close(); operation = null; closeLinks(); adapter?.disableReaderMode(this); handler.removeCallbacksAndMessages(null)
         StationRuntime.worker.execute { StationRuntime.pairingOpen = false }
         if (!isFinishing) finish()
         super.onStop()
