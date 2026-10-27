@@ -9,6 +9,11 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     companion object {
         // Weak owners avoid retaining every short-lived background receiver engine.
         private val live = java.util.WeakHashMap<StationEngine, String>()
+        internal fun invalidateDirectory(directory: java.io.File): Set<String> = synchronized(VaultLifecycle.lock) {
+            val keys = live.values.filter { java.io.File(it).parentFile == directory.absoluteFile }.toSet()
+            keys.forEach(::invalidateRetired)
+            keys.map { java.io.File(it).name.removeSuffix(".retired") }.filter(VaultLifecycle::isContact).toSet()
+        }
         internal fun invalidateRetired(key: String) = synchronized(VaultLifecycle.lock) {
             live.entries.filter { it.value == key }.map { it.key }.forEach { engine ->
                 engine.state = null; engine.cachedView = null; engine.stagedCable = null; engine.stagedRenewal = false

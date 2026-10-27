@@ -207,14 +207,42 @@ state. Fresh latest-head
 CI and screenshot review are required after these changes. Local relay
 13/13, signing-policy 7/7 and whitespace passed; latest CI evidence belongs to PR #10.
 
+### 2026-10-26 — global local-retirement backend (package B1)
+
+Recovery/UI head `3f1a9da4f214e89b67dada4c622eba63401a4650` passed API29/31/35
+including cold restart (40428193658), signed upgrade/rejection (40428193562), and
+relay (40428193548). Final compact recovery/action screenshots were inspected.
+That foundation remains draft PR #10; global work is a separate stacked change.
+
+Added a directory-wide terminal gate, synchronous live-engine/lease invalidation,
+coalesced dedicated cleanup executor, bounded pending/complete global root journal,
+independent partial disk/key discovery, index/name-key deletion and receiving stop.
+All known contact targets and metadata steps are attempted despite individual errors.
+Complete requires durable full-scope recording, successful cleanup and a complete
+post-scan with no newly discovered roots. Malformed journal variants remain frozen
+and cannot be overwritten as success. Startup retries complete as well as pending
+records. Reuse ledgers/claims remain; there is no unfreeze or enrollment shortcut.
+
+Added JVM fault/interruption and partial-inventory tests plus an exclusive four-phase
+host test after ordinary/per-contact restart checks. It exercises a corrupt index,
+key/file orphans, one failed contact while others clean, blocked worker and close,
+restored artifacts, preserved reuse hashes and malformed-journal refusal. This is
+source work pending latest-head CI, not a completed or deployable emergency feature.
+Local relay 13/13, signing-policy 7/7, Python syntax and whitespace passed.
+
+Review found a further enrollment invariant: stale global index/claims objects need
+a durable epoch gate before a fresh index can be published. The local design now
+records package B2's required transition. No global destructive UI, fresh enrollment,
+history-key migration, peer command or production-readiness claim is included.
+
 ## Next task
 
-Validate this recovery/orphan-inventory slice on API29/31/35, signed upgrade and
-cold restart, inspect the new recovery screenshots and review S02/S05/S07/S09/S10.
-Then implement package B's global terminal freeze and wipe-all recovery with full
-fault tests, followed by package C's separately reviewed history/key migration.
-No emergency-wipe initiation UI or remote control packet exists yet. Do not call
-Phase 2 complete while those requirements remain open.
+Validate the global backend and exclusive cold-process test on API29/31/35 plus all
+existing pairing, message, signed-upgrade and restart regressions. Record exact head
+and CI evidence in the stacked implementation PR. Review S02/S03/S05/S07/S09/S12.
+Then specify and implement package B2's global recovery/status and explicit durable
+enrollment epoch, including stale metadata writers and missing reuse registry tests.
+Package C's history/key migration remains separately reviewed work. Phase 2 stays open.
 
 Do not implement peer-wipe packets until package D / Phase 3 resolves independent
 control keys, generation binding, dispatch authority, acknowledgement and migration,

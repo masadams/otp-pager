@@ -54,6 +54,20 @@ internal object ContactOperations {
         }
         callbacks.forEach(::dispatch)
     }
+    fun cancelDirectory(directory: java.io.File): Set<String> {
+        val roots = mutableSetOf<String>()
+        val callbacks = synchronized(VaultLifecycle.lock) {
+            val keys = active.keys.filter { java.io.File(it).parentFile == directory.absoluteFile }
+            keys.flatMap { key ->
+                val root = java.io.File(key).name.removeSuffix(".retired")
+                if (VaultLifecycle.isContact(root)) roots.add(root)
+                stopped.add(key)
+                active.remove(key)?.flatMap { it.cancelLocked() } ?: emptyList()
+            }
+        }
+        callbacks.forEach(::dispatch)
+        return roots
+    }
     fun isStopped(key: String) = synchronized(VaultLifecycle.lock) { key in stopped }
     private fun dispatch(action: () -> Unit) { closer.execute { try { action() } catch (_: Exception) {} } }
 }
