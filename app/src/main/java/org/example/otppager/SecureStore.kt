@@ -69,6 +69,8 @@ class SecureStore(context: Context, namespace: String = "station-v2") {
         catch (e: Exception) { file.failWrite(stream); throw IllegalStateException("Local storage commit failed. No new packet will be sent; restart the station before retrying.", e) }
     }
     fun forget() = synchronized(VaultLifecycle.lock) {
+        // Global cleanup uses its explicit raw scope; stale ordinary resets cannot delete reuse guards.
+        check(!GlobalRetirement.isFrozen(base.parentFile!!)) { "Global retirement blocks ordinary storage reset" }
         // Invalidate the key first: if the process dies, old data cannot be reopened.
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         identity().forget()

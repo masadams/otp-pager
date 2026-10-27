@@ -308,7 +308,9 @@ an owned offer even if its lease is no longer registered. Close callbacks run se
 its own daemon executor, independent of `StationRuntime.worker` and network I/O.
 
 The gate covers **all** SecureStore-backed namespaces, including contact index and
-reuse registry access, so stale metadata objects cannot publish while frozen. The
+reuse registry access and ordinary `forget` resets, so stale metadata objects cannot
+publish or remove retained reuse guards while frozen. The backend's separately
+scoped raw cleanup deliberately preserves those guards. The
 reserved default `station-v2` generation is included even when empty. Cleanup keeps
 pad ledgers, their wrapping keys, global reuse claims and all terminal records. It
 independently removes operational contact/draft/signing keys and files, index/name

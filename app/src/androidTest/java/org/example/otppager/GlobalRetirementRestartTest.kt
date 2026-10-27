@@ -64,6 +64,7 @@ class GlobalRetirementRestartTest {
         assertFalse(ReceiveService.publishIfActive(context) { notified = true })
         assertFalse(notified)
         blocked { ChatBook(context) }
+        blocked { SecureStore(context, "chat-index-claims").forget() }
         blocked { SecureStore(context, root(36)).save(JSONObject().put("version", 2)) }
         blocked { SecureStore(context, root(31)).identity().card(true) }
     }

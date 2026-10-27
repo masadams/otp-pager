@@ -235,7 +235,9 @@ Local relay 13/13, signing-policy 7/7, Python syntax and whitespace passed.
 The initial backend head `7ccd21d84a23e341a378dbfc02d8b5984123f0e9` passed API29/31
 including the exclusive global host test (40434991510). Review then closed late
 notification and recovery-page label publication paths, and made the destruction
-Future non-cancellable. The host test now covers global clearing of an already
+Future non-cancellable. Ordinary store resets are also blocked during a global
+freeze, preventing stale resets deleting the retained reuse registry. The host test
+now covers global clearing of an already
 retired recovery screen and rejection of late notifications. Fresh latest-head CI
 is required for those additions; results belong to the stacked PR.
 
