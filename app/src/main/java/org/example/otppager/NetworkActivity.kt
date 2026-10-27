@@ -551,17 +551,13 @@ class NetworkActivity : Activity() {
             val selected = book!!.active()
             loadedChat = selected.id
             if (book!!.summary(selected.id).retired) {
-                loadedRetired = selected
+                observeStore("chat-index", openingGeneration) // Recovery UI also owns a global-cancellable lease.
                 loadedRetirementStatus = VaultRetirement.inspect(this, selected.id)
+                loadedRetired = selected
                 pendingDocument = null
                 return@runTask "Pairing retired locally"
             }
-            val lease = synchronized(VaultLifecycle.lock) {
-                check(active && unlocked && generation == openingGeneration) { "Conversation screen closed" }
-                visibleContact?.close()
-                SecureStore(this, loadedChat!!).operation().also { visibleContact = it }
-            }
-            lease.onInvalidate { handler.post { if (visibleContact === lease) closeRetiredConversation() } }
+            observeStore(loadedChat!!, openingGeneration)
             engine = checkNotNull(book).engine()
             engine?.state?.let { s ->
                 val master = Protocol.master(s.getString("secret"))
@@ -618,6 +614,14 @@ class NetworkActivity : Activity() {
                 }
             }
         }
+    }
+    private fun observeStore(namespace: String, openingGeneration: Int) {
+        val lease = synchronized(VaultLifecycle.lock) {
+            check(active && unlocked && generation == openingGeneration) { "Conversation screen closed" }
+            visibleContact?.close()
+            SecureStore(this, namespace).operation().also { visibleContact = it }
+        }
+        lease.onInvalidate { handler.post { if (visibleContact === lease) closeRetiredConversation() } }
     }
     private fun selectTab(requested: Int) {
         val value = if (retiredChat != null && requested in listOf(0, 1, 2, 3, 5, 6)) 7 else requested
@@ -1250,7 +1254,7 @@ class NetworkActivity : Activity() {
                     if (draftChatId != null && draftRoom == null && configuredRoom != null) draftRoom = configuredRoom
                     if (clearComposer && success && composer.text.toString() == submittedText && draftId == submittedId) composer.text.clear()
                     if (errorLoading) {
-                        note = "Saved chat unavailable. Data is preserved; open recovery tools."
+                        note = "Saved chat unavailable. Open recovery tools to inspect the problem."
                         pendingAdd = false; pendingFriend = null
                         selectTab(4)
                     }

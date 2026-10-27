@@ -18,12 +18,17 @@ internal object VaultLifecycle {
     fun marker(directory: File, root: String) = File(directory, "$root.retired")
     fun variants(file: File) = listOf(file, File(file.path + ".bak"), File(file.path + ".new"))
     fun deny(directory: File, root: String) { denied.add(marker(directory, root).absolutePath) }
+    fun deniedRoots(directory: File): Set<String> = synchronized(lock) {
+        denied.map(::File).filter { it.parentFile == directory.absoluteFile }
+            .map { it.name.removeSuffix(".retired") }.filter(::isContact).toSet()
+    }
     fun isRetired(directory: File, namespace: String): Boolean = synchronized(lock) {
         val marker = marker(directory, root(namespace))
         marker.absolutePath in denied || variants(marker).any { it.exists() }
     }
     fun requireActive(directory: File, namespace: String) = synchronized(lock) {
         check(!RetirementStartup.failed) { "Local retirement recovery unavailable; operation disabled" }
+        check(!GlobalRetirement.isFrozen(directory)) { "All local pairings are retired; global recovery/enrollment required" }
         check(!isRetired(directory, namespace)) {
             "This local pairing generation is retired; create a new friend pairing"
         }

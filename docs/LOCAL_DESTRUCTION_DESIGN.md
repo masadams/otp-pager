@@ -295,3 +295,76 @@ upgrade, expiry/clock rollback and later compromise of surviving keys. Prove tha
 history-key deletion actually removes all intended recovery paths. Retained exports,
 external copies, live-process strings and coordinated OS rollback remain excluded.
 Neither global wipe-all nor independent-history migration is implemented by this PR.
+
+## Global local-retirement backend — package B1
+
+`GlobalRetirement` is an internal local-only backend, on a separate branch/PR stacked
+on the contact-recovery foundation. It exposes no active-conversation wipe button,
+peer command or unfreeze API. `submit` immediately latches a directory-wide gate,
+drops live engine snapshots/staging/cache references, clears NFC offers and synchronously
+cancels matching operation leases. Recovery pages hold an index lease as well, so
+their retained contact labels are cleared even without an active contact engine. The HCE service also checks the global gate for
+an owned offer even if its lease is no longer registered. Close callbacks run separately. Coalesced cleanup cannot be cancelled by its result Future and uses
+its own daemon executor, independent of `StationRuntime.worker` and network I/O.
+
+The gate covers **all** SecureStore-backed namespaces, including contact index and
+reuse registry access and ordinary `forget` resets, so stale metadata objects cannot
+publish or remove retained reuse guards while frozen. The backend's separately
+scoped raw cleanup deliberately preserves those guards. The
+reserved default `station-v2` generation is included even when empty. Cleanup keeps
+pad ledgers, their wrapping keys, global reuse claims and all terminal records. It
+independently removes operational contact/draft/signing keys and files, index/name
+vault and identity keys plus AtomicFile variants, disables receiving preference,
+attempts service stop, and clears this app's notifications. Notification publication
+(including foreground registration) is serialized against the global gate so a stale
+receiver cannot post after cleanup. Pad-size preference and external exports are outside
+this scoped operation. Neither service-close timing nor already-sent bytes are an
+erasure guarantee.
+
+`global-retirement-v1.json` is an app-private plaintext record containing only version
+1, pending/complete state and sorted validated root IDs. No names, message secrets,
+commands or submit credentials. Any base/backup/new variant keeps the global freeze
+latched. Root lists from valid variants are unioned; unreadable/malformed variants
+stay untouched and prevent a completion claim, while cleanup of known targets still
+runs. File size/root count are bounded. File and directory synchronization plus
+readback verify writes. Failure after AtomicFile finalization preserves the terminal
+file rather than calling failWrite and deleting it.
+
+The machine first attempts a pending intent, then independently discovers disk and
+Keystore targets without decrypting a contact or index. Discovery preserves known
+roots when a source fails, never reports partial scope as complete, and closes the
+directory stream even at a capacity boundary. A second pending commit records all
+known roots **before** deleting their last artifacts. Each contact and metadata
+step runs despite another failure. A final scan must be complete and find no new
+roots before completion can be recorded. Newly found roots are retained for a later
+recovery pass. Intent-persistence failure still permits best-effort cleanup but does
+not establish a restart guarantee. No protection claims exceed retained state.
+
+Application startup recognizes global intent before ordinary per-contact recovery,
+repeats cleanup even for a complete record and keeps normal access frozen afterward.
+Partial cleanup counts as incomplete; unreadable global record never becomes an
+empty app. Filesystem-write access can deliberately trigger local destruction via
+this reserved record, just as with contact journals: compromised endpoint/OS is an
+explicit boundary. Relay traffic has no access to this authority.
+
+Tests cover fault boundaries, failed journal/contact/metadata steps, partial scope,
+late discovery, corrupt journal and retry. An exclusive host fixture runs after all
+ordinary tests: seed → force-stop → recover/verify → force-stop → restored-state
+verify → force-stop → malformed-journal verify. It uses a corrupt index, index-less
+key/file orphans, one undeletable contact, retained reuse hashes, blocked app worker
+and close callback, later restored files/keys, and refused fresh work. The disposable
+emulator app is intentionally left frozen; production has no test reset path.
+
+### Next gate: explicit enrollment after global retirement (package B2)
+
+Cleanup completion does **not** authorize deleting the global record or recreating a
+default index. Global recovery/status UI and new enrollment remain unimplemented.
+Before enrollment code, specify a persistent epoch/allowlist transition that blocks
+pre-wipe **index and claims objects** as well as old contacts. Per-contact markers
+alone do not prevent stale metadata writers repopulating a newly created index.
+Validate retained reuse registries and old exclusions; an absent/corrupt registry
+must not silently become empty. Define an interrupted new-index/key commit and a
+forward-only epoch publication, with no fallback to old pad/counter snapshots.
+A later journal version may need explicit retained-guard evidence. Current v1 means
+frozen permanently, including after complete. Coordinated full OS rollback and
+forensic erasure remain outside the guarantee.

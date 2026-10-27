@@ -43,7 +43,9 @@ object NfcSetupExchange {
 class NfcSetupCard : HostApduService() {
     private var selected = false
     override fun processCommandApdu(command: ByteArray, extras: Bundle?): ByteArray {
-        if (NfcSetupExchange.owner?.let(ContactOperations::isStopped) == true) return byteArrayOf(0x69, 0x85.toByte())
+        if (NfcSetupExchange.owner?.let { key ->
+                ContactOperations.isStopped(key) || java.io.File(key).parentFile?.let(GlobalRetirement::isFrozen) == true
+            } == true) return byteArrayOf(0x69, 0x85.toByte())
         val payload = NfcSetupExchange.payload
         if (payload == null || android.os.SystemClock.elapsedRealtime() >= NfcSetupExchange.expires) return byteArrayOf(0x69, 0x85.toByte())
         if (command.contentEquals(NfcSetupExchange.select)) { selected = true; return byteArrayOf(0x90.toByte(), 0) }

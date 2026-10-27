@@ -23,4 +23,11 @@ class ContactInventoryTest {
             fail("Inventory silently truncated")
         } catch (e: IllegalStateException) { assertTrue(e.message!!.contains("capacity")) }
     }
+    @Test fun partialFileEnumerationStillKeepsKnownRootsAndTriesKeyDiscovery() {
+        val broken = Iterable { sequence { yield("$a.bin"); throw java.io.IOException("directory unavailable") }.iterator() }
+        val result = ContactInventory.collect(broken, listOf("otp-pager-$b-device"))
+        assertFalse(result.complete); assertEquals(setOf(a, b), result.roots)
+        assertTrue("inventory-files" in result.failures)
+    }
+
 }

@@ -189,7 +189,7 @@ security finding requires it. Tests alone never satisfy an independent-review ga
 | Package | Scope / natural stopping point |
 | --- | --- |
 | A | Local recovery status, safe fresh-pairing UI, read-only orphan discovery and remaining local design review |
-| B | Global terminal freeze, index-independent wipe-all, metadata removal and interrupted recovery |
+| B | B1: global terminal freeze, index-independent cleanup, metadata removal and interrupted recovery; B2: explicit enrollment epoch and global recovery UI |
 | C | Independently erasable history and reviewed crash-safe old-key migration |
 | D | Exact emergency-control/dispatch/ack protocol and migration specification; independent review and vectors before code |
 | E | Relay scoped authorization, durable control/tombstone support and recovery/migration tests |

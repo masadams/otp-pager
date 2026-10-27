@@ -17,6 +17,10 @@ class ReceiveService : Service() {
         @Volatile var running = false
         @Volatile var lastCheck = 0L
         @Volatile var lastProblem = ""
+        /** Local notification publication is serialized with the global freeze; never perform network I/O here. */
+        internal fun publishIfActive(context: Context, action: () -> Unit): Boolean = synchronized(VaultLifecycle.lock) {
+            if (GlobalRetirement.isFrozen(context.noBackupFilesDir)) false else { action(); true }
+        }
         fun enabled(context: Context) = context.getSharedPreferences("receiving", MODE_PRIVATE).getBoolean("enabled", false)
         fun enabled(context: Context, value: Boolean) { check(context.getSharedPreferences("receiving", MODE_PRIVATE).edit().putBoolean("enabled", value).commit()) }
         fun start(context: Context) {
@@ -34,7 +38,7 @@ class ReceiveService : Service() {
     private var liveWake: PowerManager.WakeLock? = null
     private val keepAwake = object : Runnable {
         override fun run() {
-            if (!stopped && running && enabled(this@ReceiveService)) {
+            if (!stopped && running && enabled(this@ReceiveService) && !GlobalRetirement.isFrozen(noBackupFilesDir)) {
                 liveWake?.acquire(600000)
                 handler.postDelayed(this, 60000)
             }
@@ -56,7 +60,10 @@ class ReceiveService : Service() {
         if (intent?.action == STOP) { enabled(this, false); stopSelf(); return START_NOT_STICKY }
         if (!enabled(this)) { stopSelf(); return START_NOT_STICKY }
         try {
-            ServiceCompat.startForeground(this, 301, notice("Checks continue when you close the app"), if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING else 0)
+            val published = publishIfActive(this) {
+                ServiceCompat.startForeground(this, 301, notice("Checks continue when you close the app"), if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING else 0)
+            }
+            if (!published) { stopSelf(); return START_NOT_STICKY }
         } catch (_: Exception) { enabled(this, false); stopSelf(); return START_NOT_STICKY }
         if (!running) {
             running = true; stopped = false
@@ -67,7 +74,7 @@ class ReceiveService : Service() {
     }
     private val poll = object : Runnable {
         override fun run() {
-            if (stopped || !enabled(this@ReceiveService)) return
+            if (stopped || !enabled(this@ReceiveService) || GlobalRetirement.isFrozen(noBackupFilesDir)) return
             StationRuntime.worker.execute {
                 var text = "Receiving · checks may pause during deep sleep"
                 try {
@@ -75,9 +82,9 @@ class ReceiveService : Service() {
                         val result = cycle.poll(ChatBook(this@ReceiveService), allowed = { !stopped && !StationRuntime.uiVisible && !StationRuntime.pairingOpen })
                         val total = result.unread; val failed = result.failed; val attempted = result.attempted
                         if (result.newMessages && !StationRuntime.uiVisible && (Build.VERSION.SDK_INT < 33 || checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) && NotificationManagerCompat.from(this@ReceiveService).areNotificationsEnabled()) {
-                            manager.notify(303, Notification.Builder(this@ReceiveService, MESSAGES).setSmallIcon(android.R.drawable.stat_notify_chat)
+                            publishIfActive(this@ReceiveService) { if (!stopped) manager.notify(303, Notification.Builder(this@ReceiveService, MESSAGES).setSmallIcon(android.R.drawable.stat_notify_chat)
                                 .setContentTitle("New private message").setContentText("Open OTP Pager to read your messages")
-                                .setContentIntent(open()).setAutoCancel(true).setVisibility(Notification.VISIBILITY_SECRET).build())
+                                .setContentIntent(open()).setAutoCancel(true).setVisibility(Notification.VISIBILITY_SECRET).build()) }
                         }
                         if (failed == 0 && attempted > 0) { lastCheck = SystemClock.elapsedRealtime(); lastProblem = ""; delay = 30000L }
                         else if (failed > 0) { lastProblem = "Some chats could not connect"; delay = (delay * 2).coerceAtMost(120000L) }
@@ -86,7 +93,7 @@ class ReceiveService : Service() {
                 } catch (_: Exception) { lastProblem = "Receiver needs attention"; delay = 120000L; text = lastProblem }
                 handler.post {
                     if (!stopped) {
-                        try { manager.notify(301, notice(text)) } catch (_: SecurityException) {}
+                        try { publishIfActive(this@ReceiveService) { if (!stopped) manager.notify(301, notice(text)) } } catch (_: SecurityException) {}
                         handler.postDelayed(this, delay)
                     }
                 }

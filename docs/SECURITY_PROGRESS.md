@@ -207,14 +207,54 @@ state. Fresh latest-head
 CI and screenshot review are required after these changes. Local relay
 13/13, signing-policy 7/7 and whitespace passed; latest CI evidence belongs to PR #10.
 
+### 2026-10-26 — global local-retirement backend (package B1)
+
+Recovery/UI head `3f1a9da4f214e89b67dada4c622eba63401a4650` passed API29/31/35
+including cold restart (40428193658), signed upgrade/rejection (40428193562), and
+relay (40428193548). Final compact recovery/action screenshots were inspected.
+That foundation remains draft PR #10; global work is a separate stacked change.
+
+Added a directory-wide terminal gate, synchronous live-engine/lease invalidation,
+coalesced dedicated cleanup executor, bounded pending/complete global root journal,
+independent partial disk/key discovery, index/name-key deletion, receiving stop and
+notification cleanup. Late receiver notification publication is gated against the
+freeze, recovery pages hold an index lease for private-UI invalidation, and NFC
+offers are cleared/denied independently of lease registration.
+All known contact targets and metadata steps are attempted despite individual errors.
+Complete requires durable full-scope recording, successful cleanup and a complete
+post-scan with no newly discovered roots. Malformed journal variants remain frozen
+and cannot be overwritten as success. Startup retries complete as well as pending
+records. Reuse ledgers/claims remain; there is no unfreeze or enrollment shortcut.
+
+Added JVM fault/interruption and partial-inventory tests plus an exclusive four-phase
+host test after ordinary/per-contact restart checks. It exercises a corrupt index,
+key/file orphans, one failed contact while others clean, blocked worker and close,
+restored artifacts, preserved reuse hashes and malformed-journal refusal. This is
+source work pending latest-head CI, not a completed or deployable emergency feature.
+Local relay 13/13, signing-policy 7/7, Python syntax and whitespace passed.
+The initial backend head `7ccd21d84a23e341a378dbfc02d8b5984123f0e9` passed API29/31
+including the exclusive global host test (40434991510). Review then closed late
+notification and recovery-page label publication paths, and made the destruction
+Future non-cancellable. Ordinary store resets are also blocked during a global
+freeze, preventing stale resets deleting the retained reuse registry. The host test
+now covers global clearing of an already
+retired recovery screen, rejection of late notifications and retention of ledger keys.
+Generic error copy no longer claims data is preserved when cleanup may have removed it. Fresh latest-head CI
+is required for those additions; results belong to the stacked PR.
+
+Review found a further enrollment invariant: stale global index/claims objects need
+a durable epoch gate before a fresh index can be published. The local design now
+records package B2's required transition. No global destructive UI, fresh enrollment,
+history-key migration, peer command or production-readiness claim is included.
+
 ## Next task
 
-Validate this recovery/orphan-inventory slice on API29/31/35, signed upgrade and
-cold restart, inspect the new recovery screenshots and review S02/S05/S07/S09/S10.
-Then implement package B's global terminal freeze and wipe-all recovery with full
-fault tests, followed by package C's separately reviewed history/key migration.
-No emergency-wipe initiation UI or remote control packet exists yet. Do not call
-Phase 2 complete while those requirements remain open.
+Validate the global backend and exclusive cold-process test on API29/31/35 plus all
+existing pairing, message, signed-upgrade and restart regressions. Record exact head
+and CI evidence in the stacked implementation PR. Review S02/S03/S05/S07/S09/S12.
+Then specify and implement package B2's global recovery/status and explicit durable
+enrollment epoch, including stale metadata writers and missing reuse registry tests.
+Package C's history/key migration remains separately reviewed work. Phase 2 stays open.
 
 Do not implement peer-wipe packets until package D / Phase 3 resolves independent
 control keys, generation binding, dispatch authority, acknowledgement and migration,

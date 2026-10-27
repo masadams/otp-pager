@@ -190,7 +190,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         addButton.isEnabled = false; addButton.alpha = 0.5f
         shownFriends = null; inboxRows.removeAllViews()
         inboxRows.addView(label("This chat couldn't be opened.", 22f).apply { setPadding(0, dp(32), 0, dp(16)) })
-        inboxRows.addView(label("Your saved data has not been reset. Open recovery tools to inspect the problem.", 15f, true).apply { setPadding(0, 0, 0, dp(20)) })
+        inboxRows.addView(label("Saved data could not be opened. Open recovery tools to inspect the problem.", 15f, true).apply { setPadding(0, 0, 0, dp(20)) })
         inboxRows.addView(button("Open recovery tools") { actions.advanced() }, LinearLayout.LayoutParams(-1, -2))
     }
     fun opening(value: String) { inboxStatus.text = value }
