@@ -312,7 +312,8 @@ with exact namespaces/commitments, no key creation or AtomicFile repair, strict
 UTF-8/JSON schema and bidirectional cohort ownership validation. It returns immutable
 minimal reuse metadata and never opens operational vaults. Actual Keystore tests
 cover missing/restored/tampered/ambiguous/oversized data and unchanged files/keys;
-the existing exclusive host fixture now also reads retained guards after process
+Aggregate cohort byte/entry budgets are enforced while assembling authenticated
+records; the validator is private. The existing exclusive host fixture now also reads retained guards after process
 restart and operational key deletion. This is implementation pending latest-head CI.
 See the enrollment design for exact bounds, scope and explicit non-authority.
 

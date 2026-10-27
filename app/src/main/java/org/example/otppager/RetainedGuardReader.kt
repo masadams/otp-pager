@@ -23,6 +23,7 @@ import javax.crypto.spec.GCMParameterSpec
 internal object RetainedGuardReader {
     const val MAX_BYTES = 1024 * 1024
     const val MAX_ENTRIES = 4096
+    const val MAX_COHORT_BYTES = 8 * MAX_BYTES
     private val padId = Regex("[a-f0-9]{32}")
     private val roomId = Regex("[a-f0-9]{64}")
     private val integer = Regex("0|[1-9][0-9]*")
@@ -40,7 +41,7 @@ internal object RetainedGuardReader {
             require(roomId.matches(sha256)) { "Invalid guard commitment" }
         }
     }
-    data class Verified(val reference: Reference, val guard: Guard)
+    data class Verified(val reference: Reference, val guard: Guard, val ciphertextBytes: Int)
 
     /** Requires an exact caller-supplied commitment. It is NOT proof of when that commitment was made. */
     fun readFrozen(context: Context, reference: Reference): Verified = synchronized(VaultLifecycle.lock) {
@@ -65,7 +66,7 @@ internal object RetainedGuardReader {
                 try {
                     val guard = parse(reference.namespace, clear)
                     check(VaultLifecycle.variants(base).drop(1).none { Files.exists(it.toPath(), LinkOption.NOFOLLOW_LINKS) })
-                    Verified(reference, guard)
+                    Verified(reference, guard, bytes.size)
                 } finally { clear.fill(0) }
             } finally { bytes.fill(0) }
         } catch (_: Exception) {
@@ -152,8 +153,31 @@ internal object RetainedGuardReader {
         }
     }
 
-    /** Consistency only; caller must separately prove complete inventory and pre-cleanup provenance. */
-    fun validateCohort(records: List<Verified>, knownRoots: Set<String>) {
+    /** Bounded complete supplied cohort, NOT complete discovery or pre-cleanup provenance. */
+    fun readCohortFrozen(context: Context, references: List<Reference>, knownRoots: Set<String>): List<Verified> = synchronized(VaultLifecycle.lock) {
+        check(references.size in 1..MAX_ENTRIES)
+        check(knownRoots.size <= MAX_ENTRIES && knownRoots.all(VaultLifecycle::isContact))
+        check(references.map { it.namespace }.toSet().size == references.size)
+        check(references.count { it.namespace == "chat-index-claims" } == 1)
+        val records = mutableListOf<Verified>()
+        var bytes = 0L; var claimsEntries = 0; var ledgerEntries = 0
+        for (reference in references) {
+            val record = readFrozen(context, reference)
+            bytes += record.ciphertextBytes
+            check(bytes <= MAX_COHORT_BYTES)
+            when (val guard = record.guard) {
+                is Guard.Claims -> claimsEntries += guard.pads.size + guard.rooms.size
+                is Guard.Ledger -> ledgerEntries += guard.reservations.size
+            }
+            // Enforce while assembling: never retain thousands of full per-record maps first.
+            check(claimsEntries <= MAX_ENTRIES && ledgerEntries <= MAX_ENTRIES)
+            records.add(record)
+        }
+        validateCohort(records, knownRoots)
+        Collections.unmodifiableList(records.toList())
+    }
+    /** Consistency only; callers cannot bypass authenticated reads with fabricated parsed records. */
+    private fun validateCohort(records: List<Verified>, knownRoots: Set<String>) {
         check(knownRoots.size <= MAX_ENTRIES && knownRoots.all(VaultLifecycle::isContact))
         check(records.size in 1..MAX_ENTRIES)
         check(records.map { it.reference.namespace }.toSet().size == records.size)

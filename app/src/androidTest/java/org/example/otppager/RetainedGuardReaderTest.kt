@@ -69,7 +69,7 @@ class RetainedGuardReaderTest {
             val before = f.directory.listFiles()!!.associate { it.name to it.readBytes() }
             val aliases = keys().aliases().toList().toSet()
             val c = f.read("chat-index-claims"); val l = f.read("${f.root}-pads")
-            RetainedGuardReader.validateCohort(listOf(c, l), setOf(f.root))
+            RetainedGuardReader.readCohortFrozen(f, listOf(c.reference, l.reference), setOf(f.root))
             val savedClaims = c.guard as RetainedGuardReader.Guard.Claims
             assertEquals(f.root, savedClaims.pads[pad])
             assertEquals(RetainedGuardReader.Reservation(1, PadProtocol.SLOTS),
@@ -192,20 +192,35 @@ class RetainedGuardReaderTest {
             rejected { f.read(slot) }
         } finally { f.close() }
     }
+    @Test fun cohortByteBudgetAppliesAcrossOtherwiseValidIndividualRecords() {
+        val f = Fixture(context)
+        try {
+            f.save("chat-index-claims", JSONObject().put("version", 2).put("pads", JSONObject()).put("rooms", JSONObject()))
+            val references = mutableListOf(f.reference("chat-index-claims"))
+            val roots = (0..7).map { "chat-" + it.toString(16).padStart(20, '0') }.toSet()
+            val json = "{\"version\":2,\"pads\":{}}".padEnd(RetainedGuardReader.MAX_BYTES - 29, ' ').toByteArray()
+            for (root in roots) {
+                val slot = "$root-pads"; f.save(slot, JSONObject().put("version", 2).put("pads", JSONObject()))
+                f.raw(slot, json); references.add(f.reference(slot))
+            }
+            assertEquals(8, RetainedGuardReader.readCohortFrozen(f, references.dropLast(1), roots).size)
+            rejected { RetainedGuardReader.readCohortFrozen(f, references, roots) }
+        } finally { f.close() }
+    }
     @Test fun cohortChecksRequireBothDirectionsOfPadOwnershipAndKnownRoots() {
         val f = Fixture(context)
         try {
             val slot = "${f.root}-pads"
             f.save("chat-index-claims", claims(f.root)); f.save(slot, ledger())
             val c = f.read("chat-index-claims"); val l = f.read(slot)
-            rejected { RetainedGuardReader.validateCohort(listOf(c), setOf(f.root)) }
-            rejected { RetainedGuardReader.validateCohort(listOf(l), setOf(f.root)) }
-            rejected { RetainedGuardReader.validateCohort(listOf(c, l, l), setOf(f.root)) }
-            rejected { RetainedGuardReader.validateCohort(listOf(c, l), emptySet()) }
+            rejected { RetainedGuardReader.readCohortFrozen(f, listOf(c.reference), setOf(f.root)) }
+            rejected { RetainedGuardReader.readCohortFrozen(f, listOf(l.reference), setOf(f.root)) }
+            rejected { RetainedGuardReader.readCohortFrozen(f, listOf(c.reference, l.reference, l.reference), setOf(f.root)) }
+            rejected { RetainedGuardReader.readCohortFrozen(f, listOf(c.reference, l.reference), emptySet()) }
             f.save("chat-index-claims", JSONObject().put("version", 2).put("pads", JSONObject()).put("rooms", JSONObject()))
-            rejected { RetainedGuardReader.validateCohort(listOf(f.read("chat-index-claims"), l), setOf(f.root)) }
+            rejected { RetainedGuardReader.readCohortFrozen(f, listOf(f.reference("chat-index-claims"), l.reference), setOf(f.root)) }
             f.save("chat-index-claims", claims("station-v2"))
-            rejected { RetainedGuardReader.validateCohort(listOf(f.read("chat-index-claims"), l), setOf(f.root, "station-v2")) }
+            rejected { RetainedGuardReader.readCohortFrozen(f, listOf(f.reference("chat-index-claims"), l.reference), setOf(f.root, "station-v2")) }
         } finally { f.close() }
     }
 }

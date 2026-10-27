@@ -179,7 +179,11 @@ metadata; decrypted byte buffers are cleared. Managed runtime copies remain a li
 
 Cohort consistency requires one claims record, unique guard namespaces, declared
 known owners, matching pad ownership in both claims and ledgers and at most 4096
-ledger pad entries in total. It does not establish complete discovery, guard
+ledger pad entries in total. `readCohortFrozen` authenticates each supplied reference
+and enforces an 8 MiB total ciphertext budget plus map-entry limits incrementally
+while assembling the cohort, rather than retaining an oversized set first. Its
+internal consistency validator cannot be called with fabricated parsed records.
+It does not establish complete discovery, guard
 provenance, immutable-cohort persistence, epoch capabilities or safe activation.
 Those require the lifecycle manifest transaction; no validator return value may
 substitute for that authority. Missing room-only owners in the declared scope also
