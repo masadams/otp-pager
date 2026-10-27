@@ -74,7 +74,8 @@ Package A2 (#17, in review) adds a protected local-only **Wipe this chat from th
 phone** action (⋮ menu and Friend details, typed `WIPE` confirmation). It runs the same
 retirement on its own thread, never behind the station worker, drops private UI state
 first and reports only local evidence; the peer is never contacted or described as
-wiped. See [LOCAL_WIPE_CONTROL.md](LOCAL_WIPE_CONTROL.md).
+wiped. See [LOCAL_WIPE_CONTROL.md](LOCAL_WIPE_CONTROL.md) for exact CI evidence
+(head `2c533094`, Android run 40603779704, upgrade 40603779658, relay 40603779621).
 
 Global backend cleanup freezes all stores and metadata, attempts independent roots
 and metadata steps despite failures, and recovers on cold startup. Recovery UI

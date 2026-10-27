@@ -425,7 +425,15 @@ screen. Removed a UI-thread index read from the conversation menu title.
 `LocalWipeTest` covers worker-blocked completion, neighbour/ledger/claims preservation,
 refusal of non-listed/non-contact namespaces and the full UI flow. Local Kotlin
 type-check of main/unit/instrumentation sources against API 35 passed in the editing
-workspace; Android build, lint and emulator results belong to #17's CI runs.
+workspace. CI at #17 head `2c533094b0f9453eabf7fd4ce388907111e77692`: Android
+[run 40603779704](https://github.com/masadams/otp-pager/actions/runs/40603779704)
+PASS (API29 job 122538118931, API31 compact Nexus S job 122538118501, API35 job
+122538118753: build, unit, lint, full instrumentation suite including `LocalWipeTest`,
+and all four host restart fixtures); signed upgrade
+[run 40603779658](https://github.com/masadams/otp-pager/actions/runs/40603779658) PASS;
+relay [run 40603779621](https://github.com/masadams/otp-pager/actions/runs/40603779621)
+PASS. Per-API test counts and screenshots are in the `android-test-reports-api-*`
+artifacts; artifact downloads were not reachable from the editing workspace. Not independent review; no physical-device evidence.
 
 ## Next task
 
