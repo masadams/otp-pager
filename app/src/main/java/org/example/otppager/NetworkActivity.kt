@@ -1254,7 +1254,7 @@ class NetworkActivity : Activity() {
                     if (draftChatId != null && draftRoom == null && configuredRoom != null) draftRoom = configuredRoom
                     if (clearComposer && success && composer.text.toString() == submittedText && draftId == submittedId) composer.text.clear()
                     if (errorLoading) {
-                        note = "Saved chat unavailable. Data is preserved; open recovery tools."
+                        note = "Saved chat unavailable. Open recovery tools to inspect the problem."
                         pendingAdd = false; pendingFriend = null
                         selectTab(4)
                     }

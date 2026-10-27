@@ -59,6 +59,7 @@ class GlobalRetirementRestartTest {
         assertEquals(reference.getString("ledger"), hash(File(context.noBackupFilesDir, "${root(31)}-pads.bin")))
         assertEquals(reference.getString("claims"), hash(File(context.noBackupFilesDir, "chat-index-claims.bin")))
         assertTrue(keys.containsAlias("otp-pager-chat-index-claims"))
+        assertTrue(keys.containsAlias("otp-pager-${root(31)}-pads"))
         assertFalse(ReceiveService.enabled(context))
         var notified = false
         assertFalse(ReceiveService.publishIfActive(context) { notified = true })

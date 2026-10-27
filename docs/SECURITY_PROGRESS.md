@@ -238,7 +238,8 @@ notification and recovery-page label publication paths, and made the destruction
 Future non-cancellable. Ordinary store resets are also blocked during a global
 freeze, preventing stale resets deleting the retained reuse registry. The host test
 now covers global clearing of an already
-retired recovery screen and rejection of late notifications. Fresh latest-head CI
+retired recovery screen, rejection of late notifications and retention of ledger keys.
+Generic error copy no longer claims data is preserved when cleanup may have removed it. Fresh latest-head CI
 is required for those additions; results belong to the stacked PR.
 
 Review found a further enrollment invariant: stale global index/claims objects need
