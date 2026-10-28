@@ -51,3 +51,25 @@ Use Sync on both devices until the indicator says PEER VERIFIED. If readiness wa
 Existing 0.3 pad vaults migrate to schema 3, preserving history, pad reservations and receive replay state. The transport cursor resets to retrieve readiness packets an older client may have skipped. Installed pads must be verified on each upgraded station before new sends. Schema 3 is rejected by older APKs, preventing them from silently treating an installed pad as AES test mode. This does not prevent deliberate restoration of both old vault and ledger; the original rollback limits still apply. After uninstall/data clearing/cloning or uncertain recovery, generate a new physical pairing and pad.
 
 Unread messages remain unread while you are scrolled away from the bottom. Jump to latest or scroll to the bottom to mark the received history read. Delivery still means peer storage, not a human reading the text. Foreground-only sync is unchanged.
+
+## What the relay can learn from packet size (pipeline item 5, checked 2026-10-28)
+
+- **Messages, receipts and readiness signals are all one length.** Each is a full pad slot:
+  header (26) ‖ XOR block (4096) ‖ tag (32) = 4,154 bytes, which is 5,540 characters of base64,
+  whatever the text length. `PadProtocolTest.everyPadPacketHasTheSameWireLengthWhateverItCarries`
+  pins this. The relay can't tell a one-letter message from a full one, or a message from a receipt.
+- **The POST body** is `{"packet":"…"}`. Android's JSON writer escapes `/` as `\/`, so the
+  body length varies with the slash count in the base64 text. The variation comes from
+  ciphertext randomness rather than plaintext length; fixed packet size does not hide traffic metadata.
+  `PacketSerializationTest` checks the production serializer on Android, including slash escaping.
+- **Still visible to the relay:**
+  - timing and count of posts and fetches (one post per message or receipt);
+  - which mailbox is used;
+  - IP addresses;
+  - for peer wipe, the control mailbox frame sizes (89-byte request, 60-byte acknowledgement).
+    The relay already knows that mailbox is the control mailbox.
+
+  Hiding timing would need cover traffic, which costs pad slots. That is a possible later
+  option, not planned.
+- **Legacy pre-pad chats** only ever send receipts under AES-GCM, which have variable length.
+  Text can't be sent without a pad.

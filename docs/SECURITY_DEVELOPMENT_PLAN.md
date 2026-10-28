@@ -1,5 +1,8 @@
 # Security, data lifecycle and emergency destruction development plan
 
+For the current review graph, exact source heads, execution evidence and next steps,
+read [the continuation record](CONTINUATION_2026_10_28.md).
+
 Status: active development reference; security features below are requirements, not release claims.
 Owner direction: 2026-10-26. Baseline: Android v0.14, main commit
 `cfe01af255bebbd195337b9d1b0c72017e39f7c1`.
@@ -7,7 +10,30 @@ Owner direction: 2026-10-26. Baseline: Android v0.14, main commit
 For a checked task list in build order, see [the security checklist](SECURITY_CHECKLIST.md).
 For continuation without chat history, read [the developer handoff](DEVELOPER_HANDOFF.md).
 
-## Current delivery status — 2026-10-27
+## Current delivery status — 2026-10-28
+
+Verified baseline: main `9a968a8750657b438524902dbdac98429b080b46`.
+Local/global retirement, ACTIVE epochs/fresh enrollment and vault-key rotation are
+merged development functionality. #38 adds separate pad storage, #39 streamed large
+pads, and #40 peer wipe behind an off-by-default unreviewed setting. PRs #41–44
+remain open; the handoff records branches and dependencies. Strict chats, failover
+and groups are not implemented. No new physical, independent-review or release
+readiness evidence is implied by this status reconciliation.
+
+[PIPELINE.md](PIPELINE.md) supersedes older ordering and review-gate statements below:
+the owner moved independent peer-wipe review to the final community review package;
+the unreviewed label and default-off setting remain required. Per-device ordinary
+relay credentials were considered and dropped. Pairwise fan-out groups are now in
+scope; shared multi-party pads remain prohibited.
+
+Continue USB regression tests first, then strict protocol/relay/storage/UI, failover
+and groups. Strict v1 uses one authority, no inactivity share deletion and fresh
+physical enrollment. A bounded foreground lease must protect actual decryption,
+including drafts and caches; control processing and offline local wipe must remain
+available while content is locked. Transport failover cannot bypass strict revocation.
+All follow-up PRs stay unmerged and record tests, limitations and hardware gates.
+
+## Historical delivery status — 2026-10-27
 
 > 2026-10-28: owner answers and the ordered pipeline are in [PIPELINE.md](PIPELINE.md); it
 > takes precedence over the package list below where they differ.
@@ -210,7 +236,7 @@ Do not weaken a gate or invent a passing result to make progress appear complete
 No live server deployment or production-readiness claim follows from this plan alone.
 
 
-## Remaining work packages and continuation cadence
+## Historical work packages and continuing change discipline
 
 These are dependency-ordered work packages, not a fixed number of chat turns or
 required user approval prompts. Physical-device evidence and independent review
@@ -242,3 +268,33 @@ Global recovery observation/retry and empty staging are merged development found
 activation remains unimplemented; v1 terminal journals cannot prove absent reuse
 registry provenance and must never authorize an empty reset. Executable design-model
 checks do not complete package B or replace Android lifecycle/physical evidence.
+
+## Packet serialization follow-up — 2026-10-28
+
+Branch `test/production-packet-serialization` stacks on open #41. The production
+POST serializer is shared with an Android instrumentation test; the misleading
+hand-built JSON length assertion is removed. Binary/base64 lengths remain fixed;
+Android JSON slash escaping can vary HTTP body size. No wire, pad reservation or
+retry behavior changes. Local build/test evidence is recorded in the PR; emulator
+execution and physical-device validation must not be inferred from compilation.
+
+## Peer-wipe recipient ordering correction — 2026-10-28
+
+Independent branch `fix/peer-wipe-local-first` starts from main 9a968a8. A verified
+peer request previously posted RECEIVED before retirement, and ACK persistence
+failure could prevent local destruction. The recipient now attempts local retirement
+before any transport and despite ACK preparation errors (S05); final status preserves
+actual cleanup evidence (S10). JVM tests block transport and inject persistence
+failures; the end-to-end instrumentation fixture asserts POST occurs only after
+retirement. Physical peer-wipe, partial cleanup/restart and independent review remain
+open. Peer wipe stays unreviewed and off by default; see the PR for execution evidence.
+
+## USB discovery implementation follow-up — 2026-10-28
+
+The follow-up branch `test/usb-negotiation-lifecycle` stacks on #43 and adds tested
+retry/permission/stop transitions, wider transport tests and large-pad streaming
+coverage. S03/S07 are preserved by leaving pad activation/recovery in CableProtocol
+and rejecting discovery after transfer starts or its captured operation is cancelled.
+This is a review candidate, not a verified fix for the owner's physical regression.
+Android instrumentation, signed upgrade and two-phone/power-loss evidence remain
+separate from local compilation/JVM results recorded in the PR.

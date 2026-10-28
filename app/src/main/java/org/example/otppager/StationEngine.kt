@@ -347,12 +347,13 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         if (!requested) return null
         val snapshot = JSONObject(checkNotNull(state).toString())
         val root = VaultLifecycle.root(store.namespace)
-        val received = PeerWipe.acknowledge(store.context, root, snapshot)
-        PeerWipe.postNow(baseRelay, snapshot, received)
-        val result = VaultRetirement.retireContact(store.context, root)
-        PeerWipe.finish(store.context, snapshot.getJSONObject("control").getString("generation"), result.completed)
-        PeerWipe.pump(store.context, baseRelay)
-        return "Your friend's phone asked to remove this chat. It was removed from this phone."
+        val result = PeerWipeRecipient.retire(
+            prepare = { PeerWipe.acknowledge(store.context, root, snapshot) },
+            destroy = { VaultRetirement.retireContact(store.context, root) },
+            finish = { PeerWipe.finish(store.context, snapshot.getJSONObject("control").getString("generation"), it.completed) },
+            dispatch = { PeerWipe.pump(store.context, baseRelay) })
+        return if (result.completed) "Your friend's phone asked to remove this chat. It was removed from this phone."
+            else "Your friend's phone asked to remove this chat. Local removal did not finish; retry cleanup from recovery."
     }
     fun stageCable(setup: JSONObject, role: String, peer: String) {
         requireCableEligible(); check(stagedCable == null)
@@ -811,7 +812,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             val pending = items(checkNotNull(state).getJSONArray("outbox")).filter { it.getString("status") == "queued" }.take(10)
             for (entry in pending) {
                 store.requireActive()
-                relay.request(s.getString("endpoint"), room, credential, "POST", JSONObject().put("packet", entry.getString("packet")).toString())
+                relay.request(s.getString("endpoint"), room, credential, "POST", RelayClient.packetBody(entry.getString("packet")))
                 transaction { next ->
                     items(next.getJSONArray("outbox")).firstOrNull { it.getString("id") == entry.getString("id") }?.put("status", "relayed")
                     prune(next)

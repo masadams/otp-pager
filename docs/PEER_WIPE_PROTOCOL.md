@@ -229,3 +229,15 @@ strict chats even with a full storage copy.
 Costs: no access when the relay is unreachable; the relay operator can lock users out and sees
 when chats are opened; a permanently lost share loses those chats. This is a design note for
 review together with this protocol, not a commitment.
+
+## Recipient local-first correction (review candidate, 2026-10-28)
+
+`fix/peer-wipe-local-first` corrects the implemented recipient ordering: precompute
+final ACKs without networking, retire locally even if ACK preparation/persistence
+fails, persist the observed final outcome, then pump transport. No preliminary
+RECEIVED POST is required. This supersedes the draft §5 step that posts RECEIVED
+before retirement. A blocked network cannot postpone retirement, although the sync
+worker may still wait on dispatch after destruction. Missing/failed ACK storage
+means the peer may never learn the result; no success is fabricated. Local status
+now distinguishes completed from incomplete retirement. Separate restart recovery
+of unfinished ACK records remains outstanding; this change does not solve it.

@@ -16,8 +16,8 @@ import java.util.Base64
  * command. [pump] posts the frame to the control mailbox and matches acknowledgements.
  *
  * Recipient: the station engine verifies a WIPE for its own pairing generation, calls
- * [acknowledge] (precomputed ACKs, then RECEIVED is posted) and retires that chat only,
- * then [finish] queues WIPED or INCOMPLETE.
+ * [acknowledge] to precompute ACKs, then retires that chat even if ACK persistence fails.
+ * [finish] queues WIPED or INCOMPLETE; transport runs only after retirement.
  *
  * Records are plain JSON in `peerwipe/`: routing metadata and sealed frames are the documented
  * retained-metadata exception; they authorize nothing beyond this one pairing's mailbox.
@@ -84,8 +84,8 @@ internal object PeerWipe {
         }
     } catch (_: Exception) { false }
 
-    /** Recipient: precompute every ACK while the key exists; returns RECEIVED to post now. */
-    fun acknowledge(context: Context, root: String, state: JSONObject): ByteArray {
+    /** Recipient: precompute final ACKs while the key exists. No network activity. */
+    fun acknowledge(context: Context, root: String, state: JSONObject) {
         val c = state.getJSONObject("control")
         val direction = own(state.getString("role")); val generation = hex(c.getString("generation")); val key = hex(c.getString("ackOut"))
         try {
@@ -95,7 +95,6 @@ internal object PeerWipe {
                 .put("created", System.currentTimeMillis()).put("lastPost", 0L)
             write(File(directory(context), "ack-${c.getString("generation")}.json"), record)
             write(File(directory(context), "notice-$root.json"), JSONObject().put("version", 1).put("root", root).put("time", System.currentTimeMillis()))
-            return ControlProtocol.ack(key, direction, generation, ControlProtocol.Outcome.RECEIVED)
         } finally { key.fill(0) }
     }
     /** Recipient, after local retirement: keep only the outcome that is true. */
@@ -170,6 +169,4 @@ internal object PeerWipe {
         val final = record.optString("final").takeIf { it.isNotEmpty() } ?: return
         if (now - record.getLong("lastPost") > REPOST_MS) { post(relay, record, final); write(file, record.put("lastPost", now)) }
     }
-    /** Recipient: post the RECEIVED acknowledgement immediately, best effort. */
-    fun postNow(relay: RelayTransport, state: JSONObject, frame: ByteArray) = try { post(relay, route(state), b64e.encodeToString(frame)) } catch (_: Exception) {}
 }

@@ -40,11 +40,11 @@ class UsbPairChannelTest {
     private val P = 512
 
     /** Host reads the accessory's pipe; accessory reads the host's pipe, each with the production adapters. */
-    private fun link(kernelZlp: Boolean, fixed: Boolean = true): Triple<UsbPairChannel, UsbPairChannel, List<Pipe>> {
-        val toHost = Pipe(P, 150, kernelZlp); val toAccessory = Pipe(P, 150, kernelZlp = false) // usbfs never adds ZLPs.
+    private fun link(kernelZlp: Boolean, fixed: Boolean = true, packet: Int = P): Triple<UsbPairChannel, UsbPairChannel, List<Pipe>> {
+        val toHost = Pipe(packet, 150, kernelZlp); val toAccessory = Pipe(packet, 150, kernelZlp = false) // usbfs never adds ZLPs.
         val host = if (fixed) UsbPairChannel(
-            UsbPairChannel.hostReceive(P) { b, at, n, _ -> toHost.read(b, at, n) },
-            UsbPairChannel.hostTransmit(P) { b, at, n, _ -> toAccessory.write(b, at, n) }, {},
+            UsbPairChannel.hostReceive(packet) { b, at, n, _ -> toHost.read(b, at, n) },
+            UsbPairChannel.hostTransmit(packet) { b, at, n, _ -> toAccessory.write(b, at, n) }, {},
             System::currentTimeMillis, 20000, 3000)
         else UsbPairChannel({ b, at, n -> toHost.read(b, at, n) }, { b, at, n -> toAccessory.write(b, at, n) }, {},
             System::currentTimeMillis, 20000, 3000)
@@ -83,15 +83,19 @@ class UsbPairChannelTest {
     }
 
     @Test fun packetAlignedFramesCompleteInBothDirectionsWithoutKernelZlp() {
-        val (host, accessory, pipes) = link(kernelZlp = false)
-        exchange(host, accessory)
-        assertEquals("Data was dropped by a timed-out read", 0, pipes.sumOf { it.lost })
+        for (packet in listOf(64, 512, 1024)) {
+            val (host, accessory, pipes) = link(kernelZlp = false, packet = packet)
+            exchange(host, accessory)
+            assertEquals("Data dropped at packet size $packet", 0, pipes.sumOf { it.lost })
+        }
     }
 
     @Test fun packetAlignedFramesCompleteWhenTheAccessoryKernelAddsZlp() {
-        val (host, accessory, pipes) = link(kernelZlp = true)
-        exchange(host, accessory)
-        assertEquals(0, pipes.sumOf { it.lost })
+        for (packet in listOf(64, 512, 1024)) {
+            val (host, accessory, pipes) = link(kernelZlp = true, packet = packet)
+            exchange(host, accessory)
+            assertEquals(0, pipes.sumOf { it.lost })
+        }
     }
 
     @Test fun previousAdaptersLoseAPacketAlignedReply() {
@@ -129,4 +133,27 @@ class UsbPairChannelTest {
             { _, _, n -> n }, {}, System::currentTimeMillis, 5000, 200)
         try { idle.input.read(); fail("Idle channel never timed out") } catch (_: java.io.IOException) {}
     }
+    @Test fun shortWritesPreserveEveryByteAndCloseReleasesOnlyOnce() {
+        val sent = java.io.ByteArrayOutputStream(); var releases = 0
+        val channel = UsbPairChannel({ _, _, _ -> -1 }, { b, at, n ->
+            val count = minOf(n, 17); sent.write(b, at, count); count
+        }, { releases++ }, { 0L })
+        val bytes = ByteArray(33000) { (it % 251).toByte() }
+        channel.output.write(bytes); channel.output.flush()
+        assertArrayEquals(bytes, sent.toByteArray())
+        channel.close(); channel.close()
+        assertEquals(1, releases)
+        try { channel.input.read(); fail("Read after close") } catch (_: java.io.IOException) {}
+        try { channel.output.write(bytes); channel.output.flush(); fail("Write after close") } catch (_: IllegalStateException) {}
+    }
+
+    @Test fun disconnectAndFailedWritesPropagateWithoutFurtherTraffic() {
+        val channel = UsbPairChannel({ _, _, _ -> throw java.io.IOException("Detached") },
+            { _, _, _ -> -1 }, {}, { 0L })
+        try {
+            try { channel.input.read(); fail("Disconnect ignored") } catch (_: java.io.IOException) {}
+            try { channel.output.write(1); channel.output.flush(); fail("Write failure ignored") } catch (_: java.io.IOException) {}
+        } finally { channel.close() }
+    }
+
 }

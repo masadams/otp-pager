@@ -82,14 +82,17 @@ class CablePairTest {
             }
         }
     }
-    @Test fun largestPadStreamsIntoStorageOnBothSidesWithoutPassingThroughTheVault() {
+    @Test fun largePadsStreamIntoStorageOnBothSidesWithoutPassingThroughTheVault() {
+        for (mib in listOf(16, 32, 64)) checkStreamedPad(mib * PadProtocol.MATERIAL_BYTES)
+    }
+    private fun checkStreamedPad(size: Int) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val sa = SecureStore(context, "cable-large-a"); val sb = SecureStore(context, "cable-large-b")
         val stores = listOf(sa, sb); stores.forEach { it.forget(); it.sibling("pads").forget() }
         val pool = Executors.newFixedThreadPool(2)
         val ain = PipedInputStream(65536); val bout = PipedOutputStream(ain)
         val bin = PipedInputStream(65536); val aout = PipedOutputStream(bin)
-        val size = PadProtocol.MAX_MATERIAL_BYTES
+        val slots = PadProtocol.slotsFor(size)
         try {
             val a = StationEngine(sa); val b = StationEngine(sb)
             a.configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "B")
@@ -101,17 +104,17 @@ class CablePairTest {
             af.get(240, TimeUnit.SECONDS); bf.get(240, TimeUnit.SECONDS)
             assertTrue(progress.any { it.startsWith("Sending message keys") } && progress.any { it == "Receiving message keys · 100%" })
             for (engine in listOf(a, b)) {
-                assertEquals(PadProtocol.MAX_SLOTS, engine.view().padRemaining)
+                assertEquals(slots, engine.view().padRemaining)
                 assertFalse(engine.state!!.has("pad")); assertTrue(engine.view().canSend)
             }
             assertEquals(a.view().padCheck, b.view().padCheck)
             for (store in stores) {
                 assertTrue(java.io.File(context.noBackupFilesDir, "${store.namespace}.bin").length() < 1_000_000)
-                assertEquals(PadMaterial.HEADER + 2L * PadProtocol.MAX_SLOTS * PadMaterial.RECORD,
+                assertEquals(PadMaterial.HEADER + 2L * slots * PadMaterial.RECORD,
                     PadMaterial.file(context.noBackupFilesDir, store.namespace, a.state!!.getString("padId")).length())
             }
             // The slot at the far end of the B half is identical on both phones.
-            val last = PadProtocol.MAX_SLOTS.toLong()
+            val last = slots.toLong()
             fun slot(engine: StationEngine, store: SecureStore): ByteArray {
                 val keys = java.util.Base64.getDecoder().decode(engine.state!!.getString("padKeys"))
                 return PadMaterial.slot(PadMaterial.file(context.noBackupFilesDir, store.namespace, engine.state!!.getString("padId")), engine.state!!.getString("padId"), keys, 'B', last)
