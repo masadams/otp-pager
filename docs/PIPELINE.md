@@ -18,17 +18,20 @@ reviewable PR with tests; the plan's invariants S01–S12 still apply.
 | Capacity | Pads should be 10 MiB or larger |
 | Added scope | Every issue flagged in the assessment goes into this pipeline; add group chats |
 
-**Changed gate (needs owner confirmation):** the original plan required independent protocol
-review *before* destructive peer-wipe code. The owner prefers a community review at the end.
-Proposed compromise: implement peer wipe behind an off-by-default, clearly labelled
-"unreviewed" setting, so the community review covers shipped code. Until confirmed, peer wipe
-stays specification-only.
+**Changed gate (owner confirmed 2026-10-28):** the original plan required independent
+protocol review *before* destructive peer-wipe code. The owner prefers a community review at
+the end. Peer wipe is therefore implemented behind an **off-by-default, clearly labelled
+"unreviewed"** setting, so the community review covers shipped code. The spec's vector gate
+moves to the review package.
+
+Also confirmed 2026-10-28: separate pad storage before bigger pads ([design](PAD_STORAGE.md));
+group chats by per-member fan-out; multi-relay ideas kept in the plan (items 6 and 8).
 
 ## Ordered pipeline
 
 | # | Item | Why | Notes |
 | --- | --- | --- | --- |
-| 1 | **Separate pad storage** | Pads live inside the JSON vault, rewritten on every save; 10+ MiB pads would make every message slow | Encrypted, slot-addressable pad file per chat; consumed slots overwritten; migration from in-vault pads |
+| 1 | **Separate pad storage** ([design](PAD_STORAGE.md)) | Pads live inside the JSON vault, rewritten on every save; 10+ MiB pads would make every message slow | Encrypted, slot-addressable pad file per chat; consumed slots overwritten; migration from in-vault pads |
 | 2 | **Bigger pads (16, 32, 64 MiB)** | Owner wants ≥10 MiB; group fan-out multiplies slot use | Depends on 1; USB transfer time and Wi-Fi handoff limits checked |
 | 3 | **Peer wipe** | Wipe should reach the friend's phone | Spec in `PEER_WIPE_PROTOCOL.md`; gate above; needs relay control mailbox |
 | 4 | **Strict chats** | A seized offline phone should not open high-risk chats | Appendix A of the peer-wipe spec; after 3 (shares control mailbox) |
