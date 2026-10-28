@@ -46,7 +46,7 @@ internal object VaultRetirement {
     enum class LocalState { ACTIVE, INCOMPLETE, COMPLETE, UNAVAILABLE }
     data class Status(val state: LocalState)
     private fun keyAliases(namespace: String) = listOf(
-        "vault-key" to "otp-pager-$namespace", "draft-key" to "otp-pager-$namespace-draft",
+        "draft-key" to "otp-pager-$namespace-draft",
         "device-key" to "otp-pager-$namespace-device", "draft-device-key" to "otp-pager-$namespace-draft-device")
     private fun vaultSlots(namespace: String) = listOf("vault-files" to namespace, "draft-files" to "$namespace-draft")
 
@@ -63,7 +63,8 @@ internal object VaultRetirement {
                 VaultLifecycle.variants(marker).drop(1).none { it.exists() } &&
                 marker.readText(Charsets.US_ASCII) == "OTP Pager retirement v1\ncomplete\n"
             val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-            val keysGone = keyAliases(namespace).none { keys.containsAlias(it.second) }
+            val keysGone = keyAliases(namespace).none { keys.containsAlias(it.second) } &&
+                VaultKeys.all(namespace, keys.aliases().toList()).isEmpty() // Every rotated vault-key generation.
             val filesGone = vaultSlots(namespace).all { (_, slot) ->
                 VaultLifecycle.variants(File(directory, "$slot.bin")).none { it.name in names }
             }
@@ -125,7 +126,8 @@ internal object VaultRetirement {
                     check(VaultLifecycle.variants(base).none { it.exists() }) { "Vault file deletion incomplete" }
                 }
                 // Pad ledgers and global reuse claims deliberately survive: identifiers/counters only.
-                return keyAliases(namespace).map { (label, alias) -> label to { deleteKey(alias) } } +
+                return listOf("vault-keys" to { VaultKeys.deleteAll(namespace) }) +
+                    keyAliases(namespace).map { (label, alias) -> label to { deleteKey(alias) } } +
                     vaultSlots(namespace).map { (label, slot) -> label to { deleteFiles(slot) } } +
                     listOf("directory-sync" to { VaultLifecycle.syncDirectory(directory) })
             }

@@ -473,6 +473,16 @@ with a durable `OTPTERM2` record bound to it. Tests: `EpochTerminalCodecTest`, n
 cases, and the exclusive `EpochCycleRestartTest` matrix (added to Android CI). Local
 type-check and 70 JVM tests pass; emulator evidence belongs to #20's CI.
 
+### 2026-10-28 — package C, license, screenshots (#21–#23)
+
+Package C implemented as contact-vault wrapping-key rotation (`VaultKeys`, v3 envelope,
+rotation on first save per process, every ≤10 min, and on clear history; old keys deleted
+only after verified commit) instead of a separate history file, because a separate file
+would leave old copies under surviving keys. All contact key scanners updated for rotated
+generations. Tests: `VaultKeysTest`, `VaultRotationTest`, stricter restart-fixture key checks.
+Owner decisions: drop Jericho (#21), MIT license (#21). Added the opt-in `ui-preview`
+screenshot workflow (#23); first run captured 53 screens on API 31/35.
+
 ## Next task
 
 Package C: separately erasable history and crash-safe old-key migration (see LOCAL_DESTRUCTION_DESIGN.md). Completed package B wording for reference: implement reviewed ACTIVE epoch capability/namespace allowlist publication and

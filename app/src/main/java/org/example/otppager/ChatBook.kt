@@ -98,7 +98,7 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
         val root = generateSequence { "chat-" + UUID.randomUUID().toString().replace("-", "").take(20) }.first { candidate ->
             chats().none { it.id == candidate || it.entryId == candidate } &&
                 files.none { it.startsWith("$candidate.") || it.startsWith("$candidate-") } &&
-                aliases.none { it == "otp-pager-$candidate" || it.startsWith("otp-pager-$candidate-") }
+                aliases.none { it == "otp-pager-$candidate" || it.startsWith("otp-pager-$candidate-") || it.startsWith("otp-pager-$candidate~") }
         }
         // In an ACTIVE epoch the root is listed durably before its first key or file exists.
         EpochState.activeIfStaged(directory)?.let { EpochManifests.appendRoot(directory, it.epoch, root) }

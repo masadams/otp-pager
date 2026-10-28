@@ -41,7 +41,7 @@ physical validation, deployment or production readiness. Phase 2 remains open.
 - [x] Enforce immutable retained-cohort exclusions during active pairing/messaging (#20, B3c).
 - [x] Implement repeat-wipe/forward lineage (`OTPTERM2`) and preserve every prior exclusion/reservation (#20, B3d).
 - [x] Safely enable fresh enrollment after global destruction (#20, B3e activation, B3f UI; emulator CI only).
-- [ ] Separate erasable history keys and safely migrate older storage/operational keys.
+- [x] Make removed history crypto-erasable: crash-safe contact-vault key rotation and v2→v3 migration (#22, [design](VAULT_KEY_ROTATION.md)).
 - [ ] Complete local-protection invariant review and remaining fault/upgrade tests.
 
 ## 3. Remote revocation specification
