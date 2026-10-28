@@ -218,6 +218,7 @@ security finding requires it. Tests alone never satisfy an independent-review ga
 | --- | --- |
 | A — implemented/tested, merged #10 | Local recovery status, safe per-contact fresh-pairing UI and read-only orphan discovery; physical validation remains open |
 | A2 — implementation candidate, #17 | Protected local-only "wipe this chat from this phone" on the retirement primitive; honest local-only status; never waits for the station worker. No peer command or wipe-all |
+| B3 — design + pure core #18 | [ACTIVE epoch lineage design](ACTIVE_EPOCH_DESIGN.md) with slices B3a–B3f; B3a adds `OTPACT01`, `EpochLineage`, `EpochScope` with JVM tests, unwired |
 | B — partial, merged #11–15 | Global freeze/cleanup/recovery UI, guard reader, initial provenance and empty staging implemented/tested. ACTIVE publication/routing, retained-cohort enforcement and repeat-wipe lineage remain open |
 | C | Independently erasable history and reviewed crash-safe old-key migration |
 | D | Exact emergency-control/dispatch/ack protocol and migration specification; independent review and vectors before code |
@@ -232,7 +233,8 @@ review gate. Keep exact completion and test evidence in SECURITY_PROGRESS.md and
 the implementation PR, rather than asking the user to reconstruct prior messages.
 
 
-Current B2 reference: [global enrollment protocol candidate](GLOBAL_ENROLLMENT_PROTOCOL.md).
+Current B2 reference: [global enrollment protocol candidate](GLOBAL_ENROLLMENT_PROTOCOL.md);
+B3 continuation: [ACTIVE epoch lineage design](ACTIVE_EPOCH_DESIGN.md).
 Global recovery observation/retry and empty staging are merged development foundations. Epoch
 activation remains unimplemented; v1 terminal journals cannot prove absent reuse
 registry provenance and must never authorize an empty reset. Executable design-model

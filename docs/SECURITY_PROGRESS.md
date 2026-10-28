@@ -435,9 +435,23 @@ relay [run 40603779621](https://github.com/masadams/otp-pager/actions/runs/40603
 PASS. Per-API test counts and screenshots are in the `android-test-reports-api-*`
 artifacts; artifact downloads were not reachable from the editing workspace. Not independent review; no physical-device evidence.
 
+### 2026-10-27 — PR #17 merged; B3 design and pure core (B3a)
+
+Merged #17 (merge commit `98056c8cfdfcff87f1083747cd0b92ac2babecac`) after all three
+workflows passed on its final head `2f05516`.
+
+Wrote [ACTIVE_EPOCH_DESIGN.md](ACTIVE_EPOCH_DESIGN.md). Finding: an ACTIVE epoch changes
+the meaning of "frozen" (old terminal/staging records stay forever as provenance), so
+capability, routing, guard cohorts and repeat wipes must be decided from one lineage.
+`OTPTERM1` permits a single record/key per directory and only legacy guard namespaces, so
+a repeat wipe needs a successor `OTPTERM2` (slice B3d). Added pure `ActiveManifestCodec`,
+`EpochLineage` and `EpochScope` with `ActiveManifestCodecTest`/`EpochLineageTest` (rollback,
+ambiguity, unexplained records, second-wipe freeze, order independence, scope refusal).
+All 64 JVM unit tests pass locally; Android/emulator evidence belongs to #18's CI.
+
 ## Next task
 
-After #17 review/merge: implement reviewed ACTIVE epoch capability/namespace allowlist publication and
+Slice B3b (see ACTIVE_EPOCH_DESIGN.md): implement reviewed ACTIVE epoch capability/namespace allowlist publication and
 current-index routing together with immutable retained-cohort checks during normal
 pairing/messaging and repeat-wipe/forward-lineage handling. Follow the staged
 acceptance tasks in [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md). Do not enable fresh
