@@ -242,3 +242,14 @@ Global recovery observation/retry and empty staging are merged development found
 activation remains unimplemented; v1 terminal journals cannot prove absent reuse
 registry provenance and must never authorize an empty reset. Executable design-model
 checks do not complete package B or replace Android lifecycle/physical evidence.
+
+## Peer-wipe recipient ordering correction — 2026-10-28
+
+Independent branch `fix/peer-wipe-local-first` starts from main 9a968a8. A verified
+peer request previously posted RECEIVED before retirement, and ACK persistence
+failure could prevent local destruction. The recipient now attempts local retirement
+before any transport and despite ACK preparation errors (S05); final status preserves
+actual cleanup evidence (S10). JVM tests block transport and inject persistence
+failures; the end-to-end instrumentation fixture asserts POST occurs only after
+retirement. Physical peer-wipe, partial cleanup/restart and independent review remain
+open. Peer wipe stays unreviewed and off by default; see the PR for execution evidence.
