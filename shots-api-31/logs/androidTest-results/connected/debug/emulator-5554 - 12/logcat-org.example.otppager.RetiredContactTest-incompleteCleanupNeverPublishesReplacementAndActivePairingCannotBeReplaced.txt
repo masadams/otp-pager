@@ -1,0 +1,2 @@
+10-28 13:23:26.732  2191  2206 I TestRunner: started: incompleteCleanupNeverPublishesReplacementAndActivePairingCannotBeReplaced(org.example.otppager.RetiredContactTest)
+10-28 13:23:26.789  2191  2206 I TestRunner: finished: incompleteCleanupNeverPublishesReplacementAndActivePairingCannotBeReplaced(org.example.otppager.RetiredContactTest)

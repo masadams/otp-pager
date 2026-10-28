@@ -1,0 +1,2 @@
+10-28 13:23:26.532  2191  2206 I TestRunner: started: metadataMigrationPreservesVaultBytesAndRejectsUnknownVersions(org.example.otppager.RetiredContactTest)
+10-28 13:23:26.731  2191  2206 I TestRunner: finished: metadataMigrationPreservesVaultBytesAndRejectsUnknownVersions(org.example.otppager.RetiredContactTest)

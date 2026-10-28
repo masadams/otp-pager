@@ -1,0 +1,2 @@
+10-28 13:23:28.786  2191  2206 I TestRunner: started: orphanScanDoesNotDecryptDamagedVaultsOrDependOnAnIndex(org.example.otppager.RetirementRecoveryTest)
+10-28 13:23:28.804  2191  2206 I TestRunner: finished: orphanScanDoesNotDecryptDamagedVaultsOrDependOnAnIndex(org.example.otppager.RetirementRecoveryTest)

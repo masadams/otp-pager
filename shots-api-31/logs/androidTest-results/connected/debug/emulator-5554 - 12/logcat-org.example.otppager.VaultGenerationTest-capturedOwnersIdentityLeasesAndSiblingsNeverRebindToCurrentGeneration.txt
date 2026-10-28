@@ -1,0 +1,2 @@
+10-28 13:23:29.367  2191  2206 I TestRunner: started: capturedOwnersIdentityLeasesAndSiblingsNeverRebindToCurrentGeneration(org.example.otppager.VaultGenerationTest)
+10-28 13:23:29.409  2191  2206 I TestRunner: finished: capturedOwnersIdentityLeasesAndSiblingsNeverRebindToCurrentGeneration(org.example.otppager.VaultGenerationTest)

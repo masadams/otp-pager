@@ -1,0 +1,61 @@
+10-28 13:22:22.552  2191  2206 I TestRunner: started: switchingFriendsAndRestartingRestoreSeparateDraftsWithoutDiscardPrompts(org.example.otppager.DraftInterfaceTest)
+10-28 13:22:22.637   761   808 D SplashScreenView: Build android.window.SplashScreenView{b8af9f1 V.E...... ......ID 0,0-0,0}
+10-28 13:22:22.637   761   808 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 13:22:22.637   761   808 D SplashScreenView: Branding: view: android.view.View{3ba09d6 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 13:22:22.643  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@e271d64 in: PRE_ON_CREATE
+10-28 13:22:22.646  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@e271d64 in: CREATED
+10-28 13:22:22.647  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@e271d64 in: STARTED
+10-28 13:22:22.665   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff828000 0x3ff99f000]
+10-28 13:22:22.668   390   390 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 13:22:22.674   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff99f000 0x3ffb16000]
+10-28 13:22:22.677   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffb16000 0x3ffc8d000]
+10-28 13:22:22.723   761   903 D EGL_emulation: app_time_stats: avg=365.83ms min=157.82ms max=658.99ms count=3
+10-28 13:22:22.725  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@e271d64 in: RESUMED
+10-28 13:22:22.737   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff4dc000 0x3ff653000]
+10-28 13:22:22.747   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffc8d000 0x3ffe04000]
+10-28 13:22:22.748   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffe04000 0x3fff7b000]
+10-28 13:22:22.755   537   569 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +117ms
+10-28 13:22:22.767   992  1633 W FrameTracker: Missing SF jank callback for vsyncId: 814
+10-28 13:22:22.767   992  1633 W FrameTracker: Missing SF jank callback for vsyncId: 830
+10-28 13:22:22.776   537  1588 W InputManager-JNI: Input channel object '7459947 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 13:22:22.997   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff365000 0x3ff4dc000]
+10-28 13:22:23.000   537  2241 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 13:22:23.000   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff653000 0x3ff7ca000]
+10-28 13:22:23.005  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@e271d64 in: PAUSED
+10-28 13:22:23.020   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff653000 0x3ff7ca000]
+10-28 13:22:23.023   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff828000 0x3ff99f000]
+10-28 13:22:23.024   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff99f000 0x3ffb16000]
+10-28 13:22:23.034   390   390 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 13:22:23.063  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@e271d64 in: STOPPED
+10-28 13:22:23.064  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@e271d64 in: DESTROYED
+10-28 13:22:23.067   537  2223 W InputManager-JNI: Input channel object '2b9fcc2 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 13:22:23.081   761   808 D SplashScreenView: Build android.window.SplashScreenView{b5cb74f V.E...... ......ID 0,0-0,0}
+10-28 13:22:23.081   761   808 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 13:22:23.081   761   808 D SplashScreenView: Branding: view: android.view.View{c6e4edc G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 13:22:23.092   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff4dc000 0x3ff653000]
+10-28 13:22:23.094   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffb16000 0x3ffc8d000]
+10-28 13:22:23.094  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@a1d2409 in: PRE_ON_CREATE
+10-28 13:22:23.096   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffc8d000 0x3ffe04000]
+10-28 13:22:23.097  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@a1d2409 in: CREATED
+10-28 13:22:23.098  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@a1d2409 in: STARTED
+10-28 13:22:23.101   390   390 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 13:22:23.147  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@a1d2409 in: RESUMED
+10-28 13:22:23.163   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff828000 0x3ff99f000]
+10-28 13:22:23.165   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffe04000 0x3fff7b000]
+10-28 13:22:23.165   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3fe636000 0x3fe7ad000]
+10-28 13:22:23.181   537   569 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +101ms
+10-28 13:22:23.193   537   834 W InputManager-JNI: Input channel object '6596507 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 13:22:23.199   992  1633 W FrameTracker: Missing SF jank callback for vsyncId: 874
+10-28 13:22:23.199   992  1633 W FrameTracker: Missing SF jank callback for vsyncId: 886
+10-28 13:22:23.441   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff99f000 0x3ffb16000]
+10-28 13:22:23.444   537  2241 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 13:22:23.445   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffb16000 0x3ffc8d000]
+10-28 13:22:23.451  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@a1d2409 in: PAUSED
+10-28 13:22:23.468   390   390 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 13:22:23.473   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffb16000 0x3ffc8d000]
+10-28 13:22:23.474   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffc8d000 0x3ffe04000]
+10-28 13:22:23.475   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff4dc000 0x3ff653000]
+10-28 13:22:23.501  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@a1d2409 in: STOPPED
+10-28 13:22:23.508  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@a1d2409 in: DESTROYED
+10-28 13:22:23.513   537  1038 W InputManager-JNI: Input channel object '9b3b82 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 13:22:23.547  2191  2206 I TestRunner: finished: switchingFriendsAndRestartingRestoreSeparateDraftsWithoutDiscardPrompts(org.example.otppager.DraftInterfaceTest)

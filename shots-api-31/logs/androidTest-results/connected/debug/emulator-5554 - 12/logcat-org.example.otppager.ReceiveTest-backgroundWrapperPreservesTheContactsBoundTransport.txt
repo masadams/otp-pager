@@ -1,0 +1,3 @@
+10-28 13:22:59.547  2191  2206 I TestRunner: started: backgroundWrapperPreservesTheContactsBoundTransport(org.example.otppager.ReceiveTest)
+10-28 13:23:00.020   761   903 D EGL_emulation: app_time_stats: avg=5985.37ms min=106.43ms max=11864.31ms count=2
+10-28 13:23:00.173  2191  2206 I TestRunner: finished: backgroundWrapperPreservesTheContactsBoundTransport(org.example.otppager.ReceiveTest)

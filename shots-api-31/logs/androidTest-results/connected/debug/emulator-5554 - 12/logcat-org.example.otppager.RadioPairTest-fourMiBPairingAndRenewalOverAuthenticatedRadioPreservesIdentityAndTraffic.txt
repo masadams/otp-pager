@@ -1,0 +1,20 @@
+10-28 13:22:48.153  2191  2206 I TestRunner: started: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)
+10-28 13:22:49.613   343   343 I netd    : trafficSwapActiveStatsMap() <16.78ms>
+10-28 13:22:49.614   343   343 I netd    : tetherGetStats() -> {[]} <0.36ms>
+10-28 13:22:49.616   343   343 I netd    : bandwidthSetGlobalAlert(2097152) <0.11ms>
+10-28 13:22:49.617   343   343 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.32ms>
+10-28 13:22:49.618   343   343 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.33ms>
+10-28 13:22:49.630   343   343 I netd    : trafficSwapActiveStatsMap() <10.15ms>
+10-28 13:22:49.631   343   343 I netd    : tetherGetStats() -> {[]} <0.21ms>
+10-28 13:22:49.632   343   343 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.24ms>
+10-28 13:22:49.633   343   343 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.29ms>
+10-28 13:22:50.162  2191  2441 W xample.otppage: Long monitor contention with owner pool-26-thread-1 (2440) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.StationEngine.transaction(boolean, kotlin.jvm.functions.Function1) for 583ms
+10-28 13:22:51.945  2191  2442 W xample.otppage: Long monitor contention with owner pool-27-thread-2 (2443) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.VaultGeneration.requireCurrent(java.io.File, org.example.otppager.VaultGeneration$Capability, java.lang.String) for 249ms
+10-28 13:22:54.805  2191  2442 W xample.otppage: Long monitor contention with owner pool-27-thread-2 (2443) at boolean org.example.otppager.GlobalRetirement.hasLegacyIntent$app_debug(java.io.File)(GlobalRetirement.kt:32) waiters=0 in void org.example.otppager.StationEngine.transaction(boolean, kotlin.jvm.functions.Function1) for 919ms
+10-28 13:22:56.759   343   343 I netd    : trafficSwapActiveStatsMap() <17.15ms>
+10-28 13:22:56.760   343   343 I netd    : tetherGetStats() -> {[]} <0.40ms>
+10-28 13:22:56.761   343   343 I netd    : bandwidthSetGlobalAlert(2097152) <0.08ms>
+10-28 13:22:56.763   343   343 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.60ms>
+10-28 13:22:56.764   343   343 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.64ms>
+10-28 13:22:57.452  2191  2443 W xample.otppage: Long monitor contention with owner pool-27-thread-1 (2442) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.StationEngine.transaction(boolean, kotlin.jvm.functions.Function1) for 629ms
+10-28 13:22:59.546  2191  2206 I TestRunner: finished: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)

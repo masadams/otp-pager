@@ -1,0 +1,60 @@
+10-28 13:22:37.084  2191  2206 I TestRunner: started: unverifiedPadDisablesSendingAndShowsSetup(org.example.otppager.InterfaceTest)
+10-28 13:22:37.196   761   808 D SplashScreenView: Build android.window.SplashScreenView{67a1098 V.E...... ......ID 0,0-0,0}
+10-28 13:22:37.196   761   808 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 13:22:37.196   761   808 D SplashScreenView: Branding: view: android.view.View{9790f1 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 13:22:37.208  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@48a71fc in: PRE_ON_CREATE
+10-28 13:22:37.210  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@48a71fc in: CREATED
+10-28 13:22:37.211  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@48a71fc in: STARTED
+10-28 13:22:37.215   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff4dc000 0x3ff653000]
+10-28 13:22:37.217   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ff653000 0x3ff7ca000]
+10-28 13:22:37.218   390   390 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 13:22:37.219   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3fea9b000 0x3fec12000]
+10-28 13:22:37.269  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@48a71fc in: RESUMED
+10-28 13:22:37.288   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffb16000 0x3ffc8d000]
+10-28 13:22:37.295   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3ffe62000 0x3fffd9000]
+10-28 13:22:37.300   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3fec12000 0x3fed89000]
+10-28 13:22:37.305   537   569 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +110ms
+10-28 13:22:37.325   992  1633 W FrameTracker: Missing SF jank callback for vsyncId: 1644
+10-28 13:22:37.325   992  1633 W FrameTracker: Missing SF jank callback for vsyncId: 1659
+10-28 13:22:37.328   537  1645 W InputManager-JNI: Input channel object 'a076281 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 13:22:37.628   343  1435 D resolv  :  Calling SSL_connect with mark 0xf0064
+10-28 13:22:37.628   343  1435 D resolv  :  SSL_connect returned -1 with mark 0xf0064
+10-28 13:22:37.628   343  1435 W resolv  : SSL_connect ssl error =5, mark 0xf0064: Connection refused
+10-28 13:22:37.628   343  1435 W resolv  : TLS Handshake failed
+10-28 13:22:37.628   343  1435 D resolv  : Initialization failed.
+10-28 13:22:37.628   343  1435 D resolv  : Destructor
+10-28 13:22:37.628   343  1435 D resolv  : Destructor completed
+10-28 13:22:37.628   343  1435 D resolv  : Failing all pending queries.
+10-28 13:22:37.628   343  1435 W resolv  : query failed
+10-28 13:22:37.628   343  1435 D resolv  : Destructor
+10-28 13:22:37.628   343  1435 D resolv  : Locked destruction procedure
+10-28 13:22:37.628   343  1435 D resolv  : Destructor completed
+10-28 13:22:37.628   343  1435 W resolv  : validateDnsTlsServer returned 0 for 10.0.2.3
+10-28 13:22:37.628   343  1435 D resolv  : Sending validation failure event on netId 100 for 10.0.2.3 with hostname {}
+10-28 13:22:37.628   343  1435 W resolv  : Validation failed
+10-28 13:22:37.687   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3fea9b000 0x3fec12000]
+10-28 13:22:37.692   537  2241 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 13:22:37.692   363   472 D goldfish-address-space: claimShared: Ask to claim region [0x3fed89000 0x3fef00000]
+10-28 13:22:37.696  2191  2191 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@48a71fc in: PAUSED
+10-28 13:22:37.713  2191  2206 E TestRunner: failed: unverifiedPadDisablesSendingAndShowsSetup(org.example.otppager.InterfaceTest)
+10-28 13:22:37.714  2191  2206 E TestRunner: ----- begin exception -----
+10-28 13:22:37.714  2191  2206 E TestRunner: java.lang.AssertionError
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at org.junit.Assert.fail(Assert.java:87)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at org.junit.Assert.assertTrue(Assert.java:42)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at org.junit.Assert.assertTrue(Assert.java:53)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at org.example.otppager.InterfaceTest.unverifiedPadDisablesSendingAndShowsSetup$lambda$53(InterfaceTest.kt:237)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at org.example.otppager.InterfaceTest.$r8$lambda$CpCxe8uboe8PwFEO_OXTn1HStGE(Unknown Source:0)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at org.example.otppager.InterfaceTest$$ExternalSyntheticLambda31.run(D8$$SyntheticClass:0)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:462)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at android.app.Instrumentation$SyncRunnable.run(Instrumentation.java:2266)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at android.os.Handler.handleCallback(Handler.java:938)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at android.os.Looper.loop(Looper.java:288)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at android.app.ActivityThread.main(ActivityThread.java:7839)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+10-28 13:22:37.714  2191  2206 E TestRunner: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1003)
+10-28 13:22:37.714  2191  2206 E TestRunner: ----- end exception -----
+10-28 13:22:37.715  2191  2206 I TestRunner: finished: unverifiedPadDisablesSendingAndShowsSetup(org.example.otppager.InterfaceTest)

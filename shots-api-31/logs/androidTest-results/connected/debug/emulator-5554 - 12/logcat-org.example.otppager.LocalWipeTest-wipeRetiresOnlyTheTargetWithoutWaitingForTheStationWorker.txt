@@ -1,0 +1,2 @@
+10-28 13:22:38.900  2191  2206 I TestRunner: started: wipeRetiresOnlyTheTargetWithoutWaitingForTheStationWorker(org.example.otppager.LocalWipeTest)
+10-28 13:22:39.156  2191  2206 I TestRunner: finished: wipeRetiresOnlyTheTargetWithoutWaitingForTheStationWorker(org.example.otppager.LocalWipeTest)

@@ -1,0 +1,2 @@
+10-28 13:22:47.262  2191  2206 I TestRunner: started: cleanImportedImagesDecodeAcrossAllQrMasks(org.example.otppager.PairingQrTest)
+10-28 13:22:47.585  2191  2206 I TestRunner: finished: cleanImportedImagesDecodeAcrossAllQrMasks(org.example.otppager.PairingQrTest)

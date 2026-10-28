@@ -1,0 +1,2 @@
+10-28 13:23:05.015  2191  2206 I TestRunner: started: oldRelayWorksExplicitlyButProtectedChatNeverDowngrades(org.example.otppager.RelayAccessTest)
+10-28 13:23:06.244  2191  2206 I TestRunner: finished: oldRelayWorksExplicitlyButProtectedChatNeverDowngrades(org.example.otppager.RelayAccessTest)

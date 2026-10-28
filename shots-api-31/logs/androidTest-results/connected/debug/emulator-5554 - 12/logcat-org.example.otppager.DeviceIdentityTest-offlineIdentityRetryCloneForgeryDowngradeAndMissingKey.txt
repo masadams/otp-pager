@@ -1,0 +1,4 @@
+10-28 13:22:13.443  2191  2206 I TestRunner: started: offlineIdentityRetryCloneForgeryDowngradeAndMissingKey(org.example.otppager.DeviceIdentityTest)
+10-28 13:22:16.352   761   903 D EGL_emulation: app_time_stats: avg=16330.62ms min=16330.62ms max=16330.62ms count=1
+10-28 13:22:19.133   775  2095 I PermissionControllerServiceImpl: Updating user sensitive for user 0
+10-28 13:22:19.885  2191  2206 I TestRunner: finished: offlineIdentityRetryCloneForgeryDowngradeAndMissingKey(org.example.otppager.DeviceIdentityTest)

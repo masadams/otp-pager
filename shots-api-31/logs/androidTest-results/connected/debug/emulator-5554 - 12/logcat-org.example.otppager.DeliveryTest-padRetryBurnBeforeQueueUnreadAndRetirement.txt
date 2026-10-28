@@ -1,0 +1,12 @@
+10-28 13:21:57.121  2191  2206 I TestRunner: started: padRetryBurnBeforeQueueUnreadAndRetirement(org.example.otppager.DeliveryTest)
+10-28 13:21:58.030   347   347 I Zygote  : Process 1799 exited due to signal 9 (Killed)
+10-28 13:21:58.058   347   347 I Zygote  : Process 1914 exited due to signal 9 (Killed)
+10-28 13:21:58.058   347   347 I Zygote  : Process 1818 exited due to signal 9 (Killed)
+10-28 13:21:58.064   347   347 I Zygote  : Process 1571 exited due to signal 9 (Killed)
+10-28 13:21:58.071   537   582 I libprocessgroup: Successfully killed process cgroup uid 1000 pid 1799 in 43ms
+10-28 13:21:58.071   537   582 I libprocessgroup: Successfully killed process cgroup uid 10071 pid 1914 in 0ms
+10-28 13:21:58.071   537   582 I libprocessgroup: Successfully killed process cgroup uid 10046 pid 1571 in 0ms
+10-28 13:21:58.071   537   582 I libprocessgroup: Successfully killed process cgroup uid 1000 pid 1818 in 0ms
+10-28 13:21:58.739  2191  2198 I xample.otppage: Background concurrent copying GC freed 2096(236KB) AllocSpace objects, 93(50MB) LOS objects, 28% free, 59MB/83MB, paused 12us total 132.939ms
+10-28 13:22:00.021   761   903 D EGL_emulation: app_time_stats: avg=11901.15ms min=6.27ms max=35040.27ms count=3
+10-28 13:22:02.983  2191  2206 I TestRunner: finished: padRetryBurnBeforeQueueUnreadAndRetirement(org.example.otppager.DeliveryTest)

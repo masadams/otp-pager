@@ -1,0 +1,3 @@
+10-28 13:23:29.291  2191  2206 I TestRunner: started: pairingAndOutboxSurviveRestartWithoutPlaintextOnDisk(org.example.otppager.StorageTest)
+10-28 13:23:29.314   363   363 D goldfish-address-space: claimShared: Ask to claim region [0x3ffc30000 0x3ffc8e000]
+10-28 13:23:29.322  2191  2206 I TestRunner: finished: pairingAndOutboxSurviveRestartWithoutPlaintextOnDisk(org.example.otppager.StorageTest)
