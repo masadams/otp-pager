@@ -1,5 +1,8 @@
 # Development continuation — 2026-10-28
 
+> Latest discussion snapshot: [decisions, outstanding work and PR status](DISCUSSION_HANDOFF_2026_10_28.md).
+> Read it before older status sections below; #50–52 have merged and #53/#54 remain in review.
+
 This record is sufficient to continue this batch without conversation history.
 Baseline main: `9a968a8750657b438524902dbdac98429b080b46`. All PRs below are left
 unmerged for owner review. No deployment, production signing or release occurred.

@@ -17,15 +17,18 @@ signer custody are distinct; independent review remains pending.
 The active [security and data-lifecycle development plan](docs/SECURITY_DEVELOPMENT_PLAN.md)
 tracks the next work, with an [ordered checked task list](docs/SECURITY_CHECKLIST.md),
 [developer handoff](docs/DEVELOPER_HANDOFF.md), [progress](docs/SECURITY_PROGRESS.md)
-and [v0.14 inventory/findings](docs/SECURITY_INVENTORY_V014.md). PRs #9–15 add OTP-only
-new-text enforcement, local/global retirement and recovery, authenticated initial
-provenance and empty enrollment staging. A protected, local-only **Wipe this chat
-from this phone** action ([design](docs/LOCAL_WIPE_CONTROL.md)) is in development review;
-it never wipes the friend's phone. Fresh global enrollment activation, wipe-all and
-remote wiping remain unimplemented. These merges
-are development integration; version metadata remains 0.14.0 and no new signed
-release or live deployment is implied. Historical sections below are not descriptions
-of the current interface.
+and [v0.14 inventory/findings](docs/SECURITY_INVENTORY_V014.md). Start with the
+[2026-10-28 discussion handoff](docs/DISCUSSION_HANDOFF_2026_10_28.md) for decisions,
+open PRs and outstanding audit, development and physical-device work.
+
+Current main includes local/global retirement and recovery, fresh enrollment,
+vault-key rotation, separate pad storage, large-pad streaming and opt-in peer wipe.
+Peer wipe remains **unreviewed and off by default**; it cannot guarantee erasure on
+an offline or compromised peer. Strict chats and retired-list dismissal have open
+implementation PRs; automatic loss-of-contact retirement is a separate proposed
+opt-in policy. Failover and groups remain outstanding. Development integration does
+not imply a new signed release, live deployment or independent security approval.
+Historical sections below are not descriptions of the current interface.
 
 Update **both clients first**, then pull/redeploy the existing Portainer stack using
 `refs/heads/main` and `deploy/portainer-stack.yml`, preserving its data volume and token.
