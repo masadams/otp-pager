@@ -12,8 +12,11 @@ import java.util.Base64
 /** Physical cable transport; identity is authenticated by comparing the displayed transcript code. */
 object CableProtocol {
     class UpgradeRequired : IllegalArgumentException("Upgrade both devices to the same latest version of OTP Pager for this pairing")
-    /** v5: the pad is streamed after setup as authenticated chunks, straight into pad storage. */
-    const val VERSION = 5
+    /**
+     * v5: the pad is streamed after setup as authenticated chunks, straight into pad storage.
+     * v6: both phones also exchange peer-wipe control keys (docs/PEER_WIPE_PROTOCOL.md §1).
+     */
+    const val VERSION = 6
     private const val CHUNK = 32768
     private const val CHUNK_TAG: Byte = 0x50
     private const val LIMIT = 4096 // Public hello/approval frames only; encrypted material has a separate bound.
@@ -210,6 +213,8 @@ object CableProtocol {
                 val padDigest = PadProtocol.hex(pad.digest)
                 if (renew) engine.stageRenewal(setup, peerKey, pad) else engine.stageCable(setup, "A", peerKey, pad)
                 secureSend(JSONObject().put("kind", "setup").put("setup", setup).put("padDigest", padDigest).put("proof", proof(engine, digest, "setup-A")))
+                val control = engine.controlOffer(host = true); secureSend(control)
+                engine.stageControl(control, secureRead(), host = true)
             } else {
                 val announced = secureRead(); require(announced.getString("kind") == "pad" && announced.getInt("padSize") == a.getInt("padSize"))
                 val pad = receivePad(channel, input, engine, a.getInt("padSize"), progress)
@@ -221,6 +226,9 @@ object CableProtocol {
                     verify(peerKey, digest, "setup-A", packet.getString("proof"))
                 } catch (failure: Exception) { pad.keys.fill(0); pad.file.delete(); throw failure }
                 if (renew) engine.stageRenewal(setup, peerKey, pad) else engine.stageCable(setup, "B", peerKey, pad)
+                val offered = secureRead()
+                val control = engine.controlOffer(host = false); secureSend(control)
+                engine.stageControl(control, offered, host = false)
             }
             if (host) {
                 val accepted = secureRead(); require(accepted.getString("kind") == "saved")

@@ -25,10 +25,18 @@ internal object LocalWipe {
             val outcome = runCatching {
                 // Best effort: an empty registry lets a never-used phone produce complete wipe evidence.
                 try { book?.ensureClaimsRegistry() } catch (_: Exception) {}
+                try { book?.preparePeerWipes() } catch (_: Exception) {}
                 GlobalRetirement.submit(context.applicationContext).get()
             }
             try { done(outcome) } catch (_: Exception) {}
+            sendPeerRequests(context)
         }
+    }
+    private val sender = Executors.newSingleThreadExecutor { task -> Thread(task, "pager-peer-wipe").apply { isDaemon = true } }
+    /** Network is never on the wipe thread: destruction must not wait on the relay (S05). */
+    fun sendPeerRequests(context: android.content.Context) {
+        val app = context.applicationContext
+        if (PeerWipe.enabled(app)) sender.execute { try { PeerWipe.pump(app) } catch (_: Exception) {} }
     }
 
     /** [done] runs on the wipe thread; post to the UI thread before touching views. */
@@ -36,6 +44,7 @@ internal object LocalWipe {
         executor.execute {
             val outcome = runCatching { book.wipeLocal(id) }
             try { done(outcome) } catch (_: Exception) { /* A closed screen never affects destruction. */ }
+            sendPeerRequests(book.context)
         }
     }
 }

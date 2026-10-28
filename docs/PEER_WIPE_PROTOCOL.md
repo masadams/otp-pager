@@ -1,11 +1,40 @@
 # Peer wipe protocol — specification draft (package D)
 
-Status: **draft for independent review. No implementation exists, and none may be written
-until this document has been reviewed and its vectors independently reproduced** (plan gate
-for Phase 3). Requirements: [plan](SECURITY_DEVELOPMENT_PLAN.md) "Emergency operations" and
-invariants S05, S06, S07, S10, S11, S12. Local destruction already exists
-([local wipe](LOCAL_WIPE_CONTROL.md), [epochs](ACTIVE_EPOCH_DESIGN.md)); this adds the
-optional, best-effort request that the *other* phone in a pairing destroy its copy.
+Status: **implemented behind an off-by-default "Peer wipe (unreviewed)" setting (owner decision
+2026-10-28). It is still a draft for independent review.** Both phones must turn the setting on.
+The community review at the end of the pipeline covers this document, the code and the vectors.
+The plan's gate is a second, independent implementer reproducing `test-vectors/control-v1.properties`.
+That gate still applies before the setting can lose its "unreviewed" label.
+Requirements: [plan](SECURITY_DEVELOPMENT_PLAN.md) "Emergency operations" and invariants S05,
+S06, S07, S10, S11, S12. Local destruction already exists ([local wipe](LOCAL_WIPE_CONTROL.md),
+[epochs](ACTIVE_EPOCH_DESIGN.md)). This adds the optional, best-effort request that the *other*
+phone in a pairing destroy its copy.
+
+## Implementation notes (where the build differs from the draft below)
+
+| Draft | As built | Why |
+| --- | --- | --- |
+| Control keys in a separate `<root>-ctl` store | `control` object in the contact vault | One atomic commit with the pairing. Covered by existing retirement, rotation and epoch scope, with no new namespace. |
+| `T_ctl` 90-day relay retention, durable priority queue | Relay unchanged (24 h). The initiator re-posts the sealed frame every 12 h for up to 90 days. The recipient polls the control mailbox before ordinary traffic on every check. | No relay change. Duplicates are idempotent. |
+| Dispatch record holds `C` | Holds the mailbox room and the derived **control capability** (SHA-256 of `C` with its own label), not `C`. The setup token is used only on relays without claims. | Less retained authority. |
+| ACK record kept until accepted | The recipient keeps only the true final ACK and re-posts it for 7 days. | Covers a slow initiator. |
+| Status for old pairings | Wipe result says the friend "could not be asked: this chat was paired before peer wipe existed" | §8 wording |
+
+- **Code:**
+  - `ControlProtocol` (frames and mailbox);
+  - `PeerWipe` (setting, records, sender and poller);
+  - `StationEngine.pollControl` (recipient);
+  - `ChatBook.wipeLocal` and `LocalWipe.submitAll` (initiator, sealed before destruction);
+  - `CableProtocol` v6 (provisioning).
+- **Renewal:** gives the pairing a fresh generation and keys, so an in-flight request for the old
+  generation is ignored.
+- **Tests:**
+  - `ControlProtocolTest` (vectors from `scripts/control_vectors.py`, every alteration);
+  - `PeerWipeTest`:
+    - end to end over a fake relay, where only that chat is removed and the status reaches WIPED;
+    - replay;
+    - forged, reflected and other-generation frames are ignored;
+    - setting off on either side.
 
 ## Goals and non-goals
 
