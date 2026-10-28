@@ -27,6 +27,12 @@ moves to the review package.
 Also confirmed 2026-10-28: separate pad storage before bigger pads ([design](PAD_STORAGE.md));
 group chats by per-member fan-out; multi-relay ideas kept in the plan (items 6 and 8).
 
+## Current status and physical USB regression (2026-10-28)
+
+Items 1–3 below have now merged into `main` via PRs #38, #39 and #40. Item 5 is under review in PR #41. The item notes below are historical planning snapshots, not live PR status. Peer wipe is unreviewed and off by default; successful CI is not evidence of physical peer-wipe safety.
+
+**Open physical USB pairing regression:** the owner reports that transfer worked in an earlier APK but failed with the newer October 28 build. Before changing code, capture both device models, Android versions, host/accessory roles, cable, permission prompts, app versions and exact failure stage. Compare with the last known working build without uninstalling active pad material. Add a two-device physical USB check to the release gate; emulator tests do not establish compatibility. This remains unresolved.
+
 ## Ordered pipeline
 
 | # | Item | Why | Notes |
