@@ -815,8 +815,9 @@ class NetworkActivity : Activity() {
     private fun showAppMenu() {
         // Not busy-gated: the menu holds the wipe-all action; its other entries ignore busy work themselves.
         AlertDialog.Builder(this).setTitle("Field")
-            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help", "Wipe all chats from this phone", "Peer wipe (unreviewed) · ${if (PeerWipe.enabled(this)) "on" else "off"}")) { _, which ->
+            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help", "Wipe all chats from this phone", "Peer wipe (unreviewed) · ${if (PeerWipe.enabled(this)) "on" else "off"}", "Groups")) { _, which ->
                 when (which) {
+                    5 -> startActivity(android.content.Intent(this, GroupActivity::class.java))
                     3 -> confirmWipeAll()
                     4 -> showPeerWipeSetting()
                     0 -> showReceiving()
