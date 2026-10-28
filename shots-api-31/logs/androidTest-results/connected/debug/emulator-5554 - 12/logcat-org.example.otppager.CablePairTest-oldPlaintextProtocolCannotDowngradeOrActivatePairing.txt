@@ -1,0 +1,2 @@
+10-28 18:19:30.157  2201  2216 I TestRunner: started: oldPlaintextProtocolCannotDowngradeOrActivatePairing(org.example.otppager.CablePairTest)
+10-28 18:19:30.180  2201  2216 I TestRunner: finished: oldPlaintextProtocolCannotDowngradeOrActivatePairing(org.example.otppager.CablePairTest)

@@ -1,0 +1,12 @@
+10-28 18:20:12.037  2201  2216 I TestRunner: started: malformedAndInterruptedMarkersBlockAccessAndRecoverWithoutAContactIndex(org.example.otppager.VaultRetirementAndroidTest)
+10-28 18:20:12.045   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:12.045   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:12.045   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:12.045   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:12.045   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:12.045   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:12.045   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:12.045   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:12.045   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:12.046   988  1623 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 18:20:12.066  2201  2216 I TestRunner: finished: malformedAndInterruptedMarkersBlockAccessAndRecoverWithoutAContactIndex(org.example.otppager.VaultRetirementAndroidTest)

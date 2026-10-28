@@ -1,0 +1,38 @@
+10-28 18:20:01.946  2201  2216 I TestRunner: started: userStartedForegroundReceiverStartsAndStopsOnSupportedAndroidVersions(org.example.otppager.ReceiveTest)
+10-28 18:20:01.953   749   792 D SplashScreenView: Build android.window.SplashScreenView{f4ba1c4 V.E...... ......ID 0,0-0,0}
+10-28 18:20:01.953   749   792 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 18:20:01.953   749   792 D SplashScreenView: Branding: view: android.view.View{15c8ad G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 18:20:01.967  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@88401e8 in: PRE_ON_CREATE
+10-28 18:20:01.971  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@88401e8 in: CREATED
+10-28 18:20:01.972  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@88401e8 in: STARTED
+10-28 18:20:01.974   405   405 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 18:20:01.979   369   414 D goldfish-address-space: claimShared: Ask to claim region [0x3fba99000 0x3fbc10000]
+10-28 18:20:01.981   369   414 D goldfish-address-space: claimShared: Ask to claim region [0x3fb5d6000 0x3fb74d000]
+10-28 18:20:01.982   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fb74d000 0x3fb8c4000]
+10-28 18:20:02.000   749   887 D EGL_emulation: app_time_stats: avg=821.85ms min=91.06ms max=1988.92ms count=3
+10-28 18:20:02.004   988  1587 D EGL_emulation: app_time_stats: avg=105.01ms min=11.36ms max=2039.56ms count=23
+10-28 18:20:02.018  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@88401e8 in: RESUMED
+10-28 18:20:02.030   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fb8c4000 0x3fba3b000]
+10-28 18:20:02.032   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fbc10000 0x3fbd87000]
+10-28 18:20:02.033   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fae83000 0x3faffa000]
+10-28 18:20:02.040   533   564 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +89ms
+10-28 18:20:02.048   533  1300 W InputManager-JNI: Input channel object '63436f0 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 18:20:02.059   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:02.059   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:02.060   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:02.060   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:02.060   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:02.060   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:02.060   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:02.060   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:02.060   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:02.060   988  1623 W FrameTracker: Missing SF jank callback for vsyncId: 2842
+10-28 18:20:02.060   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:20:02.060   988  1623 W FrameTracker: Missing HWUI jank callback for vsyncId: 2858
+10-28 18:20:02.060   988  1623 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 18:20:02.070  2201  2201 D CompatibilityChangeReporter: Compat change id reported: 160794467; UID 10105; state: ENABLED
+10-28 18:20:02.123   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fba99000 0x3fbc10000]
+10-28 18:20:02.126   533  2250 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 18:20:02.126   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fbd87000 0x3fbefe000]
+10-28 18:20:02.130  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@88401e8 in: PAUSED
+10-28 18:20:02.133  2201  2216 I TestRunner: finished: userStartedForegroundReceiverStartsAndStopsOnSupportedAndroidVersions(org.example.otppager.ReceiveTest)

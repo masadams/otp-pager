@@ -1,0 +1,2 @@
+10-28 18:20:07.778  2201  2216 I TestRunner: started: strictSchemasRejectDuplicatesCoercionsUnknownFieldsAndTrailingValues(org.example.otppager.RetainedGuardReaderTest)
+10-28 18:20:07.848  2201  2216 I TestRunner: finished: strictSchemasRejectDuplicatesCoercionsUnknownFieldsAndTrailingValues(org.example.otppager.RetainedGuardReaderTest)

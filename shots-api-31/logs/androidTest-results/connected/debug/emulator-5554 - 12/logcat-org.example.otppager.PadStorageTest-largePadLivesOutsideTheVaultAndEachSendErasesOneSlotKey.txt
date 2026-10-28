@@ -1,0 +1,3 @@
+10-28 18:19:52.368  2201  2216 I TestRunner: started: largePadLivesOutsideTheVaultAndEachSendErasesOneSlotKey(org.example.otppager.PadStorageTest)
+10-28 18:19:52.563  2201  2208 I xample.otppage: Background concurrent copying GC freed 20006(1322KB) AllocSpace objects, 3(4172KB) LOS objects, 49% free, 18MB/37MB, paused 18us total 132.632ms
+10-28 18:19:53.366  2201  2216 I TestRunner: finished: largePadLivesOutsideTheVaultAndEachSendErasesOneSlotKey(org.example.otppager.PadStorageTest)

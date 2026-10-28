@@ -1,0 +1,3 @@
+10-28 18:19:59.306  2201  2216 I TestRunner: started: generatedBitmapAndImportedPngDecodeWithoutNetwork(org.example.otppager.PairingQrTest)
+10-28 18:19:59.388  2201  2216 D skia    : --- Failed to create image decoder with message 'unimplemented'
+10-28 18:19:59.388  2201  2216 I TestRunner: finished: generatedBitmapAndImportedPngDecodeWithoutNetwork(org.example.otppager.PairingQrTest)

@@ -1,0 +1,2 @@
+10-28 18:20:07.633  2201  2216 I TestRunner: started: cohortChecksRequireBothDirectionsOfPadOwnershipAndKnownRoots(org.example.otppager.RetainedGuardReaderTest)
+10-28 18:20:07.674  2201  2216 I TestRunner: finished: cohortChecksRequireBothDirectionsOfPadOwnershipAndKnownRoots(org.example.otppager.RetainedGuardReaderTest)

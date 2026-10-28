@@ -1,0 +1,2 @@
+10-28 18:20:12.067  2201  2216 I TestRunner: started: retirementDestroysContactKeysAndDraftButKeepsReuseMetadataAndOtherContacts(org.example.otppager.VaultRetirementAndroidTest)
+10-28 18:20:12.193  2201  2216 I TestRunner: finished: retirementDestroysContactKeysAndDraftButKeepsReuseMetadataAndOtherContacts(org.example.otppager.VaultRetirementAndroidTest)

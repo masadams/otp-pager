@@ -1,0 +1,4 @@
+10-28 18:20:02.235  2201  2216 I TestRunner: started: nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks(org.example.otppager.ReceiveTest)
+10-28 18:20:02.236   533   726 D HostConnection: createUnique: call
+10-28 18:20:02.237   533   726 D HostConnection: HostConnection::get() New Host Connection established 0x742e46d66650, tid 726
+10-28 18:20:02.240  2201  2216 I TestRunner: finished: nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks(org.example.otppager.ReceiveTest)

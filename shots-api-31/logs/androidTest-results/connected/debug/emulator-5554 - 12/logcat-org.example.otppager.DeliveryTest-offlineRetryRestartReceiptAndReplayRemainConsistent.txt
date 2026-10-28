@@ -1,0 +1,3 @@
+10-28 18:19:32.143  2201  2216 I TestRunner: started: offlineRetryRestartReceiptAndReplayRemainConsistent(org.example.otppager.DeliveryTest)
+10-28 18:19:32.153  1836  1836 D CompatibilityChangeReporter: Compat change id reported: 150939131; UID 10082; state: DISABLED
+10-28 18:19:32.243  2201  2216 I TestRunner: finished: offlineRetryRestartReceiptAndReplayRemainConsistent(org.example.otppager.DeliveryTest)

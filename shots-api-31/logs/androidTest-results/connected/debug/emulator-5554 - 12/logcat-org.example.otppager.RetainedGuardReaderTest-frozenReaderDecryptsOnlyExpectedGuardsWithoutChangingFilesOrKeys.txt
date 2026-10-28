@@ -1,0 +1,2 @@
+10-28 18:20:07.849  2201  2216 I TestRunner: started: frozenReaderDecryptsOnlyExpectedGuardsWithoutChangingFilesOrKeys(org.example.otppager.RetainedGuardReaderTest)
+10-28 18:20:07.870  2201  2216 I TestRunner: finished: frozenReaderDecryptsOnlyExpectedGuardsWithoutChangingFilesOrKeys(org.example.otppager.RetainedGuardReaderTest)

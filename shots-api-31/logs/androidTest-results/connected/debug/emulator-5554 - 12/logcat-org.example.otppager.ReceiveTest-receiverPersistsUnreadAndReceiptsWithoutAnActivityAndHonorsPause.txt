@@ -1,0 +1,7 @@
+10-28 18:20:02.251  2201  2216 I TestRunner: started: receiverPersistsUnreadAndReceiptsWithoutAnActivityAndHonorsPause(org.example.otppager.ReceiveTest)
+10-28 18:20:02.317   342   342 I netd    : trafficSwapActiveStatsMap() <11.44ms>
+10-28 18:20:02.318   342   342 I netd    : tetherGetStats() -> {[]} <0.28ms>
+10-28 18:20:02.319   342   342 I netd    : bandwidthSetGlobalAlert(2097152) <0.08ms>
+10-28 18:20:02.322   342   342 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.48ms>
+10-28 18:20:02.323   342   342 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.53ms>
+10-28 18:20:03.091  2201  2216 I TestRunner: finished: receiverPersistsUnreadAndReceiptsWithoutAnActivityAndHonorsPause(org.example.otppager.ReceiveTest)

@@ -1,0 +1,31 @@
+10-28 18:19:49.718  2201  2216 I TestRunner: started: unpairedChatExplainsSetupAndProtectsKeyboardInput(org.example.otppager.InterfaceTest)
+10-28 18:19:49.720  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@4525d3c in: DESTROYED
+10-28 18:19:49.721   533  1980 W InputManager-JNI: Input channel object '39fa86e org.example.otppager/org.example.otppager.RadioPairActivity (client)' was disposed without first being removed with the input manager!
+10-28 18:19:49.751   749   792 D SplashScreenView: Build android.window.SplashScreenView{4668c9d V.E...... ......ID 0,0-0,0}
+10-28 18:19:49.751   749   792 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 18:19:49.751   749   792 D SplashScreenView: Branding: view: android.view.View{cefe512 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 18:19:49.755  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@98e8a8c in: PRE_ON_CREATE
+10-28 18:19:49.758  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@98e8a8c in: CREATED
+10-28 18:19:49.759  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@98e8a8c in: STARTED
+10-28 18:19:49.763   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fe694000 0x3fe80b000]
+10-28 18:19:49.773   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3ff9cd000 0x3ffb44000]
+10-28 18:19:49.774   405   405 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 18:19:49.786   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3ff53a000 0x3ff6b1000]
+10-28 18:19:49.798   749   887 D EGL_emulation: app_time_stats: avg=154.21ms min=42.93ms max=349.43ms count=7
+10-28 18:19:49.823  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@98e8a8c in: RESUMED
+10-28 18:19:49.834   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3ffe04000 0x3fff7b000]
+10-28 18:19:49.838   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fda7e000 0x3fdbf5000]
+10-28 18:19:49.839   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fdbf5000 0x3fdd6c000]
+10-28 18:19:49.849   533   564 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +100ms
+10-28 18:19:49.850   988   988 D TaplTarget: sendStateEventToTest: 0
+10-28 18:19:49.859   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:19:49.859   988  1623 W FrameTracker: Missed App frame:16
+10-28 18:19:49.859   988  1623 W FrameTracker: Missing HWUI jank callback for vsyncId: 1897
+10-28 18:19:49.863   533   562 W InputManager-JNI: Input channel object '9b59800 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 18:19:50.146   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fe694000 0x3fe80b000]
+10-28 18:19:50.155  1301  1562 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 18:19:50.159  1301  1562 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/unpaired-chat.png. Uid: 10105
+10-28 18:19:50.183   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fe982000 0x3feaf9000]
+10-28 18:19:50.185   533  2250 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 18:19:50.185   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3ff077000 0x3ff1ee000]
+10-28 18:19:50.199  2201  2216 I TestRunner: finished: unpairedChatExplainsSetupAndProtectsKeyboardInput(org.example.otppager.InterfaceTest)

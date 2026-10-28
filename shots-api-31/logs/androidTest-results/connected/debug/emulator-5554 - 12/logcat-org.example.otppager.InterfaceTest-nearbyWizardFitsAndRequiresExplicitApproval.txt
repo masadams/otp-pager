@@ -1,0 +1,31 @@
+10-28 18:19:49.329  2201  2216 I TestRunner: started: nearbyWizardFitsAndRequiresExplicitApproval(org.example.otppager.InterfaceTest)
+10-28 18:19:49.337   749   792 D SplashScreenView: Build android.window.SplashScreenView{86485e5 V.E...... ......ID 0,0-0,0}
+10-28 18:19:49.337   749   792 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 18:19:49.337   749   792 D SplashScreenView: Branding: view: android.view.View{7b6f8ba G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 18:19:49.338   533   823 W InputManager-JNI: Input channel object '115b35a org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 18:19:49.352  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@4525d3c in: PRE_ON_CREATE
+10-28 18:19:49.354   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3ffe04000 0x3fff7b000]
+10-28 18:19:49.360   405   405 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 18:19:49.364   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3ff53a000 0x3ff6b1000]
+10-28 18:19:49.371  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@4525d3c in: CREATED
+10-28 18:19:49.371  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@4525d3c in: STARTED
+10-28 18:19:49.371   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fe51d000 0x3fe694000]
+10-28 18:19:49.372  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@4525d3c in: RESUMED
+10-28 18:19:49.391   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fe694000 0x3fe80b000]
+10-28 18:19:49.398   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fda7e000 0x3fdbf5000]
+10-28 18:19:49.399   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fdbf5000 0x3fdd6c000]
+10-28 18:19:49.412   533   564 I ActivityTaskManager: Displayed org.example.otppager/.RadioPairActivity: +72ms
+10-28 18:19:49.413   533  1532 W InputManager-JNI: Input channel object 'd5e437d Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 18:19:49.414   988   988 D TaplTarget: sendStateEventToTest: 0
+10-28 18:19:49.448   988  1623 W FrameTracker: Missed App frame:80
+10-28 18:19:49.448   988  1623 W FrameTracker: Missed App frame:80
+10-28 18:19:49.448   988  1623 W FrameTracker: Missed App frame:80
+10-28 18:19:49.448   988  1623 W FrameTracker: Missed App frame:80
+10-28 18:19:49.449   988  1623 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 18:19:49.634  1301  1562 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 18:19:49.636  1301  1562 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/nearby-pairing.png. Uid: 10105
+10-28 18:19:49.650   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fe51d000 0x3fe694000]
+10-28 18:19:49.653   533  2250 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 18:19:49.653   369   460 D goldfish-address-space: claimShared: Ask to claim region [0x3fe982000 0x3feaf9000]
+10-28 18:19:49.657  2201  2201 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@4525d3c in: PAUSED
+10-28 18:19:49.666  2201  2216 I TestRunner: finished: nearbyWizardFitsAndRequiresExplicitApproval(org.example.otppager.InterfaceTest)
