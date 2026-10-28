@@ -1,0 +1,2 @@
+10-28 22:56:40.707  2189  2204 I TestRunner: started: exportGivesOppositeRoleWithoutChangingVaultOrCounters(org.example.otppager.PairingQrTest)
+10-28 22:56:40.758  2189  2204 I TestRunner: finished: exportGivesOppositeRoleWithoutChangingVaultOrCounters(org.example.otppager.PairingQrTest)

@@ -1,0 +1,14 @@
+10-28 22:56:39.505  2189  2204 I TestRunner: started: cleanImportedImagesDecodeAcrossAllQrMasks(org.example.otppager.PairingQrTest)
+10-28 22:56:39.556   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff9cd000 0x3ffa2b000]
+10-28 22:56:39.755  2189  2196 I xample.otppage: Background concurrent copying GC freed 54576(2943KB) AllocSpace objects, 34(1224KB) LOS objects, 49% free, 9600KB/18MB, paused 35us total 135.437ms
+10-28 22:56:39.981  1434  2091 I Dialer  : OmtpVvmCarrierCfgHlpr - OmtpEvent:CONFIG_STATUS_SMS_TIME_OUT
+10-28 22:56:39.981  1434  1434 I Dialer  : RetryPolicy - discarding deferred status: configuration_state=4
+10-28 22:56:39.981  1434  1434 I Dialer  : VvmTaskExecutor - no more tasks, stopping service if no task are added in 5000 millis
+10-28 22:56:39.983  1434  1434 I Dialer  : VvmTaskReceiver - task received
+10-28 22:56:39.983  1434  1434 I Dialer  : VvmTaskReceiver - TaskExecutor already running
+10-28 22:56:39.983  1434  1434 I Dialer  : Task.createTask - create task:com.android.voicemail.impl.ActivationTask
+10-28 22:56:39.983  1434  1434 I Dialer  : RetryPolicy - retry #1 for com.android.voicemail.impl.ActivationTask@faac5b queued, executing in 5000
+10-28 22:56:39.983  1434  1434 I Dialer  : VvmTaskExecutor - com.android.voicemail.impl.ActivationTask@faac5b added
+10-28 22:56:39.983  1434  1434 I Dialer  : VvmTaskExecutor - minimal wait time:5000
+10-28 22:56:39.983  1434  1434 I Dialer  : VvmTaskExecutor - sleep for 5000 millis
+10-28 22:56:40.142  2189  2204 I TestRunner: finished: cleanImportedImagesDecodeAcrossAllQrMasks(org.example.otppager.PairingQrTest)

@@ -1,0 +1,2 @@
+10-28 22:58:42.311  3108  3123 I TestRunner: started: stagedAndInterruptedPairingRetiresPadAndCannotSend(org.example.otppager.CablePairTest)
+10-28 22:58:42.490  3108  3123 I TestRunner: finished: stagedAndInterruptedPairingRetiresPadAndCannotSend(org.example.otppager.CablePairTest)

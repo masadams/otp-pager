@@ -1,0 +1,92 @@
+10-28 22:58:53.789  3108  3123 I TestRunner: started: compactDisplayKeepsTrafficAndComposerVisibleWithKeyboard(org.example.otppager.InterfaceTest)
+10-28 22:58:53.802  3108  3177 V UiAutomation: Init UiAutomation@c453bd2[id=3, flags=0]
+10-28 22:58:53.996   758   804 D SplashScreenView: Build android.window.SplashScreenView{fdcd38d V.E...... ......ID 0,0-0,0}
+10-28 22:58:53.996   758   804 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 22:58:53.996   758   804 D SplashScreenView: Branding: view: android.view.View{5893942 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 22:58:54.001  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7040a92 in: PRE_ON_CREATE
+10-28 22:58:54.004  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7040a92 in: CREATED
+10-28 22:58:54.005  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7040a92 in: STARTED
+10-28 22:58:54.016   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff886000 0x3ff9fd000]
+10-28 22:58:54.018   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffd49000 0x3ffec0000]
+10-28 22:58:54.022   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fe9e0000 0x3feb57000]
+10-28 22:58:54.025   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:58:54.050   758   890 D EGL_emulation: app_time_stats: avg=741.01ms min=392.32ms max=1089.69ms count=2
+10-28 22:58:54.053  1019  1574 D EGL_emulation: app_time_stats: avg=42.00ms min=5.02ms max=737.71ms count=23
+10-28 22:58:54.069  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7040a92 in: RESUMED
+10-28 22:58:54.084   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffbd2000 0x3ffd49000]
+10-28 22:58:54.089   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3feb57000 0x3fecce000]
+10-28 22:58:54.096   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fecce000 0x3fee45000]
+10-28 22:58:54.101   537   570 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +108ms
+10-28 22:58:54.117   537  3064 W InputManager-JNI: Input channel object '1ac45ba Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:88
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.117  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.118  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.118  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:54.118  1019  1625 W FrameTracker: Missing SF jank callback for vsyncId: 7033
+10-28 22:58:54.118  1019  1625 W FrameTracker: Missing SF jank callback for vsyncId: 7051
+10-28 22:58:54.118  1019  1625 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 22:58:54.464   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fe9e0000 0x3feb57000]
+10-28 22:58:54.469   173   173 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+10-28 22:58:54.469  3096  3107 I Gralloc4: mapper 4.x is not supported
+10-28 22:58:54.474  3096  3107 D HostConnection: createUnique: call
+10-28 22:58:54.474  3096  3107 D HostConnection: HostConnection::get() New Host Connection established 0x7ec1eb80e290, tid 3107
+10-28 22:58:54.474  3096  3107 D goldfish-address-space: allocate: Ask for block of size 0x100
+10-28 22:58:54.475  3096  3107 D goldfish-address-space: allocate: ioctl allocate returned offset 0x3fbffe000 size 0x2000
+10-28 22:58:54.482  3096  3107 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 22:58:54.488  3096  3196 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+10-28 22:58:54.489  3096  3196 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+10-28 22:58:54.490  3096  3196 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+10-28 22:58:54.501  3096  3196 D HostConnection: createUnique: call
+10-28 22:58:54.502  3096  3196 D HostConnection: HostConnection::get() New Host Connection established 0x7ec1eb80cf10, tid 3196
+10-28 22:58:54.504  3096  3196 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 22:58:54.505   173   173 I hwservicemanager: getTransport: Cannot find entry android.hardware.configstore@1.0::ISurfaceFlingerConfigs/default in either framework or device VINTF manifest.
+10-28 22:58:54.506  3096  3196 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+10-28 22:58:54.507  3096  3196 D EGL_emulation: eglCreateContext: 0x7ec1eb80ccd0: maj 3 min 0 rcv 3
+10-28 22:58:54.507  3096  3196 D EGL_emulation: eglMakeCurrent: 0x7ec1eb80ccd0: ver 3 0 (tinfo 0x7ec40922c080) (first time)
+10-28 22:58:54.597  1351  1387 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:58:54.601  1351  1387 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/messages-compact (2).png. Uid: 10109
+10-28 22:58:54.623  3108  3108 D CompatibilityChangeReporter: Compat change id reported: 163400105; UID 10109; state: ENABLED
+10-28 22:58:54.625  3108  3108 D InputMethodManager: showSoftInput() view=android.widget.EditText{5ef7e19 VFED..CL. .F....ID 0,500-444,567 aid=1073741828} flags=1 reason=SHOW_SOFT_INPUT
+10-28 22:58:54.629  1217  1217 I LatinIME: Starting input. Cursor position = 0,0
+10-28 22:58:54.652   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffd49000 0x3ffeb0000]
+10-28 22:58:54.655   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff598000 0x3ff6ff000]
+10-28 22:58:54.656   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff6ff000 0x3ff866000]
+10-28 22:58:54.669  3108  3108 D InsetsController: show(ime(), fromIme=true)
+10-28 22:58:54.853   758   758 D InterruptionStateProvider: No bubble up: not allowed to bubble: -1|android|8|null|1000
+10-28 22:58:54.853   758   758 D InterruptionStateProvider: No heads up: unimportant notification: -1|android|8|null|1000
+10-28 22:58:54.854   758   809 D PeopleSpaceWidgetMgr: Sbn doesn't contain valid PeopleTileKey: null/-1/android
+10-28 22:58:54.855   758   758 D InterruptionStateProvider: No bubble up: not allowed to bubble: -1|android|8|null|1000
+10-28 22:58:54.855   758   758 D InterruptionStateProvider: No heads up: unimportant notification: -1|android|8|null|1000
+10-28 22:58:54.855   758   809 D PeopleSpaceWidgetMgr: Sbn doesn't contain valid PeopleTileKey: null/-1/android
+10-28 22:58:54.901   758   758 D InterruptionStateProvider: No bubble up: not allowed to bubble: -1|android|8|null|1000
+10-28 22:58:54.901   758   758 D InterruptionStateProvider: No heads up: unimportant notification: -1|android|8|null|1000
+10-28 22:58:54.903   758   809 D PeopleSpaceWidgetMgr: Sbn doesn't contain valid PeopleTileKey: null/-1/android
+10-28 22:58:54.999  1351  1387 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:58:55.002  1351  1387 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/messages-compact-keyboard (2).png. Uid: 10109
+10-28 22:58:55.038   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff866000 0x3ff9dd000]
+10-28 22:58:55.040   758   809 D PeopleSpaceWidgetMgr: Sbn doesn't contain valid PeopleTileKey: null/-1/android
+10-28 22:58:55.043   537  2246 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 22:58:55.044   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fee45000 0x3fefbc000]
+10-28 22:58:55.058  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7040a92 in: PAUSED
+10-28 22:58:55.058   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:58:55.076   758   890 D EGL_emulation: app_time_stats: avg=256.70ms min=17.99ms max=833.23ms count=4
+10-28 22:58:55.098   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fee45000 0x3fefbc000]
+10-28 22:58:55.114   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fefbc000 0x3ff133000]
+10-28 22:58:55.119   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff133000 0x3ff2aa000]
+10-28 22:58:55.147  3108  3123 I TestRunner: finished: compactDisplayKeepsTrafficAndComposerVisibleWithKeyboard(org.example.otppager.InterfaceTest)

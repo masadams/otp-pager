@@ -1,0 +1,12 @@
+10-28 22:56:41.719  2189  2204 I TestRunner: started: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)
+10-28 22:56:41.722   537  1569 W InputManager-JNI: Input channel object '5625475 org.example.otppager/org.example.otppager.RadioPairActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:56:43.140   344   344 I netd    : trafficSwapActiveStatsMap() <12.61ms>
+10-28 22:56:43.141   344   344 I netd    : tetherGetStats() -> {[]} <0.39ms>
+10-28 22:56:43.143   344   344 I netd    : bandwidthSetGlobalAlert(2097152) <0.12ms>
+10-28 22:56:43.145   344   344 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.46ms>
+10-28 22:56:43.146   344   344 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.51ms>
+10-28 22:56:43.154   344   344 I netd    : trafficSwapActiveStatsMap() <6.53ms>
+10-28 22:56:43.155   344   344 I netd    : tetherGetStats() -> {[]} <0.34ms>
+10-28 22:56:43.157   344   344 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.47ms>
+10-28 22:56:43.158   344   344 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.42ms>
+10-28 22:56:43.501  2189  2204 I TestRunner: finished: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)

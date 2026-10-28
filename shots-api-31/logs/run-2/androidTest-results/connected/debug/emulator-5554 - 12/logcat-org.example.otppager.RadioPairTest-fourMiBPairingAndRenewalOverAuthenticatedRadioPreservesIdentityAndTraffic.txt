@@ -1,0 +1,11 @@
+10-28 22:57:59.389  2698  2713 I TestRunner: started: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)
+10-28 22:58:00.782   344   344 I netd    : trafficSwapActiveStatsMap() <23.25ms>
+10-28 22:58:00.784   344   344 I netd    : tetherGetStats() -> {[]} <0.64ms>
+10-28 22:58:00.785   344   344 I netd    : bandwidthSetGlobalAlert(2097152) <0.10ms>
+10-28 22:58:00.786   344   344 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.53ms>
+10-28 22:58:00.787   344   344 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.49ms>
+10-28 22:58:00.801   344   344 I netd    : trafficSwapActiveStatsMap() <11.73ms>
+10-28 22:58:00.802   344   344 I netd    : tetherGetStats() -> {[]} <0.34ms>
+10-28 22:58:00.804   344   344 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.47ms>
+10-28 22:58:00.805   344   344 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.50ms>
+10-28 22:58:01.167  2698  2713 I TestRunner: finished: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)

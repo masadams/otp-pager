@@ -1,0 +1,4 @@
+10-28 22:58:32.606  3108  3123 I TestRunner: started: automaticPairingWorksWithServerSettingsOnEitherUsbSide(org.example.otppager.CablePairTest)
+10-28 22:58:32.647   537   632 I RoleService: Granting default roles...
+10-28 22:58:33.327   758   890 D EGL_emulation: app_time_stats: avg=7291.43ms min=37.29ms max=21791.54ms count=3
+10-28 22:58:34.124  3108  3123 I TestRunner: finished: automaticPairingWorksWithServerSettingsOnEitherUsbSide(org.example.otppager.CablePairTest)

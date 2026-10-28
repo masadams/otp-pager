@@ -1,0 +1,2 @@
+10-28 22:58:11.699  2698  2713 I TestRunner: started: unreadableVaultPathIsNotTreatedAsANewPairing(org.example.otppager.StorageTest)
+10-28 22:58:11.721  2698  2713 I TestRunner: finished: unreadableVaultPathIsNotTreatedAsANewPairing(org.example.otppager.StorageTest)

@@ -1,0 +1,26 @@
+10-28 22:57:57.237  2698  2713 I TestRunner: started: cleanImportedImagesDecodeAcrossAllQrMasks(org.example.otppager.PairingQrTest)
+10-28 22:57:57.285   537  2273 W InputManager-JNI: Input channel object '4ee05e6 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:57:57.573  2698  2705 I xample.otppage: Background concurrent copying GC freed 60797(3498KB) AllocSpace objects, 23(2780KB) LOS objects, 49% free, 13MB/26MB, paused 40us total 128.180ms
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.614  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:57.615  1019  1625 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 22:57:57.850  2698  2713 I TestRunner: finished: cleanImportedImagesDecodeAcrossAllQrMasks(org.example.otppager.PairingQrTest)

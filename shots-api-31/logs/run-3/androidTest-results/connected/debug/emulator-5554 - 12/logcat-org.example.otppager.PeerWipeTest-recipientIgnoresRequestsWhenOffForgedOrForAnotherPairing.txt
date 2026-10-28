@@ -1,0 +1,14 @@
+10-28 22:59:15.706  3108  3123 I TestRunner: started: recipientIgnoresRequestsWhenOffForgedOrForAnotherPairing(org.example.otppager.PeerWipeTest)
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missing HWUI jank callback for vsyncId: 9119
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missed App frame:24
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:15.812  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:15.812  1019  1625 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 22:59:16.110  3108  3123 I TestRunner: finished: recipientIgnoresRequestsWhenOffForgedOrForAnotherPairing(org.example.otppager.PeerWipeTest)

@@ -1,0 +1,2 @@
+10-28 22:58:03.499  2698  2713 I TestRunner: started: renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates(org.example.otppager.RenewalTest)
+10-28 22:58:07.015  2698  2713 I TestRunner: finished: renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates(org.example.otppager.RenewalTest)

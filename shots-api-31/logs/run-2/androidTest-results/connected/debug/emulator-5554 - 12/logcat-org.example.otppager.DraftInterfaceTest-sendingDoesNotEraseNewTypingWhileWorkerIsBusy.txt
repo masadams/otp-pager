@@ -1,0 +1,106 @@
+10-28 22:57:33.960  2698  2713 I TestRunner: started: sendingDoesNotEraseNewTypingWhileWorkerIsBusy(org.example.otppager.DraftInterfaceTest)
+10-28 22:57:34.110   758   804 D SplashScreenView: Build android.window.SplashScreenView{8cd5597 V.E...... ......ID 0,0-0,0}
+10-28 22:57:34.110   758   804 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 22:57:34.110   758   804 D SplashScreenView: Branding: view: android.view.View{94ba384 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 22:57:34.125   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:57:34.131  2698  2732 D libEGL  : loaded /vendor/lib64/egl/libEGL_emulation.so
+10-28 22:57:34.132   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fe7ad000 0x3fe924000]
+10-28 22:57:34.132  2698  2732 D libEGL  : loaded /vendor/lib64/egl/libGLESv1_CM_emulation.so
+10-28 22:57:34.134   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fea9b000 0x3fec12000]
+10-28 22:57:34.135  2698  2732 D libEGL  : loaded /vendor/lib64/egl/libGLESv2_emulation.so
+10-28 22:57:34.138   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fef00000 0x3ff077000]
+10-28 22:57:34.154  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@257386d in: PRE_ON_CREATE
+10-28 22:57:34.160  1019  1574 D EGL_emulation: app_time_stats: avg=18060.35ms min=18060.35ms max=18060.35ms count=1
+10-28 22:57:34.163  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@257386d in: CREATED
+10-28 22:57:34.164  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@257386d in: STARTED
+10-28 22:57:34.169   758   890 D EGL_emulation: app_time_stats: avg=34145.93ms min=34145.93ms max=34145.93ms count=1
+10-28 22:57:34.187  2698  2698 D CompatibilityChangeReporter: Compat change id reported: 171228096; UID 10107; state: ENABLED
+10-28 22:57:34.270  2698  2704 I xample.otppage: JIT allocated 77KB for compiled code of void android.view.View.<init>(android.content.Context, android.util.AttributeSet, int, int)
+10-28 22:57:34.273  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@257386d in: RESUMED
+10-28 22:57:34.292   387   433 W ServiceManager: Permission failure: android.permission.ACCESS_SURFACE_FLINGER from uid=10107 pid=2698
+10-28 22:57:34.292   387   433 D PermissionCache: checking android.permission.ACCESS_SURFACE_FLINGER for uid=10107 => denied (90 us)
+10-28 22:57:34.292   387   433 W ServiceManager: Permission failure: android.permission.ROTATE_SURFACE_FLINGER from uid=10107 pid=2698
+10-28 22:57:34.292   387   433 D PermissionCache: checking android.permission.ROTATE_SURFACE_FLINGER for uid=10107 => denied (100 us)
+10-28 22:57:34.298  2698  2731 D HostConnection: createUnique: call
+10-28 22:57:34.303  2698  2731 D HostConnection: HostConnection::get() New Host Connection established 0x753a46faa2d0, tid 2731
+10-28 22:57:34.308  2698  2731 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 22:57:34.315   173   173 I hwservicemanager: getTransport: Cannot find entry android.hardware.configstore@1.0::ISurfaceFlingerConfigs/default in either framework or device VINTF manifest.
+10-28 22:57:34.316  2698  2731 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+10-28 22:57:34.317  2698  2731 D EGL_emulation: eglCreateContext: 0x753a46faa390: maj 3 min 0 rcv 3
+10-28 22:57:34.318  2698  2731 D EGL_emulation: eglMakeCurrent: 0x753a46faa390: ver 3 0 (tinfo 0x753c581f4080) (first time)
+10-28 22:57:34.327   387   433 E HWComposer: getSupportedContentTypes: getSupportedContentTypes failed for display 4619827259835644672: Unsupported (8)
+10-28 22:57:34.327   173   173 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.mapper@4.0::IMapper/default in either framework or device VINTF manifest.
+10-28 22:57:34.327  2698  2731 I Gralloc4: mapper 4.x is not supported
+10-28 22:57:34.329  2698  2731 D HostConnection: createUnique: call
+10-28 22:57:34.329  2698  2731 D HostConnection: HostConnection::get() New Host Connection established 0x753a46fa9e50, tid 2731
+10-28 22:57:34.330  2698  2731 D goldfish-address-space: allocate: Ask for block of size 0x100
+10-28 22:57:34.330  2698  2731 D goldfish-address-space: allocate: ioctl allocate returned offset 0x3fbffe000 size 0x2000
+10-28 22:57:34.336   173   173 I hwservicemanager: getTransport: Cannot find entry android.hardware.graphics.allocator@4.0::IAllocator/default in either framework or device VINTF manifest.
+10-28 22:57:34.336  2698  2731 W Gralloc4: allocator 4.x is not supported
+10-28 22:57:34.337   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff3c3000 0x3ff53a000]
+10-28 22:57:34.342  2698  2731 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 22:57:34.343   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff53a000 0x3ff6b1000]
+10-28 22:57:34.344   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fd790000 0x3fd907000]
+10-28 22:57:34.606   537   570 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +506ms
+10-28 22:57:34.616   537  1080 W InputManager-JNI: Input channel object 'f6b6893 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 22:57:34.785   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fe7ad000 0x3fe924000]
+10-28 22:57:34.789   537  2246 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 22:57:34.789   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fef00000 0x3ff077000]
+10-28 22:57:34.794  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@257386d in: PAUSED
+10-28 22:57:34.808   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:57:34.815   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fef00000 0x3ff077000]
+10-28 22:57:34.817   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff24c000 0x3ff3c3000]
+10-28 22:57:34.821   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffa89000 0x3ffc00000]
+10-28 22:57:34.837  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@257386d in: STOPPED
+10-28 22:57:34.838  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@257386d in: DESTROYED
+10-28 22:57:34.849   537  1080 W InputManager-JNI: Input channel object '4632556 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:57:34.904   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffe33000 0x3ffe91000]
+10-28 22:57:34.907   537  2278 D HostConnection: createUnique: call
+10-28 22:57:34.907   537  2278 D HostConnection: HostConnection::get() New Host Connection established 0x753a46fb6510, tid 2278
+10-28 22:57:34.915   537  2278 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 22:57:34.922   537  2278 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+10-28 22:57:34.924   537  2278 D EGL_emulation: eglCreateContext: 0x753a46fb6d50: maj 3 min 0 rcv 3
+10-28 22:57:34.935   758   804 D SplashScreenView: Build android.window.SplashScreenView{97f608f V.E...... ......ID 0,0-0,0}
+10-28 22:57:34.935   758   804 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 22:57:34.935   758   804 D SplashScreenView: Branding: view: android.view.View{841df1c G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 22:57:34.938  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1cd1fd9 in: PRE_ON_CREATE
+10-28 22:57:34.938   537  2278 D EGL_emulation: eglMakeCurrent: 0x753a46fb6d50: ver 3 0 (tinfo 0x753c4ba6c180) (first time)
+10-28 22:57:34.944   537  2528 D HostConnection: createUnique: call
+10-28 22:57:34.945   537  2528 D HostConnection: HostConnection::get() New Host Connection established 0x753a46fb5850, tid 2528
+10-28 22:57:34.948  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1cd1fd9 in: CREATED
+10-28 22:57:34.949   537  2528 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 22:57:34.949  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1cd1fd9 in: STARTED
+10-28 22:57:34.957   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff3c3000 0x3ff53a000]
+10-28 22:57:34.958   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:57:34.984   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff53a000 0x3ff6b1000]
+10-28 22:57:35.008   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fea9b000 0x3fec12000]
+10-28 22:57:35.070  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1cd1fd9 in: RESUMED
+10-28 22:57:35.104   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fec12000 0x3fed89000]
+10-28 22:57:35.105   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fef00000 0x3ff077000]
+10-28 22:57:35.106   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fd790000 0x3fd907000]
+10-28 22:57:35.116  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:35.116  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:35.116  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:35.116  1019  1625 W FrameTracker: Missed App frame:88
+10-28 22:57:35.116  1019  1625 W FrameTracker: Missed App frame:88
+10-28 22:57:35.116  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:35.116  1019  1625 V PerfettoTrigger: Triggering /system/bin/trigger_perfetto com.android.telemetry.interaction-jank-monitor-9
+10-28 22:57:35.132   537   570 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +209ms
+10-28 22:57:35.151   537  1622 W InputManager-JNI: Input channel object 'c770443 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 22:57:35.256   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fea9b000 0x3fec12000]
+10-28 22:57:35.261   537  2246 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 22:57:35.261   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffa89000 0x3ffc00000]
+10-28 22:57:35.272  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1cd1fd9 in: PAUSED
+10-28 22:57:35.291   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:57:35.297   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffa89000 0x3ffc00000]
+10-28 22:57:35.299   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff24c000 0x3ff3c3000]
+10-28 22:57:35.300   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff3c3000 0x3ff53a000]
+10-28 22:57:35.333   758   890 D EGL_emulation: app_time_stats: avg=388.09ms min=178.35ms max=691.39ms count=3
+10-28 22:57:35.356  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1cd1fd9 in: STOPPED
+10-28 22:57:35.357  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1cd1fd9 in: DESTROYED
+10-28 22:57:35.372   537  1622 W InputManager-JNI: Input channel object '3ef03f0 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:57:35.391   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffe91000 0x3ffeef000]
+10-28 22:57:35.399   537  1622 D HostConnection: createUnique: call
+10-28 22:57:35.400   537  1622 D HostConnection: HostConnection::get() New Host Connection established 0x753a46faf910, tid 1622
+10-28 22:57:35.414   537  1622 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 22:57:35.490  2698  2713 I TestRunner: finished: sendingDoesNotEraseNewTypingWhileWorkerIsBusy(org.example.otppager.DraftInterfaceTest)

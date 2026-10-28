@@ -1,0 +1,37 @@
+10-28 22:57:47.005  2698  2713 I TestRunner: started: unpairedChatExplainsSetupAndProtectsKeyboardInput(org.example.otppager.InterfaceTest)
+10-28 22:57:47.006   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffe33000 0x3ffe91000]
+10-28 22:57:47.049   758   804 D SplashScreenView: Build android.window.SplashScreenView{1ff2469 V.E...... ......ID 0,0-0,0}
+10-28 22:57:47.049   758   804 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 22:57:47.049   758   804 D SplashScreenView: Branding: view: android.view.View{8f0aeee G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 22:57:47.062   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff7fe000 0x3ff975000]
+10-28 22:57:47.064  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@9d8dca6 in: PRE_ON_CREATE
+10-28 22:57:47.068  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@9d8dca6 in: CREATED
+10-28 22:57:47.069  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@9d8dca6 in: STARTED
+10-28 22:57:47.070   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff975000 0x3ffaec000]
+10-28 22:57:47.075   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:57:47.088   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff1ee000 0x3ff365000]
+10-28 22:57:47.119  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@9d8dca6 in: RESUMED
+10-28 22:57:47.137   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fe05a000 0x3fe1d1000]
+10-28 22:57:47.140   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fe1d1000 0x3fe348000]
+10-28 22:57:47.145   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fe348000 0x3fe4bf000]
+10-28 22:57:47.167   537   570 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +126ms
+10-28 22:57:47.169  1019  1019 D TaplTarget: sendStateEventToTest: 0
+10-28 22:57:47.183  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:47.183  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:47.183  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:47.183  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:47.183  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:47.183  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:57:47.183  1019  1625 W FrameTracker: Missing SF jank callback for vsyncId: 5074
+10-28 22:57:47.183  1019  1625 W FrameTracker: Missed App frame:72
+10-28 22:57:47.183  1019  1625 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 22:57:47.191   537  1622 W InputManager-JNI: Input channel object 'd9aeac5 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 22:57:47.478   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fe4bf000 0x3fe636000]
+10-28 22:57:47.491  1351  1378 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:57:47.495  1351  1378 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/unpaired-chat (1).png. Uid: 10107
+10-28 22:57:47.532   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffcbc000 0x3ffe33000]
+10-28 22:57:47.534   537  2246 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 22:57:47.535   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff510000 0x3ff687000]
+10-28 22:57:47.546  2698  2698 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@9d8dca6 in: PAUSED
+10-28 22:57:47.558   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:57:47.567  2698  2713 I TestRunner: finished: unpairedChatExplainsSetupAndProtectsKeyboardInput(org.example.otppager.InterfaceTest)

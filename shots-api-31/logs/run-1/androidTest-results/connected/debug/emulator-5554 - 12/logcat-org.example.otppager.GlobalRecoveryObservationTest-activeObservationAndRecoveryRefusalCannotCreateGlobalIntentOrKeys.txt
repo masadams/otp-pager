@@ -1,0 +1,2 @@
+10-28 22:56:18.353  2189  2204 I TestRunner: started: activeObservationAndRecoveryRefusalCannotCreateGlobalIntentOrKeys(org.example.otppager.GlobalRecoveryObservationTest)
+10-28 22:56:18.358  2189  2204 I TestRunner: finished: activeObservationAndRecoveryRefusalCannotCreateGlobalIntentOrKeys(org.example.otppager.GlobalRecoveryObservationTest)

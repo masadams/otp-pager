@@ -1,0 +1,17 @@
+10-28 22:56:45.904  2189  2204 I TestRunner: started: renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates(org.example.otppager.RenewalTest)
+10-28 22:56:47.817   344  1505 D resolv  :  Calling SSL_connect with mark 0xf0064
+10-28 22:56:47.817   344  1505 D resolv  :  SSL_connect returned -1 with mark 0xf0064
+10-28 22:56:47.817   344  1505 W resolv  : SSL_connect ssl error =5, mark 0xf0064: Connection refused
+10-28 22:56:47.817   344  1505 W resolv  : TLS Handshake failed
+10-28 22:56:47.817   344  1505 D resolv  : Initialization failed.
+10-28 22:56:47.817   344  1505 D resolv  : Destructor
+10-28 22:56:47.817   344  1505 D resolv  : Destructor completed
+10-28 22:56:47.817   344  1505 D resolv  : Failing all pending queries.
+10-28 22:56:47.817   344  1505 W resolv  : query failed
+10-28 22:56:47.817   344  1505 D resolv  : Destructor
+10-28 22:56:47.817   344  1505 D resolv  : Locked destruction procedure
+10-28 22:56:47.817   344  1505 D resolv  : Destructor completed
+10-28 22:56:47.817   344  1505 W resolv  : validateDnsTlsServer returned 0 for 10.0.2.3
+10-28 22:56:47.817   344  1505 D resolv  : Sending validation failure event on netId 100 for 10.0.2.3 with hostname {}
+10-28 22:56:47.817   344  1505 W resolv  : Validation failed
+10-28 22:56:49.432  2189  2204 I TestRunner: finished: renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates(org.example.otppager.RenewalTest)

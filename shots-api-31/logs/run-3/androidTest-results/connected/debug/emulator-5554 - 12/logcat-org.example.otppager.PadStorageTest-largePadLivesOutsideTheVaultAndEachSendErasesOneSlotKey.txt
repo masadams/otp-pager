@@ -1,0 +1,2 @@
+10-28 22:59:06.874  3108  3123 I TestRunner: started: largePadLivesOutsideTheVaultAndEachSendErasesOneSlotKey(org.example.otppager.PadStorageTest)
+10-28 22:59:07.890  3108  3123 I TestRunner: finished: largePadLivesOutsideTheVaultAndEachSendErasesOneSlotKey(org.example.otppager.PadStorageTest)

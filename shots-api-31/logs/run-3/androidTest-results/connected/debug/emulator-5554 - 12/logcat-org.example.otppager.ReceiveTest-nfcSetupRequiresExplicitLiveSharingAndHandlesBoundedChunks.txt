@@ -1,0 +1,2 @@
+10-28 22:59:19.020  3108  3123 I TestRunner: started: nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks(org.example.otppager.ReceiveTest)
+10-28 22:59:19.022  3108  3123 I TestRunner: finished: nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks(org.example.otppager.ReceiveTest)

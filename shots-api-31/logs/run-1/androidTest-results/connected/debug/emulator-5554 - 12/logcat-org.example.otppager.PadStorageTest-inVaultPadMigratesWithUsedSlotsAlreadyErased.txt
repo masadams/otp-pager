@@ -1,0 +1,2 @@
+10-28 22:56:33.430  2189  2204 I TestRunner: started: inVaultPadMigratesWithUsedSlotsAlreadyErased(org.example.otppager.PadStorageTest)
+10-28 22:56:33.895  2189  2204 I TestRunner: finished: inVaultPadMigratesWithUsedSlotsAlreadyErased(org.example.otppager.PadStorageTest)

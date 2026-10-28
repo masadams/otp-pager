@@ -1,0 +1,80 @@
+10-28 22:56:51.339  2189  2204 I TestRunner: started: retiredActiveContactCanRecoverReachOtherChatsAndStartAnEmptyPhysicalPairing(org.example.otppager.RetirementRecoveryTest)
+10-28 22:56:51.401   758   804 D SplashScreenView: Build android.window.SplashScreenView{604b410 V.E...... ......ID 0,0-0,0}
+10-28 22:56:51.401   758   804 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 22:56:51.401   758   804 D SplashScreenView: Branding: view: android.view.View{33dbb09 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 22:56:51.407  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@5d5c35d in: PRE_ON_CREATE
+10-28 22:56:51.410   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fe924000 0x3fea9b000]
+10-28 22:56:51.418   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffc00000 0x3ffd77000]
+10-28 22:56:51.419   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff24c000 0x3ff3c3000]
+10-28 22:56:51.421  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@5d5c35d in: CREATED
+10-28 22:56:51.421  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@5d5c35d in: STARTED
+10-28 22:56:51.425   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:56:51.454  1019  1574 D EGL_emulation: app_time_stats: avg=318.48ms min=3.58ms max=7091.62ms count=23
+10-28 22:56:51.464  1019  1625 W FrameTracker: Missed App frame:24
+10-28 22:56:51.464  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.464  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.464  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.464  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.464  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.464  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missing SF jank callback for vsyncId: 3327
+10-28 22:56:51.465  1019  1625 W FrameTracker: Missed App frame:16
+10-28 22:56:51.466  1019  1625 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 22:56:51.466   758   890 D EGL_emulation: app_time_stats: avg=3855.25ms min=244.78ms max=7465.71ms count=2
+10-28 22:56:51.500  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@5d5c35d in: RESUMED
+10-28 22:56:51.518   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff856000 0x3ff9cd000]
+10-28 22:56:51.519   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff3c3000 0x3ff53a000]
+10-28 22:56:51.520   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff53a000 0x3ff6b1000]
+10-28 22:56:51.535   537   570 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +134ms
+10-28 22:56:51.547   537  1622 W InputManager-JNI: Input channel object '8a8019 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 22:56:51.851  1351  1378 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:56:51.855  1351  1378 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/14-retired-incomplete.png. Uid: 10105
+10-28 22:56:51.899   383   508 D AudioFlinger: mixer(0x767ef7195a70) throttle end: throttle time(34)
+10-28 22:56:52.483  1351  1378 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:56:52.486  1351  1378 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/15-retired-complete.png. Uid: 10105
+10-28 22:56:52.545  2189  2232 D EGL_emulation: app_time_stats: avg=59.59ms min=6.44ms max=284.87ms count=17
+10-28 22:56:52.969  1351  1378 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:56:52.972  1351  1378 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/16-retired-actions.png. Uid: 10105
+10-28 22:56:53.033   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffdd5000 0x3fff04000]
+10-28 22:56:53.036   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffa89000 0x3ffbb8000]
+10-28 22:56:53.037   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffbb8000 0x3ffce7000]
+10-28 22:56:53.060   537  1622 W InputManager-JNI: Input channel object '8db5897 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:56:53.084   758   890 D EGL_emulation: app_time_stats: avg=1617.92ms min=1617.92ms max=1617.92ms count=1
+10-28 22:56:53.115   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffdd5000 0x3fff04000]
+10-28 22:56:53.117   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffa89000 0x3ffbb8000]
+10-28 22:56:53.117   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffbb8000 0x3ffce7000]
+10-28 22:56:53.134   537   887 W InputManager-JNI: Input channel object 'cc4cbaa org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:56:53.302   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fe924000 0x3fea9b000]
+10-28 22:56:53.304   537  2246 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 22:56:53.304   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff24c000 0x3ff3c3000]
+10-28 22:56:53.318  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@5d5c35d in: PAUSED
+10-28 22:56:53.325   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:56:53.346   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff24c000 0x3ff3c3000]
+10-28 22:56:53.348   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffdd5000 0x3fff4c000]
+10-28 22:56:53.349   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffa89000 0x3ffc00000]
+10-28 22:56:53.390  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@5d5c35d in: STOPPED
+10-28 22:56:53.391  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@5d5c35d in: DESTROYED
+10-28 22:56:53.399   537  2488 W InputManager-JNI: Input channel object '3cac1af org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:56:53.431   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ffc00000 0x3ffc5e000]
+10-28 22:56:53.439   537  2278 D HostConnection: createUnique: call
+10-28 22:56:53.439   537  2278 D HostConnection: HostConnection::get() New Host Connection established 0x753a46faf910, tid 2278
+10-28 22:56:53.454   537  2278 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 22:56:53.455   537  2278 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+10-28 22:56:53.456   537  2278 D EGL_emulation: eglCreateContext: 0x753a46fb5850: maj 3 min 0 rcv 3
+10-28 22:56:53.472   537  2278 D EGL_emulation: eglMakeCurrent: 0x753a46fb5850: ver 3 0 (tinfo 0x753c4ba6c180) (first time)
+10-28 22:56:53.474   537   831 D HostConnection: createUnique: call
+10-28 22:56:53.479   537   831 D HostConnection: HostConnection::get() New Host Connection established 0x753a46fb1950, tid 831
+10-28 22:56:53.488   537   831 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 22:56:53.568  2189  2204 I TestRunner: finished: retiredActiveContactCanRecoverReachOtherChatsAndStartAnEmptyPhysicalPairing(org.example.otppager.RetirementRecoveryTest)

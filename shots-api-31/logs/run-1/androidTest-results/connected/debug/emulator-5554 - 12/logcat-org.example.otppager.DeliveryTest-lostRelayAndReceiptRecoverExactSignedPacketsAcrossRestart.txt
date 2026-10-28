@@ -1,0 +1,8 @@
+10-28 22:56:11.166  2189  2204 I TestRunner: started: lostRelayAndReceiptRecoverExactSignedPacketsAcrossRestart(org.example.otppager.DeliveryTest)
+10-28 22:56:12.184   345   345 I Zygote  : Process 1850 exited due to signal 9 (Killed)
+10-28 22:56:12.198   345   345 I Zygote  : Process 1867 exited due to signal 9 (Killed)
+10-28 22:56:12.205   345   345 I Zygote  : Process 1453 exited due to signal 9 (Killed)
+10-28 22:56:12.224   537   584 I libprocessgroup: Successfully killed process cgroup uid 10072 pid 1850 in 43ms
+10-28 22:56:12.224   537   584 I libprocessgroup: Successfully killed process cgroup uid 1000 pid 1867 in 0ms
+10-28 22:56:12.224   537   584 I libprocessgroup: Successfully killed process cgroup uid 10081 pid 1453 in 0ms
+10-28 22:56:12.267  2189  2204 I TestRunner: finished: lostRelayAndReceiptRecoverExactSignedPacketsAcrossRestart(org.example.otppager.DeliveryTest)

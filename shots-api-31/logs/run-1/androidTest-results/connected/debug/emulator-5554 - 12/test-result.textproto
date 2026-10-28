@@ -1,0 +1,5142 @@
+# 2026-10-28T22:56:56.590543009Z:
+test_suite_meta_data {
+  scheduled_test_case_count: 98
+}
+test_status: PASSED
+test_result {
+  test_case {
+    test_class: "CablePairTest"
+    test_package: "org.example.otppager"
+    test_method: "automaticPairingWorksWithServerSettingsOnEitherUsbSide"
+    start_time {
+      seconds: 1793228157
+      nanos: 922000000
+    }
+    end_time {
+      seconds: 1793228159
+      nanos: 430000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.CablePairTest-automaticPairingWorksWithServerSettingsOnEitherUsbSide.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "CablePairTest"
+    test_package: "org.example.otppager"
+    test_method: "oldPlaintextProtocolCannotDowngradeOrActivatePairing"
+    start_time {
+      seconds: 1793228159
+      nanos: 452000000
+    }
+    end_time {
+      seconds: 1793228159
+      nanos: 453000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.CablePairTest-oldPlaintextProtocolCannotDowngradeOrActivatePairing.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "CablePairTest"
+    test_package: "org.example.otppager"
+    test_method: "largePadsStreamIntoStorageOnBothSidesWithoutPassingThroughTheVault"
+    start_time {
+      seconds: 1793228159
+      nanos: 455000000
+    }
+    end_time {
+      seconds: 1793228167
+      nanos: 414000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.CablePairTest-largePadsStreamIntoStorageOnBothSidesWithoutPassingThroughTheVault.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "CablePairTest"
+    test_package: "org.example.otppager"
+    test_method: "stagedAndInterruptedPairingRetiresPadAndCannotSend"
+    start_time {
+      seconds: 1793228167
+      nanos: 417000000
+    }
+    end_time {
+      seconds: 1793228167
+      nanos: 593000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.CablePairTest-stagedAndInterruptedPairingRetiresPadAndCannotSend.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "CablePairTest"
+    test_package: "org.example.otppager"
+    test_method: "decliningConfirmationSendsNoCredentialsOrPad"
+    start_time {
+      seconds: 1793228167
+      nanos: 597000000
+    }
+    end_time {
+      seconds: 1793228167
+      nanos: 648000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.CablePairTest-decliningConfirmationSendsNoCredentialsOrPad.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "ChatBookTest"
+    test_package: "org.example.otppager"
+    test_method: "chatBoundsNamesAndDamagedIndexNeverSilentlyReset"
+    start_time {
+      seconds: 1793228167
+      nanos: 652000000
+    }
+    end_time {
+      seconds: 1793228167
+      nanos: 879000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.ChatBookTest-chatBoundsNamesAndDamagedIndexNeverSilentlyReset.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "ChatBookTest"
+    test_package: "org.example.otppager"
+    test_method: "separateFriendsKeepKeysTrafficUnreadAndForgetIsolated"
+    start_time {
+      seconds: 1793228167
+      nanos: 881000000
+    }
+    end_time {
+      seconds: 1793228168
+      nanos: 987000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.ChatBookTest-separateFriendsKeepKeysTrafficUnreadAndForgetIsolated.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "ChatBookTest"
+    test_package: "org.example.otppager"
+    test_method: "legacyMigrationAndCrossChatPadAndSecretReuseFailClosed"
+    start_time {
+      seconds: 1793228168
+      nanos: 989000000
+    }
+    end_time {
+      seconds: 1793228169
+      nanos: 242000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.ChatBookTest-legacyMigrationAndCrossChatPadAndSecretReuseFailClosed.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "ChatBookTest"
+    test_package: "org.example.otppager"
+    test_method: "reviewedQrCanReplaceOnlyUnusedFriendSetup"
+    start_time {
+      seconds: 1793228169
+      nanos: 246000000
+    }
+    end_time {
+      seconds: 1793228169
+      nanos: 272000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.ChatBookTest-reviewedQrCanReplaceOnlyUnusedFriendSetup.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DeliveryTest"
+    test_package: "org.example.otppager"
+    test_method: "offlineRetryRestartReceiptAndReplayRemainConsistent"
+    start_time {
+      seconds: 1793228169
+      nanos: 273000000
+    }
+    end_time {
+      seconds: 1793228169
+      nanos: 399000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DeliveryTest-offlineRetryRestartReceiptAndReplayRemainConsistent.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DeliveryTest"
+    test_package: "org.example.otppager"
+    test_method: "legacyPadMigrationPreservesHistoryAndLateSlotsAndClearsRetainedPayloads"
+    start_time {
+      seconds: 1793228169
+      nanos: 404000000
+    }
+    end_time {
+      seconds: 1793228170
+      nanos: 57000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DeliveryTest-legacyPadMigrationPreservesHistoryAndLateSlotsAndClearsRetainedPayloads.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DeliveryTest"
+    test_package: "org.example.otppager"
+    test_method: "padRetryBurnBeforeQueueUnreadAndRetirement"
+    start_time {
+      seconds: 1793228170
+      nanos: 59000000
+    }
+    end_time {
+      seconds: 1793228171
+      nanos: 996000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DeliveryTest-padRetryBurnBeforeQueueUnreadAndRetirement.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DeliveryTest"
+    test_package: "org.example.otppager"
+    test_method: "lostRelayAndReceiptRecoverExactSignedPacketsAcrossRestart"
+    start_time {
+      seconds: 1793228171
+      nanos: 998000000
+    }
+    end_time {
+      seconds: 1793228173
+      nanos: 103000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DeliveryTest-lostRelayAndReceiptRecoverExactSignedPacketsAcrossRestart.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DeliveryTest"
+    test_package: "org.example.otppager"
+    test_method: "padVerificationGateExactReadinessRetryAndMigration"
+    start_time {
+      seconds: 1793228173
+      nanos: 106000000
+    }
+    end_time {
+      seconds: 1793228173
+      nanos: 910000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DeliveryTest-padVerificationGateExactReadinessRetryAndMigration.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DeliveryTest"
+    test_package: "org.example.otppager"
+    test_method: "manualRecoveryKeepsExpiryAndQueueBoundAndNeverAllocates"
+    start_time {
+      seconds: 1793228173
+      nanos: 913000000
+    }
+    end_time {
+      seconds: 1793228173
+      nanos: 989000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DeliveryTest-manualRecoveryKeepsExpiryAndQueueBoundAndNeverAllocates.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DeviceIdentityTest"
+    test_package: "org.example.otppager"
+    test_method: "offlineIdentityRetryCloneForgeryDowngradeAndMissingKey"
+    start_time {
+      seconds: 1793228173
+      nanos: 991000000
+    }
+    end_time {
+      seconds: 1793228175
+      nanos: 70000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DeviceIdentityTest-offlineIdentityRetryCloneForgeryDowngradeAndMissingKey.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DraftInterfaceTest"
+    test_package: "org.example.otppager"
+    test_method: "sendingDoesNotEraseNewTypingWhileWorkerIsBusy"
+    start_time {
+      seconds: 1793228175
+      nanos: 75000000
+    }
+    end_time {
+      seconds: 1793228177
+      nanos: 148000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DraftInterfaceTest-sendingDoesNotEraseNewTypingWhileWorkerIsBusy.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DraftInterfaceTest"
+    test_package: "org.example.otppager"
+    test_method: "switchingFriendsAndRestartingRestoreSeparateDraftsWithoutDiscardPrompts"
+    start_time {
+      seconds: 1793228177
+      nanos: 151000000
+    }
+    end_time {
+      seconds: 1793228178
+      nanos: 596000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DraftInterfaceTest-switchingFriendsAndRestartingRestoreSeparateDraftsWithoutDiscardPrompts.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DraftTest"
+    test_package: "org.example.otppager"
+    test_method: "encryptedDraftsExpireStayInTheirRoomAndNeverConsumePad"
+    start_time {
+      seconds: 1793228178
+      nanos: 598000000
+    }
+    end_time {
+      seconds: 1793228178
+      nanos: 903000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DraftTest-encryptedDraftsExpireStayInTheirRoomAndNeverConsumePad.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "DraftTest"
+    test_package: "org.example.otppager"
+    test_method: "acceptedDraftSuppressionCommitsWithMessageAndDoesNotDropANewerDraft"
+    start_time {
+      seconds: 1793228178
+      nanos: 906000000
+    }
+    end_time {
+      seconds: 1793228179
+      nanos: 109000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.DraftTest-acceptedDraftSuppressionCommitsWithMessageAndDoesNotDropANewerDraft.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "EnrollmentStageRestartTest"
+    test_package: "org.example.otppager"
+    test_method: "stagedStorageCannotActivateResumeEncryptionOrLoseAbandonedReservations"
+    start_time {
+      seconds: 1793228179
+      nanos: 111000000
+    }
+    end_time {
+      seconds: 1793228179
+      nanos: 112000000
+    }
+  }
+  test_status: IGNORED
+  error {
+    error_message: "org.junit.AssumptionViolatedException: Exclusive host staging fixture only\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.EnrollmentStageRestartTest.stagedStorageCannotActivateResumeEncryptionOrLoseAbandonedReservations(EnrollmentStageRestartTest.kt:68)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+    error_type: "org.junit.AssumptionViolatedException"
+    stack_trace: "org.junit.AssumptionViolatedException: Exclusive host staging fixture only\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.EnrollmentStageRestartTest.stagedStorageCannotActivateResumeEncryptionOrLoseAbandonedReservations(EnrollmentStageRestartTest.kt:68)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.EnrollmentStageRestartTest-stagedStorageCannotActivateResumeEncryptionOrLoseAbandonedReservations.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "EpochCycleRestartTest"
+    test_package: "org.example.otppager"
+    test_method: "freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing"
+    start_time {
+      seconds: 1793228179
+      nanos: 119000000
+    }
+    end_time {
+      seconds: 1793228179
+      nanos: 121000000
+    }
+  }
+  test_status: IGNORED
+  error {
+    error_message: "org.junit.AssumptionViolatedException: Exclusive host epoch fixture only\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.EpochCycleRestartTest.freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(EpochCycleRestartTest.kt:79)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+    error_type: "org.junit.AssumptionViolatedException"
+    stack_trace: "org.junit.AssumptionViolatedException: Exclusive host epoch fixture only\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.EpochCycleRestartTest.freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(EpochCycleRestartTest.kt:79)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.EpochCycleRestartTest-freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "EpochManifestsTest"
+    test_package: "org.example.otppager"
+    test_method: "authenticatedCreateReadAppendAndFailClosedOnTamperingVariantsAndStrays"
+    start_time {
+      seconds: 1793228179
+      nanos: 124000000
+    }
+    end_time {
+      seconds: 1793228179
+      nanos: 200000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.EpochManifestsTest-authenticatedCreateReadAppendAndFailClosedOnTamperingVariantsAndStrays.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "GlobalRecoveryObservationTest"
+    test_package: "org.example.otppager"
+    test_method: "unavailableDirectoryNeverLooksLikeACompletedCleanup"
+    start_time {
+      seconds: 1793228179
+      nanos: 202000000
+    }
+    end_time {
+      seconds: 1793228179
+      nanos: 203000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.GlobalRecoveryObservationTest-unavailableDirectoryNeverLooksLikeACompletedCleanup.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "GlobalRecoveryObservationTest"
+    test_package: "org.example.otppager"
+    test_method: "activeObservationAndRecoveryRefusalCannotCreateGlobalIntentOrKeys"
+    start_time {
+      seconds: 1793228179
+      nanos: 204000000
+    }
+    end_time {
+      seconds: 1793228179
+      nanos: 208000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.GlobalRecoveryObservationTest-activeObservationAndRecoveryRefusalCannotCreateGlobalIntentOrKeys.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "GlobalRetirementRestartTest"
+    test_package: "org.example.otppager"
+    test_method: "globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration"
+    start_time {
+      seconds: 1793228179
+      nanos: 212000000
+    }
+    end_time {
+      seconds: 1793228179
+      nanos: 214000000
+    }
+  }
+  test_status: IGNORED
+  error {
+    error_message: "org.junit.AssumptionViolatedException: Exclusive host-driven global destruction fixture only\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.GlobalRetirementRestartTest.globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration(GlobalRetirementRestartTest.kt:104)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+    error_type: "org.junit.AssumptionViolatedException"
+    stack_trace: "org.junit.AssumptionViolatedException: Exclusive host-driven global destruction fixture only\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.GlobalRetirementRestartTest.globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration(GlobalRetirementRestartTest.kt:104)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.GlobalRetirementRestartTest-globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "InterfaceTest"
+    test_package: "org.example.otppager"
+    test_method: "compactDisplayKeepsTrafficAndComposerVisibleWithKeyboard"
+    start_time {
+      seconds: 1793228179
+      nanos: 215000000
+    }
+    end_time {
+      seconds: 1793228181
+      nanos: 685000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.InterfaceTest-compactDisplayKeepsTrafficAndComposerVisibleWithKeyboard.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "InterfaceTest"
+    test_package: "org.example.otppager"
+    test_method: "deviceExchangePausesSendingAndShowsHonestKeyStatus"
+    start_time {
+      seconds: 1793228181
+      nanos: 766000000
+    }
+    end_time {
+      seconds: 1793228183
+      nanos: 113000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.InterfaceTest-deviceExchangePausesSendingAndShowsHonestKeyStatus.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "InterfaceTest"
+    test_package: "org.example.otppager"
+    test_method: "capturesActualEinkInterfaceWithFictionalTraffic"
+    start_time {
+      seconds: 1793228183
+      nanos: 220000000
+    }
+    end_time {
+      seconds: 1793228184
+      nanos: 862000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.InterfaceTest-capturesActualEinkInterfaceWithFictionalTraffic.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "InterfaceTest"
+    test_package: "org.example.otppager"
+    test_method: "completedPairingHidesSetupAndSettingsRemainReachable"
+    start_time {
+      seconds: 1793228184
+      nanos: 969000000
+    }
+    end_time {
+      seconds: 1793228188
+      nanos: 834000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.InterfaceTest-completedPairingHidesSetupAndSettingsRemainReachable.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "InterfaceTest"
+    test_package: "org.example.otppager"
+    test_method: "unverifiedPadDisablesSendingAndShowsSetup"
+    start_time {
+      seconds: 1793228188
+      nanos: 888000000
+    }
+    end_time {
+      seconds: 1793228189
+      nanos: 678000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.InterfaceTest-unverifiedPadDisablesSendingAndShowsSetup.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "InterfaceTest"
+    test_package: "org.example.otppager"
+    test_method: "nearbyWizardFitsAndRequiresExplicitApproval"
+    start_time {
+      seconds: 1793228189
+      nanos: 786000000
+    }
+    end_time {
+      seconds: 1793228190
+      nanos: 268000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.InterfaceTest-nearbyWizardFitsAndRequiresExplicitApproval.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "InterfaceTest"
+    test_package: "org.example.otppager"
+    test_method: "unpairedChatExplainsSetupAndProtectsKeyboardInput"
+    start_time {
+      seconds: 1793228190
+      nanos: 320000000
+    }
+    end_time {
+      seconds: 1793228190
+      nanos: 876000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.InterfaceTest-unpairedChatExplainsSetupAndProtectsKeyboardInput.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "LifecycleEvidenceRestartTest"
+    test_package: "org.example.otppager"
+    test_method: "durableEvidenceDoesNotInventProvenanceAfterRestartOrLoss"
+    start_time {
+      seconds: 1793228190
+      nanos: 956000000
+    }
+    end_time {
+      seconds: 1793228190
+      nanos: 957000000
+    }
+  }
+  test_status: IGNORED
+  error {
+    error_message: "org.junit.AssumptionViolatedException: Exclusive host lifecycle fixture only\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.LifecycleEvidenceRestartTest.durableEvidenceDoesNotInventProvenanceAfterRestartOrLoss(LifecycleEvidenceRestartTest.kt:59)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+    error_type: "org.junit.AssumptionViolatedException"
+    stack_trace: "org.junit.AssumptionViolatedException: Exclusive host lifecycle fixture only\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.LifecycleEvidenceRestartTest.durableEvidenceDoesNotInventProvenanceAfterRestartOrLoss(LifecycleEvidenceRestartTest.kt:59)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.LifecycleEvidenceRestartTest-durableEvidenceDoesNotInventProvenanceAfterRestartOrLoss.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "LocalWipeTest"
+    test_package: "org.example.otppager"
+    test_method: "wipeRetiresOnlyTheTargetWithoutWaitingForTheStationWorker"
+    start_time {
+      seconds: 1793228190
+      nanos: 966000000
+    }
+    end_time {
+      seconds: 1793228191
+      nanos: 403000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.LocalWipeTest-wipeRetiresOnlyTheTargetWithoutWaitingForTheStationWorker.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "LocalWipeTest"
+    test_package: "org.example.otppager"
+    test_method: "wipeRefusesUnlistedAndNonContactNamespaces"
+    start_time {
+      seconds: 1793228191
+      nanos: 406000000
+    }
+    end_time {
+      seconds: 1793228191
+      nanos: 456000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.LocalWipeTest-wipeRefusesUnlistedAndNonContactNamespaces.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "LocalWipeTest"
+    test_package: "org.example.otppager"
+    test_method: "menuWipeNeedsTypedConfirmationClearsPrivateUiAndReportsOnlyLocalResult"
+    start_time {
+      seconds: 1793228191
+      nanos: 458000000
+    }
+    end_time {
+      seconds: 1793228193
+      nanos: 155000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.LocalWipeTest-menuWipeNeedsTypedConfirmationClearsPrivateUiAndReportsOnlyLocalResult.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "OtpOnlyEngineTest"
+    test_package: "org.example.otppager"
+    test_method: "missingPadRejectsNewTextAndDraftAcrossRestartWithoutChangingSavedState"
+    start_time {
+      seconds: 1793228193
+      nanos: 162000000
+    }
+    end_time {
+      seconds: 1793228193
+      nanos: 294000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.OtpOnlyEngineTest-missingPadRejectsNewTextAndDraftAcrossRestartWithoutChangingSavedState.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PacketSerializationTest"
+    test_package: "org.example.otppager"
+    test_method: "productionPostPreservesFixedPacketsAcrossPayloadKindsAndSizes"
+    start_time {
+      seconds: 1793228193
+      nanos: 299000000
+    }
+    end_time {
+      seconds: 1793228193
+      nanos: 377000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PacketSerializationTest-productionPostPreservesFixedPacketsAcrossPayloadKindsAndSizes.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PacketSerializationTest"
+    test_package: "org.example.otppager"
+    test_method: "escapingVariationIsMeasuredRatherThanAssumingConstantHttpBodyLength"
+    start_time {
+      seconds: 1793228193
+      nanos: 380000000
+    }
+    end_time {
+      seconds: 1793228193
+      nanos: 386000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PacketSerializationTest-escapingVariationIsMeasuredRatherThanAssumingConstantHttpBodyLength.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PadStorageTest"
+    test_package: "org.example.otppager"
+    test_method: "largePadLivesOutsideTheVaultAndEachSendErasesOneSlotKey"
+    start_time {
+      seconds: 1793228193
+      nanos: 388000000
+    }
+    end_time {
+      seconds: 1793228194
+      nanos: 273000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PadStorageTest-largePadLivesOutsideTheVaultAndEachSendErasesOneSlotKey.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PadStorageTest"
+    test_package: "org.example.otppager"
+    test_method: "inVaultPadMigratesWithUsedSlotsAlreadyErased"
+    start_time {
+      seconds: 1793228194
+      nanos: 275000000
+    }
+    end_time {
+      seconds: 1793228194
+      nanos: 728000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PadStorageTest-inVaultPadMigratesWithUsedSlotsAlreadyErased.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PagerJourneyTest"
+    test_package: "org.example.otppager"
+    test_method: "inboxConversationAndFriendDetailsKeepTechnicalToolsOutOfTheEverydayFlow"
+    start_time {
+      seconds: 1793228194
+      nanos: 729000000
+    }
+    end_time {
+      seconds: 1793228197
+      nanos: 25000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PagerJourneyTest-inboxConversationAndFriendDetailsKeepTechnicalToolsOutOfTheEverydayFlow.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PagerJourneyTest"
+    test_package: "org.example.otppager"
+    test_method: "firstLaunchGuidesNamingServerTransferAndUsbWithoutAGhostContact"
+    start_time {
+      seconds: 1793228197
+      nanos: 27000000
+    }
+    end_time {
+      seconds: 1793228198
+      nanos: 890000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PagerJourneyTest-firstLaunchGuidesNamingServerTransferAndUsbWithoutAGhostContact.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PagerJourneyTest"
+    test_package: "org.example.otppager"
+    test_method: "damagedVaultShowsRecoveryWithoutResettingStoredData"
+    start_time {
+      seconds: 1793228198
+      nanos: 892000000
+    }
+    end_time {
+      seconds: 1793228199
+      nanos: 466000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PagerJourneyTest-damagedVaultShowsRecoveryWithoutResettingStoredData.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PairingInterfaceTest"
+    test_package: "org.example.otppager"
+    test_method: "scanRequiresReviewThenSavesOppositeRoleWithoutAnotherManualStep"
+    start_time {
+      seconds: 1793228199
+      nanos: 467000000
+    }
+    end_time {
+      seconds: 1793228200
+      nanos: 302000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PairingInterfaceTest-scanRequiresReviewThenSavesOppositeRoleWithoutAnotherManualStep.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PairingQrTest"
+    test_package: "org.example.otppager"
+    test_method: "cleanImportedImagesDecodeAcrossAllQrMasks"
+    start_time {
+      seconds: 1793228200
+      nanos: 355000000
+    }
+    end_time {
+      seconds: 1793228200
+      nanos: 988000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PairingQrTest-cleanImportedImagesDecodeAcrossAllQrMasks.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PairingQrTest"
+    test_package: "org.example.otppager"
+    test_method: "embeddedScannerInflatesWithSecureWindow"
+    start_time {
+      seconds: 1793228200
+      nanos: 993000000
+    }
+    end_time {
+      seconds: 1793228201
+      nanos: 296000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PairingQrTest-embeddedScannerInflatesWithSecureWindow.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PairingQrTest"
+    test_package: "org.example.otppager"
+    test_method: "generatedBitmapAndImportedPngDecodeWithoutNetwork"
+    start_time {
+      seconds: 1793228201
+      nanos: 353000000
+    }
+    end_time {
+      seconds: 1793228201
+      nanos: 557000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PairingQrTest-generatedBitmapAndImportedPngDecodeWithoutNetwork.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PairingQrTest"
+    test_package: "org.example.otppager"
+    test_method: "exportGivesOppositeRoleWithoutChangingVaultOrCounters"
+    start_time {
+      seconds: 1793228201
+      nanos: 559000000
+    }
+    end_time {
+      seconds: 1793228201
+      nanos: 610000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PairingQrTest-exportGivesOppositeRoleWithoutChangingVaultOrCounters.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PeerWipeTest"
+    test_package: "org.example.otppager"
+    test_method: "recipientIgnoresRequestsWhenOffForgedOrForAnotherPairing"
+    start_time {
+      seconds: 1793228201
+      nanos: 614000000
+    }
+    end_time {
+      seconds: 1793228202
+      nanos: 22000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PeerWipeTest-recipientIgnoresRequestsWhenOffForgedOrForAnotherPairing.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "PeerWipeTest"
+    test_package: "org.example.otppager"
+    test_method: "wipeRequestRemovesOnlyThatChatOnTheFriendsPhoneAndReportsWhatItSaid"
+    start_time {
+      seconds: 1793228202
+      nanos: 24000000
+    }
+    end_time {
+      seconds: 1793228202
+      nanos: 327000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.PeerWipeTest-wipeRequestRemovesOnlyThatChatOnTheFriendsPhoneAndReportsWhatItSaid.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RadioPairTest"
+    test_package: "org.example.otppager"
+    test_method: "cancellingWizardClosesListenerSynchronouslyAndWipesOffer"
+    start_time {
+      seconds: 1793228202
+      nanos: 329000000
+    }
+    end_time {
+      seconds: 1793228202
+      nanos: 459000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RadioPairTest-cancellingWizardClosesListenerSynchronouslyAndWipesOffer.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RadioPairTest"
+    test_package: "org.example.otppager"
+    test_method: "fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic"
+    start_time {
+      seconds: 1793228202
+      nanos: 564000000
+    }
+    end_time {
+      seconds: 1793228204
+      nanos: 351000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RadioPairTest-fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "ReceiveTest"
+    test_package: "org.example.otppager"
+    test_method: "backgroundWrapperPreservesTheContactsBoundTransport"
+    start_time {
+      seconds: 1793228204
+      nanos: 353000000
+    }
+    end_time {
+      seconds: 1793228204
+      nanos: 529000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.ReceiveTest-backgroundWrapperPreservesTheContactsBoundTransport.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "ReceiveTest"
+    test_package: "org.example.otppager"
+    test_method: "userStartedForegroundReceiverStartsAndStopsOnSupportedAndroidVersions"
+    start_time {
+      seconds: 1793228204
+      nanos: 531000000
+    }
+    end_time {
+      seconds: 1793228204
+      nanos: 811000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.ReceiveTest-userStartedForegroundReceiverStartsAndStopsOnSupportedAndroidVersions.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "ReceiveTest"
+    test_package: "org.example.otppager"
+    test_method: "nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks"
+    start_time {
+      seconds: 1793228204
+      nanos: 863000000
+    }
+    end_time {
+      seconds: 1793228204
+      nanos: 889000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.ReceiveTest-nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "ReceiveTest"
+    test_package: "org.example.otppager"
+    test_method: "receiverPersistsUnreadAndReceiptsWithoutAnActivityAndHonorsPause"
+    start_time {
+      seconds: 1793228204
+      nanos: 890000000
+    }
+    end_time {
+      seconds: 1793228205
+      nanos: 898000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.ReceiveTest-receiverPersistsUnreadAndReceiptsWithoutAnActivityAndHonorsPause.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RelayAccessTest"
+    test_package: "org.example.otppager"
+    test_method: "oldRelayWorksExplicitlyButProtectedChatNeverDowngrades"
+    start_time {
+      seconds: 1793228205
+      nanos: 899000000
+    }
+    end_time {
+      seconds: 1793228206
+      nanos: 100000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RelayAccessTest-oldRelayWorksExplicitlyButProtectedChatNeverDowngrades.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RelayAccessTest"
+    test_package: "org.example.otppager"
+    test_method: "protectedChatRetriesLostVolumeAndRevocationPreserveLocalState"
+    start_time {
+      seconds: 1793228206
+      nanos: 102000000
+    }
+    end_time {
+      seconds: 1793228206
+      nanos: 755000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RelayAccessTest-protectedChatRetriesLostVolumeAndRevocationPreserveLocalState.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RenewalTest"
+    test_package: "org.example.otppager"
+    test_method: "renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates"
+    start_time {
+      seconds: 1793228206
+      nanos: 757000000
+    }
+    end_time {
+      seconds: 1793228210
+      nanos: 270000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RenewalTest-renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetainedGuardReaderTest"
+    test_package: "org.example.otppager"
+    test_method: "cohortChecksRequireBothDirectionsOfPadOwnershipAndKnownRoots"
+    start_time {
+      seconds: 1793228210
+      nanos: 272000000
+    }
+    end_time {
+      seconds: 1793228210
+      nanos: 323000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetainedGuardReaderTest-cohortChecksRequireBothDirectionsOfPadOwnershipAndKnownRoots.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetainedGuardReaderTest"
+    test_package: "org.example.otppager"
+    test_method: "exactCiphertextByteBoundAcceptsValidGuardButNextByteIsRefused"
+    start_time {
+      seconds: 1793228210
+      nanos: 324000000
+    }
+    end_time {
+      seconds: 1793228210
+      nanos: 425000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetainedGuardReaderTest-exactCiphertextByteBoundAcceptsValidGuardButNextByteIsRefused.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetainedGuardReaderTest"
+    test_package: "org.example.otppager"
+    test_method: "missingFileMissingKeyAndCiphertextRestorationCannotBecomeEmptyState"
+    start_time {
+      seconds: 1793228210
+      nanos: 427000000
+    }
+    end_time {
+      seconds: 1793228210
+      nanos: 428000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetainedGuardReaderTest-missingFileMissingKeyAndCiphertextRestorationCannotBecomeEmptyState.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetainedGuardReaderTest"
+    test_package: "org.example.otppager"
+    test_method: "strictSchemasRejectDuplicatesCoercionsUnknownFieldsAndTrailingValues"
+    start_time {
+      seconds: 1793228210
+      nanos: 429000000
+    }
+    end_time {
+      seconds: 1793228210
+      nanos: 530000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetainedGuardReaderTest-strictSchemasRejectDuplicatesCoercionsUnknownFieldsAndTrailingValues.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetainedGuardReaderTest"
+    test_package: "org.example.otppager"
+    test_method: "frozenReaderDecryptsOnlyExpectedGuardsWithoutChangingFilesOrKeys"
+    start_time {
+      seconds: 1793228210
+      nanos: 532000000
+    }
+    end_time {
+      seconds: 1793228210
+      nanos: 558000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetainedGuardReaderTest-frozenReaderDecryptsOnlyExpectedGuardsWithoutChangingFilesOrKeys.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetainedGuardReaderTest"
+    test_package: "org.example.otppager"
+    test_method: "activeAccessAndOperationalOrArbitraryNamespacesAreRejected"
+    start_time {
+      seconds: 1793228210
+      nanos: 559000000
+    }
+    end_time {
+      seconds: 1793228210
+      nanos: 560000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetainedGuardReaderTest-activeAccessAndOperationalOrArbitraryNamespacesAreRejected.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetainedGuardReaderTest"
+    test_package: "org.example.otppager"
+    test_method: "claimsRejectInvalidOwnersMissingMapsDuplicateIdsAndNumericStrings"
+    start_time {
+      seconds: 1793228210
+      nanos: 561000000
+    }
+    end_time {
+      seconds: 1793228210
+      nanos: 611000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetainedGuardReaderTest-claimsRejectInvalidOwnersMissingMapsDuplicateIdsAndNumericStrings.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetainedGuardReaderTest"
+    test_package: "org.example.otppager"
+    test_method: "cohortByteBudgetAppliesAcrossOtherwiseValidIndividualRecords"
+    start_time {
+      seconds: 1793228210
+      nanos: 613000000
+    }
+    end_time {
+      seconds: 1793228211
+      nanos: 417000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetainedGuardReaderTest-cohortByteBudgetAppliesAcrossOtherwiseValidIndividualRecords.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetainedGuardReaderTest"
+    test_package: "org.example.otppager"
+    test_method: "sideVariantsDirectoriesSymlinksAndOversizedFilesAreNeverRepairedOrOpened"
+    start_time {
+      seconds: 1793228211
+      nanos: 418000000
+    }
+    end_time {
+      seconds: 1793228211
+      nanos: 444000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetainedGuardReaderTest-sideVariantsDirectoriesSymlinksAndOversizedFilesAreNeverRepairedOrOpened.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetainedGuardReaderTest"
+    test_package: "org.example.otppager"
+    test_method: "authenticatedCiphertextTamperingAndCapacityLimitsFailClosed"
+    start_time {
+      seconds: 1793228211
+      nanos: 445000000
+    }
+    end_time {
+      seconds: 1793228211
+      nanos: 596000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetainedGuardReaderTest-authenticatedCiphertextTamperingAndCapacityLimitsFailClosed.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetiredContactTest"
+    test_package: "org.example.otppager"
+    test_method: "replacementIsEmptyKeepsStableEntryAndClaimsAndCannotBeUndoneByStaleBook"
+    start_time {
+      seconds: 1793228211
+      nanos: 598000000
+    }
+    end_time {
+      seconds: 1793228211
+      nanos: 900000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetiredContactTest-replacementIsEmptyKeepsStableEntryAndClaimsAndCannotBeUndoneByStaleBook.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetiredContactTest"
+    test_package: "org.example.otppager"
+    test_method: "missingIndexCannotReinitializeRetiredLegacyRoot"
+    start_time {
+      seconds: 1793228211
+      nanos: 901000000
+    }
+    end_time {
+      seconds: 1793228211
+      nanos: 902000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetiredContactTest-missingIndexCannotReinitializeRetiredLegacyRoot.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetiredContactTest"
+    test_package: "org.example.otppager"
+    test_method: "metadataMigrationPreservesVaultBytesAndRejectsUnknownVersions"
+    start_time {
+      seconds: 1793228211
+      nanos: 903000000
+    }
+    end_time {
+      seconds: 1793228212
+      nanos: 28000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetiredContactTest-metadataMigrationPreservesVaultBytesAndRejectsUnknownVersions.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetiredContactTest"
+    test_package: "org.example.otppager"
+    test_method: "incompleteCleanupNeverPublishesReplacementAndActivePairingCannotBeReplaced"
+    start_time {
+      seconds: 1793228212
+      nanos: 30000000
+    }
+    end_time {
+      seconds: 1793228212
+      nanos: 81000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetiredContactTest-incompleteCleanupNeverPublishesReplacementAndActivePairingCannotBeReplaced.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementCancellationTest"
+    test_package: "org.example.otppager"
+    test_method: "retiringAContactDoesNotWaitForBlockedHttpsDisconnectAndPreventsAnyRetry"
+    start_time {
+      seconds: 1793228212
+      nanos: 83000000
+    }
+    end_time {
+      seconds: 1793228212
+      nanos: 134000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementCancellationTest-retiringAContactDoesNotWaitForBlockedHttpsDisconnectAndPreventsAnyRetry.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementCancellationTest"
+    test_package: "org.example.otppager"
+    test_method: "cancellationCannotClearAnotherContactsNfcOffer"
+    start_time {
+      seconds: 1793228212
+      nanos: 135000000
+    }
+    end_time {
+      seconds: 1793228212
+      nanos: 136000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementCancellationTest-cancellationCannotClearAnotherContactsNfcOffer.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementEvidenceTest"
+    test_package: "org.example.otppager"
+    test_method: "legacyIntentCannotAcquireRetrospectiveCaptureAuthority"
+    start_time {
+      seconds: 1793228212
+      nanos: 137000000
+    }
+    end_time {
+      seconds: 1793228212
+      nanos: 138000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementEvidenceTest-legacyIntentCannotAcquireRetrospectiveCaptureAuthority.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementEvidenceTest"
+    test_package: "org.example.otppager"
+    test_method: "tamperingVariantsMissingKeyAndKeyOnlyStateCannotBeRepairedOrReset"
+    start_time {
+      seconds: 1793228212
+      nanos: 138000000
+    }
+    end_time {
+      seconds: 1793228212
+      nanos: 164000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementEvidenceTest-tamperingVariantsMissingKeyAndKeyOnlyStateCannotBeRepairedOrReset.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementEvidenceTest"
+    test_package: "org.example.otppager"
+    test_method: "authenticatedIntentRoundTripNeverGrantsEnrollmentOrReplacesAnExistingRecord"
+    start_time {
+      seconds: 1793228212
+      nanos: 165000000
+    }
+    end_time {
+      seconds: 1793228212
+      nanos: 191000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementEvidenceTest-authenticatedIntentRoundTripNeverGrantsEnrollmentOrReplacesAnExistingRecord.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementRecoveryTest"
+    test_package: "org.example.otppager"
+    test_method: "retiredActiveContactCanRecoverReachOtherChatsAndStartAnEmptyPhysicalPairing"
+    start_time {
+      seconds: 1793228212
+      nanos: 192000000
+    }
+    end_time {
+      seconds: 1793228214
+      nanos: 414000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementRecoveryTest-retiredActiveContactCanRecoverReachOtherChatsAndStartAnEmptyPhysicalPairing.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementRecoveryTest"
+    test_package: "org.example.otppager"
+    test_method: "orphanScanDoesNotDecryptDamagedVaultsOrDependOnAnIndex"
+    start_time {
+      seconds: 1793228214
+      nanos: 421000000
+    }
+    end_time {
+      seconds: 1793228214
+      nanos: 499000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementRecoveryTest-orphanScanDoesNotDecryptDamagedVaultsOrDependOnAnIndex.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementRecoveryTest"
+    test_package: "org.example.otppager"
+    test_method: "inspectionNeverRepairsOrTrustsCompletionMarkerWithoutCheckingKeysAndFiles"
+    start_time {
+      seconds: 1793228214
+      nanos: 501000000
+    }
+    end_time {
+      seconds: 1793228214
+      nanos: 604000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementRecoveryTest-inspectionNeverRepairsOrTrustsCompletionMarkerWithoutCheckingKeysAndFiles.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementRestartTest"
+    test_package: "org.example.otppager"
+    test_method: "applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened"
+    start_time {
+      seconds: 1793228214
+      nanos: 606000000
+    }
+    end_time {
+      seconds: 1793228214
+      nanos: 607000000
+    }
+  }
+  test_status: IGNORED
+  error {
+    error_message: "org.junit.AssumptionViolatedException: Host-driven cold process test only\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.RetirementRestartTest.applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened(RetirementRestartTest.kt:19)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+    error_type: "org.junit.AssumptionViolatedException"
+    stack_trace: "org.junit.AssumptionViolatedException: Host-driven cold process test only\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.RetirementRestartTest.applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened(RetirementRestartTest.kt:19)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementRestartTest-applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementStartupTest"
+    test_package: "org.example.otppager"
+    test_method: "oneIncompleteRetirementDoesNotStopRecoveryOrDisableUnrelatedContacts"
+    start_time {
+      seconds: 1793228214
+      nanos: 609000000
+    }
+    end_time {
+      seconds: 1793228214
+      nanos: 634000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementStartupTest-oneIncompleteRetirementDoesNotStopRecoveryOrDisableUnrelatedContacts.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementStartupTest"
+    test_package: "org.example.otppager"
+    test_method: "unreadableJournalEnumerationDisablesVaultAccessWithoutResettingData"
+    start_time {
+      seconds: 1793228214
+      nanos: 636000000
+    }
+    end_time {
+      seconds: 1793228214
+      nanos: 662000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementStartupTest-unreadableJournalEnumerationDisablesVaultAccessWithoutResettingData.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "RetirementUiTest"
+    test_package: "org.example.otppager"
+    test_method: "retirementClearsDraftDialogsFieldsAndFinishesWithoutWaitingForWorker"
+    start_time {
+      seconds: 1793228214
+      nanos: 663000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 145000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.RetirementUiTest-retirementClearsDraftDialogsFieldsAndFinishesWithoutWaitingForWorker.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "StorageTest"
+    test_package: "org.example.otppager"
+    test_method: "pairingAndOutboxSurviveRestartWithoutPlaintextOnDisk"
+    start_time {
+      seconds: 1793228215
+      nanos: 146000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 351000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.StorageTest-pairingAndOutboxSurviveRestartWithoutPlaintextOnDisk.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "StorageTest"
+    test_package: "org.example.otppager"
+    test_method: "unreadableVaultPathIsNotTreatedAsANewPairing"
+    start_time {
+      seconds: 1793228215
+      nanos: 353000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 380000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.StorageTest-unreadableVaultPathIsNotTreatedAsANewPairing.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "StorageTest"
+    test_package: "org.example.otppager"
+    test_method: "missingVaultWithExistingKeyCannotResetReservations"
+    start_time {
+      seconds: 1793228215
+      nanos: 381000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 437000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.StorageTest-missingVaultWithExistingKeyCannotResetReservations.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "StorageTest"
+    test_package: "org.example.otppager"
+    test_method: "corruptVaultFailsClosedAndReplayWindowSurvivesReopen"
+    start_time {
+      seconds: 1793228215
+      nanos: 438000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 464000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.StorageTest-corruptVaultFailsClosedAndReplayWindowSurvivesReopen.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "UpgradeStateTest"
+    test_package: "org.example.otppager"
+    test_method: "releaseReplacementPreservesOperationalState"
+    start_time {
+      seconds: 1793228215
+      nanos: 465000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 466000000
+    }
+  }
+  test_status: IGNORED
+  error {
+    error_message: "org.junit.AssumptionViolatedException: Only the host-driven signed update job runs this fixture\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.UpgradeStateTest.releaseReplacementPreservesOperationalState(UpgradeStateTest.kt:21)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+    error_type: "org.junit.AssumptionViolatedException"
+    stack_trace: "org.junit.AssumptionViolatedException: Only the host-driven signed update job runs this fixture\nat org.junit.Assume.assumeTrue(Assume.java:68)\nat org.example.otppager.UpgradeStateTest.releaseReplacementPreservesOperationalState(UpgradeStateTest.kt:21)\nat java.lang.reflect.Method.invoke(Native Method)\nat org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)\nat org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)\nat org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)\nat org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)\nat org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)\nat org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)\nat org.junit.runners.Suite.runChild(Suite.java:128)\nat org.junit.runners.Suite.runChild(Suite.java:27)\nat org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)\nat org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)\nat org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)\nat org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)\nat org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)\nat org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)\nat org.junit.runners.ParentRunner.run(ParentRunner.java:413)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:137)\nat org.junit.runner.JUnitCore.run(JUnitCore.java:115)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)\nat androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)\nat androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)\nat android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)\n"
+  }
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.UpgradeStateTest-releaseReplacementPreservesOperationalState.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "VaultGenerationTest"
+    test_package: "org.example.otppager"
+    test_method: "capturedOwnersIdentityLeasesAndSiblingsNeverRebindToCurrentGeneration"
+    start_time {
+      seconds: 1793228215
+      nanos: 468000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 519000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.VaultGenerationTest-capturedOwnersIdentityLeasesAndSiblingsNeverRebindToCurrentGeneration.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "VaultRetirementAndroidTest"
+    test_package: "org.example.otppager"
+    test_method: "queuedWriterCannotRecreateAKeyAfterTerminalCleanup"
+    start_time {
+      seconds: 1793228215
+      nanos: 520000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 546000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.VaultRetirementAndroidTest-queuedWriterCannotRecreateAKeyAfterTerminalCleanup.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "VaultRetirementAndroidTest"
+    test_package: "org.example.otppager"
+    test_method: "malformedAndInterruptedMarkersBlockAccessAndRecoverWithoutAContactIndex"
+    start_time {
+      seconds: 1793228215
+      nanos: 547000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 573000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.VaultRetirementAndroidTest-malformedAndInterruptedMarkersBlockAccessAndRecoverWithoutAContactIndex.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "VaultRetirementAndroidTest"
+    test_package: "org.example.otppager"
+    test_method: "retirementDestroysContactKeysAndDraftButKeepsReuseMetadataAndOtherContacts"
+    start_time {
+      seconds: 1793228215
+      nanos: 574000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 701000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.VaultRetirementAndroidTest-retirementDestroysContactKeysAndDraftButKeepsReuseMetadataAndOtherContacts.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "VaultRotationTest"
+    test_package: "org.example.otppager"
+    test_method: "legacyV2VaultsStillOpenAndRetirementRemovesEveryGeneration"
+    start_time {
+      seconds: 1793228215
+      nanos: 702000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 753000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.VaultRotationTest-legacyV2VaultsStillOpenAndRetirementRemovesEveryGeneration.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+test_result {
+  test_case {
+    test_class: "VaultRotationTest"
+    test_package: "org.example.otppager"
+    test_method: "clearHistoryRotatesTheKeySoOldSnapshotsCannotBeOpened"
+    start_time {
+      seconds: 1793228215
+      nanos: 755000000
+    }
+    end_time {
+      seconds: 1793228215
+      nanos: 780000000
+    }
+  }
+  test_status: PASSED
+  output_artifact {
+    label {
+      label: "logcat"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/logcat-org.example.otppager.VaultRotationTest-clearHistoryRotatesTheKeySoOldSnapshotsCannotBeOpened.txt"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/device-info.pb"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.meminfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/meminfo"
+    }
+  }
+  output_artifact {
+    label {
+      label: "device-info.cpuinfo"
+      namespace: "android"
+    }
+    source_path {
+      path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/cpuinfo"
+    }
+  }
+}
+output_artifact {
+  label {
+    label: "test-results.log"
+    namespace: "com.google.testing.platform.runtime.android.driver.AndroidInstrumentationDriver"
+  }
+  source_path {
+    path: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/androidTest-results/connected/debug/emulator-5554 - 12/testlog/test-results.log"
+  }
+  type: TEST_DATA
+  mime_type: "text/plain"
+}

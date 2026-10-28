@@ -1,0 +1,2 @@
+10-28 22:57:58.859  2698  2713 I TestRunner: started: wipeRequestRemovesOnlyThatChatOnTheFriendsPhoneAndReportsWhatItSaid(org.example.otppager.PeerWipeTest)
+10-28 22:57:59.148  2698  2713 I TestRunner: finished: wipeRequestRemovesOnlyThatChatOnTheFriendsPhoneAndReportsWhatItSaid(org.example.otppager.PeerWipeTest)

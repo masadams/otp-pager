@@ -1,0 +1,7 @@
+10-28 22:59:25.741  3108  3123 I TestRunner: started: authenticatedCiphertextTamperingAndCapacityLimitsFailClosed(org.example.otppager.RetainedGuardReaderTest)
+10-28 22:59:25.762   189  2213 E keystore2: keystore2::error: In KeystoreOperation::finish
+10-28 22:59:25.762   189  2213 E keystore2:
+10-28 22:59:25.762   189  2213 E keystore2: Caused by:
+10-28 22:59:25.762   189  2213 E keystore2:     0: In finish: KeyMint::finish failed.
+10-28 22:59:25.762   189  2213 E keystore2:     1: Error::Km(ErrorCode(-30))
+10-28 22:59:25.871  3108  3123 I TestRunner: finished: authenticatedCiphertextTamperingAndCapacityLimitsFailClosed(org.example.otppager.RetainedGuardReaderTest)

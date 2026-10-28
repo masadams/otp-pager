@@ -1,0 +1,2 @@
+10-28 22:58:08.583  2698  2713 I TestRunner: started: missingIndexCannotReinitializeRetiredLegacyRoot(org.example.otppager.RetiredContactTest)
+10-28 22:58:08.596  2698  2713 I TestRunner: finished: missingIndexCannotReinitializeRetiredLegacyRoot(org.example.otppager.RetiredContactTest)

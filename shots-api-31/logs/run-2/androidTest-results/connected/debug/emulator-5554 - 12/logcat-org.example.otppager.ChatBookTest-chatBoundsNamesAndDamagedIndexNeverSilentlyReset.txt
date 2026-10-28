@@ -1,0 +1,2 @@
+10-28 22:57:26.700  2698  2713 I TestRunner: started: chatBoundsNamesAndDamagedIndexNeverSilentlyReset(org.example.otppager.ChatBookTest)
+10-28 22:57:26.940  2698  2713 I TestRunner: finished: chatBoundsNamesAndDamagedIndexNeverSilentlyReset(org.example.otppager.ChatBookTest)

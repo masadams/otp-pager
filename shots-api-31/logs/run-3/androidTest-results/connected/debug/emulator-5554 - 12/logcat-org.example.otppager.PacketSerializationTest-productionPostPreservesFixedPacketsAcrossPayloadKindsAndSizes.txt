@@ -1,0 +1,2 @@
+10-28 22:59:06.801  3108  3123 I TestRunner: started: productionPostPreservesFixedPacketsAcrossPayloadKindsAndSizes(org.example.otppager.PacketSerializationTest)
+10-28 22:59:06.868  3108  3123 I TestRunner: finished: productionPostPreservesFixedPacketsAcrossPayloadKindsAndSizes(org.example.otppager.PacketSerializationTest)

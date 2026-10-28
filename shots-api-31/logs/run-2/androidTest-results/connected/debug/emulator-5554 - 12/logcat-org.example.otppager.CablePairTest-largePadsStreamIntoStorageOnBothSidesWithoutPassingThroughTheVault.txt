@@ -1,0 +1,3 @@
+10-28 22:57:18.555  2698  2713 I TestRunner: started: largePadsStreamIntoStorageOnBothSidesWithoutPassingThroughTheVault(org.example.otppager.CablePairTest)
+10-28 22:57:22.011  2698  2725 D ProfileInstaller: Installing profile for org.example.otppager
+10-28 22:57:26.469  2698  2713 I TestRunner: finished: largePadsStreamIntoStorageOnBothSidesWithoutPassingThroughTheVault(org.example.otppager.CablePairTest)

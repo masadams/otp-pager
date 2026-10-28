@@ -1,0 +1,24 @@
+10-28 22:59:16.441  3108  3123 I TestRunner: started: cancellingWizardClosesListenerSynchronouslyAndWipesOffer(org.example.otppager.RadioPairTest)
+10-28 22:59:16.448   758   804 D SplashScreenView: Build android.window.SplashScreenView{a4c3773 V.E...... ......ID 0,0-0,0}
+10-28 22:59:16.448   758   804 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 22:59:16.448   758   804 D SplashScreenView: Branding: view: android.view.View{14ad630 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 22:59:16.457  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@68af0c in: PRE_ON_CREATE
+10-28 22:59:16.468   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fefbc000 0x3ff133000]
+10-28 22:59:16.471   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff829000 0x3ff9a0000]
+10-28 22:59:16.472   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff2aa000 0x3ff421000]
+10-28 22:59:16.475   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:59:16.483  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@68af0c in: CREATED
+10-28 22:59:16.484  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@68af0c in: STARTED
+10-28 22:59:16.486  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@68af0c in: RESUMED
+10-28 22:59:16.501   758   890 D EGL_emulation: app_time_stats: avg=2064.72ms min=2064.72ms max=2064.72ms count=1
+10-28 22:59:16.506   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff421000 0x3ff598000]
+10-28 22:59:16.513  1019  1574 D EGL_emulation: app_time_stats: avg=44.87ms min=3.32ms max=716.30ms count=23
+10-28 22:59:16.514   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff598000 0x3ff70f000]
+10-28 22:59:16.515   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fe58a000 0x3fe701000]
+10-28 22:59:16.532   537   570 I ActivityTaskManager: Displayed org.example.otppager/.RadioPairActivity: +84ms
+10-28 22:59:16.551   537  1007 W InputManager-JNI: Input channel object '79e76a6 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 22:59:16.567   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff2aa000 0x3ff421000]
+10-28 22:59:16.568   537  2246 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 22:59:16.569   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffd4a000 0x3ffec1000]
+10-28 22:59:16.582  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@68af0c in: PAUSED
+10-28 22:59:16.586  3108  3123 I TestRunner: finished: cancellingWizardClosesListenerSynchronouslyAndWipesOffer(org.example.otppager.RadioPairTest)

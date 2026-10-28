@@ -1,0 +1,2 @@
+10-28 22:59:29.367  3108  3123 I TestRunner: started: pairingAndOutboxSurviveRestartWithoutPlaintextOnDisk(org.example.otppager.StorageTest)
+10-28 22:59:29.541  3108  3123 I TestRunner: finished: pairingAndOutboxSurviveRestartWithoutPlaintextOnDisk(org.example.otppager.StorageTest)

@@ -1,0 +1,3 @@
+10-28 22:56:44.015  2189  2204 I TestRunner: started: nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks(org.example.otppager.ReceiveTest)
+10-28 22:56:44.023   537   887 W InputManager-JNI: Input channel object '2f9bd6e org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:56:44.026  2189  2204 I TestRunner: finished: nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks(org.example.otppager.ReceiveTest)

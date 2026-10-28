@@ -1,0 +1,46 @@
+10-28 22:59:18.617  3108  3123 I TestRunner: started: userStartedForegroundReceiverStartsAndStopsOnSupportedAndroidVersions(org.example.otppager.ReceiveTest)
+10-28 22:59:18.628   758   804 D SplashScreenView: Build android.window.SplashScreenView{d945de1 V.E...... ......ID 0,0-0,0}
+10-28 22:59:18.628   758   804 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 22:59:18.628   758   804 D SplashScreenView: Branding: view: android.view.View{9ccb706 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 22:59:18.640  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@85415cf in: PRE_ON_CREATE
+10-28 22:59:18.643  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@85415cf in: CREATED
+10-28 22:59:18.644  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@85415cf in: STARTED
+10-28 22:59:18.653   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff9a0000 0x3ffb17000]
+10-28 22:59:18.655   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffb17000 0x3ffc8e000]
+10-28 22:59:18.656   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff421000 0x3ff598000]
+10-28 22:59:18.659   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:59:18.688  1019  1574 D EGL_emulation: app_time_stats: avg=87.40ms min=2.47ms max=1693.17ms count=22
+10-28 22:59:18.701   758   890 D EGL_emulation: app_time_stats: avg=1099.64ms min=78.86ms max=2120.42ms count=2
+10-28 22:59:18.725  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@85415cf in: RESUMED
+10-28 22:59:18.746   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffd4a000 0x3ffec1000]
+10-28 22:59:18.748   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff598000 0x3ff70f000]
+10-28 22:59:18.749   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fe58a000 0x3fe701000]
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:16
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:24
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missing SF jank callback for vsyncId: 9253
+10-28 22:59:18.754  1019  1625 W FrameTracker: Missing SF jank callback for vsyncId: 9268
+10-28 22:59:18.755  1019  1625 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 22:59:18.763   537   570 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +141ms
+10-28 22:59:18.784   537  1080 W InputManager-JNI: Input channel object 'e08f443 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 22:59:18.798  3108  3108 D CompatibilityChangeReporter: Compat change id reported: 160794467; UID 10109; state: ENABLED
+10-28 22:59:18.897   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fefbc000 0x3ff133000]
+10-28 22:59:18.899   537  2246 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 22:59:18.899   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff421000 0x3ff598000]
+10-28 22:59:18.907  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@85415cf in: PAUSED
+10-28 22:59:18.911  3108  3123 I TestRunner: finished: userStartedForegroundReceiverStartsAndStopsOnSupportedAndroidVersions(org.example.otppager.ReceiveTest)

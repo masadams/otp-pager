@@ -1,0 +1,47 @@
+10-28 22:56:41.473  2189  2204 I TestRunner: started: cancellingWizardClosesListenerSynchronouslyAndWipesOffer(org.example.otppager.RadioPairTest)
+10-28 22:56:41.481   758   804 D SplashScreenView: Build android.window.SplashScreenView{ad6b912 V.E...... ......ID 0,0-0,0}
+10-28 22:56:41.481   758   804 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 22:56:41.481   758   804 D SplashScreenView: Branding: view: android.view.View{fbc78e3 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 22:56:41.487  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@8f7033b in: PRE_ON_CREATE
+10-28 22:56:41.499   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fe924000 0x3fea9b000]
+10-28 22:56:41.502  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@8f7033b in: CREATED
+10-28 22:56:41.503  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@8f7033b in: STARTED
+10-28 22:56:41.504  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@8f7033b in: RESUMED
+10-28 22:56:41.504   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff856000 0x3ff9cd000]
+10-28 22:56:41.506   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffdd5000 0x3fff4c000]
+10-28 22:56:41.520   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff0d5000 0x3ff24c000]
+10-28 22:56:41.522   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff24c000 0x3ff3c3000]
+10-28 22:56:41.523   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff3c3000 0x3ff53a000]
+10-28 22:56:41.525   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:56:41.549   758   890 D EGL_emulation: app_time_stats: avg=475.17ms min=13.25ms max=1986.61ms count=6
+10-28 22:56:41.553  1019  1574 D EGL_emulation: app_time_stats: avg=41.32ms min=2.36ms max=710.11ms count=23
+10-28 22:56:41.555   537   570 I ActivityTaskManager: Displayed org.example.otppager/.RadioPairActivity: +76ms
+10-28 22:56:41.573   537   887 W InputManager-JNI: Input channel object '4a07a8b Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 22:56:41.586   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3fed89000 0x3fef00000]
+10-28 22:56:41.589   537  2246 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 22:56:41.589   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ff856000 0x3ff9cd000]
+10-28 22:56:41.606  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@8f7033b in: PAUSED
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:88
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:88
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:41.607  1019  1625 W FrameTracker: Missing SF jank callback for vsyncId: 3124
+10-28 22:56:41.607  1019  1625 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 22:56:41.608   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:56:41.617  2189  2204 I TestRunner: finished: cancellingWizardClosesListenerSynchronouslyAndWipesOffer(org.example.otppager.RadioPairTest)

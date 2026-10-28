@@ -1,0 +1,127 @@
+10-28 22:59:08.391  3108  3123 I TestRunner: started: inboxConversationAndFriendDetailsKeepTechnicalToolsOutOfTheEverydayFlow(org.example.otppager.PagerJourneyTest)
+10-28 22:59:08.683   758   804 D SplashScreenView: Build android.window.SplashScreenView{fc7d1ea V.E...... ......ID 0,0-0,0}
+10-28 22:59:08.683   758   804 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 22:59:08.683   758   804 D SplashScreenView: Branding: view: android.view.View{f05dcdb G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 22:59:08.688  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@6abec6f in: PRE_ON_CREATE
+10-28 22:59:08.700  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@6abec6f in: CREATED
+10-28 22:59:08.700  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@6abec6f in: STARTED
+10-28 22:59:08.708   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:59:08.711   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fe3b5000 0x3fe52c000]
+10-28 22:59:08.717   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fdd6c000 0x3fdee3000]
+10-28 22:59:08.718   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fdee3000 0x3fe05a000]
+10-28 22:59:08.735  1019  1574 D EGL_emulation: app_time_stats: avg=90.34ms min=5.54ms max=1807.26ms count=23
+10-28 22:59:08.755   758   890 D EGL_emulation: app_time_stats: avg=1493.38ms min=786.71ms max=2200.04ms count=2
+10-28 22:59:08.783  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@6abec6f in: RESUMED
+10-28 22:59:08.801   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fdbf5000 0x3fdd6c000]
+10-28 22:59:08.809   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fd0b5000 0x3fd22c000]
+10-28 22:59:08.813   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fcf3e000 0x3fd0b5000]
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:24
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:88
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missing SF jank callback for vsyncId: 8382
+10-28 22:59:08.817  1019  1625 W FrameTracker: Missing SF jank callback for vsyncId: 8398
+10-28 22:59:08.817  1019  1625 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 22:59:08.818   537   570 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +146ms
+10-28 22:59:08.840   537  1080 W InputManager-JNI: Input channel object '806de73 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 22:59:09.181   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fcdc7000 0x3fcf3e000]
+10-28 22:59:09.195  1351  1387 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:59:09.198  1351  1387 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/inbox-friends (2).png. Uid: 10109
+10-28 22:59:09.532   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fe3b5000 0x3fe52c000]
+10-28 22:59:09.544  1351  1387 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:59:09.553  1351  1387 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/conversation-redesign (2).png. Uid: 10109
+10-28 22:59:09.599   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fdd6c000 0x3fdf35000]
+10-28 22:59:09.601   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fc465000 0x3fc62e000]
+10-28 22:59:09.602   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fc62e000 0x3fc7f7000]
+10-28 22:59:09.603   383   508 D AudioFlinger: mixer(0x767ef7195a70) throttle end: throttle time(35)
+10-28 22:59:09.682   537   565 W InputManager-JNI: Input channel object '779f8cb org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:59:09.901   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fdd6c000 0x3fdee3000]
+10-28 22:59:09.915  1351  1387 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:59:09.918  1351  1387 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/friend-details (2).png. Uid: 10109
+10-28 22:59:09.964  3108  3141 D EGL_emulation: app_time_stats: avg=127.46ms min=8.03ms max=340.46ms count=9
+10-28 22:59:10.531   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fdee3000 0x3fe05a000]
+10-28 22:59:10.541  3096  3104 W System  : A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+10-28 22:59:10.541  3096  3104 W System  : java.lang.Throwable: Explicit termination method 'close' not called
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java:295)
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.open(CloseGuard.java:263)
+10-28 22:59:10.541  3096  3104 W System  : 	at android.hardware.HardwareBuffer.<init>(HardwareBuffer.java:246)
+10-28 22:59:10.541  3096  3104 W System  : A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+10-28 22:59:10.541  3096  3104 W System  : java.lang.Throwable: Explicit termination method 'close' not called
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java:295)
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.open(CloseGuard.java:263)
+10-28 22:59:10.541  3096  3104 W System  : 	at android.hardware.HardwareBuffer.<init>(HardwareBuffer.java:246)
+10-28 22:59:10.541  3096  3104 W System  : A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+10-28 22:59:10.541  3096  3104 W System  : java.lang.Throwable: Explicit termination method 'close' not called
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java:295)
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.open(CloseGuard.java:263)
+10-28 22:59:10.541  3096  3104 W System  : 	at android.hardware.HardwareBuffer.<init>(HardwareBuffer.java:246)
+10-28 22:59:10.541  3096  3104 W System  : A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+10-28 22:59:10.541  3096  3104 W System  : java.lang.Throwable: Explicit termination method 'close' not called
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java:295)
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.open(CloseGuard.java:263)
+10-28 22:59:10.541  3096  3104 W System  : 	at android.hardware.HardwareBuffer.<init>(HardwareBuffer.java:246)
+10-28 22:59:10.541  3096  3104 W System  : A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+10-28 22:59:10.541  3096  3104 W System  : java.lang.Throwable: Explicit termination method 'close' not called
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java:295)
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.open(CloseGuard.java:263)
+10-28 22:59:10.541  3096  3104 W System  : 	at android.hardware.HardwareBuffer.<init>(HardwareBuffer.java:246)
+10-28 22:59:10.541  3096  3104 W System  : A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+10-28 22:59:10.541  3096  3104 W System  : java.lang.Throwable: Explicit termination method 'close' not called
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java:295)
+10-28 22:59:10.541  3096  3104 W System  : 	at dalvik.system.CloseGuard.open(CloseGuard.java:263)
+10-28 22:59:10.541  3096  3104 W System  : 	at android.hardware.HardwareBuffer.<init>(HardwareBuffer.java:246)
+10-28 22:59:10.541  3096  3104 W System  : A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+10-28 22:59:10.542  3096  3104 W System  : java.lang.Throwable: Explicit termination method 'close' not called
+10-28 22:59:10.542  3096  3104 W System  : 	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java:295)
+10-28 22:59:10.542  3096  3104 W System  : 	at dalvik.system.CloseGuard.open(CloseGuard.java:263)
+10-28 22:59:10.542  3096  3104 W System  : 	at android.hardware.HardwareBuffer.<init>(HardwareBuffer.java:246)
+10-28 22:59:10.542  3096  3104 W System  : A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+10-28 22:59:10.542  3096  3104 W System  : java.lang.Throwable: Explicit termination method 'close' not called
+10-28 22:59:10.542  3096  3104 W System  : 	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java:295)
+10-28 22:59:10.542  3096  3104 W System  : 	at dalvik.system.CloseGuard.open(CloseGuard.java:263)
+10-28 22:59:10.542  3096  3104 W System  : 	at android.hardware.HardwareBuffer.<init>(HardwareBuffer.java:246)
+10-28 22:59:10.542  3096  3104 W System  : A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+10-28 22:59:10.542  3096  3104 W System  : java.lang.Throwable: Explicit termination method 'close' not called
+10-28 22:59:10.542  3096  3104 W System  : 	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java:295)
+10-28 22:59:10.542  3096  3104 W System  : 	at dalvik.system.CloseGuard.open(CloseGuard.java:263)
+10-28 22:59:10.542  3096  3104 W System  : 	at android.hardware.HardwareBuffer.<init>(HardwareBuffer.java:246)
+10-28 22:59:10.542  3096  3104 W System  : A resource was acquired at attached stack trace but never released. See java.io.Closeable for information on avoiding resource leaks.
+10-28 22:59:10.542  3096  3104 W System  : java.lang.Throwable: Explicit termination method 'close' not called
+10-28 22:59:10.542  3096  3104 W System  : 	at dalvik.system.CloseGuard.openWithCallSite(CloseGuard.java:295)
+10-28 22:59:10.542  3096  3104 W System  : 	at dalvik.system.CloseGuard.open(CloseGuard.java:263)
+10-28 22:59:10.542  3096  3104 W System  : 	at android.hardware.HardwareBuffer.<init>(HardwareBuffer.java:246)
+10-28 22:59:10.545  1351  1387 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:59:10.550  1351  1378 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/add-friend-methods (2).png. Uid: 10109
+10-28 22:59:10.571   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fc465000 0x3fc5dc000]
+10-28 22:59:10.574   537  2246 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 22:59:10.574   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fc5dc000 0x3fc753000]
+10-28 22:59:10.584  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@6abec6f in: PAUSED
+10-28 22:59:10.591   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:59:10.594   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fc5dc000 0x3fc753000]
+10-28 22:59:10.603   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fc753000 0x3fc8ca000]
+10-28 22:59:10.605   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fc8ca000 0x3fca41000]
+10-28 22:59:10.649   758   890 D EGL_emulation: app_time_stats: avg=631.45ms min=47.81ms max=950.66ms count=3
+10-28 22:59:10.667  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@6abec6f in: STOPPED
+10-28 22:59:10.669  3108  3108 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@6abec6f in: DESTROYED
+10-28 22:59:10.687   537  1080 W InputManager-JNI: Input channel object '2e42719 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:59:10.701   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fe52c000 0x3fe58a000]
+10-28 22:59:10.707   537  2278 D HostConnection: createUnique: call
+10-28 22:59:10.709   537  2278 D HostConnection: HostConnection::get() New Host Connection established 0x753a46fb5c10, tid 2278
+10-28 22:59:10.714   537  2278 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 22:59:10.714   537  2278 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+10-28 22:59:10.719   537  2278 D EGL_emulation: eglCreateContext: 0x753a46fb2550: maj 3 min 0 rcv 3
+10-28 22:59:10.727   537  2278 D EGL_emulation: eglMakeCurrent: 0x753a46fb2550: ver 3 0 (tinfo 0x753c4ba6c180) (first time)
+10-28 22:59:10.874  3108  3123 I TestRunner: finished: inboxConversationAndFriendDetailsKeepTechnicalToolsOutOfTheEverydayFlow(org.example.otppager.PagerJourneyTest)

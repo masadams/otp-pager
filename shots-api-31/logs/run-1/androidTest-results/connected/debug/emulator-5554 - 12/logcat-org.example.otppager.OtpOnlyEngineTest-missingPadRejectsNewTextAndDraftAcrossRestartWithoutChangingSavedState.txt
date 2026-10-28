@@ -1,0 +1,2 @@
+10-28 22:56:32.304  2189  2204 I TestRunner: started: missingPadRejectsNewTextAndDraftAcrossRestartWithoutChangingSavedState(org.example.otppager.OtpOnlyEngineTest)
+10-28 22:56:32.459  2189  2204 I TestRunner: finished: missingPadRejectsNewTextAndDraftAcrossRestartWithoutChangingSavedState(org.example.otppager.OtpOnlyEngineTest)

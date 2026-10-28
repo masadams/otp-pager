@@ -1,0 +1,2 @@
+10-28 22:58:53.459  3108  3123 I TestRunner: started: acceptedDraftSuppressionCommitsWithMessageAndDoesNotDropANewerDraft(org.example.otppager.DraftTest)
+10-28 22:58:53.679  3108  3123 I TestRunner: finished: acceptedDraftSuppressionCommitsWithMessageAndDoesNotDropANewerDraft(org.example.otppager.DraftTest)

@@ -1,0 +1,2 @@
+10-28 22:57:26.941  2698  2713 I TestRunner: started: separateFriendsKeepKeysTrafficUnreadAndForgetIsolated(org.example.otppager.ChatBookTest)
+10-28 22:57:28.060  2698  2713 I TestRunner: finished: separateFriendsKeepKeysTrafficUnreadAndForgetIsolated(org.example.otppager.ChatBookTest)

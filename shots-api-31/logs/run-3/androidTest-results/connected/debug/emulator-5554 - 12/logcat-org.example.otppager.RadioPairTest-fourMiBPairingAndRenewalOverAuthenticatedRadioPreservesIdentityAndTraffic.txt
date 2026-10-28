@@ -1,0 +1,8 @@
+10-28 22:59:16.688  3108  3123 I TestRunner: started: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)
+10-28 22:59:16.690   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffec1000 0x3fff1f000]
+10-28 22:59:18.066   344   344 I netd    : trafficSwapActiveStatsMap() <16.83ms>
+10-28 22:59:18.068   344   344 I netd    : tetherGetStats() -> {[]} <0.47ms>
+10-28 22:59:18.069   344   344 I netd    : bandwidthSetGlobalAlert(2097152) <0.13ms>
+10-28 22:59:18.071   344   344 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.62ms>
+10-28 22:59:18.072   344   344 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.59ms>
+10-28 22:59:18.445  3108  3123 I TestRunner: finished: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)

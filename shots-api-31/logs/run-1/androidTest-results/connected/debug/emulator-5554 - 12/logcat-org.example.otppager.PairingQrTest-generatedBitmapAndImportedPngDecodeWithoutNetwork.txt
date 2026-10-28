@@ -1,0 +1,4 @@
+10-28 22:56:40.497  2189  2204 I TestRunner: started: generatedBitmapAndImportedPngDecodeWithoutNetwork(org.example.otppager.PairingQrTest)
+10-28 22:56:40.558   360   418 D goldfish-address-space: claimShared: Ask to claim region [0x3ffd77000 0x3ffdd5000]
+10-28 22:56:40.703  2189  2204 D skia    : --- Failed to create image decoder with message 'unimplemented'
+10-28 22:56:40.704  2189  2204 I TestRunner: finished: generatedBitmapAndImportedPngDecodeWithoutNetwork(org.example.otppager.PairingQrTest)

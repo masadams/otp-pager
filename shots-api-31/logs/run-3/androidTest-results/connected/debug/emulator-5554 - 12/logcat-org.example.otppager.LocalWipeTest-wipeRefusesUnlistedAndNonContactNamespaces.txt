@@ -1,0 +1,2 @@
+10-28 22:59:04.856  3108  3123 I TestRunner: started: wipeRefusesUnlistedAndNonContactNamespaces(org.example.otppager.LocalWipeTest)
+10-28 22:59:04.883  3108  3123 I TestRunner: finished: wipeRefusesUnlistedAndNonContactNamespaces(org.example.otppager.LocalWipeTest)

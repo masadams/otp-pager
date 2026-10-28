@@ -1,0 +1,21 @@
+10-28 22:55:58.602  2189  2204 I TestRunner: started: largePadsStreamIntoStorageOnBothSidesWithoutPassingThroughTheVault(org.example.otppager.CablePairTest)
+10-28 22:56:00.012   758   890 D EGL_emulation: app_time_stats: avg=11809.87ms min=84.37ms max=23535.38ms count=2
+10-28 22:56:02.671  2189  2221 D ProfileInstaller: Installing profile for org.example.otppager
+10-28 22:56:05.387   537   692 E WifiHealthMonitor:  Hit PackageManager exception
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: android.content.pm.PackageManager$NameNotFoundException: No module info for package: com.android.wifi
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at android.app.ApplicationPackageManager.getModuleInfo(ApplicationPackageManager.java:1079)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.getWifiStackVersion(WifiHealthMonitor.java:366)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.extractCurrentSoftwareBuildInfo(WifiHealthMonitor.java:587)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.postBootSwBuildCheck(WifiHealthMonitor.java:522)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.postBootDetectionHandler(WifiHealthMonitor.java:513)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.access$500(WifiHealthMonitor.java:71)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor$2.onAlarm(WifiHealthMonitor.java:190)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at android.app.AlarmManager$ListenerWrapper.run(AlarmManager.java:323)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at android.os.Handler.handleCallback(Handler.java:938)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at android.os.Looper.loop(Looper.java:288)
+10-28 22:56:05.387   537   692 E WifiHealthMonitor: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+10-28 22:56:05.423   537  1080 D WifiNl80211Manager: Scan result ready event
+10-28 22:56:05.423   537  1080 D WifiNative: Scan result ready event
+10-28 22:56:06.568  2189  2204 I TestRunner: finished: largePadsStreamIntoStorageOnBothSidesWithoutPassingThroughTheVault(org.example.otppager.CablePairTest)

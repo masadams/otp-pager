@@ -1,0 +1,24 @@
+10-28 22:58:11.895  2698  2713 I TestRunner: started: capturedOwnersIdentityLeasesAndSiblingsNeverRebindToCurrentGeneration(org.example.otppager.VaultGenerationTest)
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:88
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:72
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:88
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:88
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:58:11.917  1019  1625 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 22:58:11.955  2698  2713 I TestRunner: finished: capturedOwnersIdentityLeasesAndSiblingsNeverRebindToCurrentGeneration(org.example.otppager.VaultGenerationTest)

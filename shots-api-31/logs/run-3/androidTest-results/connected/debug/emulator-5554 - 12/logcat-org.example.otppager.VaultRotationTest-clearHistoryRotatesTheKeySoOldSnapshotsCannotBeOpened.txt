@@ -1,0 +1,2 @@
+10-28 22:59:30.025  3108  3123 I TestRunner: started: clearHistoryRotatesTheKeySoOldSnapshotsCannotBeOpened(org.example.otppager.VaultRotationTest)
+10-28 22:59:30.053  3108  3123 I TestRunner: finished: clearHistoryRotatesTheKeySoOldSnapshotsCannotBeOpened(org.example.otppager.VaultRotationTest)

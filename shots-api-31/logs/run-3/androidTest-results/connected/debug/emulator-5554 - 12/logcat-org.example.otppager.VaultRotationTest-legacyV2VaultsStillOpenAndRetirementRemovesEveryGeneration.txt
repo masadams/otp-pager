@@ -1,0 +1,2 @@
+10-28 22:59:29.979  3108  3123 I TestRunner: started: legacyV2VaultsStillOpenAndRetirementRemovesEveryGeneration(org.example.otppager.VaultRotationTest)
+10-28 22:59:30.024  3108  3123 I TestRunner: finished: legacyV2VaultsStillOpenAndRetirementRemovesEveryGeneration(org.example.otppager.VaultRotationTest)

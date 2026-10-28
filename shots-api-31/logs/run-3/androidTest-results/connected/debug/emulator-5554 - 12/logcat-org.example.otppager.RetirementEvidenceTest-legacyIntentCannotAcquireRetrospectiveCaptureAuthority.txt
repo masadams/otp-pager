@@ -1,0 +1,2 @@
+10-28 22:59:26.453  3108  3123 I TestRunner: started: legacyIntentCannotAcquireRetrospectiveCaptureAuthority(org.example.otppager.RetirementEvidenceTest)
+10-28 22:59:26.457  3108  3123 I TestRunner: finished: legacyIntentCannotAcquireRetrospectiveCaptureAuthority(org.example.otppager.RetirementEvidenceTest)

@@ -1,0 +1,61 @@
+10-28 22:56:20.924  2189  2204 I TestRunner: started: deviceExchangePausesSendingAndShowsHonestKeyStatus(org.example.otppager.InterfaceTest)
+10-28 22:56:21.245   758   804 D SplashScreenView: Build android.window.SplashScreenView{ecc8cef V.E...... ......ID 0,0-0,0}
+10-28 22:56:21.245   758   804 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 22:56:21.245   758   804 D SplashScreenView: Branding: view: android.view.View{fe303fc G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 22:56:21.251  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@fd4de76 in: PRE_ON_CREATE
+10-28 22:56:21.254  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@fd4de76 in: CREATED
+10-28 22:56:21.255  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@fd4de76 in: STARTED
+10-28 22:56:21.260   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff79a000 0x3ff911000]
+10-28 22:56:21.267   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff911000 0x3ffa88000]
+10-28 22:56:21.270   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fda7e000 0x3fdbf5000]
+10-28 22:56:21.275   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:56:21.306   758   890 D EGL_emulation: app_time_stats: avg=282.63ms min=16.71ms max=497.80ms count=5
+10-28 22:56:21.337  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@fd4de76 in: RESUMED
+10-28 22:56:21.351   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff335000 0x3ff4ac000]
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:24
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:88
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missed App frame:80
+10-28 22:56:21.363  1019  1625 W FrameTracker: Missing SF jank callback for vsyncId: 1213
+10-28 22:56:21.363   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fdbf5000 0x3fdd6c000]
+10-28 22:56:21.363  1019  1625 V PerfettoTrigger: Not triggering com.android.telemetry.interaction-jank-monitor-9 - not enough time since last trigger
+10-28 22:56:21.370   537   570 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +127ms
+10-28 22:56:21.371   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fdd6c000 0x3fdee3000]
+10-28 22:56:21.378   537  1007 W InputManager-JNI: Input channel object '370eea7 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 22:56:21.403  1217  1277 D EGL_emulation: app_time_stats: avg=189.53ms min=15.59ms max=528.36ms count=6
+10-28 22:56:21.499   383   508 D AudioFlinger: mixer(0x767ef7195a70) throttle end: throttle time(36)
+10-28 22:56:21.532   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff4ac000 0x3ff675000]
+10-28 22:56:21.536   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff675000 0x3ff83e000]
+10-28 22:56:21.538   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff83e000 0x3ffa07000]
+10-28 22:56:21.545   383   508 D AudioFlinger: mixer(0x767ef7195a70) throttle end: throttle time(33)
+10-28 22:56:21.892   537   685 W InputManager-JNI: Input channel object 'caf7d95 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 22:56:21.919   383   506 W AudioFlinger: createTrack_l(): mismatch between requested flags (00000004) and output flags (00000002)
+10-28 22:56:21.921   383   506 D AF::TrackHandle: OpPlayAudio: track:56 usage:13 not muted
+10-28 22:56:21.921   537   707 D AudioTrack: createTrack_l(8): AUDIO_OUTPUT_FLAG_FAST denied by server; frameCount 0 -> 4512
+10-28 22:56:22.164   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3fda7e000 0x3fdbf5000]
+10-28 22:56:22.177  1351  1387 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 22:56:22.181  1351  1387 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/device.png. Uid: 10105
+10-28 22:56:22.201   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff4ac000 0x3ff623000]
+10-28 22:56:22.204   537  2246 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 22:56:22.204   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff623000 0x3ff79a000]
+10-28 22:56:22.225   387   387 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 22:56:22.232  2189  2189 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@fd4de76 in: PAUSED
+10-28 22:56:22.266   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff623000 0x3ff79a000]
+10-28 22:56:22.268   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff79a000 0x3ff911000]
+10-28 22:56:22.269   360   449 D goldfish-address-space: claimShared: Ask to claim region [0x3ff911000 0x3ffa88000]
+10-28 22:56:22.280  2189  2204 I TestRunner: finished: deviceExchangePausesSendingAndShowsHonestKeyStatus(org.example.otppager.InterfaceTest)

@@ -1,0 +1,2 @@
+10-28 22:59:24.578  3108  3123 I TestRunner: started: exactCiphertextByteBoundAcceptsValidGuardButNextByteIsRefused(org.example.otppager.RetainedGuardReaderTest)
+10-28 22:59:24.676  3108  3123 I TestRunner: finished: exactCiphertextByteBoundAcceptsValidGuardButNextByteIsRefused(org.example.otppager.RetainedGuardReaderTest)

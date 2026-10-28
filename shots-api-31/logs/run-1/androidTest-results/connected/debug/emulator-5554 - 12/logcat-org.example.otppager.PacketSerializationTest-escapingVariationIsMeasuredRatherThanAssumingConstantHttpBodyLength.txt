@@ -1,0 +1,2 @@
+10-28 22:56:32.536  2189  2204 I TestRunner: started: escapingVariationIsMeasuredRatherThanAssumingConstantHttpBodyLength(org.example.otppager.PacketSerializationTest)
+10-28 22:56:32.540  2189  2204 I TestRunner: finished: escapingVariationIsMeasuredRatherThanAssumingConstantHttpBodyLength(org.example.otppager.PacketSerializationTest)
