@@ -262,3 +262,13 @@ actual cleanup evidence (S10). JVM tests block transport and inject persistence
 failures; the end-to-end instrumentation fixture asserts POST occurs only after
 retirement. Physical peer-wipe, partial cleanup/restart and independent review remain
 open. Peer wipe stays unreviewed and off by default; see the PR for execution evidence.
+
+## USB discovery implementation follow-up — 2026-10-28
+
+The follow-up branch `test/usb-negotiation-lifecycle` stacks on #43 and adds tested
+retry/permission/stop transitions, wider transport tests and large-pad streaming
+coverage. S03/S07 are preserved by leaving pad activation/recovery in CableProtocol
+and rejecting discovery after transfer starts or its captured operation is cancelled.
+This is a review candidate, not a verified fix for the owner's physical regression.
+Android instrumentation, signed upgrade and two-phone/power-loss evidence remain
+separate from local compilation/JVM results recorded in the PR.

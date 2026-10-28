@@ -300,3 +300,15 @@ actual cleanup evidence (S10). JVM tests block transport and inject persistence
 failures; the end-to-end instrumentation fixture asserts POST occurs only after
 retirement. Physical peer-wipe, partial cleanup/restart and independent review remain
 open. Peer wipe stays unreviewed and off by default; see the PR for execution evidence.
+
+## USB discovery follow-up — 2026-10-28
+
+Branch `test/usb-negotiation-lifecycle` depends on #43, not a duplicate fix. The
+wizard now uses `UsbPairDiscovery`: failed negotiation can retry; denial needs an
+explicit permission retry; late callbacks cannot restart a stopped/retired owner;
+transfer is terminal to discovery. No wire format, pad ledger or lifecycle ownership
+rules changed. Tests cover discovery transitions and transport packet boundaries;
+streaming instrumentation covers 16/32/64 MiB. See the PR for exact build evidence.
+Physical hardware regression is still open: record both models, OS/build versions,
+host direction, cable, permission sequence and failure stage; test interruption,
+renewal and power loss without clearing existing operational pads.

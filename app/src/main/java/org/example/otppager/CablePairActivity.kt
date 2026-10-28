@@ -16,7 +16,6 @@ import android.os.Looper
 import android.view.WindowManager
 import android.widget.*
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -30,13 +29,12 @@ class CablePairActivity : Activity() {
     private lateinit var status: TextView
     private lateinit var confirm: Button
     private lateinit var finish: Button
-    private var awaitingPermission = false
-    private var busy = false
+    private lateinit var discovery: UsbPairDiscovery
+    private lateinit var retryPermission: Button
     private var active = false
     @Volatile private var channel: UsbPairChannel? = null
     @Volatile private var confirmation: CountDownLatch? = null
     @Volatile private var approved = false
-    private var expireAt = 0L
     private lateinit var chatId: String
     private var renewal = false
     private var padSize = PadProtocol.MATERIAL_BYTES
@@ -50,10 +48,8 @@ class CablePairActivity : Activity() {
                 return
             }
             if (intent.action == permissionAction) {
-                awaitingPermission = false
-                if (!intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                    busy = true; note("USB permission declined. Close and retry when ready.")
-                } else inspect()
+                if (discovery.permissionResult(intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false))) inspect()
+                retryPermission.isEnabled = discovery.state == UsbPairDiscovery.State.DENIED
             }
         }
     }
@@ -86,6 +82,14 @@ class CablePairActivity : Activity() {
         if (renewal) body.addView(label("Choose the same friend on both devices. Your saved history and verified device identities stay in place."))
         body.addView(label("Message keys: ${padSize / PadProtocol.MATERIAL_BYTES} MiB", 14f))
         status = label("Waiting for your friend's device…"); body.addView(status)
+        discovery = UsbPairDiscovery(android.os.SystemClock::elapsedRealtime,
+            { active && !cancelled.get() && operation?.cancelled == false },
+            { task -> worker.execute { task() } }, { task -> runOnUiThread { task() } }, ::note)
+        retryPermission = Button(this).apply {
+            text = "Retry USB permission"; isEnabled = false
+            setOnClickListener { isEnabled = false; if (discovery.retryPermission()) inspect() }
+        }
+        body.addView(retryPermission)
         body.addView(Button(this).apply { text = "About USB pairing"; setOnClickListener {
             val dialog = AlertDialog.Builder(this@CablePairActivity).setTitle("Physical pairing")
                 .setMessage("One device needs the server address and access token saved. Approve Android's USB permission prompts. Compare every group of the confirmation code on BOTH physical screens.\n\nAfter both approve, the encrypted connection exchanges server setup, fresh message keys and public device identities. Private signing keys remain on their own device. USB host direction selects pad size. Both devices need the same app version.\n\nA data cable and compatible Android USB host/accessory modes are required. This experimental protocol uses conventional encryption and is not independently audited or post-quantum secure. If renewal is interrupted, reconnect both devices on this screen to recover.")
@@ -99,35 +103,35 @@ class CablePairActivity : Activity() {
         setContentView(root)
         val events = IntentFilter(permissionAction).apply { addAction(UsbManager.ACTION_USB_DEVICE_DETACHED); addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED) }
         androidx.core.content.ContextCompat.registerReceiver(this, receiver, events, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
-        expireAt = android.os.SystemClock.elapsedRealtime() + 180000
     }
     override fun onResume() { super.onResume(); if (operation == null || cancelled.get() || operation?.cancelled == true) { finish(); return }; active = true; handler.post(poll) }
     private fun permission(): PendingIntent = PendingIntent.getBroadcast(this, 90, Intent(permissionAction).setPackage(packageName),
         PendingIntent.FLAG_UPDATE_CURRENT or if (android.os.Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
     @Suppress("DEPRECATION")
     private fun inspect() {
-        if (busy || awaitingPermission || cancelled.get() || operation?.cancelled == true) return
-        if (android.os.SystemClock.elapsedRealtime() >= expireAt) { busy = true; note("No compatible USB data connection found. Check cable/USB host direction, then close and retry. QR setup remains available."); return }
+        if (!discovery.inspectable()) return
         val accessory = manager.accessoryList?.firstOrNull { it.manufacturer == "Field" && it.model == "OTP Pager Pairing" }
         if (accessory != null) {
-            if (!manager.hasPermission(accessory)) { awaitingPermission = true; manager.requestPermission(accessory, permission()); return }
+            if (!manager.hasPermission(accessory)) { discovery.requestPermission { manager.requestPermission(accessory, permission()) }; retryPermission.isEnabled = discovery.state == UsbPairDiscovery.State.DENIED; return }
             startTransfer(false) { UsbPairChannel.accessory(manager, accessory) }; return
         }
         val devices = manager.deviceList.values.toList()
         if (devices.size > 1) { note("Connect only the intended other station; disconnect other USB peripherals."); return }
         val device = devices.singleOrNull() ?: return
-        if (!manager.hasPermission(device)) { awaitingPermission = true; manager.requestPermission(device, permission()); return }
+        if (!manager.hasPermission(device)) { discovery.requestPermission { manager.requestPermission(device, permission()) }; retryPermission.isEnabled = discovery.state == UsbPairDiscovery.State.DENIED; return }
         if (UsbPairChannel.isAccessory(device)) startTransfer(true) { UsbPairChannel.host(manager, device) }
         else {
-            busy = true; note("Checking USB accessory support…")
-            worker.execute {
-                try { check(!cancelled.get()); operation?.check(); UsbPairChannel.switchToAccessory(manager, device); operation?.check(); runOnUiThread { busy = false; note("USB mode changed · waiting for reconnection/permission…") } }
-                catch (failure: Exception) { runOnUiThread { busy = false; note("Could not establish Android accessory mode (${failure.message ?: "USB negotiation failed"}). Try reversing USB host direction or use QR setup.") } }
+            val lease = operation ?: return
+            discovery.negotiate {
+                check(!cancelled.get()); lease.check()
+                UsbPairChannel.switchToAccessory(manager, device)
+                lease.check()
             }
         }
     }
     private fun startTransfer(host: Boolean, open: () -> UsbPairChannel) {
-        busy = true; note("Connected by USB · exchanging setup…")
+        if (!discovery.startTransfer()) return
+        note("Connected by USB · exchanging setup…")
         worker.execute {
             var engine: StationEngine? = null
             try {
@@ -160,6 +164,7 @@ class CablePairActivity : Activity() {
         }
     }
     override fun onStop() {
+        if (::discovery.isInitialized) discovery.stop()
         active = false; cancelled.set(true); operation?.close(); operation = null; handler.removeCallbacksAndMessages(null); confirmation?.countDown(); channel?.close()
         worker.execute { StationRuntime.pairingOpen = false }
         if (!isFinishing) finish()
