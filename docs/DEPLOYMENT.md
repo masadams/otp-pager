@@ -67,6 +67,7 @@ not supported. No registry login or local image build is needed for the public i
 | `RELAY_TOKEN` | Private random URL-safe token, 43–128 characters |
 | `PROXY_NETWORK` | Existing bridge network shared with Nginx; default `proxy` |
 | `RELAY_IMAGE` | Leave unset for the current pinned stack default, or use the tested digest above |
+| `RELAY_STRICT_CLAIMS` | `0` (default) or `1`: the setup token only creates chat claims; see [chat access](CHAT_RELAY_ACCESS.md#strict-claims-optional-recommended-once-migrated). Needs a relay image built from this change |
 
 Generate the token locally with a trusted password manager or:
 
