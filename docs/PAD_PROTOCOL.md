@@ -1,6 +1,6 @@
 # Field finite-pad experiment (app 0.4)
 
-This is an experimental, incompatible Field protocol, not a Jericho client or a claim of information-theoretic security. The app's generator uses Android SecureRandom, not a certified physical entropy source. Authentication uses conventional HMAC-SHA-256 (RFC 2104/4231), not an information-theoretic one-time MAC. No cryptographic audit has been performed. AES-GCM remains the clearly labelled no-pad test mode. Installing a pad disables that mode for the pairing; exhaustion never falls back.
+This is an experimental, independent Field protocol, not a claim of information-theoretic security. The app's generator uses Android SecureRandom, not a certified physical entropy source. Authentication uses conventional HMAC-SHA-256 (RFC 2104/4231), not an information-theoretic one-time MAC. No cryptographic audit has been performed. AES-GCM remains the clearly labelled no-pad test mode. Installing a pad disables that mode for the pairing; exhaustion never falls back.
 
 ## Physical setup
 
@@ -29,13 +29,12 @@ These are crash-consistency measures under Android's storage semantics, not a ha
 
 Pad bytes remain in the encrypted vault so recent history can be displayed. There is no verified per-slot erasure or forward secrecy. Java strings and copied JSON cannot be reliably zeroized. Local storage is protected by Android Keystore AES-GCM; this is another computational dependency. Protect both devices and transfer media.
 
-## Sources and interoperability
+## Sources
 
-Reviewed Jericho upstream revision `f0ef7971fbdc297165e41880f2047e00387b28ac`, specifically `client/scripts/common.js` constants, pad slicing, `createMessageMac`, `encryptAndAuthenticateMessage` and decryption path. That source is GPLv3, copyright Joshua M. David. Its 192-byte pads, 7-byte identifiers, hash selection, encrypted 64-byte MAC and wire/storage formats differ from this experiment. No Jericho code has been copied. This implementation does not import Jericho databases or claim Jericho interoperability.
+This pad format and its wire/storage formats are this project's own. No third-party
+messenger code is included, and no interoperability with other clients is claimed.
 
 Primary references:
-- https://github.com/joshua-m-david/jerichoencryption/blob/f0ef7971fbdc297165e41880f2047e00387b28ac/client/scripts/common.js
-- https://joshua-m-david.github.io/jerichoencryption/information.html
 - https://www.rfc-editor.org/rfc/rfc2104
 - https://www.rfc-editor.org/rfc/rfc4231
 

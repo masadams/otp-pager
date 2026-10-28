@@ -1,6 +1,6 @@
 # Two-device test — v0.2
 
-Experimental AES-GCM, not OTP or Jericho. Read [HARDENING.md](HARDENING.md).
+Experimental AES-GCM, not OTP. Read [HARDENING.md](HARDENING.md).
 
 1. Pull/redeploy the relay in Portainer, preserving its data volume and token.
 2. Install the v0.2 APK on both devices. If debug signing differs, uninstall the

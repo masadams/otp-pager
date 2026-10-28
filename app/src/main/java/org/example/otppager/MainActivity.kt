@@ -17,7 +17,7 @@ import javax.crypto.spec.SecretKeySpec
 /**
  * Educational, single-device demonstration. NOT a secure messaging client.
  * Two roles are simulated in one process. No network, no physical pairing,
- * no persistent key accounting, no Jericho wire compatibility.
+ * no persistent key accounting.
  */
 class MainActivity : Activity() {
     private val random = SecureRandom()
