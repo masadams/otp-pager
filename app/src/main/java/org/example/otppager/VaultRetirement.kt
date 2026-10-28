@@ -67,7 +67,7 @@ internal object VaultRetirement {
                 VaultKeys.all(namespace, keys.aliases().toList()).isEmpty() // Every rotated vault-key generation.
             val filesGone = vaultSlots(namespace).all { (_, slot) ->
                 VaultLifecycle.variants(File(directory, "$slot.bin")).none { it.name in names }
-            }
+            } && PadMaterial.gone(directory, namespace)
             Status(if (cleanMarker && keysGone && filesGone) LocalState.COMPLETE else LocalState.INCOMPLETE)
         } catch (_: Exception) { Status(LocalState.UNAVAILABLE) }
     }
@@ -129,6 +129,7 @@ internal object VaultRetirement {
                 return listOf("vault-keys" to { VaultKeys.deleteAll(namespace) }) +
                     keyAliases(namespace).map { (label, alias) -> label to { deleteKey(alias) } } +
                     vaultSlots(namespace).map { (label, slot) -> label to { deleteFiles(slot) } } +
+                    listOf("pad-material" to { PadMaterial.deleteAll(directory, namespace) }) +
                     listOf("directory-sync" to { VaultLifecycle.syncDirectory(directory) })
             }
         })

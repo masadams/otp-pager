@@ -47,18 +47,48 @@ object PadProtocol {
     fun authenticate(key: ByteArray, bytes: ByteArray): ByteArray = Mac.getInstance("HmacSHA256").run { init(SecretKeySpec(key, "HmacSHA256")); doFinal(bytes) }
     fun seal(pad: ByteArray, role: Char, counter: Long, payload: String, stableId: ByteArray = id(pad)): Pair<String, String> {
         require(validSize(pad.size) && stableId.size == 16)
-        val data = payload.toByteArray(Charsets.UTF_8)
-        require(data.size <= BLOCK - 2) { "Encoded message too large for a pad slot" }
         val at = offset(pad, role, counter)
         requireAvailable(pad, at)
+        val slot = pad.copyOfRange(at, at + STRIDE)
+        return try { sealSlot(slot, role, counter, payload, stableId) } finally { slot.fill(0) }
+    }
+    /** Same wire format as [seal], from one slot's STRIDE bytes (separate pad storage). */
+    fun sealSlot(slot: ByteArray, role: Char, counter: Long, payload: String, stableId: ByteArray): Pair<String, String> {
+        require(slot.size == STRIDE && stableId.size == 16 && (role == 'A' || role == 'B') && counter in 1..MAX_SLOTS.toLong())
+        require((0 until STRIDE).any { slot[it] != 0.toByte() }) { "Pad slot retired" }
+        val data = payload.toByteArray(Charsets.UTF_8)
+        require(data.size <= BLOCK - 2) { "Encoded message too large for a pad slot" }
         val header = ByteBuffer.allocate(26).put(3).put(role.code.toByte()).putLong(counter).put(stableId).array()
         val clear = ByteBuffer.allocate(BLOCK).putShort(data.size.toShort()).put(data).array()
-        val cipher = ByteArray(BLOCK) { (clear[it].toInt() xor pad[at + it].toInt()).toByte() }
-        val key = pad.copyOfRange(at + BLOCK, at + STRIDE)
+        val cipher = ByteArray(BLOCK) { (clear[it].toInt() xor slot[it].toInt()).toByte() }
+        val key = slot.copyOfRange(BLOCK, STRIDE)
         return try {
             val wire = header + cipher
-            messageId(pad, role, counter, stableId) to b64.encodeToString(wire + authenticate(key, wire))
+            messageId(slot, role, counter, stableId) to b64.encodeToString(wire + authenticate(key, wire))
         } finally { key.fill(0); clear.fill(0); data.fill(0) }
+    }
+    /** Format and pad-id check only; returns the counter so the caller can fetch that one slot. */
+    fun counter(wire: String, role: Char, stableId: ByteArray): Long {
+        require(stableId.size == 16 && wire.length <= 5600)
+        val bytes = Base64.getDecoder().decode(wire)
+        require(bytes.size == 26 + BLOCK + 32 && bytes[0] == 3.toByte() && bytes[1] == role.code.toByte())
+        require(MessageDigest.isEqual(stableId, bytes.copyOfRange(10, 26))) { "Wrong pad" }
+        return ByteBuffer.wrap(bytes, 2, 8).long.also { require(it in 1..MAX_SLOTS.toLong()) { "Pad exhausted; exchange a fresh pad" } }
+    }
+    fun openSlot(slot: ByteArray, wire: String, role: Char, stableId: ByteArray): Protocol.Opened {
+        require(slot.size == STRIDE)
+        val counter = counter(wire, role, stableId)
+        require((0 until STRIDE).any { slot[it] != 0.toByte() }) { "Pad slot retired" }
+        val bytes = Base64.getDecoder().decode(wire)
+        val key = slot.copyOfRange(BLOCK, STRIDE)
+        try { require(MessageDigest.isEqual(authenticate(key, bytes.copyOfRange(0, 26 + BLOCK)), bytes.copyOfRange(26 + BLOCK, bytes.size))) { "Invalid pad authentication" } }
+        finally { key.fill(0) }
+        val clear = ByteArray(BLOCK) { (bytes[26 + it].toInt() xor slot[it].toInt()).toByte() }
+        return try {
+            val length = ByteBuffer.wrap(clear).short.toInt() and 65535
+            require(length <= BLOCK - 2)
+            Protocol.Opened(counter, messageId(slot, role, counter, stableId), String(clear, 2, length, Charsets.UTF_8))
+        } finally { clear.fill(0) }
     }
     fun messageId(pad: ByteArray, role: Char, counter: Long, stableId: ByteArray = id(pad)): String = hex(MessageDigest.getInstance("SHA-256").digest(stableId + role.code.toByte() + ByteBuffer.allocate(8).putLong(counter).array()).copyOf(16))
     fun role(wire: String): Char? = try {
