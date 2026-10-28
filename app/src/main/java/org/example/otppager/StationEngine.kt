@@ -11,6 +11,14 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     companion object {
         /** Paired with pad material, either in the vault (pre-migration "pad") or separate storage ("padKeys"). */
         internal fun hasPad(s: JSONObject) = s.has("pad") || s.has("padKeys")
+        const val MAX_BACKUPS = 2
+        /** Canonical `[{endpoint, token}]`, validated; order is the fallback order. */
+        internal fun parseBackups(list: JSONArray): JSONArray {
+            require(list.length() <= MAX_BACKUPS) { "At most $MAX_BACKUPS backup relays" }
+            return JSONArray((0 until list.length()).map { i -> list.getJSONObject(i).let {
+                JSONObject().put("endpoint", Protocol.endpoint(it.getString("endpoint"))).put("token", Protocol.token(it.getString("token")))
+            } }.also { l -> require(l.map { it.getString("endpoint") }.distinct().size == l.size) })
+        }
         /** A strict lease ended: live engines for that chat drop their decrypted state. */
         internal fun lockStrict(key: String) = synchronized(VaultLifecycle.lock) {
             live.filterValues { it == key }.keys.forEach { it.snapshot = null; it.cached = null }
@@ -98,6 +106,13 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         check(s.getLong("counter") >= 0 && s.getLong("cursor") >= 0)
         window(s)
         check(!(s.has("pad") && s.has("padKeys")))
+        s.optJSONArray("backups")?.let { list ->
+            check(list.length() in 1..MAX_BACKUPS)
+            for (i in 0 until list.length()) list.getJSONObject(i).let {
+                Protocol.endpoint(it.getString("endpoint")); Protocol.token(it.getString("token"))
+                check(it.getLong("cursor") >= 0 && it.has("epoch") && it.getString("endpoint") != s.getString("endpoint"))
+            }
+        }
         s.optJSONObject("control")?.let { c ->
             check(Regex("[a-f0-9]{32}").matches(c.getString("generation")))
             for (name in listOf("credential", "ctlOut", "ctlIn", "ackOut", "ackIn")) check(Regex("[a-f0-9]{64}").matches(c.getString(name)))
@@ -346,6 +361,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
                 .put("padKeys", b64e.encodeToString(pad.keys)).put("counter", 0).put("high", 0).put("seen", JSONArray())
                 .put("inbox", JSONArray()).put("outbox", JSONArray()).put("opened", JSONObject()).put("acceptedPackets", JSONObject()).put("cableComplete", false)
             stagedCable!!.remove("readyPacket"); stagedCable!!.remove("readyId"); stagedCable!!.remove("pad")
+            if (setup.has("backups")) stageBackups(stagedCable!!, setup)
             stagedRenewal = true
         } catch (failure: Exception) { pad.file.delete(); throw failure }
         finally { pad.keys.fill(0) }
@@ -438,6 +454,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
                 .put("padKeys", b64e.encodeToString(pad.keys)).put("padId", id)
                 .put("ownDevice", own).put("peerDevice", peer).put("padVerified", true).put("peerReady", true)
                 .put("cableComplete", false)
+            stageBackups(stagedCable!!, setup)
         } catch (failure: Exception) { pad.file.delete(); throw failure }
         finally { pad.keys.fill(0) }
     }
@@ -786,6 +803,37 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             transaction { it.put("relayRevoked", true) }
         } finally { master.fill(0) }
     }
+    /**
+     * Backup relays (pipeline item 6): up to [MAX_BACKUPS] extra relays, each with its own setup
+     * token, cursor, storage epoch and claim. Every check reads all reachable relays; queued
+     * packets go to the primary and, only if it fails, to the first backup that accepts them.
+     * Duplicates are harmless: inbox matching and the replay window already make delivery
+     * idempotent. Strict-chat unlocks stay with the primary relay only (one authority).
+     */
+    internal fun setBackups(relays: List<Pair<String, String>>) {
+        require(relays.size <= MAX_BACKUPS) { "At most $MAX_BACKUPS backup relays" }
+        val endpoints = relays.map { Protocol.endpoint(it.first) }
+        relays.forEach { Protocol.token(it.second) }
+        transaction { next ->
+            require(endpoints.distinct().size == endpoints.size && next.getString("endpoint") !in endpoints) { "Each relay may appear once" }
+            val previous = items(next.optJSONArray("backups") ?: JSONArray()).associateBy { it.getString("endpoint") }
+            next.put("backups", JSONArray(endpoints.zip(relays).map { (url, pair) ->
+                previous[url]?.takeIf { it.getString("token") == pair.second }
+                    ?: JSONObject().put("endpoint", url).put("token", Protocol.token(pair.second)).put("cursor", 0L).put("epoch", "")
+            }))
+            if (endpoints.isEmpty()) next.remove("backups")
+        }
+    }
+    internal fun backupsForSetup(): JSONArray = parseBackups(JSONArray(items(state?.optJSONArray("backups") ?: JSONArray()).map {
+        JSONObject().put("endpoint", it.getString("endpoint")).put("token", it.getString("token")) }))
+    /** Staging: adopt the signed setup's backup list with fresh cursors. */
+    private fun stageBackups(staged: JSONObject, setup: JSONObject) {
+        val list = parseBackups(setup.optJSONArray("backups") ?: JSONArray())
+        require((0 until list.length()).none { list.getJSONObject(it).getString("endpoint") == staged.getString("endpoint") }) { "Each relay may appear once" }
+        if (list.length() == 0) { staged.remove("backups"); return }
+        staged.put("backups", JSONArray((0 until list.length()).map { list.getJSONObject(it).put("cursor", 0L).put("epoch", "") }))
+    }
+    internal val backups: List<String> get() = items(state?.optJSONArray("backups") ?: JSONArray()).map { it.getString("endpoint") }
     fun sync(): String {
         store.requireActive()
         // Control first: a wipe request must work after pad exhaustion and relay revocation (S11).
@@ -800,34 +848,14 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         var ignored = 0
         try {
             val room = Protocol.room(master)
-            if (hasPad(s) && !s.optBoolean("relayScoped") &&
-                relay.scope(s.getString("endpoint"), room, s.getString("token"), Protocol.relayCapability(master))) {
-                // Persist protection before traffic. A later failure must never fall back to shared access.
-                transaction { it.put("relayScoped", true) }
-            }
-            val credential = if (state!!.optBoolean("relayScoped")) Protocol.relayCapability(master) else s.getString("token")
-            val response = JSONObject(try {
-                relay.request(s.getString("endpoint"), room, credential, "GET", cursor = s.getLong("cursor"))
-            } catch (e: RelayHttpException) {
-                if (e.status != 401 || !state!!.optBoolean("relayScoped")) throw e
-                // Lost relay volume: restore this same claim, never read/write with the setup token.
-                check(relay.scope(s.getString("endpoint"), room, s.getString("token"), credential)) { "Update the relay; protected chat access cannot be downgraded" }
-                relay.request(s.getString("endpoint"), room, credential, "GET", cursor = s.getLong("cursor"))
-            })
-            if (state!!.optBoolean("relayScoped")) check(response.optString("access") == "chat") { "Relay chat protection unavailable; access was not downgraded" }
-            check(response.optInt("protocol") == 2) { "Update the relay container before using this APK" }
-            val epoch = response.getString("epoch")
-            if (s.getString("epoch").isNotEmpty() && s.getString("epoch") != epoch) {
-                var recovered = 0
-                transaction { next -> next.put("epoch", epoch).put("cursor", 0L); recovered = retryUndelivered(next); retrySavedReceipts(next) }
-                return "RELAY STORAGE CHANGED // $recovered saved messages queued for recovery"
-            }
-            val messages = response.getJSONArray("messages")
-            require(messages.length() <= 50) { "Relay returned an oversized page" }
+            val capability = Protocol.relayCapability(master)
             val inbound = if (s.getString("role") == "A") 'B' else 'A'
-            transaction { next ->
-                next.put("epoch", epoch); prune(next)
-                var cursor = next.getLong("cursor")
+            /** Applies one page from any relay; [cursorOf] selects where that relay's cursor lives. */
+            fun ingest(messages: JSONArray, cursorOf: (JSONObject) -> JSONObject, cursorKey: String, epochKey: String, epoch: String) {
+                require(messages.length() <= 50) { "Relay returned an oversized page" }
+                transaction { next ->
+                    cursorOf(next).put(epochKey, epoch); prune(next)
+                    var cursor = cursorOf(next).getLong(cursorKey)
                 for (i in 0 until messages.length()) {
                     val item = messages.getJSONObject(i)
                     val seq = item.getLong("seq"); require(seq > cursor) { "Invalid relay ordering" }
@@ -838,7 +866,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
                         val known = items(next.getJSONArray("inbox")).firstOrNull { it.getString("packet") == wire }
                         if (known != null) {
                             recoverReceipt(next, known.getString("id"), wire)
-                            cursor = seq; next.put("cursor", cursor); continue
+                            cursor = seq; cursorOf(next).put(cursorKey, cursor); continue
                         }
                         // Authentication and payload validation finish before touching replay state.
                         val decoded = try { open(next, master, wire, inbound) } catch (_: Exception) { ignored++; null }
@@ -869,21 +897,81 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
                             } else { ignored++ }
                         }
                     } else if (packetRole(next, wire) == null) { ignored++ }
-                    cursor = seq; next.put("cursor", cursor)
+                    cursor = seq; cursorOf(next).put(cursorKey, cursor)
                 }
-                prune(next)
+                    prune(next)
+                }
             }
+            // Primary relay: unchanged rules (claims, lost-volume restore, storage-epoch recovery).
+            var primaryFailure: Exception? = null
+            val primaryCredential: String? = try {
+                if (hasPad(s) && !s.optBoolean("relayScoped") &&
+                    relay.scope(s.getString("endpoint"), room, s.getString("token"), capability)) {
+                    // Persist protection before traffic. A later failure must never fall back to shared access.
+                    transaction { it.put("relayScoped", true) }
+                }
+                val credential = if (state!!.optBoolean("relayScoped")) capability else s.getString("token")
+                val response = JSONObject(try {
+                    relay.request(s.getString("endpoint"), room, credential, "GET", cursor = state!!.getLong("cursor"))
+                } catch (e: RelayHttpException) {
+                    if (e.status != 401 || !state!!.optBoolean("relayScoped")) throw e
+                    // Lost relay volume: restore this same claim, never read/write with the setup token.
+                    check(relay.scope(s.getString("endpoint"), room, s.getString("token"), credential)) { "Update the relay; protected chat access cannot be downgraded" }
+                    relay.request(s.getString("endpoint"), room, credential, "GET", cursor = state!!.getLong("cursor"))
+                })
+                if (state!!.optBoolean("relayScoped")) check(response.optString("access") == "chat") { "Relay chat protection unavailable; access was not downgraded" }
+                check(response.optInt("protocol") == 2) { "Update the relay container before using this APK" }
+                val epoch = response.getString("epoch")
+                if (state!!.getString("epoch").isNotEmpty() && state!!.getString("epoch") != epoch) {
+                    var recovered = 0
+                    transaction { next -> next.put("epoch", epoch).put("cursor", 0L); recovered = retryUndelivered(next); retrySavedReceipts(next) }
+                    return "RELAY STORAGE CHANGED // $recovered saved messages queued for recovery"
+                }
+                ingest(response.getJSONArray("messages"), { it }, "cursor", "epoch", epoch)
+                credential
+            } catch (e: RelayHttpException) {
+                if (e.status == 410) throw e // Revocation is final; never route around it.
+                primaryFailure = e; null
+            } catch (e: java.io.IOException) { primaryFailure = e; null }
+
+            // Backups: read every reachable one. A storage-epoch change only restarts that relay's cursor.
+            val reachable = mutableListOf<Pair<String, String>>()
+            for ((index, backup) in items(state!!.optJSONArray("backups") ?: JSONArray()).withIndex()) try {
+                val url = backup.getString("endpoint")
+                fun entry(next: JSONObject) = next.getJSONArray("backups").getJSONObject(index).also { check(it.getString("endpoint") == url) }
+                if (hasPad(s) && !backup.optBoolean("scoped") && relay.scope(url, room, backup.getString("token"), capability))
+                    transaction { entry(it).put("scoped", true) }
+                val credential = if (entry(state!!).optBoolean("scoped")) capability else backup.getString("token")
+                val response = JSONObject(relay.request(url, room, credential, "GET", cursor = entry(state!!).getLong("cursor")))
+                if (entry(state!!).optBoolean("scoped")) check(response.optString("access") == "chat") { "Backup relay protection unavailable" }
+                check(response.optInt("protocol") == 2) { "Update the backup relay container" }
+                val epoch = response.getString("epoch")
+                if (entry(state!!).getString("epoch").let { it.isNotEmpty() && it != epoch }) {
+                    transaction { entry(it).put("epoch", epoch).put("cursor", 0L) }
+                } else ingest(response.getJSONArray("messages"), ::entry, "cursor", "epoch", epoch)
+                reachable.add(url to credential)
+            } catch (e: RelayHttpException) { if (e.status == 410) throw e } catch (_: java.io.IOException) {}
+            if (primaryCredential == null && reachable.isEmpty()) throw checkNotNull(primaryFailure)
+
             // Retry the exact durable ciphertext; a timeout never creates a new message ID/counter.
             val pending = items(checkNotNull(state).getJSONArray("outbox")).filter { it.getString("status") == "queued" }.take(10)
+            val routes = (listOfNotNull(primaryCredential?.let { s.getString("endpoint") to it }) + reachable)
             for (entry in pending) {
                 store.requireActive()
-                relay.request(s.getString("endpoint"), room, credential, "POST", RelayClient.packetBody(entry.getString("packet")))
+                var sent = false; var failure: Exception? = null
+                for ((url, credential) in routes) {
+                    try { relay.request(url, room, credential, "POST", RelayClient.packetBody(entry.getString("packet"))); sent = true; break }
+                    catch (e: RelayHttpException) { if (e.status == 410) throw e; failure = e } catch (e: java.io.IOException) { failure = e }
+                }
+                // No relay took it: report the failure exactly as before backups existed. The packet stays queued.
+                if (!sent) throw checkNotNull(failure)
                 transaction { next ->
                     items(next.getJSONArray("outbox")).firstOrNull { it.getString("id") == entry.getString("id") }?.put("status", "relayed")
                     prune(next)
                 }
             }
-            return "Connected" + if (ignored > 0) " · $ignored invalid/legacy packets skipped" else ""
+            val via = if (primaryCredential == null) " · via backup relay" else ""
+            return "Connected$via" + if (ignored > 0) " · $ignored invalid/legacy packets skipped" else ""
         } catch (e: RelayHttpException) {
             if (e.status == 410 && state?.let(::hasPad) == true) transaction { it.put("relayScoped", true).put("relayRevoked", true) }
             throw e

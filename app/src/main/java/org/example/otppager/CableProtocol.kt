@@ -16,8 +16,9 @@ object CableProtocol {
      * v5: the pad is streamed after setup as authenticated chunks, straight into pad storage.
      * v6: both phones also exchange peer-wipe control keys (docs/PEER_WIPE_PROTOCOL.md §1).
      * v7: both phones state the strict-chat mode; it must match and is bound into the code.
+     * v8: the phone that supplies the server also supplies its backup relays (signed setup).
      */
-    const val VERSION = 7
+    const val VERSION = 8
     private const val CHUNK = 32768
     private const val CHUNK_TAG: Byte = 0x50
     private const val LIMIT = 4096 // Public hello/approval frames only; encrypted material has a separate bound.
@@ -72,6 +73,7 @@ object CableProtocol {
             part("Field physical cable material v5".toByteArray(Charsets.US_ASCII))
             for (h in listOf(a, b)) { part(IdentityProtocol.publicKey(h.getString("key")).encoded); part(decoder.decode(h.getString("nonce"))); part(IdentityProtocol.publicKey(h.getString("ephemeral")).encoded) }
             for (name in listOf("endpoint", "token", "secret")) part(setup.getString(name).toByteArray(Charsets.UTF_8))
+            part((setup.optJSONArray("backups") ?: org.json.JSONArray()).toString().toByteArray(Charsets.UTF_8))
             part(setup.getInt("padSize").toString().toByteArray(Charsets.US_ASCII)); part(pad)
         }
         return hash(out.toByteArray())
@@ -200,20 +202,23 @@ object CableProtocol {
             }
             if (!host && !a.has("endpoint")) {
                 val token = checkNotNull(engine.state).getString("token")
-                secureSend(JSONObject().put("kind", "server").put("token", token)
-                    .put("proof", proof(engine, hash(identityDigest + token.toByteArray(Charsets.UTF_8)), "server-B")))
+                val relays = engine.backupsForSetup()
+                secureSend(JSONObject().put("kind", "server").put("token", token).put("backups", relays)
+                    .put("proof", proof(engine, hash(identityDigest + (token + relays.toString()).toByteArray(Charsets.UTF_8)), "server-B")))
             }
             val setup: JSONObject
             val digest: ByteArray
             progress("Both confirmed · exchanging fresh pairing material…")
             if (host) {
+                var relays = engine.backupsForSetup()
                 val token = if (a.has("endpoint")) checkNotNull(engine.state).getString("token") else {
                     val credentials = secureRead(); require(credentials.getString("kind") == "server")
-                    Protocol.token(credentials.getString("token")).also { verify(peerKey, hash(identityDigest + it.toByteArray(Charsets.UTF_8)), "server-B", credentials.getString("proof")) }
+                    relays = StationEngine.parseBackups(credentials.optJSONArray("backups") ?: org.json.JSONArray())
+                    Protocol.token(credentials.getString("token")).also { verify(peerKey, hash(identityDigest + (it + relays.toString()).toByteArray(Charsets.UTF_8)), "server-B", credentials.getString("proof")) }
                 }
                 val secret = if (renew) engine.state!!.getString("secret") else Protocol.randomSecret()
                 val size = a.getInt("padSize")
-                setup = JSONObject().put("endpoint", endpoint).put("token", token).put("secret", secret).put("padSize", size)
+                setup = JSONObject().put("endpoint", endpoint).put("token", token).put("secret", secret).put("padSize", size).put("backups", relays)
                 secureSend(JSONObject().put("kind", "pad").put("padSize", size))
                 val pad = sendPad(channel, output, engine, size, progress)
                 digest = digest(a, b, setup, pad.digest)

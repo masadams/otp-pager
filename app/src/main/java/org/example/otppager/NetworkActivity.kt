@@ -878,11 +878,41 @@ class NetworkActivity : Activity() {
             }
         }
     }
+    /** Up to two extra relays per chat. Both phones need the same list; pairing copies it. */
+    private fun showBackupRelays() {
+        val station = engine ?: return
+        val current = station.backups
+        val message = (if (current.isEmpty()) "No backup relays." else current.joinToString("\n") { "• $it" }) +
+            "\n\nIf the main server is unreachable, this chat reads from and sends through a backup relay. Each backup needs its own access token. " +
+            "Add the same backups on your friend's phone too; new pairings copy them automatically. Strict-chat unlocks always use the main server."
+        val builder = AlertDialog.Builder(this).setTitle("Backup relays").setMessage(message).setNegativeButton("Close", null)
+        if (current.size < StationEngine.MAX_BACKUPS) builder.setPositiveButton("Add") { _, _ ->
+            val box = column().apply { setPadding(dp(20), dp(8), dp(20), 0) }
+            val address = field("https://backup.example.com").also(box::addView)
+            val token = field("Access token").apply { inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD }.also(box::addView)
+            AlertDialog.Builder(this).setTitle("Add a backup relay").setView(box).setNegativeButton("Cancel", null)
+                .setPositiveButton("Save") { _, _ ->
+                    val pair = address.text.toString().trim() to token.text.toString().trim()
+                    token.text.clear()
+                    runTask(network = true) {
+                        val existing = checkNotNull(engine).backupsForSetup()
+                        val list = (0 until existing.length()).map { existing.getJSONObject(it).let { e -> e.getString("endpoint") to e.getString("token") } } + pair
+                        checkNotNull(engine).setBackups(list); "Backup relay saved · checking"
+                    }
+                }.create().also(::secureShow)
+        }
+        if (current.isNotEmpty()) builder.setNeutralButton("Remove all") { _, _ ->
+            confirm("Remove backup relays?", "This chat will use only its main server. Messages already delivered stay saved.") {
+                runTask { checkNotNull(engine).setBackups(emptyList()); "Backup relays removed" }
+            }
+        }
+        builder.create().also(::secureShow)
+    }
     private fun showConversationMenu() {
         // Stays available while a check is running so the local wipe is never blocked by networking.
         // Every other entry either opens a screen/dialog or is itself ignored while busy.
         AlertDialog.Builder(this).setTitle(openChat?.name ?: "Conversation")
-            .setItems(arrayOf("Friend details", "Check now", "Receiving & battery", "Clear draft", "Clear message history", "Advanced setup", "Wipe this chat from this phone")) { _, which ->
+            .setItems(arrayOf("Friend details", "Check now", "Receiving & battery", "Clear draft", "Clear message history", "Advanced setup", "Backup relays", "Wipe this chat from this phone")) { _, which ->
                 when (which) {
                     0 -> selectTab(6)
                     1 -> runTask(network = true) { syncChats() }
@@ -890,6 +920,7 @@ class NetworkActivity : Activity() {
                     3 -> clearDraft()
                     4 -> confirm("Clear local messages?", "Pending messages stay queued. Saved receipt recovery is removed with history. Replay protection stays active.") { runTask { checkNotNull(engine).clearHistory(); "Message history cleared" } }
                     5 -> { advancedShown = true; selectTab(1); latest?.let(::render) }
+                    6 -> showBackupRelays()
                     else -> confirmWipe()
                 }
             }.setNegativeButton("Close", null).create().also(::secureShow)
