@@ -146,7 +146,7 @@ internal object EpochState {
             }
             EpochLineage.Observation(legacyJournal = journal, terminals = legacy + epochs, stages = stages,
                 manifests = EpochManifests.readAll(directory))
-        } catch (_: Exception) { EpochLineage.Observation(unreadable = true) }
+        } catch (e: Exception) { android.util.Log.e("OTPDIAG", "observe unreadable", e); EpochLineage.Observation(unreadable = true) }
     }
 
     fun detail(directory: File): EpochLineage.Detail = synchronized(VaultLifecycle.lock) {

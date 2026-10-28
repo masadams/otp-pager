@@ -1,0 +1,85 @@
+name: UI preview screenshots
+# Development aid only. Runs the existing screenshot-capturing UI tests with a fictional
+# test profile on disposable emulators and commits the PNGs to `ui-shots/<branch>` so they
+# can be fetched with git. Triggered only by pushes to `ui-preview/**` branches.
+on:
+  push:
+    branches: ['ui-preview/**']
+concurrency:
+  group: ui-preview-${{ github.ref_name }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 31
+            profile: Nexus S # 480x800, Kompakt-sized
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - run: gradle --no-daemon :app:assembleDebug :app:assembleDebugAndroidTest
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Capture screens
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          ram-size: 2048M
+          heap-size: 256M
+          pre-emulator-launch-script: |
+            sed -i '/^hw.heapSize=/d; /^vm.heapSize=/d' "$ANDROID_AVD_HOME/test.avd/config.ini"
+            printf '\nvm.heapSize=256\n' >> "$ANDROID_AVD_HOME/test.avd/config.ini"
+          disable-animations: true
+          script: |
+            mkdir -p shots/logs
+            bash -c 'gradle --no-daemon :app:installDebug :app:installDebugAndroidTest > shots/logs/install.txt 2>&1; echo "exit=$?" >> shots/logs/install.txt'
+            bash -c 'adb logcat -c; python3 scripts/verify_epoch_cycle_restart.py > shots/logs/epoch.txt 2>&1; echo "exit=$?" >> shots/logs/epoch.txt; adb logcat -d -s OTPDIAG:V > shots/logs/otpdiag.txt 2>&1; adb logcat -d > shots/logs/logcat-full.txt 2>&1; true'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shots-api-${{ matrix.api }}
+          path: shots/
+          if-no-files-found: warn
+  publish:
+    needs: capture
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Only this job writes, and only to the ui-shots/ branch below.
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: shots
+      - name: Commit screenshots to ui-shots/<branch>
+        env:
+          SOURCE: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          mkdir out && cd out && git init -q -b shots
+          cp -r ../shots/. .
+          printf 'Screenshots from %s at %s (fictional test profile only).\n' "$SOURCE" "$SHA" > README.md
+          git add -A
+          git -c user.name=ui-preview -c user.email=ui-preview@users.noreply.github.com commit -q -m "UI preview of $SOURCE at $SHA"
+          git push -f "https://x-access-token:${TOKEN}@github.com/${REPO}.git" "shots:refs/heads/ui-shots/${SOURCE#ui-preview/}"

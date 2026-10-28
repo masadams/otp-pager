@@ -141,7 +141,9 @@ internal object GlobalRetirement {
     }
     private fun captureInitialEvidence(context: Context) {
         val directory = context.noBackupFilesDir.absoluteFile
-        when (val scope = try { EpochState.wipeScope(directory, requested = true) } catch (_: Exception) { EpochState.WipeScope.Unknown }) {
+        val diagDetail = try { EpochState.detail(directory) } catch (e: Exception) { null }
+        android.util.Log.e("OTPDIAG", "capture detail state=${diagDetail?.state} last=${diagDetail?.lastEpoch?.epoch} chain=${diagDetail?.chain?.size} obs=${try { EpochState.observe(directory).let { "unreadable=${it.unreadable} t=${it.terminals.size} s=${it.stages.size} m=${it.manifests.size}" } } catch (e: Exception) { e.toString() }}")
+        when (val scope = try { EpochState.wipeScope(directory, requested = true) } catch (e: Exception) { android.util.Log.e("OTPDIAG", "wipeScope threw", e); EpochState.WipeScope.Unknown }) {
             EpochState.WipeScope.Legacy -> Unit
             EpochState.WipeScope.Unknown -> return // Destruction proceeds; no provenance can be captured.
             is EpochState.WipeScope.Epoch -> {
@@ -150,8 +152,8 @@ internal object GlobalRetirement {
                 try {
                     ticket = EpochEvidence.beginFresh(directory, scope.manifest.epoch)
                     EpochEvidence.seal(context, ticket, scope.manifest, scope.priorRoots)
-                } catch (_: Exception) {
-                    // Evidence failure never prevents local cleanup; enrollment simply stays unavailable.
+                } catch (e: Exception) {
+                    android.util.Log.e("OTPDIAG", "epoch capture failed", e)
                 } finally { EpochEvidence.closeCapture(directory) }
                 return
             }
@@ -169,7 +171,7 @@ internal object GlobalRetirement {
     /** Only startup recovery of an existing global intent, or the explicit internal submit path, calls this. */
     fun recover(context: Context, requested: Boolean = false): GlobalRetirementMachine.Result {
         val directory = context.noBackupFilesDir.absoluteFile
-        return when (val scope = try { EpochState.wipeScope(directory, requested) } catch (_: Exception) { EpochState.WipeScope.Unknown }) {
+        return when (val scope = try { EpochState.wipeScope(directory, requested) } catch (e: Exception) { android.util.Log.e("OTPDIAG", "recover wipeScope threw", e); EpochState.WipeScope.Unknown }.also { android.util.Log.e("OTPDIAG", "recover scope=$it requested=$requested") }) {
             EpochState.WipeScope.Legacy -> recoverLegacy(context)
             is EpochState.WipeScope.Epoch -> recoverEpoch(context, scope)
             EpochState.WipeScope.Unknown ->
@@ -229,7 +231,9 @@ internal object GlobalRetirement {
                 return GlobalRetirementMachine.Previous(record?.roots ?: emptySet(), usable = true)
             }
             // The OTPTERM2 record is the durable intent; the listed manifest already holds every root.
-            override fun write(roots: Set<String>, complete: Boolean) { checkNotNull(terminal()) { "No durable epoch wipe intent" } }
+            override fun write(roots: Set<String>, complete: Boolean) {
+                try { android.util.Log.e("OTPDIAG", "write terminals=" + EpochEvidence.readAll(directory).map { "${it.epoch.take(6)}:${it.phase}" }) } catch (e: Exception) { android.util.Log.e("OTPDIAG", "write readAll threw", e) }
+                checkNotNull(terminal()) { "No durable epoch wipe intent" } }
             override fun discover() = ContactInventory.scanBestEffort(context).let { it.copy(roots = epochRoots(it.roots)) }
             override fun retire(root: String) = VaultRetirement.retireContact(context, root).completed
             override fun metadata(): List<Pair<String, () -> Unit>> = listOf(
