@@ -1,0 +1,2 @@
+10-28 12:27:35.661  2204  2219 I TestRunner: started: legacyPadMigrationPreservesHistoryAndLateSlotsAndClearsRetainedPayloads(org.example.otppager.DeliveryTest)
+10-28 12:27:37.187  2204  2219 I TestRunner: finished: legacyPadMigrationPreservesHistoryAndLateSlotsAndClearsRetainedPayloads(org.example.otppager.DeliveryTest)

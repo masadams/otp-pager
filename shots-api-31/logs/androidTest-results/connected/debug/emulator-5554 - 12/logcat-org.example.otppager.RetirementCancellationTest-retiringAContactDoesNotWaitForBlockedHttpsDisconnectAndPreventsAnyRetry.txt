@@ -1,0 +1,2 @@
+10-28 12:28:54.320  2204  2219 I TestRunner: started: retiringAContactDoesNotWaitForBlockedHttpsDisconnectAndPreventsAnyRetry(org.example.otppager.RetirementCancellationTest)
+10-28 12:28:54.343  2204  2219 I TestRunner: finished: retiringAContactDoesNotWaitForBlockedHttpsDisconnectAndPreventsAnyRetry(org.example.otppager.RetirementCancellationTest)

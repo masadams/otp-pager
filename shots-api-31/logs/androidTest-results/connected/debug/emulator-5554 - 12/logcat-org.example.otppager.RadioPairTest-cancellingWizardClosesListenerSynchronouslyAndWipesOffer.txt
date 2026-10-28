@@ -1,0 +1,32 @@
+10-28 12:28:22.152  2204  2219 I TestRunner: started: cancellingWizardClosesListenerSynchronouslyAndWipesOffer(org.example.otppager.RadioPairTest)
+10-28 12:28:22.166   763   816 D SplashScreenView: Build android.window.SplashScreenView{710a1a0 V.E...... ......ID 0,0-0,0}
+10-28 12:28:22.166   763   816 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 12:28:22.166   763   816 D SplashScreenView: Branding: view: android.view.View{513c159 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 12:28:22.179  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@e665dd6 in: PRE_ON_CREATE
+10-28 12:28:22.185  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@e665dd6 in: CREATED
+10-28 12:28:22.186  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@e665dd6 in: STARTED
+10-28 12:28:22.187  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@e665dd6 in: RESUMED
+10-28 12:28:22.189   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fe1f6000 0x3fe36d000]
+10-28 12:28:22.189   389   389 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:28:22.197   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fdd6c000 0x3fdee3000]
+10-28 12:28:22.198   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fc465000 0x3fc5dc000]
+10-28 12:28:22.218   763   900 D EGL_emulation: app_time_stats: avg=217.28ms min=16.87ms max=803.03ms count=5
+10-28 12:28:22.225   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fc5dc000 0x3fc753000]
+10-28 12:28:22.229   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fc753000 0x3fc8ca000]
+10-28 12:28:22.230   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fc8ca000 0x3fca41000]
+10-28 12:28:22.247   540   571 I ActivityTaskManager: Displayed org.example.otppager/.RadioPairActivity: +83ms
+10-28 12:28:22.250   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fec70000 0x3fede7000]
+10-28 12:28:22.253   540  2257 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 12:28:22.253   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fca41000 0x3fcbb8000]
+10-28 12:28:22.264  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@e665dd6 in: PAUSED
+10-28 12:28:22.267   540   627 W InputManager-JNI: Input channel object '83f6c8d Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 12:28:22.272   389   389 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:28:22.298   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fc465000 0x3fc5dc000]
+10-28 12:28:22.300   997  1618 W FrameTracker: Missed App frame:16
+10-28 12:28:22.300   997  1618 W FrameTracker: Missing SF jank callback for vsyncId: 2416
+10-28 12:28:22.301   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fe1f6000 0x3fe36d000]
+10-28 12:28:22.305   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fdd6c000 0x3fdee3000]
+10-28 12:28:22.360  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@e665dd6 in: STOPPED
+10-28 12:28:22.362  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.RadioPairActivity@e665dd6 in: DESTROYED
+10-28 12:28:22.365   540  1592 W InputManager-JNI: Input channel object 'ac34489 org.example.otppager/org.example.otppager.RadioPairActivity (client)' was disposed without first being removed with the input manager!
+10-28 12:28:22.370  2204  2219 I TestRunner: finished: cancellingWizardClosesListenerSynchronouslyAndWipesOffer(org.example.otppager.RadioPairTest)

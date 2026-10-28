@@ -1,0 +1,50 @@
+10-28 12:28:05.638  2204  2219 I TestRunner: started: capturesActualEinkInterfaceWithFictionalTraffic(org.example.otppager.InterfaceTest)
+10-28 12:28:05.639   540  2261 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 12:28:05.639   540  2261 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+10-28 12:28:05.640   540  2261 D EGL_emulation: eglCreateContext: 0x79ef15535550: maj 3 min 0 rcv 3
+10-28 12:28:05.640   540  2261 D EGL_emulation: eglMakeCurrent: 0x79ef15535550: ver 3 0 (tinfo 0x79f118e04180) (first time)
+10-28 12:28:05.641   540  2238 D HostConnection: createUnique: call
+10-28 12:28:05.641   540  2238 D HostConnection: HostConnection::get() New Host Connection established 0x79ef1552dbd0, tid 2238
+10-28 12:28:05.645   540  2238 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 12:28:06.288   763   816 D SplashScreenView: Build android.window.SplashScreenView{ec23566 V.E...... ......ID 0,0-0,0}
+10-28 12:28:06.288   763   816 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 12:28:06.288   763   816 D SplashScreenView: Branding: view: android.view.View{7da00a7 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 12:28:06.291   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fe636000 0x3fe7ad000]
+10-28 12:28:06.297   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fe7ad000 0x3fe924000]
+10-28 12:28:06.305  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@c21687f in: PRE_ON_CREATE
+10-28 12:28:06.305   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fe924000 0x3fea9b000]
+10-28 12:28:06.316  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@c21687f in: CREATED
+10-28 12:28:06.317  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@c21687f in: STARTED
+10-28 12:28:06.322   389   389 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:28:06.355  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@c21687f in: RESUMED
+10-28 12:28:06.365   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fec70000 0x3fede7000]
+10-28 12:28:06.367   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fd790000 0x3fd907000]
+10-28 12:28:06.368   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fd907000 0x3fda7e000]
+10-28 12:28:06.378   540   571 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +93ms
+10-28 12:28:06.394   540  2000 W InputManager-JNI: Input channel object '505fa2b Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 12:28:06.396   997  1618 W FrameTracker: Missing SF jank callback for vsyncId: 1167
+10-28 12:28:07.028   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fede7000 0x3fef5e000]
+10-28 12:28:07.038  1338  1511 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 12:28:07.043  1338  1511 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/messages.png. Uid: 10105
+10-28 12:28:07.083   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fe636000 0x3fe7ff000]
+10-28 12:28:07.085   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3fe7ff000 0x3fe9c8000]
+10-28 12:28:07.086   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fda7e000 0x3fdc47000]
+10-28 12:28:07.131   763   900 D EGL_emulation: app_time_stats: avg=772.88ms min=750.27ms max=795.49ms count=2
+10-28 12:28:07.134   540   568 W InputManager-JNI: Input channel object '5d5d37e org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 12:28:07.184  1211  1344 D EGL_emulation: app_time_stats: avg=788.58ms min=768.38ms max=808.79ms count=2
+10-28 12:28:07.412   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fef5e000 0x3ff0d5000]
+10-28 12:28:07.423  1338  1511 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 12:28:07.427  1338  1511 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/link.png. Uid: 10105
+10-28 12:28:07.660   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fe636000 0x3fe7ad000]
+10-28 12:28:07.671  1338  1511 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 12:28:07.678  1338  1360 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/pad.png. Uid: 10105
+10-28 12:28:07.695   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fe7ad000 0x3fe924000]
+10-28 12:28:07.697   540  2257 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 12:28:07.698   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fe924000 0x3fea9b000]
+10-28 12:28:07.702  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@c21687f in: PAUSED
+10-28 12:28:07.719   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fe924000 0x3fea9b000]
+10-28 12:28:07.721   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fda7e000 0x3fdbf5000]
+10-28 12:28:07.721   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fdbf5000 0x3fdd6c000]
+10-28 12:28:07.722   389   389 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:28:07.746   997  1495 I OpenGLRenderer: Davey! duration=2189ms; Flags=1, FrameTimelineVsyncId=1158, IntendedVsync=80966210258, Vsync=80966210258, InputEventId=0, HandleInputStart=80966963702, AnimationStart=80966964143, PerformTraversalsStart=80966964253, DrawStart=80972925266, FrameDeadline=80999543590, FrameInterval=80966962470, FrameStartTime=16666666, SyncQueued=80973284756, SyncStart=80973427110, IssueDrawCommandsStart=80973467861, SwapBuffers=80973827751, FrameCompleted=83155576145, DequeueBufferDuration=833931, QueueBufferDuration=1668074, GpuCompleted=83155576145, SwapBuffersCompleted=80979002610, DisplayPresentTime=0,
+10-28 12:28:07.753  2204  2219 I TestRunner: finished: capturesActualEinkInterfaceWithFictionalTraffic(org.example.otppager.InterfaceTest)

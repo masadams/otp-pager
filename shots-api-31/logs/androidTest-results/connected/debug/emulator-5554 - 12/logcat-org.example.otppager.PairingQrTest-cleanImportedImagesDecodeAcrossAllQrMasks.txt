@@ -1,0 +1,18 @@
+10-28 12:28:21.418  2204  2219 I TestRunner: started: cleanImportedImagesDecodeAcrossAllQrMasks(org.example.otppager.PairingQrTest)
+10-28 12:28:21.446   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3ff191000 0x3ff1ef000]
+10-28 12:28:21.543   343  1459 D resolv  :  Calling SSL_connect with mark 0xf0064
+10-28 12:28:21.543   343  1459 D resolv  :  SSL_connect returned -1 with mark 0xf0064
+10-28 12:28:21.543   343  1459 W resolv  : SSL_connect ssl error =5, mark 0xf0064: Connection refused
+10-28 12:28:21.543   343  1459 W resolv  : TLS Handshake failed
+10-28 12:28:21.543   343  1459 D resolv  : Initialization failed.
+10-28 12:28:21.543   343  1459 D resolv  : Destructor
+10-28 12:28:21.543   343  1459 D resolv  : Destructor completed
+10-28 12:28:21.543   343  1459 D resolv  : Failing all pending queries.
+10-28 12:28:21.543   343  1459 W resolv  : query failed
+10-28 12:28:21.543   343  1459 D resolv  : Destructor
+10-28 12:28:21.543   343  1459 D resolv  : Locked destruction procedure
+10-28 12:28:21.543   343  1459 D resolv  : Destructor completed
+10-28 12:28:21.543   343  1459 W resolv  : validateDnsTlsServer returned 0 for 10.0.2.3
+10-28 12:28:21.543   343  1459 D resolv  : Sending validation failure event on netId 100 for 10.0.2.3 with hostname {}
+10-28 12:28:21.543   343  1459 W resolv  : Validation failed
+10-28 12:28:21.756  2204  2219 I TestRunner: finished: cleanImportedImagesDecodeAcrossAllQrMasks(org.example.otppager.PairingQrTest)

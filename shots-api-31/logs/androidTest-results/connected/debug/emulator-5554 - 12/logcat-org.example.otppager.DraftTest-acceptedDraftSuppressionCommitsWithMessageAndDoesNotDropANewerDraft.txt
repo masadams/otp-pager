@@ -1,0 +1,3 @@
+10-28 12:27:59.821  2204  2219 I TestRunner: started: acceptedDraftSuppressionCommitsWithMessageAndDoesNotDropANewerDraft(org.example.otppager.DraftTest)
+10-28 12:28:00.010   763   900 D EGL_emulation: app_time_stats: avg=381.63ms min=97.74ms max=758.79ms count=4
+10-28 12:28:00.604  2204  2219 I TestRunner: finished: acceptedDraftSuppressionCommitsWithMessageAndDoesNotDropANewerDraft(org.example.otppager.DraftTest)

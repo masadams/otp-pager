@@ -1,0 +1,119 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="org.example.otppager.CablePairTest" tests="91" failures="1" errors="0" skipped="6" time="92.137" timestamp="2026-10-28T12:28:58" hostname="localhost">
+  <properties>
+    <property name="device" value="emulator-5554 - 12" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="automaticPairingWorksWithServerSettingsOnEitherUsbSide" classname="org.example.otppager.CablePairTest" time="3.82" />
+  <testcase name="oldPlaintextProtocolCannotDowngradeOrActivatePairing" classname="org.example.otppager.CablePairTest" time="0.0" />
+  <testcase name="stagedAndInterruptedPairingRetiresPadAndCannotSend" classname="org.example.otppager.CablePairTest" time="0.322" />
+  <testcase name="decliningConfirmationSendsNoCredentialsOrPad" classname="org.example.otppager.CablePairTest" time="0.05" />
+  <testcase name="chatBoundsNamesAndDamagedIndexNeverSilentlyReset" classname="org.example.otppager.ChatBookTest" time="0.229" />
+  <testcase name="separateFriendsKeepKeysTrafficUnreadAndForgetIsolated" classname="org.example.otppager.ChatBookTest" time="4.746" />
+  <testcase name="legacyMigrationAndCrossChatPadAndSecretReuseFailClosed" classname="org.example.otppager.ChatBookTest" time="0.63" />
+  <testcase name="reviewedQrCanReplaceOnlyUnusedFriendSetup" classname="org.example.otppager.ChatBookTest" time="0.027" />
+  <testcase name="offlineRetryRestartReceiptAndReplayRemainConsistent" classname="org.example.otppager.DeliveryTest" time="0.109" />
+  <testcase name="legacyPadMigrationPreservesHistoryAndLateSlotsAndClearsRetainedPayloads" classname="org.example.otppager.DeliveryTest" time="1.537" />
+  <testcase name="padRetryBurnBeforeQueueUnreadAndRetirement" classname="org.example.otppager.DeliveryTest" time="4.945" />
+  <testcase name="lostRelayAndReceiptRecoverExactSignedPacketsAcrossRestart" classname="org.example.otppager.DeliveryTest" time="5.6" />
+  <testcase name="padVerificationGateExactReadinessRetryAndMigration" classname="org.example.otppager.DeliveryTest" time="2.687" />
+  <testcase name="manualRecoveryKeepsExpiryAndQueueBoundAndNeverAllocates" classname="org.example.otppager.DeliveryTest" time="0.054" />
+  <testcase name="offlineIdentityRetryCloneForgeryDowngradeAndMissingKey" classname="org.example.otppager.DeviceIdentityTest" time="5.327" />
+  <testcase name="sendingDoesNotEraseNewTypingWhileWorkerIsBusy" classname="org.example.otppager.DraftInterfaceTest" time="2.501" />
+  <testcase name="switchingFriendsAndRestartingRestoreSeparateDraftsWithoutDiscardPrompts" classname="org.example.otppager.DraftInterfaceTest" time="1.007" />
+  <testcase name="encryptedDraftsExpireStayInTheirRoomAndNeverConsumePad" classname="org.example.otppager.DraftTest" time="0.505" />
+  <testcase name="acceptedDraftSuppressionCommitsWithMessageAndDoesNotDropANewerDraft" classname="org.example.otppager.DraftTest" time="0.781" />
+  <testcase name="stagedStorageCannotActivateResumeEncryptionOrLoseAbandonedReservations" classname="org.example.otppager.EnrollmentStageRestartTest" time="0.006">
+    <skipped />
+  </testcase>
+  <testcase name="freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing" classname="org.example.otppager.EpochCycleRestartTest" time="0.001">
+    <skipped />
+  </testcase>
+  <testcase name="authenticatedCreateReadAppendAndFailClosedOnTamperingVariantsAndStrays" classname="org.example.otppager.EpochManifestsTest" time="0.054" />
+  <testcase name="unavailableDirectoryNeverLooksLikeACompletedCleanup" classname="org.example.otppager.GlobalRecoveryObservationTest" time="0.002" />
+  <testcase name="activeObservationAndRecoveryRefusalCannotCreateGlobalIntentOrKeys" classname="org.example.otppager.GlobalRecoveryObservationTest" time="0.004" />
+  <testcase name="globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration" classname="org.example.otppager.GlobalRetirementRestartTest" time="0.001">
+    <skipped />
+  </testcase>
+  <testcase name="compactDisplayKeepsTrafficAndComposerVisibleWithKeyboard" classname="org.example.otppager.InterfaceTest" time="3.074" />
+  <testcase name="deviceExchangePausesSendingAndShowsHonestKeyStatus" classname="org.example.otppager.InterfaceTest" time="1.815" />
+  <testcase name="capturesActualEinkInterfaceWithFictionalTraffic" classname="org.example.otppager.InterfaceTest" time="2.118" />
+  <testcase name="completedPairingHidesSetupAndSettingsRemainReachable" classname="org.example.otppager.InterfaceTest" time="4.557" />
+  <testcase name="unverifiedPadDisablesSendingAndShowsSetup" classname="org.example.otppager.InterfaceTest" time="0.761" />
+  <testcase name="nearbyWizardFitsAndRequiresExplicitApproval" classname="org.example.otppager.InterfaceTest" time="0.402" />
+  <testcase name="unpairedChatExplainsSetupAndProtectsKeyboardInput" classname="org.example.otppager.InterfaceTest" time="0.506" />
+  <testcase name="durableEvidenceDoesNotInventProvenanceAfterRestartOrLoss" classname="org.example.otppager.LifecycleEvidenceRestartTest" time="0.029">
+    <skipped />
+  </testcase>
+  <testcase name="wipeRetiresOnlyTheTargetWithoutWaitingForTheStationWorker" classname="org.example.otppager.LocalWipeTest" time="0.225" />
+  <testcase name="wipeRefusesUnlistedAndNonContactNamespaces" classname="org.example.otppager.LocalWipeTest" time="0.026" />
+  <testcase name="menuWipeNeedsTypedConfirmationClearsPrivateUiAndReportsOnlyLocalResult" classname="org.example.otppager.LocalWipeTest" time="0.759" />
+  <testcase name="missingPadRejectsNewTextAndDraftAcrossRestartWithoutChangingSavedState" classname="org.example.otppager.OtpOnlyEngineTest" time="0.052" />
+  <testcase name="inboxConversationAndFriendDetailsKeepTechnicalToolsOutOfTheEverydayFlow" classname="org.example.otppager.PagerJourneyTest" time="3.34" />
+  <testcase name="firstLaunchGuidesNamingServerTransferAndUsbWithoutAGhostContact" classname="org.example.otppager.PagerJourneyTest" time="1.665" />
+  <testcase name="damagedVaultShowsRecoveryWithoutResettingStoredData" classname="org.example.otppager.PagerJourneyTest" time="0.279" />
+  <testcase name="scanRequiresReviewThenSavesOppositeRoleWithoutAnotherManualStep" classname="org.example.otppager.PairingInterfaceTest" time="0.709" />
+  <testcase name="cleanImportedImagesDecodeAcrossAllQrMasks" classname="org.example.otppager.PairingQrTest" time="0.355" />
+  <testcase name="embeddedScannerInflatesWithSecureWindow" classname="org.example.otppager.PairingQrTest" time="0.226" />
+  <testcase name="generatedBitmapAndImportedPngDecodeWithoutNetwork" classname="org.example.otppager.PairingQrTest" time="0.027" />
+  <testcase name="exportGivesOppositeRoleWithoutChangingVaultOrCounters" classname="org.example.otppager.PairingQrTest" time="0.027" />
+  <testcase name="cancellingWizardClosesListenerSynchronouslyAndWipesOffer" classname="org.example.otppager.RadioPairTest" time="0.228" />
+  <testcase name="fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic" classname="org.example.otppager.RadioPairTest" time="9.36" />
+  <testcase name="backgroundWrapperPreservesTheContactsBoundTransport" classname="org.example.otppager.ReceiveTest" time="0.56" />
+  <testcase name="userStartedForegroundReceiverStartsAndStopsOnSupportedAndroidVersions" classname="org.example.otppager.ReceiveTest" time="0.302" />
+  <testcase name="nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks" classname="org.example.otppager.ReceiveTest" time="0.002" />
+  <testcase name="receiverPersistsUnreadAndReceiptsWithoutAnActivityAndHonorsPause" classname="org.example.otppager.ReceiveTest" time="3.89" />
+  <testcase name="oldRelayWorksExplicitlyButProtectedChatNeverDowngrades" classname="org.example.otppager.RelayAccessTest" time="0.98" />
+  <testcase name="protectedChatRetriesLostVolumeAndRevocationPreserveLocalState" classname="org.example.otppager.RelayAccessTest" time="3.34" />
+  <testcase name="renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates" classname="org.example.otppager.RenewalTest" time="11.87" />
+  <testcase name="cohortChecksRequireBothDirectionsOfPadOwnershipAndKnownRoots" classname="org.example.otppager.RetainedGuardReaderTest" time="0.026" />
+  <testcase name="exactCiphertextByteBoundAcceptsValidGuardButNextByteIsRefused" classname="org.example.otppager.RetainedGuardReaderTest" time="0.102" />
+  <testcase name="missingFileMissingKeyAndCiphertextRestorationCannotBecomeEmptyState" classname="org.example.otppager.RetainedGuardReaderTest" time="0.026" />
+  <testcase name="strictSchemasRejectDuplicatesCoercionsUnknownFieldsAndTrailingValues" classname="org.example.otppager.RetainedGuardReaderTest" time="0.051" />
+  <testcase name="frozenReaderDecryptsOnlyExpectedGuardsWithoutChangingFilesOrKeys" classname="org.example.otppager.RetainedGuardReaderTest" time="0.027" />
+  <testcase name="activeAccessAndOperationalOrArbitraryNamespacesAreRejected" classname="org.example.otppager.RetainedGuardReaderTest" time="0.027" />
+  <testcase name="claimsRejectInvalidOwnersMissingMapsDuplicateIdsAndNumericStrings" classname="org.example.otppager.RetainedGuardReaderTest" time="0.027" />
+  <testcase name="cohortByteBudgetAppliesAcrossOtherwiseValidIndividualRecords" classname="org.example.otppager.RetainedGuardReaderTest" time="0.577" />
+  <testcase name="sideVariantsDirectoriesSymlinksAndOversizedFilesAreNeverRepairedOrOpened" classname="org.example.otppager.RetainedGuardReaderTest" time="0.025" />
+  <testcase name="authenticatedCiphertextTamperingAndCapacityLimitsFailClosed" classname="org.example.otppager.RetainedGuardReaderTest" time="0.124" />
+  <testcase name="replacementIsEmptyKeepsStableEntryAndClaimsAndCannotBeUndoneByStaleBook" classname="org.example.otppager.RetiredContactTest" time="0.302" />
+  <testcase name="missingIndexCannotReinitializeRetiredLegacyRoot" classname="org.example.otppager.RetiredContactTest" time="0.0" />
+  <testcase name="metadataMigrationPreservesVaultBytesAndRejectsUnknownVersions" classname="org.example.otppager.RetiredContactTest" time="0.151" />
+  <testcase name="incompleteCleanupNeverPublishesReplacementAndActivePairingCannotBeReplaced" classname="org.example.otppager.RetiredContactTest" time="0.052" />
+  <testcase name="retiringAContactDoesNotWaitForBlockedHttpsDisconnectAndPreventsAnyRetry" classname="org.example.otppager.RetirementCancellationTest" time="0.027" />
+  <testcase name="cancellationCannotClearAnotherContactsNfcOffer" classname="org.example.otppager.RetirementCancellationTest" time="0.001" />
+  <testcase name="legacyIntentCannotAcquireRetrospectiveCaptureAuthority" classname="org.example.otppager.RetirementEvidenceTest" time="0.0" />
+  <testcase name="tamperingVariantsMissingKeyAndKeyOnlyStateCannotBeRepairedOrReset" classname="org.example.otppager.RetirementEvidenceTest" time="0.0" />
+  <testcase name="authenticatedIntentRoundTripNeverGrantsEnrollmentOrReplacesAnExistingRecord" classname="org.example.otppager.RetirementEvidenceTest" time="0.027" />
+  <testcase name="retiredActiveContactCanRecoverReachOtherChatsAndStartAnEmptyPhysicalPairing" classname="org.example.otppager.RetirementRecoveryTest" time="1.811" />
+  <testcase name="orphanScanDoesNotDecryptDamagedVaultsOrDependOnAnIndex" classname="org.example.otppager.RetirementRecoveryTest" time="0.026" />
+  <testcase name="inspectionNeverRepairsOrTrustsCompletionMarkerWithoutCheckingKeysAndFiles" classname="org.example.otppager.RetirementRecoveryTest" time="0.051" />
+  <testcase name="applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened" classname="org.example.otppager.RetirementRestartTest" time="0.002">
+    <skipped />
+  </testcase>
+  <testcase name="oneIncompleteRetirementDoesNotStopRecoveryOrDisableUnrelatedContacts" classname="org.example.otppager.RetirementStartupTest" time="0.024" />
+  <testcase name="unreadableJournalEnumerationDisablesVaultAccessWithoutResettingData" classname="org.example.otppager.RetirementStartupTest" time="0.026" />
+  <testcase name="retirementClearsDraftDialogsFieldsAndFinishesWithoutWaitingForWorker" classname="org.example.otppager.RetirementUiTest" time="0.355" />
+  <testcase name="pairingAndOutboxSurviveRestartWithoutPlaintextOnDisk" classname="org.example.otppager.StorageTest" time="0.003" />
+  <testcase name="unreadableVaultPathIsNotTreatedAsANewPairing" classname="org.example.otppager.StorageTest" time="0.027" />
+  <testcase name="missingVaultWithExistingKeyCannotResetReservations" classname="org.example.otppager.StorageTest" time="0.0" />
+  <testcase name="corruptVaultFailsClosedAndReplayWindowSurvivesReopen" classname="org.example.otppager.StorageTest" time="0.028" />
+  <testcase name="releaseReplacementPreservesOperationalState" classname="org.example.otppager.UpgradeStateTest" time="0.001">
+    <skipped />
+  </testcase>
+  <testcase name="capturedOwnersIdentityLeasesAndSiblingsNeverRebindToCurrentGeneration" classname="org.example.otppager.VaultGenerationTest" time="0.025" />
+  <testcase name="queuedWriterCannotRecreateAKeyAfterTerminalCleanup" classname="org.example.otppager.VaultRetirementAndroidTest" time="0.025" />
+  <testcase name="malformedAndInterruptedMarkersBlockAccessAndRecoverWithoutAContactIndex" classname="org.example.otppager.VaultRetirementAndroidTest" time="0.026" />
+  <testcase name="retirementDestroysContactKeysAndDraftButKeepsReuseMetadataAndOtherContacts" classname="org.example.otppager.VaultRetirementAndroidTest" time="0.203" />
+  <testcase name="legacyV2VaultsStillOpenAndRetirementRemovesEveryGeneration" classname="org.example.otppager.VaultRotationTest" time="0.001" />
+  <testcase name="clearHistoryRotatesTheKeySoOldSnapshotsCannotBeOpened" classname="org.example.otppager.VaultRotationTest" time="0.027">
+    <failure>java.lang.AssertionError: Values should be different. Actual: [otp-pager-chat-459eef95956145a2bf5d~1]
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failEquals(Assert.java:187)
+at org.junit.Assert.assertNotEquals(Assert.java:163)
+at org.junit.Assert.assertNotEquals(Assert.java:177)
+at org.example.otppager.VaultRotationTest.clearHistoryRotatesTheKeySoOldSnapshotsCannotBeOpened(VaultRotationTest.kt:30)
+</failure>
+  </testcase>
+</testsuite>

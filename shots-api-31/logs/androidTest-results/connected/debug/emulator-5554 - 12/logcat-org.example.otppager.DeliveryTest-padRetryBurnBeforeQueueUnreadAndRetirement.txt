@@ -1,0 +1,27 @@
+10-28 12:27:37.188  2204  2219 I TestRunner: started: padRetryBurnBeforeQueueUnreadAndRetirement(org.example.otppager.DeliveryTest)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor:  Hit PackageManager exception
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: android.content.pm.PackageManager$NameNotFoundException: No module info for package: com.android.wifi
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at android.app.ApplicationPackageManager.getModuleInfo(ApplicationPackageManager.java:1079)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.getWifiStackVersion(WifiHealthMonitor.java:366)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.extractCurrentSoftwareBuildInfo(WifiHealthMonitor.java:587)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.postBootSwBuildCheck(WifiHealthMonitor.java:522)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.postBootDetectionHandler(WifiHealthMonitor.java:513)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor.access$500(WifiHealthMonitor.java:71)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at com.android.server.wifi.WifiHealthMonitor$2.onAlarm(WifiHealthMonitor.java:190)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at android.app.AlarmManager$ListenerWrapper.run(AlarmManager.java:323)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at android.os.Handler.handleCallback(Handler.java:938)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at android.os.Handler.dispatchMessage(Handler.java:99)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at android.os.Looper.loop(Looper.java:288)
+10-28 12:27:40.121   540   691 E WifiHealthMonitor: 	at android.os.HandlerThread.run(HandlerThread.java:67)
+10-28 12:27:40.157   540  1979 D WifiNl80211Manager: Scan result ready event
+10-28 12:27:40.158   540  1979 D WifiNative: Scan result ready event
+10-28 12:27:40.790   540   584 I libprocessgroup: Successfully killed process cgroup uid 10072 pid 1806 in 0ms
+10-28 12:27:40.802   344   344 I Zygote  : Process 1806 exited due to signal 9 (Killed)
+10-28 12:27:40.805   344   344 I Zygote  : Process 1859 exited due to signal 9 (Killed)
+10-28 12:27:40.809   344   344 I Zygote  : Process 1838 exited due to signal 9 (Killed)
+10-28 12:27:40.813   344   344 I Zygote  : Process 1822 exited due to signal 9 (Killed)
+10-28 12:27:40.822   540   584 I libprocessgroup: Successfully killed process cgroup uid 1000 pid 1859 in 0ms
+10-28 12:27:40.822   540   584 I libprocessgroup: Successfully killed process cgroup uid 10059 pid 1838 in 0ms
+10-28 12:27:40.822   540   584 I libprocessgroup: Successfully killed process cgroup uid 10081 pid 1822 in 0ms
+10-28 12:27:42.142  2204  2219 I TestRunner: finished: padRetryBurnBeforeQueueUnreadAndRetirement(org.example.otppager.DeliveryTest)

@@ -1,0 +1,2 @@
+10-28 12:28:56.215  2204  2219 I TestRunner: started: inspectionNeverRepairsOrTrustsCompletionMarkerWithoutCheckingKeysAndFiles(org.example.otppager.RetirementRecoveryTest)
+10-28 12:28:56.262  2204  2219 I TestRunner: finished: inspectionNeverRepairsOrTrustsCompletionMarkerWithoutCheckingKeysAndFiles(org.example.otppager.RetirementRecoveryTest)

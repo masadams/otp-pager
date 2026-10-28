@@ -1,0 +1,8 @@
+10-28 12:28:40.923  2204  2219 I TestRunner: started: renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates(org.example.otppager.RenewalTest)
+10-28 12:28:45.561  2204  2472 W xample.otppage: Long monitor contention with owner pool-30-thread-1 (2471) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.StationEngine.transaction(boolean, kotlin.jvm.functions.Function1) for 492ms
+10-28 12:28:48.137  2204  2219 I xample.otppage: Waiting for a blocking GC Alloc
+10-28 12:28:48.144  2204  2219 I xample.otppage: WaitForGcToComplete blocked Alloc on Background for 6.600ms
+10-28 12:28:48.144  2204  2219 I xample.otppage: Starting a blocking GC Alloc
+10-28 12:28:48.704  2204  2473 W xample.otppage: Long monitor contention with owner pool-31-thread-2 (2474) at boolean org.example.otppager.GlobalRetirement.hasLegacyIntent$app_debug(java.io.File)(GlobalRetirement.kt:32) waiters=0 in void org.example.otppager.StationEngine.transaction(boolean, kotlin.jvm.functions.Function1) for 507ms
+10-28 12:28:52.086  2204  2476 W xample.otppage: Long monitor contention with owner pool-32-thread-1 (2475) at boolean org.example.otppager.GlobalRetirement.hasLegacyIntent$app_debug(java.io.File)(GlobalRetirement.kt:32) waiters=0 in void org.example.otppager.VaultGeneration.requireCurrent(java.io.File, org.example.otppager.VaultGeneration$Capability, java.lang.String) for 209ms
+10-28 12:28:52.793  2204  2219 I TestRunner: finished: renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates(org.example.otppager.RenewalTest)

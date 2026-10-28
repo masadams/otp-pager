@@ -1,0 +1,26 @@
+10-28 12:28:22.371  2204  2219 I TestRunner: started: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)
+10-28 12:28:22.381   360   429 D goldfish-address-space: claimShared: Ask to claim region [0x3ffe63000 0x3ffec1000]
+10-28 12:28:22.384   540  1592 D HostConnection: createUnique: call
+10-28 12:28:22.384   540  1592 D HostConnection: HostConnection::get() New Host Connection established 0x79ef1550e490, tid 1592
+10-28 12:28:22.388   540  1592 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 12:28:23.817   343   410 I netd    : trafficSwapActiveStatsMap() <16.10ms>
+10-28 12:28:23.818   343   410 I netd    : tetherGetStats() -> {[]} <0.44ms>
+10-28 12:28:23.820   343   410 I netd    : bandwidthSetGlobalAlert(2097152) <0.11ms>
+10-28 12:28:23.821   343   410 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.47ms>
+10-28 12:28:23.822   343   410 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.32ms>
+10-28 12:28:23.841   343   410 I netd    : trafficSwapActiveStatsMap() <17.34ms>
+10-28 12:28:23.842   343   410 I netd    : tetherGetStats() -> {[]} <0.67ms>
+10-28 12:28:23.844   343   410 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.36ms>
+10-28 12:28:23.845   343   410 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.22ms>
+10-28 12:28:24.121  2204  2455 W xample.otppage: Long monitor contention with owner pool-26-thread-1 (2454) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.StationEngine.transaction(boolean, kotlin.jvm.functions.Function1) for 495ms
+10-28 12:28:27.990  2204  2456 W xample.otppage: Long monitor contention with owner pool-27-thread-2 (2457) at boolean org.example.otppager.GlobalRetirement.hasLegacyIntent$app_debug(java.io.File)(GlobalRetirement.kt:32) waiters=0 in void org.example.otppager.StationEngine.transaction(boolean, kotlin.jvm.functions.Function1) for 751ms
+10-28 12:28:29.755   343   410 I netd    : trafficSwapActiveStatsMap() <14.49ms>
+10-28 12:28:29.755   343   410 I netd    : tetherGetStats() -> {[]} <0.34ms>
+10-28 12:28:29.757   343   410 I netd    : bandwidthSetGlobalAlert(2097152) <0.08ms>
+10-28 12:28:29.759   343   410 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.41ms>
+10-28 12:28:29.760   343   410 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.40ms>
+10-28 12:28:30.186  2204  2457 W xample.otppage: Long monitor contention with owner pool-27-thread-1 (2456) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.StationEngine.transaction(boolean, kotlin.jvm.functions.Function1) for 532ms
+10-28 12:28:30.601  2204  2457 I xample.otppage: Waiting for a blocking GC Alloc
+10-28 12:28:30.606  2204  2457 I xample.otppage: WaitForGcToComplete blocked Alloc on Background for 5.260ms
+10-28 12:28:30.607  2204  2457 I xample.otppage: Starting a blocking GC Alloc
+10-28 12:28:31.754  2204  2219 I TestRunner: finished: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)

@@ -1,0 +1,39 @@
+/sdcard/Download/otp-pager-preview/: 31 files pulled, 0 skipped. 21.4 MB/s (1396647 bytes in 0.062s)
+
+org.example.otppager.GlobalRetirementRestartTest:.
+
+Time: 0.826
+
+OK (1 test)
+
+
+
+
+org.example.otppager.GlobalRetirementRestartTest:.
+
+Time: 1.904
+
+OK (1 test)
+
+
+
+
+org.example.otppager.GlobalRetirementRestartTest:.
+
+Time: 0.022
+
+OK (1 test)
+
+
+
+
+org.example.otppager.GlobalRetirementRestartTest:.
+
+Time: 0.838
+
+OK (1 test)
+
+
+
+PASS: global cold-start/partial cleanup, corrupt-index/key-only orphans, blocked-worker isolation, restored-state sweep malformed-journal freeze and verified recovery UI
+exit=0

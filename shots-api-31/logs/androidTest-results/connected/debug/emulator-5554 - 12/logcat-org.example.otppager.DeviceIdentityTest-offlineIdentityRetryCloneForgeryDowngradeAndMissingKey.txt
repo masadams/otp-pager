@@ -1,0 +1,2 @@
+10-28 12:27:50.490  2204  2219 I TestRunner: started: offlineIdentityRetryCloneForgeryDowngradeAndMissingKey(org.example.otppager.DeviceIdentityTest)
+10-28 12:27:55.810  2204  2219 I TestRunner: finished: offlineIdentityRetryCloneForgeryDowngradeAndMissingKey(org.example.otppager.DeviceIdentityTest)

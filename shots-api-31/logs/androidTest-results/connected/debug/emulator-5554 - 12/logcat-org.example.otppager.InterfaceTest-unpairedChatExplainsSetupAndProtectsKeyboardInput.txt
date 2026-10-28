@@ -1,0 +1,31 @@
+10-28 12:28:13.718  2204  2219 I TestRunner: started: unpairedChatExplainsSetupAndProtectsKeyboardInput(org.example.otppager.InterfaceTest)
+10-28 12:28:13.719   540  1979 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 12:28:13.734   763   816 D SplashScreenView: Build android.window.SplashScreenView{901f05a V.E...... ......ID 0,0-0,0}
+10-28 12:28:13.734   763   816 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 12:28:13.734   763   816 D SplashScreenView: Branding: view: android.view.View{caaf28b G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 12:28:13.744  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7d7e45f in: PRE_ON_CREATE
+10-28 12:28:13.747  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7d7e45f in: CREATED
+10-28 12:28:13.748  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7d7e45f in: STARTED
+10-28 12:28:13.749   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fede7000 0x3fef5e000]
+10-28 12:28:13.752   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fef5e000 0x3ff0d5000]
+10-28 12:28:13.754   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fe198000 0x3fe30f000]
+10-28 12:28:13.756   389   389 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:28:13.798  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7d7e45f in: RESUMED
+10-28 12:28:13.815   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fec70000 0x3fede7000]
+10-28 12:28:13.818   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fe30f000 0x3fe486000]
+10-28 12:28:13.819   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fd907000 0x3fda7e000]
+10-28 12:28:13.829   540   571 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +96ms
+10-28 12:28:13.843   997  1618 W FrameTracker: Missing SF jank callback for vsyncId: 1734
+10-28 12:28:13.847   540  2111 W InputManager-JNI: Input channel object '70e799e Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 12:28:14.127   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fe198000 0x3fe30f000]
+10-28 12:28:14.141  1338  1360 W MediaProvider: isAppCloneUserPair for user 0: false
+10-28 12:28:14.144  1338  1360 I MediaProvider: Open with lower FS for /storage/emulated/0/Download/otp-pager-preview/unpaired-chat.png. Uid: 10105
+10-28 12:28:14.180   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3ff6b1000 0x3ff828000]
+10-28 12:28:14.183   540  2257 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 12:28:14.184   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3ff828000 0x3ff99f000]
+10-28 12:28:14.188  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7d7e45f in: PAUSED
+10-28 12:28:14.206   389   389 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:28:14.212   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3ff828000 0x3ff99f000]
+10-28 12:28:14.216   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fede7000 0x3fef5e000]
+10-28 12:28:14.219   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fef5e000 0x3ff0d5000]
+10-28 12:28:14.222  2204  2219 I TestRunner: finished: unpairedChatExplainsSetupAndProtectsKeyboardInput(org.example.otppager.InterfaceTest)

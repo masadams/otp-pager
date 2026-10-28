@@ -1,0 +1,2 @@
+10-28 12:28:53.670  2204  2219 I TestRunner: started: sideVariantsDirectoriesSymlinksAndOversizedFilesAreNeverRepairedOrOpened(org.example.otppager.RetainedGuardReaderTest)
+10-28 12:28:53.690  2204  2219 I TestRunner: finished: sideVariantsDirectoriesSymlinksAndOversizedFilesAreNeverRepairedOrOpened(org.example.otppager.RetainedGuardReaderTest)

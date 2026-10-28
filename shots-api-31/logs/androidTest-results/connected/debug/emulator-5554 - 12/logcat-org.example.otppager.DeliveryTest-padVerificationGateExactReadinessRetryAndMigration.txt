@@ -1,0 +1,2 @@
+10-28 12:27:47.736  2204  2219 I TestRunner: started: padVerificationGateExactReadinessRetryAndMigration(org.example.otppager.DeliveryTest)
+10-28 12:27:50.427  2204  2219 I TestRunner: finished: padVerificationGateExactReadinessRetryAndMigration(org.example.otppager.DeliveryTest)

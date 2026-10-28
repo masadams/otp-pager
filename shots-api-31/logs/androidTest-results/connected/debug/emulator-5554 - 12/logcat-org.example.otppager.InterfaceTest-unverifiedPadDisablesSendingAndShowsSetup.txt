@@ -1,0 +1,37 @@
+10-28 12:28:12.418  2204  2219 I TestRunner: started: unverifiedPadDisablesSendingAndShowsSetup(org.example.otppager.InterfaceTest)
+10-28 12:28:12.439   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fff5c000 0x3fffba000]
+10-28 12:28:12.440   540  2261 D HostConnection: createUnique: call
+10-28 12:28:12.441   540  2261 D HostConnection: HostConnection::get() New Host Connection established 0x79ef15531a10, tid 2261
+10-28 12:28:12.443   540  2261 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 12:28:12.443   540  2261 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+10-28 12:28:12.444   540  2261 D EGL_emulation: eglCreateContext: 0x79ef15534f50: maj 3 min 0 rcv 3
+10-28 12:28:12.445   540  2261 D EGL_emulation: eglMakeCurrent: 0x79ef15534f50: ver 3 0 (tinfo 0x79f118e04180) (first time)
+10-28 12:28:12.448   540  2111 D HostConnection: createUnique: call
+10-28 12:28:12.448   540  2111 D HostConnection: HostConnection::get() New Host Connection established 0x79ef15530510, tid 2111
+10-28 12:28:12.451   540  2111 D HostConnection: HostComposition ext ANDROID_EMU_CHECKSUM_HELPER_v1 ANDROID_EMU_native_sync_v2 ANDROID_EMU_dma_v1 ANDROID_EMU_direct_mem ANDROID_EMU_host_composition_v1 ANDROID_EMU_host_composition_v2 ANDROID_EMU_vulkan ANDROID_EMU_deferred_vulkan_commands ANDROID_EMU_vulkan_null_optional_strings ANDROID_EMU_vulkan_create_resources_with_requirements ANDROID_EMU_YUV_Cache ANDROID_EMU_vulkan_ignored_handles ANDROID_EMU_has_shared_slots_host_memory_allocator ANDROID_EMU_vulkan_free_memory_sync ANDROID_EMU_vulkan_shader_float16_int8 ANDROID_EMU_vulkan_async_queue_submit ANDROID_EMU_vulkan_queue_submit_with_commands ANDROID_EMU_sync_buffer_data ANDROID_EMU_vulkan_async_qsri ANDROID_EMU_read_color_buffer_dma ANDROID_EMU_hwc_color_transform GL_OES_EGL_image_external_essl3 GL_OES_vertex_array_object GL_KHR_texture_compression_astc_ldr ANDROID_EMU_host_side_tracing ANDROID_EMU_gles_max_version_3_0
+10-28 12:28:12.520   763   816 D SplashScreenView: Build android.window.SplashScreenView{d1ba152 V.E...... ......ID 0,0-0,0}
+10-28 12:28:12.520   763   816 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 12:28:12.520   763   816 D SplashScreenView: Branding: view: android.view.View{756dc23 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 12:28:12.531  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@4a4e1c0 in: PRE_ON_CREATE
+10-28 12:28:12.533  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@4a4e1c0 in: CREATED
+10-28 12:28:12.534  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@4a4e1c0 in: STARTED
+10-28 12:28:12.538   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3ffbd2000 0x3ffd49000]
+10-28 12:28:12.539   389   389 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:28:12.547   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fede7000 0x3fef5e000]
+10-28 12:28:12.551   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fef5e000 0x3ff0d5000]
+10-28 12:28:12.581  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@4a4e1c0 in: RESUMED
+10-28 12:28:12.588   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fe021000 0x3fe198000]
+10-28 12:28:12.593   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fec70000 0x3fede7000]
+10-28 12:28:12.594   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fe198000 0x3fe30f000]
+10-28 12:28:12.604   540   571 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +85ms
+10-28 12:28:12.614   540  1979 W InputManager-JNI: Input channel object '5efe179 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 12:28:12.626   997  1618 W FrameTracker: Missed App frame:16
+10-28 12:28:12.996   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3ffbd2000 0x3ffd9b000]
+10-28 12:28:12.998   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3ff6b1000 0x3ff87a000]
+10-28 12:28:12.999   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3fede7000 0x3fefb0000]
+10-28 12:28:13.070   540  1979 W InputManager-JNI: Input channel object '63f6f64 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 12:28:13.147   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3ffbd2000 0x3ffd49000]
+10-28 12:28:13.149   540  2257 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 12:28:13.149   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3ff6b1000 0x3ff828000]
+10-28 12:28:13.154  2204  2204 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@4a4e1c0 in: PAUSED
+10-28 12:28:13.169  2204  2219 I TestRunner: finished: unverifiedPadDisablesSendingAndShowsSetup(org.example.otppager.InterfaceTest)

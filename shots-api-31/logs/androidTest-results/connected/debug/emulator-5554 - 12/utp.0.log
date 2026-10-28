@@ -1,0 +1,580 @@
+INFO: Constructing runner from config.
+INFO: Configuring Android Instrumentation driver: android_instrumentation_runtime {
+  instrumentation_info {
+    app_package: "org.example.otppager"
+    test_package: "org.example.otppager.test"
+    test_runner_class: "androidx.test.runner.AndroidJUnitRunner"
+  }
+  instrumentation_args {
+    args_map {
+      key: "additionalTestOutputDir"
+      value: "/sdcard/Android/media/org.example.otppager/additional_test_output"
+    }
+  }
+}
+am_instrument_timeout: 31536000
+
+INFO: Configuring AndroidTestApkInstallerPlugin: apks_to_install {
+  apk_paths: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/apk/debug/app-debug.apk"
+  install_options {
+  }
+  uninstall_after_test: true
+}
+apks_to_install {
+  apk_paths: "/home/runner/work/otp-pager/otp-pager/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk"
+  install_options {
+  }
+  uninstall_after_test: true
+}
+
+INFO: No installables found in test fixture. Nothing to install.
+INFO: Installing [/home/runner/work/otp-pager/otp-pager/app/build/outputs/apk/debug/app-debug.apk] on device emulator-5554.
+INFO: Installing [/home/runner/work/otp-pager/otp-pager/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk] on device emulator-5554.
+INFO: Start logcat streaming.
+INFO: Running Android Instrumentation driver.
+INFO: Copying files from device to host: /sdcard/Android/media/org.example.otppager/additional_test_output to /home/runner/work/otp-pager/otp-pager/app/build/outputs/connected_android_test_additional_output/debugAndroidTest/connected/emulator-5554 - 12
+INFO: Stop logcat streaming.
+INFO: Uninstalling org.example.otppager for device emulator-5554.
+INFO: Uninstalling org.example.otppager.test for device emulator-5554.
+INFO: Execute org.example.otppager.CablePairTest.automaticPairingWorksWithServerSettingsOnEitherUsbSide: PASSED
+INFO: Execute org.example.otppager.CablePairTest.oldPlaintextProtocolCannotDowngradeOrActivatePairing: PASSED
+INFO: Execute org.example.otppager.CablePairTest.stagedAndInterruptedPairingRetiresPadAndCannotSend: PASSED
+INFO: Execute org.example.otppager.CablePairTest.decliningConfirmationSendsNoCredentialsOrPad: PASSED
+INFO: Execute org.example.otppager.ChatBookTest.chatBoundsNamesAndDamagedIndexNeverSilentlyReset: PASSED
+INFO: Execute org.example.otppager.ChatBookTest.separateFriendsKeepKeysTrafficUnreadAndForgetIsolated: PASSED
+INFO: Execute org.example.otppager.ChatBookTest.legacyMigrationAndCrossChatPadAndSecretReuseFailClosed: PASSED
+INFO: Execute org.example.otppager.ChatBookTest.reviewedQrCanReplaceOnlyUnusedFriendSetup: PASSED
+INFO: Execute org.example.otppager.DeliveryTest.offlineRetryRestartReceiptAndReplayRemainConsistent: PASSED
+INFO: Execute org.example.otppager.DeliveryTest.legacyPadMigrationPreservesHistoryAndLateSlotsAndClearsRetainedPayloads: PASSED
+INFO: Execute org.example.otppager.DeliveryTest.padRetryBurnBeforeQueueUnreadAndRetirement: PASSED
+INFO: Execute org.example.otppager.DeliveryTest.lostRelayAndReceiptRecoverExactSignedPacketsAcrossRestart: PASSED
+INFO: Execute org.example.otppager.DeliveryTest.padVerificationGateExactReadinessRetryAndMigration: PASSED
+INFO: Execute org.example.otppager.DeliveryTest.manualRecoveryKeepsExpiryAndQueueBoundAndNeverAllocates: PASSED
+INFO: Execute org.example.otppager.DeviceIdentityTest.offlineIdentityRetryCloneForgeryDowngradeAndMissingKey: PASSED
+INFO: Execute org.example.otppager.DraftInterfaceTest.sendingDoesNotEraseNewTypingWhileWorkerIsBusy: PASSED
+INFO: Execute org.example.otppager.DraftInterfaceTest.switchingFriendsAndRestartingRestoreSeparateDraftsWithoutDiscardPrompts: PASSED
+INFO: Execute org.example.otppager.DraftTest.encryptedDraftsExpireStayInTheirRoomAndNeverConsumePad: PASSED
+INFO: Execute org.example.otppager.DraftTest.acceptedDraftSuppressionCommitsWithMessageAndDoesNotDropANewerDraft: PASSED
+INFO: Execute org.example.otppager.EnrollmentStageRestartTest.stagedStorageCannotActivateResumeEncryptionOrLoseAbandonedReservations: IGNORED
+org.junit.AssumptionViolatedException: org.junit.AssumptionViolatedException: Exclusive host staging fixture only
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.EnrollmentStageRestartTest.stagedStorageCannotActivateResumeEncryptionOrLoseAbandonedReservations(EnrollmentStageRestartTest.kt:68)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+
+org.junit.AssumptionViolatedException: Exclusive host staging fixture only
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.EnrollmentStageRestartTest.stagedStorageCannotActivateResumeEncryptionOrLoseAbandonedReservations(EnrollmentStageRestartTest.kt:68)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+INFO: Execute org.example.otppager.EpochCycleRestartTest.freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing: IGNORED
+org.junit.AssumptionViolatedException: org.junit.AssumptionViolatedException: Exclusive host epoch fixture only
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.EpochCycleRestartTest.freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(EpochCycleRestartTest.kt:79)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+
+org.junit.AssumptionViolatedException: Exclusive host epoch fixture only
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.EpochCycleRestartTest.freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(EpochCycleRestartTest.kt:79)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+INFO: Execute org.example.otppager.EpochManifestsTest.authenticatedCreateReadAppendAndFailClosedOnTamperingVariantsAndStrays: PASSED
+INFO: Execute org.example.otppager.GlobalRecoveryObservationTest.unavailableDirectoryNeverLooksLikeACompletedCleanup: PASSED
+INFO: Execute org.example.otppager.GlobalRecoveryObservationTest.activeObservationAndRecoveryRefusalCannotCreateGlobalIntentOrKeys: PASSED
+INFO: Execute org.example.otppager.GlobalRetirementRestartTest.globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration: IGNORED
+org.junit.AssumptionViolatedException: org.junit.AssumptionViolatedException: Exclusive host-driven global destruction fixture only
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.GlobalRetirementRestartTest.globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration(GlobalRetirementRestartTest.kt:104)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+
+org.junit.AssumptionViolatedException: Exclusive host-driven global destruction fixture only
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.GlobalRetirementRestartTest.globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration(GlobalRetirementRestartTest.kt:104)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+INFO: Execute org.example.otppager.InterfaceTest.compactDisplayKeepsTrafficAndComposerVisibleWithKeyboard: PASSED
+INFO: Execute org.example.otppager.InterfaceTest.deviceExchangePausesSendingAndShowsHonestKeyStatus: PASSED
+INFO: Execute org.example.otppager.InterfaceTest.capturesActualEinkInterfaceWithFictionalTraffic: PASSED
+INFO: Execute org.example.otppager.InterfaceTest.completedPairingHidesSetupAndSettingsRemainReachable: PASSED
+INFO: Execute org.example.otppager.InterfaceTest.unverifiedPadDisablesSendingAndShowsSetup: PASSED
+INFO: Execute org.example.otppager.InterfaceTest.nearbyWizardFitsAndRequiresExplicitApproval: PASSED
+INFO: Execute org.example.otppager.InterfaceTest.unpairedChatExplainsSetupAndProtectsKeyboardInput: PASSED
+INFO: Execute org.example.otppager.LifecycleEvidenceRestartTest.durableEvidenceDoesNotInventProvenanceAfterRestartOrLoss: IGNORED
+org.junit.AssumptionViolatedException: org.junit.AssumptionViolatedException: Exclusive host lifecycle fixture only
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.LifecycleEvidenceRestartTest.durableEvidenceDoesNotInventProvenanceAfterRestartOrLoss(LifecycleEvidenceRestartTest.kt:59)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+
+org.junit.AssumptionViolatedException: Exclusive host lifecycle fixture only
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.LifecycleEvidenceRestartTest.durableEvidenceDoesNotInventProvenanceAfterRestartOrLoss(LifecycleEvidenceRestartTest.kt:59)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+INFO: Execute org.example.otppager.LocalWipeTest.wipeRetiresOnlyTheTargetWithoutWaitingForTheStationWorker: PASSED
+INFO: Execute org.example.otppager.LocalWipeTest.wipeRefusesUnlistedAndNonContactNamespaces: PASSED
+INFO: Execute org.example.otppager.LocalWipeTest.menuWipeNeedsTypedConfirmationClearsPrivateUiAndReportsOnlyLocalResult: PASSED
+INFO: Execute org.example.otppager.OtpOnlyEngineTest.missingPadRejectsNewTextAndDraftAcrossRestartWithoutChangingSavedState: PASSED
+INFO: Execute org.example.otppager.PagerJourneyTest.inboxConversationAndFriendDetailsKeepTechnicalToolsOutOfTheEverydayFlow: PASSED
+INFO: Execute org.example.otppager.PagerJourneyTest.firstLaunchGuidesNamingServerTransferAndUsbWithoutAGhostContact: PASSED
+INFO: Execute org.example.otppager.PagerJourneyTest.damagedVaultShowsRecoveryWithoutResettingStoredData: PASSED
+INFO: Execute org.example.otppager.PairingInterfaceTest.scanRequiresReviewThenSavesOppositeRoleWithoutAnotherManualStep: PASSED
+INFO: Execute org.example.otppager.PairingQrTest.cleanImportedImagesDecodeAcrossAllQrMasks: PASSED
+INFO: Execute org.example.otppager.PairingQrTest.embeddedScannerInflatesWithSecureWindow: PASSED
+INFO: Execute org.example.otppager.PairingQrTest.generatedBitmapAndImportedPngDecodeWithoutNetwork: PASSED
+INFO: Execute org.example.otppager.PairingQrTest.exportGivesOppositeRoleWithoutChangingVaultOrCounters: PASSED
+INFO: Execute org.example.otppager.RadioPairTest.cancellingWizardClosesListenerSynchronouslyAndWipesOffer: PASSED
+INFO: Execute org.example.otppager.RadioPairTest.fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic: PASSED
+INFO: Execute org.example.otppager.ReceiveTest.backgroundWrapperPreservesTheContactsBoundTransport: PASSED
+INFO: Execute org.example.otppager.ReceiveTest.userStartedForegroundReceiverStartsAndStopsOnSupportedAndroidVersions: PASSED
+INFO: Execute org.example.otppager.ReceiveTest.nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks: PASSED
+INFO: Execute org.example.otppager.ReceiveTest.receiverPersistsUnreadAndReceiptsWithoutAnActivityAndHonorsPause: PASSED
+INFO: Execute org.example.otppager.RelayAccessTest.oldRelayWorksExplicitlyButProtectedChatNeverDowngrades: PASSED
+INFO: Execute org.example.otppager.RelayAccessTest.protectedChatRetriesLostVolumeAndRevocationPreserveLocalState: PASSED
+INFO: Execute org.example.otppager.RenewalTest.renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates: PASSED
+INFO: Execute org.example.otppager.RetainedGuardReaderTest.cohortChecksRequireBothDirectionsOfPadOwnershipAndKnownRoots: PASSED
+INFO: Execute org.example.otppager.RetainedGuardReaderTest.exactCiphertextByteBoundAcceptsValidGuardButNextByteIsRefused: PASSED
+INFO: Execute org.example.otppager.RetainedGuardReaderTest.missingFileMissingKeyAndCiphertextRestorationCannotBecomeEmptyState: PASSED
+INFO: Execute org.example.otppager.RetainedGuardReaderTest.strictSchemasRejectDuplicatesCoercionsUnknownFieldsAndTrailingValues: PASSED
+INFO: Execute org.example.otppager.RetainedGuardReaderTest.frozenReaderDecryptsOnlyExpectedGuardsWithoutChangingFilesOrKeys: PASSED
+INFO: Execute org.example.otppager.RetainedGuardReaderTest.activeAccessAndOperationalOrArbitraryNamespacesAreRejected: PASSED
+INFO: Execute org.example.otppager.RetainedGuardReaderTest.claimsRejectInvalidOwnersMissingMapsDuplicateIdsAndNumericStrings: PASSED
+INFO: Execute org.example.otppager.RetainedGuardReaderTest.cohortByteBudgetAppliesAcrossOtherwiseValidIndividualRecords: PASSED
+INFO: Execute org.example.otppager.RetainedGuardReaderTest.sideVariantsDirectoriesSymlinksAndOversizedFilesAreNeverRepairedOrOpened: PASSED
+INFO: Execute org.example.otppager.RetainedGuardReaderTest.authenticatedCiphertextTamperingAndCapacityLimitsFailClosed: PASSED
+INFO: Execute org.example.otppager.RetiredContactTest.replacementIsEmptyKeepsStableEntryAndClaimsAndCannotBeUndoneByStaleBook: PASSED
+INFO: Execute org.example.otppager.RetiredContactTest.missingIndexCannotReinitializeRetiredLegacyRoot: PASSED
+INFO: Execute org.example.otppager.RetiredContactTest.metadataMigrationPreservesVaultBytesAndRejectsUnknownVersions: PASSED
+INFO: Execute org.example.otppager.RetiredContactTest.incompleteCleanupNeverPublishesReplacementAndActivePairingCannotBeReplaced: PASSED
+INFO: Execute org.example.otppager.RetirementCancellationTest.retiringAContactDoesNotWaitForBlockedHttpsDisconnectAndPreventsAnyRetry: PASSED
+INFO: Execute org.example.otppager.RetirementCancellationTest.cancellationCannotClearAnotherContactsNfcOffer: PASSED
+INFO: Execute org.example.otppager.RetirementEvidenceTest.legacyIntentCannotAcquireRetrospectiveCaptureAuthority: PASSED
+INFO: Execute org.example.otppager.RetirementEvidenceTest.tamperingVariantsMissingKeyAndKeyOnlyStateCannotBeRepairedOrReset: PASSED
+INFO: Execute org.example.otppager.RetirementEvidenceTest.authenticatedIntentRoundTripNeverGrantsEnrollmentOrReplacesAnExistingRecord: PASSED
+INFO: Execute org.example.otppager.RetirementRecoveryTest.retiredActiveContactCanRecoverReachOtherChatsAndStartAnEmptyPhysicalPairing: PASSED
+INFO: Execute org.example.otppager.RetirementRecoveryTest.orphanScanDoesNotDecryptDamagedVaultsOrDependOnAnIndex: PASSED
+INFO: Execute org.example.otppager.RetirementRecoveryTest.inspectionNeverRepairsOrTrustsCompletionMarkerWithoutCheckingKeysAndFiles: PASSED
+INFO: Execute org.example.otppager.RetirementRestartTest.applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened: IGNORED
+org.junit.AssumptionViolatedException: org.junit.AssumptionViolatedException: Host-driven cold process test only
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.RetirementRestartTest.applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened(RetirementRestartTest.kt:19)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+
+org.junit.AssumptionViolatedException: Host-driven cold process test only
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.RetirementRestartTest.applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened(RetirementRestartTest.kt:19)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+INFO: Execute org.example.otppager.RetirementStartupTest.oneIncompleteRetirementDoesNotStopRecoveryOrDisableUnrelatedContacts: PASSED
+INFO: Execute org.example.otppager.RetirementStartupTest.unreadableJournalEnumerationDisablesVaultAccessWithoutResettingData: PASSED
+INFO: Execute org.example.otppager.RetirementUiTest.retirementClearsDraftDialogsFieldsAndFinishesWithoutWaitingForWorker: PASSED
+INFO: Execute org.example.otppager.StorageTest.pairingAndOutboxSurviveRestartWithoutPlaintextOnDisk: PASSED
+INFO: Execute org.example.otppager.StorageTest.unreadableVaultPathIsNotTreatedAsANewPairing: PASSED
+INFO: Execute org.example.otppager.StorageTest.missingVaultWithExistingKeyCannotResetReservations: PASSED
+INFO: Execute org.example.otppager.StorageTest.corruptVaultFailsClosedAndReplayWindowSurvivesReopen: PASSED
+INFO: Execute org.example.otppager.UpgradeStateTest.releaseReplacementPreservesOperationalState: IGNORED
+org.junit.AssumptionViolatedException: org.junit.AssumptionViolatedException: Only the host-driven signed update job runs this fixture
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.UpgradeStateTest.releaseReplacementPreservesOperationalState(UpgradeStateTest.kt:21)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+
+org.junit.AssumptionViolatedException: Only the host-driven signed update job runs this fixture
+at org.junit.Assume.assumeTrue(Assume.java:68)
+at org.example.otppager.UpgradeStateTest.releaseReplacementPreservesOperationalState(UpgradeStateTest.kt:21)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+INFO: Execute org.example.otppager.VaultGenerationTest.capturedOwnersIdentityLeasesAndSiblingsNeverRebindToCurrentGeneration: PASSED
+INFO: Execute org.example.otppager.VaultRetirementAndroidTest.queuedWriterCannotRecreateAKeyAfterTerminalCleanup: PASSED
+INFO: Execute org.example.otppager.VaultRetirementAndroidTest.malformedAndInterruptedMarkersBlockAccessAndRecoverWithoutAContactIndex: PASSED
+INFO: Execute org.example.otppager.VaultRetirementAndroidTest.retirementDestroysContactKeysAndDraftButKeepsReuseMetadataAndOtherContacts: PASSED
+INFO: Execute org.example.otppager.VaultRotationTest.legacyV2VaultsStillOpenAndRetirementRemovesEveryGeneration: PASSED
+SEVERE: Execute org.example.otppager.VaultRotationTest.clearHistoryRotatesTheKeySoOldSnapshotsCannotBeOpened: FAILED
+java.lang.AssertionError: java.lang.AssertionError: Values should be different. Actual: [otp-pager-chat-459eef95956145a2bf5d~1]
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failEquals(Assert.java:187)
+at org.junit.Assert.assertNotEquals(Assert.java:163)
+at org.junit.Assert.assertNotEquals(Assert.java:177)
+at org.example.otppager.VaultRotationTest.clearHistoryRotatesTheKeySoOldSnapshotsCannotBeOpened(VaultRotationTest.kt:30)
+
+java.lang.AssertionError: Values should be different. Actual: [otp-pager-chat-459eef95956145a2bf5d~1]
+at org.junit.Assert.fail(Assert.java:89)
+at org.junit.Assert.failEquals(Assert.java:187)
+at org.junit.Assert.assertNotEquals(Assert.java:163)
+at org.junit.Assert.assertNotEquals(Assert.java:177)
+at org.example.otppager.VaultRotationTest.clearHistoryRotatesTheKeySoOldSnapshotsCannotBeOpened(VaultRotationTest.kt:30)

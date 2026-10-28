@@ -1,0 +1,2 @@
+10-28 12:28:56.799  2204  2219 I TestRunner: started: malformedAndInterruptedMarkersBlockAccessAndRecoverWithoutAContactIndex(org.example.otppager.VaultRetirementAndroidTest)
+10-28 12:28:56.830  2204  2219 I TestRunner: finished: malformedAndInterruptedMarkersBlockAccessAndRecoverWithoutAContactIndex(org.example.otppager.VaultRetirementAndroidTest)

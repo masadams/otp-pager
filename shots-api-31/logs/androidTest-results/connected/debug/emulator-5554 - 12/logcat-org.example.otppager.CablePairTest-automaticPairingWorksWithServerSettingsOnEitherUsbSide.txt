@@ -1,0 +1,4 @@
+10-28 12:27:25.667  2204  2219 I TestRunner: started: automaticPairingWorksWithServerSettingsOnEitherUsbSide(org.example.otppager.CablePairTest)
+10-28 12:27:25.768   540   635 I RoleService: Granting default roles...
+10-28 12:27:27.997  2204  2228 W xample.otppage: Long monitor contention with owner pool-3-thread-1 (2227) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.StationEngine.transaction(boolean, kotlin.jvm.functions.Function1) for 105ms
+10-28 12:27:29.511  2204  2219 I TestRunner: finished: automaticPairingWorksWithServerSettingsOnEitherUsbSide(org.example.otppager.CablePairTest)

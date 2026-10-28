@@ -1,0 +1,4 @@
+10-28 12:28:32.705  2204  2219 I TestRunner: started: nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks(org.example.otppager.ReceiveTest)
+10-28 12:28:32.705   360   360 D goldfish-address-space: claimShared: Ask to claim region [0x3ffec1000 0x3fff1f000]
+10-28 12:28:32.707   540  2261 D HostConnection: createUnique: call
+10-28 12:28:32.707  2204  2219 I TestRunner: finished: nfcSetupRequiresExplicitLiveSharingAndHandlesBoundedChunks(org.example.otppager.ReceiveTest)

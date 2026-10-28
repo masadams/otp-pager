@@ -1,0 +1,2 @@
+10-28 12:28:31.755  2204  2219 I TestRunner: started: backgroundWrapperPreservesTheContactsBoundTransport(org.example.otppager.ReceiveTest)
+10-28 12:28:32.303  2204  2219 I TestRunner: finished: backgroundWrapperPreservesTheContactsBoundTransport(org.example.otppager.ReceiveTest)

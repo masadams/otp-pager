@@ -1,0 +1,2 @@
+10-28 12:28:37.585  2204  2219 I TestRunner: started: protectedChatRetriesLostVolumeAndRevocationPreserveLocalState(org.example.otppager.RelayAccessTest)
+10-28 12:28:40.921  2204  2219 I TestRunner: finished: protectedChatRetriesLostVolumeAndRevocationPreserveLocalState(org.example.otppager.RelayAccessTest)

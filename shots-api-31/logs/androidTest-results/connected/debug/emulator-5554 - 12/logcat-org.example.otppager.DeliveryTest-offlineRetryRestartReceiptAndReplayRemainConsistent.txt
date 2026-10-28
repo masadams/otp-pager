@@ -1,0 +1,2 @@
+10-28 12:27:35.556  2204  2219 I TestRunner: started: offlineRetryRestartReceiptAndReplayRemainConsistent(org.example.otppager.DeliveryTest)
+10-28 12:27:35.660  2204  2219 I TestRunner: finished: offlineRetryRestartReceiptAndReplayRemainConsistent(org.example.otppager.DeliveryTest)
