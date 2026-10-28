@@ -21,8 +21,13 @@ internal object GlobalRetirement {
     private val executor = Executors.newSingleThreadExecutor { task -> Thread(task, "pager-retire-all").apply { isDaemon = true } }
     fun marker(directory: File) = File(directory, JOURNAL)
     fun isFrozen(directory: File): Boolean = synchronized(VaultLifecycle.lock) {
-        hasLegacyIntent(directory) || RetirementEvidence.presence(directory) != RetirementEvidence.Presence.NONE ||
+        // An in-process freeze latch always wins, including during a wipe of an ACTIVE epoch.
+        if (directory.absolutePath in denied) return@synchronized true
+        val lifecycle = hasLegacyIntent(directory) || RetirementEvidence.presence(directory) != RetirementEvidence.Presence.NONE ||
             EnrollmentStaging.presence(directory) != EnrollmentStaging.Presence.NONE
+        // Lifecycle records stay forever once an epoch is ACTIVE, so only the lineage can unfreeze.
+        // Without a manifest file this is exactly the previous presence rule.
+        lifecycle && EpochState.resolveIfManifest(directory) !is EpochLineage.State.Active
     }
     internal fun hasLegacyIntent(directory: File): Boolean = synchronized(VaultLifecycle.lock) {
         directory.absolutePath in denied || VaultLifecycle.variants(marker(directory)).any {
@@ -39,6 +44,11 @@ internal object GlobalRetirement {
             check(directory.isDirectory && directory.list() != null)
             if (!isFrozen(directory)) return@synchronized Status(LocalState.NOT_FROZEN)
             if (RetirementStartup.failed) return@synchronized Status(LocalState.UNAVAILABLE)
+            when (val scope = EpochState.wipeScope(directory, requested = false)) {
+                EpochState.WipeScope.Unknown -> return@synchronized Status(LocalState.UNAVAILABLE)
+                is EpochState.WipeScope.Epoch -> return@synchronized inspectEpoch(context, scope)
+                EpochState.WipeScope.Legacy -> Unit
+            }
             var sealedRoots: Set<String>? = null
             when (RetirementEvidence.presence(directory)) {
                 RetirementEvidence.Presence.UNAVAILABLE -> return@synchronized Status(LocalState.UNAVAILABLE)
@@ -102,6 +112,11 @@ internal object GlobalRetirement {
             known.getValue(directory.path).apply { addAll(leases) }.toSet()
         }
     }
+    /**
+     * Freeze latch only, without starting cleanup. Exclusive restart fixtures use it to
+     * simulate a crash after durable wipe intent; production wipes always use [submit].
+     */
+    internal fun latchOnlyForRestartFixture(context: Context): Set<String> = freeze(context.applicationContext)
     /** Freeze immediately; cleanup never queues behind the station's network worker. */
     fun submit(context: Context): Future<GlobalRetirementMachine.Result> {
         val app = context.applicationContext
@@ -113,7 +128,7 @@ internal object GlobalRetirement {
                 val firstAttempt = captureAttempted.add(directory)
                 val task = executor.submit<GlobalRetirementMachine.Result> {
                     if (firstAttempt) captureInitialEvidence(app)
-                    recover(app).also { RetirementStartup.recordGlobal(app, it) }
+                    recover(app, requested = true).also { RetirementStartup.recordGlobal(app, it) }
                 }
                 // Closing a screen or cancelling a result wait must never cancel local destruction.
                 val result = object : Future<GlobalRetirementMachine.Result> by task {
@@ -125,6 +140,22 @@ internal object GlobalRetirement {
         }
     }
     private fun captureInitialEvidence(context: Context) {
+        val directory = context.noBackupFilesDir.absoluteFile
+        when (val scope = try { EpochState.wipeScope(directory, requested = true) } catch (_: Exception) { EpochState.WipeScope.Unknown }) {
+            EpochState.WipeScope.Legacy -> Unit
+            EpochState.WipeScope.Unknown -> return // Destruction proceeds; no provenance can be captured.
+            is EpochState.WipeScope.Epoch -> {
+                if (scope.terminal != null) return // Existing evidence is never replaced or recaptured.
+                var ticket: EpochEvidence.Ticket? = null
+                try {
+                    ticket = EpochEvidence.beginFresh(directory, scope.manifest.epoch)
+                    EpochEvidence.seal(context, ticket, scope.manifest, scope.priorRoots)
+                } catch (_: Exception) {
+                    // Evidence failure never prevents local cleanup; enrollment simply stays unavailable.
+                } finally { EpochEvidence.closeCapture(directory) }
+                return
+            }
+        }
         var ticket: RetirementEvidence.Ticket? = null
         try {
             ticket = RetirementEvidence.beginFresh(context)
@@ -136,7 +167,18 @@ internal object GlobalRetirement {
         } finally { ticket?.let(RetirementEvidence::close) }
     }
     /** Only startup recovery of an existing global intent, or the explicit internal submit path, calls this. */
-    fun recover(context: Context): GlobalRetirementMachine.Result {
+    fun recover(context: Context, requested: Boolean = false): GlobalRetirementMachine.Result {
+        val directory = context.noBackupFilesDir.absoluteFile
+        return when (val scope = try { EpochState.wipeScope(directory, requested) } catch (_: Exception) { EpochState.WipeScope.Unknown }) {
+            EpochState.WipeScope.Legacy -> recoverLegacy(context)
+            is EpochState.WipeScope.Epoch -> recoverEpoch(context, scope)
+            EpochState.WipeScope.Unknown ->
+                if (requested) recoverUnknown(context)
+                // Boot never destroys a possibly ACTIVE epoch without durable intent; stay frozen.
+                else GlobalRetirementMachine.Result(emptySet(), false, false, false, listOf("lineage-unavailable"))
+        }
+    }
+    private fun recoverLegacy(context: Context): GlobalRetirementMachine.Result {
         val directory = context.noBackupFilesDir.absoluteFile
         RetirementEvidence.retireCaptureWindow(directory)
         try { EnrollmentStaging.recoverInterrupted(context) } catch (_: Exception) { /* Keep blocked; old local cleanup still proceeds. */ }
@@ -163,6 +205,96 @@ internal object GlobalRetirement {
             )
         })
         return result
+    }
+    private fun deviceMetadata(context: Context, directory: File): List<Pair<String, () -> Unit>> = listOf(
+        "receiving-preference" to {
+            check(context.getSharedPreferences("receiving", Context.MODE_PRIVATE).edit().putBoolean("enabled", false).commit())
+        },
+        "receiving-service" to { context.stopService(Intent(context, ReceiveService::class.java)); Unit },
+        "notifications" to { context.getSystemService(android.app.NotificationManager::class.java).cancelAll() },
+        "global-directory-sync" to { VaultLifecycle.syncDirectory(directory) }
+    )
+    /** Wipe of an ACTIVE epoch: its listed and discovered roots and its index; every cohort/record stays. */
+    private fun recoverEpoch(context: Context, scope: EpochState.WipeScope.Epoch): GlobalRetirementMachine.Result {
+        val directory = context.noBackupFilesDir.absoluteFile
+        val manifest = scope.manifest
+        EpochEvidence.closeCapture(directory)
+        try { EnrollmentStaging.recoverInterrupted(context) } catch (_: Exception) { /* Keep blocked; cleanup still proceeds. */ }
+        fun terminal() = try { EpochEvidence.readAll(directory).singleOrNull { it.epoch == manifest.epoch } } catch (_: Exception) { null }
+        fun epochRoots(found: Set<String>) = found.filter { it != "station-v2" && it !in scope.priorRoots }.toSet()
+        return GlobalRetirementMachine.perform(object : GlobalRetirementMachine.Operations {
+            override fun freeze() = epochRoots(freeze(context)) + manifest.roots
+            override fun previous(): GlobalRetirementMachine.Previous {
+                val record = terminal()
+                return GlobalRetirementMachine.Previous(record?.roots ?: emptySet(), usable = true)
+            }
+            // The OTPTERM2 record is the durable intent; the listed manifest already holds every root.
+            override fun write(roots: Set<String>, complete: Boolean) { checkNotNull(terminal()) { "No durable epoch wipe intent" } }
+            override fun discover() = ContactInventory.scanBestEffort(context).let { it.copy(roots = epochRoots(it.roots)) }
+            override fun retire(root: String) = VaultRetirement.retireContact(context, root).completed
+            override fun metadata(): List<Pair<String, () -> Unit>> = listOf(
+                "index-key" to { deleteKey("otp-pager-${manifest.index}") },
+                "index-device-key" to { deleteKey("otp-pager-${manifest.index}-device") },
+                "index-files" to { deleteFiles(directory, manifest.index) }
+            ) + deviceMetadata(context, directory)
+        })
+    }
+    /** Explicit in-process request with an unreadable lineage: destroy every discoverable contact and index. */
+    private fun recoverUnknown(context: Context): GlobalRetirementMachine.Result {
+        val directory = context.noBackupFilesDir.absoluteFile
+        val indexes = (directory.list()?.mapNotNull { Regex("^(enr-[a-f0-9]{20})\\.bin(?:\\.(?:bak|new))?$").matchEntire(it)?.groupValues?.get(1) }
+            ?: emptyList()).toSet()
+        return GlobalRetirementMachine.perform(object : GlobalRetirementMachine.Operations {
+            override fun freeze() = freeze(context)
+            override fun previous() = GlobalRetirementMachine.Previous(emptySet(), usable = true)
+            override fun write(roots: Set<String>, complete: Boolean) = error("No durable record for an unreadable lineage")
+            override fun discover() = ContactInventory.scanBestEffort(context)
+            override fun retire(root: String) = VaultRetirement.retireContact(context, root).completed
+            override fun metadata(): List<Pair<String, () -> Unit>> = indexes.flatMap { index -> listOf(
+                "index-key:$index" to { deleteKey("otp-pager-$index") },
+                "index-files:$index" to { deleteFiles(directory, index) }) } + deviceMetadata(context, directory)
+        })
+    }
+    private fun inspectEpoch(context: Context, scope: EpochState.WipeScope.Epoch): Status {
+        val directory = context.noBackupFilesDir.absoluteFile
+        val record = scope.terminal ?: return Status(LocalState.INCOMPLETE)
+        if (record.phase == RetirementEvidenceCodec.Phase.INTENT) return Status(LocalState.INCOMPLETE)
+        EpochGuardInventory.verify(context, record)
+        val found = ContactInventory.scanBestEffort(context)
+        if (!found.complete) return Status(LocalState.UNAVAILABLE)
+        val roots = found.roots.filter { it != "station-v2" && it !in scope.priorRoots }
+        if (!record.roots.containsAll(roots)) return Status(LocalState.INCOMPLETE)
+        for (root in record.roots) when (VaultRetirement.inspect(context, root).state) {
+            VaultRetirement.LocalState.UNAVAILABLE -> return Status(LocalState.UNAVAILABLE)
+            VaultRetirement.LocalState.COMPLETE -> Unit
+            else -> return Status(LocalState.INCOMPLETE)
+        }
+        val keys = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        val index = scope.manifest.index
+        val metadataGone = listOf("otp-pager-$index", "otp-pager-$index-device").none(keys::containsAlias) &&
+            VaultLifecycle.variants(File(directory, "$index.bin")).none { it.exists() }
+        val notifications = context.getSystemService(android.app.NotificationManager::class.java)
+        return Status(if (metadataGone && !ReceiveService.enabled(context) && notifications.activeNotifications.isEmpty())
+            LocalState.COMPLETE else LocalState.INCOMPLETE)
+    }
+    /** Record a verified cleanup in whichever terminal record governs the current scope. */
+    fun recordCleanup(context: Context, result: GlobalRetirementMachine.Result) = synchronized(VaultLifecycle.lock) {
+        when (val scope = EpochState.wipeScope(context.noBackupFilesDir.absoluteFile, requested = false)) {
+            EpochState.WipeScope.Legacy -> RetirementEvidence.recordCleanup(context, result)
+            is EpochState.WipeScope.Epoch -> scope.terminal?.let { EpochEvidence.recordCleanup(context, it.generation, result) }
+            EpochState.WipeScope.Unknown -> Unit
+        }
+        Unit
+    }
+    /**
+     * Called only by [FreshEnrollment] after the new epoch's manifest is committed and resolves
+     * ACTIVE. Old owners stay rejected by their captured capability, so the in-process freeze
+     * latch is released for owners constructed from now on.
+     */
+    internal fun reopenAfterActivation(directory: File) = synchronized(VaultLifecycle.lock) {
+        val path = directory.absolutePath
+        denied.remove(path); known.remove(path); captureAttempted.remove(path); running.remove(path)
+        EpochState.invalidate(directory)
     }
     private fun read(directory: File): GlobalRetirementMachine.Previous {
         val roots = mutableSetOf<String>(); var usable = true

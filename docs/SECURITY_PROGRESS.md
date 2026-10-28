@@ -3,7 +3,20 @@
 Read [the development plan](SECURITY_DEVELOPMENT_PLAN.md) first. This file is the
 handoff record; never infer feature completion from a plan or passing baseline CI.
 
-## Current position — updated 2026-10-27
+## Current continuation — 2026-10-28
+
+The [continuation record](CONTINUATION_2026_10_28.md) records main 9a968a8, open
+#45–49, dependency branches, exact tested heads and actual local/CI evidence.
+Local/ACTIVE lifecycle foundations, key rotation, large streamed pads and opt-in
+unreviewed peer wipe are merged. Strict end-to-end protection, failover and groups
+remain unimplemented. The strict codec in #48 is an unwired review candidate.
+
+Next implementation: finish USB physical regression evidence, then strict enrollment/
+relay authorization, vault/control separation and lifecycle/UI enforcement. Review
+#49's local-first recipient correction without waiting for strict mode. Follow
+PIPELINE.md; no PR merge, release or deployment is authorized automatically.
+
+## Historical position — 2026-10-27
 
 - PRs #9–15 are merged into `main`. Integration endpoint before this documentation
   refresh: `574576d0a39108a641386ca260788c3ef7df578e`.
@@ -449,9 +462,43 @@ a repeat wipe needs a successor `OTPTERM2` (slice B3d). Added pure `ActiveManife
 ambiguity, unexplained records, second-wipe freeze, order independence, scope refusal).
 All 64 JVM unit tests pass locally; Android/emulator evidence belongs to #18's CI.
 
-## Next task
+### 2026-10-27 — B3b capability, freeze and routing wiring (#19)
 
-Slice B3b (see ACTIVE_EPOCH_DESIGN.md): implement reviewed ACTIVE epoch capability/namespace allowlist publication and
+#18 passed all workflows; merge awaits the owner (an automated merge without review was
+declined by a permission check). #19 is stacked on it. Added `EpochManifests`/`EpochState`
+adapters, sealed capability with namespace-aware `requireCurrent`, lineage-aware
+`isFrozen` (in-process latch first), `ChatBook` default routing, manifest append in
+`freshNamespace`, and a guard stopping staging recovery from abandoning an activated
+stage. Without a manifest file every decision equals the previous presence rule.
+Tests: `CapabilityDecisionTest` (JVM), `EpochManifestsTest` (isolated directory: create,
+append, tamper, variants, strays, missing key, manifest-alone stays frozen/blocked),
+updated `VaultGenerationTest`. Local type-check and 66 JVM tests pass; emulator results
+belong to #19's CI.
+
+### 2026-10-28 — B3c–B3f: cohorts, repeat wipe, activation and UI (#20)
+
+Owner asked to continue through the plan; #18/#19 await owner merge, so #20 is stacked on
+#19. Implemented retained-cohort enforcement in `PairingClaims`, `OTPTERM2` repeat-wipe
+evidence and epoch-scoped wipe/recovery/inspection, `FreshEnrollment` activation, a
+fingerprint-validated lineage cache, newest-terminal staging, Start fresh on the recovery
+screen and a typed Wipe all action. Key safety rule: boot recovery destroys an epoch only
+with a durable `OTPTERM2` record bound to it. Tests: `EpochTerminalCodecTest`, new lineage
+cases, and the exclusive `EpochCycleRestartTest` matrix (added to Android CI). Local
+type-check and 70 JVM tests pass; emulator evidence belongs to #20's CI.
+
+### 2026-10-28 — package C, license, screenshots (#21–#23)
+
+Package C implemented as contact-vault wrapping-key rotation (`VaultKeys`, v3 envelope,
+rotation on first save per process, every ≤10 min, and on clear history; old keys deleted
+only after verified commit) instead of a separate history file, because a separate file
+would leave old copies under surviving keys. All contact key scanners updated for rotated
+generations. Tests: `VaultKeysTest`, `VaultRotationTest`, stricter restart-fixture key checks.
+Owner decisions: drop Jericho (#21), MIT license (#21). Added the opt-in `ui-preview`
+screenshot workflow (#23); first run captured 53 screens on API 31/35.
+
+## Historical next-task note — superseded by the continuation record
+
+Package C: separately erasable history and crash-safe old-key migration (see LOCAL_DESTRUCTION_DESIGN.md). Completed package B wording for reference: implement reviewed ACTIVE epoch capability/namespace allowlist publication and
 current-index routing together with immutable retained-cohort checks during normal
 pairing/messaging and repeat-wipe/forward-lineage handling. Follow the staged
 acceptance tasks in [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md). Do not enable fresh

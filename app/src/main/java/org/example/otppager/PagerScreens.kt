@@ -10,6 +10,8 @@ import android.view.View
 import android.widget.*
 
 /** Everyday screens contain presentation and explicit actions, never keys or protocol logic. */
+private const val NO_REMOTE_WIPE = "This pairing is permanently disabled on this device. No remote wipe has been requested; the other device may still hold its copy."
+
 internal class PagerScreens(private val activity: Activity, private val actions: Actions) {
     interface Actions {
         fun back(destination: Int)
@@ -26,6 +28,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         fun rename()
         fun retryRetirement()
         fun freshPairing()
+        fun dismissRetired()
         fun status()
         fun wipe()
     }
@@ -48,8 +51,13 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         isSaveEnabled = false
     }
     private fun header(title: String, back: Int? = null, menu: Boolean = false) = row().apply {
-        if (back != null) addView(button("‹") { actions.back(back) }.apply { contentDescription = "Back" }, LinearLayout.LayoutParams(dp(44), dp(44)))
-        addView(label(title, 24f).apply { setPadding(dp(if (back == null) 0 else 10), 0, 0, 0); typeface = Typeface.create("monospace", Typeface.BOLD) }, LinearLayout.LayoutParams(0, dp(60), 1f))
+        if (back != null) addView(button("‹") { actions.back(back) }.apply {
+            contentDescription = "Back"; textSize = 24f; background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+        }, LinearLayout.LayoutParams(dp(44), dp(44)))
+        addView(label(title, 24f).apply {
+            setPadding(dp(if (back == null) 0 else 4), 0, 0, 0); typeface = Typeface.create("monospace", Typeface.BOLD)
+            gravity = Gravity.CENTER_VERTICAL; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+        }, LinearLayout.LayoutParams(0, dp(60), 1f))
         if (menu) addView(button("⋮") { actions.appMenu() }.apply { contentDescription = "App options" }, LinearLayout.LayoutParams(dp(44), dp(44)))
     }
     val inbox = column()
@@ -79,16 +87,19 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     private val retiredName = label("Retired pairing", 24f)
     private val retiredStatus = label("Local cleanup status unavailable", 18f)
     private val retiredNotice = label("", 13f).apply { visibility = View.GONE }
+    private val retiredRemote = label(NO_REMOTE_WIPE, 15f).apply { setPadding(0, dp(16), 0, dp(16)) }
     private val retryRetirementButton = button("Retry local cleanup") { actions.retryRetirement() }.apply { isEnabled = false; alpha = 0.45f }
+    private val dismissRetiredButton = button("Done · remove from Chats", true) { actions.dismissRetired() }.apply { visibility = View.GONE }
     private val freshPairingButton = button("Start fresh pairing", true) { actions.freshPairing() }.apply { isEnabled = false; alpha = 0.45f }
     init {
         retired.addView(header("Pairing recovery", back = 4))
         retired.addView(ScrollView(activity).apply { isFillViewport = true; scrollBarStyle = View.SCROLLBARS_INSIDE_INSET; setPadding(0, 0, dp(8), dp(12)); addView(column().apply {
             addView(retiredName.apply { setPadding(0, dp(20), 0, dp(16)) })
             addView(retiredStatus)
-            addView(label("This pairing is permanently disabled on this device. No remote wipe has been requested; the other device may still hold its copy.", 15f).apply { setPadding(0, dp(16), 0, dp(16)) })
-            addView(label("Local cleanup removes this pairing's vault, draft and identity keys and their files. The contact name and minimal reuse/retirement records remain. Flash, memory and exported copies cannot be guaranteed erased.", 13f, true))
+            addView(retiredRemote)
+            addView(label("Local cleanup removes this pairing's vault, draft and identity keys and their files. After cleanup completes, Done or returning to Chats removes this entry. Minimal reuse/retirement records and queued peer-wipe requests remain. Flash, memory and exported copies cannot be guaranteed erased.", 13f, true))
             addView(retiredNotice)
+            addView(dismissRetiredButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
             addView(retryRetirementButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(20) })
             addView(freshPairingButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
             addView(button("Back to chats") { actions.back(4) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
@@ -124,7 +135,9 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         details.addView(header("Friend details", back = 0))
         details.addView(detailsNotice)
         val body = column()
-        details.addView(ScrollView(activity).apply { addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        details.addView(ScrollView(activity).apply {
+            scrollBarStyle = View.SCROLLBARS_INSIDE_INSET; setPadding(0, 0, dp(8), 0); addView(body) // Keep text off the screen edge.
+        }, LinearLayout.LayoutParams(-1, 0, 1f))
         body.addView(friendName.apply { setPadding(0, dp(20), 0, dp(8)) })
         body.addView(friendState.apply { setPadding(0, 0, 0, dp(24)) })
         body.addView(button("Connection details") { actions.status() }, LinearLayout.LayoutParams(-1, -2))
@@ -151,7 +164,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     }
     fun renderInbox(friends: List<Friend>, receiving: Boolean, busy: Boolean) {
         addButton.isEnabled = true; addButton.alpha = 1f
-        inboxStatus.text = if (busy) "Checking for messages…" else if (receiving) "Background receiving is on" else "Tap here for receiving options"
+        inboxStatus.text = if (busy) "Checking for messages…" else if (receiving) "Background receiving is on · Change" else "Messages arrive while the app is open · Change"
         if (friends == shownFriends) return
         shownFriends = friends.toList()
         inboxRows.removeAllViews()
@@ -177,13 +190,17 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         recoveryStep.visibility = if (!view.cableEligible) View.VISIBLE else View.GONE
         sizeButton.text = "Pad size · ${padSize / PadProtocol.MATERIAL_BYTES} MiB · Change"
     }
-    fun renderRetired(name: String, status: VaultRetirement.Status, busy: Boolean) {
+    /** [remote]: honest peer-wipe status (unreviewed feature), or null when none was involved. */
+    fun renderRetired(name: String, status: VaultRetirement.Status, busy: Boolean, remote: String? = null) {
         retiredName.text = name
+        retiredRemote.text = remote ?: NO_REMOTE_WIPE
         retiredStatus.text = when (status.state) {
             VaultRetirement.LocalState.COMPLETE -> "Local cleanup completed"
             VaultRetirement.LocalState.INCOMPLETE -> "Local cleanup incomplete"
             else -> "Local cleanup status unavailable"
         }
+        dismissRetiredButton.visibility = if (status.state == VaultRetirement.LocalState.COMPLETE) View.VISIBLE else View.GONE
+        dismissRetiredButton.isEnabled = !busy && status.state == VaultRetirement.LocalState.COMPLETE
         retryRetirementButton.isEnabled = !busy
         freshPairingButton.isEnabled = !busy && status.state == VaultRetirement.LocalState.COMPLETE
         retryRetirementButton.alpha = if (retryRetirementButton.isEnabled) 1f else 0.45f

@@ -43,8 +43,10 @@ class LifecycleEvidenceRestartTest {
     }
     private fun localGone() {
         assertTrue(GlobalRetirement.isFrozen(context.noBackupFilesDir))
-        for (n in 41..42) for (suffix in listOf("", "-draft", "-device", "-draft-device"))
-            assertFalse(keys().containsAlias("otp-pager-${root(n)}$suffix"))
+        for (n in 41..42) {
+            for (suffix in listOf("", "-draft", "-device", "-draft-device")) assertFalse(keys().containsAlias("otp-pager-${root(n)}$suffix"))
+            assertTrue(VaultKeys.all(root(n), keys().aliases().toList()).isEmpty()) // Every rotated generation.
+        }
         assertFalse(keys().containsAlias("otp-pager-chat-index"))
         assertTrue(keys().containsAlias("otp-pager-${root(41)}-pads"))
         assertTrue(keys().containsAlias("otp-pager-chat-index-claims"))
@@ -77,7 +79,7 @@ class LifecycleEvidenceRestartTest {
                     if (phase == "key-seed") check(RetirementEvidence.marker(dir).delete())
                     ref.put("generation", ticket.generation)
                     referenceFile.writeText(ref.toString())
-                    assertTrue(keys().containsAlias("otp-pager-${root(41)}"))
+                    assertTrue(VaultKeys.all(root(41), keys().aliases().toList()).isNotEmpty())
                     assertFalse(GlobalRetirement.marker(dir).exists()) // Simulated death before ordinary cleanup journal.
                     if (phase == "scope-seed") DeviceIdentity("otp-pager-${root(43)}-device").card(true)
                 } finally { RetirementEvidence.close(ticket) }

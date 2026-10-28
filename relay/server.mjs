@@ -21,6 +21,9 @@ export function makeServer(options = {}) {
   const maxClaims = options.maxClaims ?? 1000;
   const now = options.now ?? Date.now;
   const rateLimit = options.rateLimit ?? 360;
+  // Strict claims (finding F06): the setup token may only create chat claims; it can never
+  // read, post or delete mailbox traffic. Off by default so legacy unclaimed chats keep working.
+  const strictClaims = options.strictClaims ?? ['1', 'true', 'yes'].includes(String(process.env.RELAY_STRICT_CLAIMS || '').toLowerCase());
   const buckets = new Map();
   let poisoned = false;
   const credentialHash = value => createHash('sha256').update(value).digest('hex');
@@ -98,7 +101,7 @@ export function makeServer(options = {}) {
       const claim = state.access[room];
       const bearer = /^Bearer ([A-Za-z0-9_-]{43,128})$/.exec(req.headers.authorization || '')?.[1];
       const scoped = !!(claim && bearer && equalHash(claim.hash, credentialHash(bearer)));
-      const authorized = scoped || (bootstrap && !claim);
+      const authorized = scoped || (bootstrap && !claim && !strictClaims);
       const peer = scoped ? 'room:' + room : (bootstrap ? 'setup:' : 'anon:') + req.socket.remoteAddress;
       const time = now();
       for (const [ip, bucket] of buckets) if (time - bucket.start >= 60000) buckets.delete(ip);
@@ -149,7 +152,7 @@ export function makeServer(options = {}) {
         if (!Number.isSafeInteger(after) || after < 0) return json(res, 400, { error: 'bad cursor' });
         const limit = Number(url.searchParams.get('limit') || 50);
         if (!Number.isInteger(limit) || limit < 1 || limit > 50) return json(res, 400, { error: 'bad page size' });
-        return json(res, 200, { protocol: 2, access: scoped ? 'chat' : 'shared', epoch: state.epoch,
+        return json(res, 200, { protocol: 2, access: scoped ? 'chat' : 'shared', strict: strictClaims, epoch: state.epoch,
           messages: state.messages.filter(m => m.room === room && m.seq > after).slice(0, limit)
             .map(({ seq, packet }) => ({ seq, packet })) });
       }

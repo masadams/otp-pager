@@ -5,10 +5,16 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
+/** Routes the default contact index to the current lineage: legacy `chat-index`, or an ACTIVE epoch's own index. */
+internal object EpochRouting {
+    fun index(context: Context): String = EpochState.activeIfStaged(context.noBackupFilesDir)?.index ?: "chat-index"
+    fun initialRoot(context: Context): String = EpochState.activeIfStaged(context.noBackupFilesDir)?.initialRoot ?: "station-v2"
+}
+
 /** Encrypted contact index. Existing station-v2 data stays in place; keys are never copied. */
-class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNamespace: String = "station-v2") {
+class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(context), legacyNamespace: String = EpochRouting.initialRoot(context)) {
     companion object { const val MAX_CHATS = 12 }
-    private val context = context.applicationContext
+    internal val context: Context = context.applicationContext
     private val index = SecureStore(context, indexNamespace)
     private val claims = PairingClaims(SecureStore(context, "$indexNamespace-claims"))
     // Reload durable state for every operation: stale UI/receiver objects cannot overwrite a replacement.
@@ -23,6 +29,8 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
         synchronized(VaultLifecycle.lock) {
             val saved = index.load()
             if (saved == null) {
+                // An ACTIVE epoch's index is created by activation only; a missing one is never recreated.
+                check(EpochState.activeIfStaged(context.noBackupFilesDir) == null) { "Contact index unavailable" }
                 // A lost index must not silently reopen a terminal legacy generation.
                 VaultLifecycle.requireActive(context.noBackupFilesDir, legacyNamespace)
                 claims.migrate(SecureStore(context, legacyNamespace))
@@ -87,11 +95,14 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
         val files = checkNotNull(directory.listFiles()) { "Contact storage unavailable" }.map { it.name }
         val keys = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         val aliases = keys.aliases().toList()
-        return generateSequence { "chat-" + UUID.randomUUID().toString().replace("-", "").take(20) }.first { candidate ->
+        val root = generateSequence { "chat-" + UUID.randomUUID().toString().replace("-", "").take(20) }.first { candidate ->
             chats().none { it.id == candidate || it.entryId == candidate } &&
                 files.none { it.startsWith("$candidate.") || it.startsWith("$candidate-") } &&
-                aliases.none { it == "otp-pager-$candidate" || it.startsWith("otp-pager-$candidate-") }
+                aliases.none { it == "otp-pager-$candidate" || it.startsWith("otp-pager-$candidate-") || it.startsWith("otp-pager-$candidate~") }
         }
+        // In an ACTIVE epoch the root is listed durably before its first key or file exists.
+        EpochState.activeIfStaged(directory)?.let { EpochManifests.appendRoot(directory, it.epoch, root) }
+        return root
     }
     /** A recovery action can only retry a known terminal generation, never retire an active contact. */
     internal fun recoverRetired(id: String): VaultRetirement.Result {
@@ -100,6 +111,32 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
             check(VaultLifecycle.isContact(id) && VaultLifecycle.isRetired(context.noBackupFilesDir, id)) { "Pairing is not retired" }
         }
         return VaultRetirement.retireContact(context, id)
+    }
+    /** Dismiss only verified-complete local cleanup. Retained guards and peer dispatch survive.
+     * A stale dismissal cannot remove a fresh replacement of the same contact entry.
+     */
+    internal fun dismissRetired(id: String): Boolean = synchronized(VaultLifecycle.lock) {
+        require(VaultLifecycle.isContact(id)) { "Not a conversation" }
+        val next = JSONObject(data.toString())
+        val entries = next.getJSONArray("chats")
+        val position = (0 until entries.length()).firstOrNull { entries.getJSONObject(it).getString("id") == id }
+            ?: return@synchronized false
+        check(VaultRetirement.inspect(context, id).state == VaultRetirement.LocalState.COMPLETE) {
+            "Local cleanup must complete before removing this chat"
+        }
+        entries.remove(position)
+        if (entries.length() == 0) {
+            // Preserve the existing non-empty index contract. The UI hides this unused setup slot.
+            // Never reuse the retired namespace, even when dismissing the last conversation.
+            val fresh = freshNamespace()
+            entries.put(JSONObject().put("id", fresh).put("entryId", fresh).put("name", "Chat 1"))
+            next.put("active", fresh)
+        } else if (next.getString("active") == id) {
+            next.put("active", entries.getJSONObject(0).getString("id"))
+        }
+        save(next) // Only the index changes. No ledger, tombstone, claim or dispatch deletion.
+        summaries.remove(id)
+        true
     }
     /** Explicit local-only replacement. Never copies credentials, pads, history or peer identity. */
     internal fun replaceRetired(id: String): Chat {
@@ -129,10 +166,18 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
             require(VaultLifecycle.isContact(id)) { "Not a conversation" }
             require(chats().any { it.id == id }) { "Unknown chat" }
         }
+        // Unreviewed peer wipe (setting off by default): seal the request before destruction. Never blocks it.
+        if (PeerWipe.enabled(context)) PeerWipe.prepare(context, id, try { engine(id).state } catch (_: Exception) { null })
         // Retirement dispatches cancellation; never call it while holding an outer lifecycle lock.
         val result = VaultRetirement.retireContact(context, id)
         refresh(id)
         return result
+    }
+    internal fun ensureClaimsRegistry() = claims.ensureRegistry()
+    /** Wipe all: seal one peer request per chat that has control material, before the freeze. */
+    internal fun preparePeerWipes() {
+        if (!PeerWipe.enabled(context)) return
+        for (chat in chats()) PeerWipe.prepare(context, chat.id, try { engine(chat.id).state } catch (_: Exception) { null })
     }
     fun forgetActive() = synchronized(VaultLifecycle.lock) { ChatDraft(SecureStore(context, active().id).sibling("draft")).clear(); SecureStore(context, active().id).forget(); refresh() }
     fun summary(id: String): Summary {
@@ -160,8 +205,8 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
             summaries[id] = Summary(
                 (if (inbox == null) 0 else (0 until inbox.length()).count { live(inbox.getJSONObject(it)) && !inbox.getJSONObject(it).optBoolean("read") }) + (s?.optJSONArray("history")?.let { history -> (0 until history.length()).count { live(history.getJSONObject(it)) && history.getJSONObject(it).optBoolean("unread") } } ?: 0),
                 if (out == null) 0 else (0 until out.length()).count { live(out.getJSONObject(it)) && out.getJSONObject(it).getString("status") == "queued" }, draft = draft,
-                paired = s != null && s.has("pad") && s.has("peerDevice") && s.optBoolean("padVerified") && s.optBoolean("peerReady") && s.optBoolean("cableComplete", true) && !s.optBoolean("renewalPaused") && !s.optBoolean("relayRevoked"),
-                eligible = s == null || (!s.has("pad") && s.getLong("counter") == 0L && s.getLong("high") == 0L && s.getJSONArray("inbox").length() == 0 && s.getJSONArray("outbox").length() == 0))
+                paired = s != null && StationEngine.hasPad(s) && s.has("peerDevice") && s.optBoolean("padVerified") && s.optBoolean("peerReady") && s.optBoolean("cableComplete", true) && !s.optBoolean("renewalPaused") && !s.optBoolean("relayRevoked"),
+                eligible = s == null || (!StationEngine.hasPad(s) && s.getLong("counter") == 0L && s.getLong("high") == 0L && s.getJSONArray("inbox").length() == 0 && s.getJSONArray("outbox").length() == 0))
         } catch (_: Exception) { summaries[id] = Summary(problem = true) }
     }
     private fun refreshSummaries() { chats().forEach { refresh(it.id) } }
@@ -189,6 +234,13 @@ class PairingClaims(private val store: SecureStore) {
         if (entries.has(key)) {
             require(existing && entries.getString(key) == owner) { "This pairing material was already used. Create a fresh pairing for each friend." }
         } else {
+            // In an ACTIVE epoch every earlier wipe's sealed cohort is checked before the delta grows.
+            store.activeEpoch?.let { epoch ->
+                val retained = RetainedGuardReader.activeExclusions(store.directory, epoch)
+                require(key !in (if (kind == "pads") retained.pads else retained.rooms)) {
+                    "This pairing material was already used. Create a fresh pairing for each friend."
+                }
+            }
             entries.put(key, owner)
             try { store.save(data) } catch (e: Exception) { failed = true; throw e }
         }
@@ -196,6 +248,11 @@ class PairingClaims(private val store: SecureStore) {
     fun room(secret: String, owner: String, existing: Boolean) {
         val master = Protocol.master(secret)
         try { claim("rooms", Protocol.room(master), owner, existing) } finally { master.fill(0) }
+    }
+    /** Global wipe evidence needs an authenticated registry; create the empty one if nothing was ever claimed. */
+    internal fun ensureRegistry() = synchronized(lock) {
+        check(!failed) { "Pairing registry write failed; restart the app" }
+        if (store.load() == null) store.save(JSONObject().put("version", 2).put("pads", JSONObject()).put("rooms", JSONObject()))
     }
     fun pad(id: String, owner: String) { require(Regex("[a-f0-9]{32}").matches(id)); claim("pads", id, owner, existing = true) }
     fun migrate(profile: SecureStore) {

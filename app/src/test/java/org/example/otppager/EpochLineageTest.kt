@@ -104,4 +104,38 @@ class EpochLineageTest {
             "chat-" + e2.take(20), "$root-other", "$root-draft-pads", "${m.index}-draft", "CHAT-" + e1.take(20), ""))
             assertFalse("Permitted $bad", EpochScope.permits(m, bad))
     }
+
+    @Test fun detailReportsTheEpochBeingWipedAndEveryLinkedTerminal() {
+        val t1 = Terminal(hex32('6'), e1, hex64('b'), cleaned = false)
+        val detail = EpochLineage.detail(firstEpoch().copy(terminals = listOf(t0, t1)))
+        assertEquals(State.Frozen("cleanup-incomplete"), detail.state)
+        assertEquals(e1, detail.lastEpoch?.epoch)
+        assertEquals(listOf(t0, t1), detail.chain)
+        val active = EpochLineage.detail(firstEpoch())
+        assertEquals(listOf(t0), (active.state as State.Active).chain)
+        assertNull(EpochLineage.detail(Observation(unreadable = true)).lastEpoch)
+        assertNull(EpochLineage.detail(Observation(terminals = listOf(t0))).lastEpoch)
+    }
+
+    @Test fun anEpochCanNeverRelistARootAnEarlierWipeDestroyed() {
+        val initial = "chat-" + e1.take(20)
+        frozen(firstEpoch().copy(terminals = listOf(t0.copy(roots = setOf("station-v2", initial)))), "root-reuse")
+        val appended = ActiveManifestCodec.appended(manifest(e1, t0), "chat-" + "7".repeat(20))
+        frozen(firstEpoch().copy(terminals = listOf(t0.copy(roots = setOf("chat-" + "7".repeat(20)))), manifests = listOf(appended)), "root-reuse")
+        val distinct = firstEpoch().copy(terminals = listOf(t0.copy(roots = setOf("station-v2", "chat-" + "8".repeat(20)))))
+        assertEquals(e1, active(distinct).epoch)
+    }
+
+    @Test fun anEpochsOwnLaterWipeListingItsRootsIsNotReuse() {
+        val r1 = "chat-" + e1.take(20)
+        val t0r = t0.copy(roots = setOf("station-v2"))
+        val t1 = Terminal(hex32('6'), e1, hex64('b'), cleaned = true, roots = setOf(r1))
+        val second = Observation(terminals = listOf(t0r, t1),
+            stages = listOf(stage(e1, t0r, PREPARED), stage(e2, t1, PREPARED)),
+            manifests = listOf(manifest(e1, t0r), manifest(e2, t1)))
+        assertEquals(e2, active(second).epoch)
+        // But E2 may never list a root that T1 destroyed.
+        val reused = ActiveManifestCodec.appended(manifest(e2, t1), r1)
+        frozen(second.copy(manifests = listOf(manifest(e1, t0r), reused)), "root-reuse")
+    }
 }

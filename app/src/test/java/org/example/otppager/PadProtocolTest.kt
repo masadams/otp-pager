@@ -70,4 +70,14 @@ class PadProtocolTest {
         rejects { PadProtocol.material(bundle, ByteArray(32)) }; rejects { PadProtocol.material(bundle.copyOf(bundle.size - 1), binding) }
         bundle[0] = 0; rejects { PadProtocol.material(bundle, binding) }
     }
+    /** Pipeline item 5: the relay sees one packet length for every message, receipt and readiness signal. */
+    @Test fun everyPadPacketHasTheSameWireLengthWhateverItCarries() {
+        val pad = PadProtocol.material(PadProtocol.generate(ByteArray(32) { 3 }), ByteArray(32) { 3 })
+        val payloads = listOf("", "x", "{\"kind\":\"receipt\",\"for\":\"${"a".repeat(32)}\"}", "{\"kind\":\"ready\",\"protocol\":4}",
+            "é".repeat(1000), "y".repeat(PadProtocol.BLOCK - 2))
+        val lengths = payloads.mapIndexed { i, p -> PadProtocol.seal(pad, if (i % 2 == 0) 'A' else 'B', i + 1L, p).second.length }.toSet()
+        assertEquals("Packet length depends on content: $lengths", 1, lengths.size)
+        assertEquals(((26 + PadProtocol.BLOCK + 32 + 2) / 3) * 4, lengths.single()) // Base64 of header ‖ block ‖ tag.
+
+    }
 }

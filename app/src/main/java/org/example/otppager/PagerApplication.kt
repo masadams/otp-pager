@@ -14,8 +14,10 @@ internal object RetirementStartup {
         global = result
         incomplete = if (result.completed) 0 else 1
         failed = false // Global access remains terminal even when retry succeeds.
-        try { RetirementEvidence.recordCleanup(context, result) } catch (_: Exception) { /* No repair or retrospective capture. */ }
+        try { GlobalRetirement.recordCleanup(context, result) } catch (_: Exception) { /* No repair or retrospective capture. */ }
     }
+    /** After a verified fresh enrollment: the previous global result no longer describes this device. */
+    internal fun clearGlobal() { global = null; incomplete = 0; failed = false }
     fun recover(context: Context) {
         failed = true
         try {

@@ -11,8 +11,13 @@ internal object EpochLineage {
     const val LEGACY = "legacy"
     private val epochPattern = Regex("[a-f0-9]{32}")
 
-    /** Authenticated terminal evidence. [boundEpoch] is [LEGACY] for `OTPTERM1`. */
-    data class Terminal(val generation: String, val boundEpoch: String, val commitment: String, val cleaned: Boolean)
+    /**
+     * Authenticated terminal evidence. [boundEpoch] is [LEGACY] for `OTPTERM1`. [roots] is the
+     * sealed destroyed scope and [guards] the sealed retained reuse cohort; both stay
+     * authoritative for every later epoch in the chain.
+     */
+    data class Terminal(val generation: String, val boundEpoch: String, val commitment: String, val cleaned: Boolean,
+                        val roots: Set<String> = emptySet(), val guards: List<RetirementEvidenceCodec.Guard> = emptyList())
 
     data class Observation(
         /** Any unreadable, unauthenticated, variant or unknown lifecycle artifact. */
@@ -26,16 +31,31 @@ internal object EpochLineage {
 
     sealed interface State {
         data object Legacy : State
-        data class Active(val manifest: ActiveManifestCodec.Record) : State
+        /** [chain] lists every terminal from legacy onward; their retained cohorts all stay enforced. */
+        data class Active(val manifest: ActiveManifestCodec.Record, val chain: List<Terminal> = emptyList()) : State
         data class Frozen(val reason: String) : State
     }
 
     private class Stop(val reason: String) : Exception(reason)
     private fun freeze(reason: String): Nothing = throw Stop(reason)
 
-    fun resolve(o: Observation): State = try { walk(o) } catch (stop: Stop) { State.Frozen(stop.reason) }
+    /**
+     * [lastEpoch] is the most recently linked epoch, even when a later wipe of it froze the
+     * lineage; [chain] lists the terminals linked so far. Wipe recovery uses these to scope
+     * destruction; access decisions use only [state].
+     */
+    data class Detail(val state: State, val lastEpoch: ActiveManifestCodec.Record?, val chain: List<Terminal>)
+    private class Progress { var current: ActiveManifestCodec.Record? = null; val chain = mutableListOf<Terminal>() }
 
-    private fun walk(o: Observation): State {
+    fun resolve(o: Observation): State = detail(o).state
+
+    fun detail(o: Observation): Detail {
+        val progress = Progress()
+        val state = try { walk(o, progress) } catch (stop: Stop) { State.Frozen(stop.reason) }
+        return Detail(state, progress.current, progress.chain.toList())
+    }
+
+    private fun walk(o: Observation, progress: Progress): State {
         if (o.unreadable) freeze("unreadable")
         if (o.terminals.isEmpty() && o.stages.isEmpty() && o.manifests.isEmpty())
             return if (o.legacyJournal) freeze("legacy-journal-without-evidence") else State.Legacy
@@ -48,7 +68,7 @@ internal object EpochLineage {
 
         val usedTerminals = mutableSetOf<String>(); val usedStages = mutableSetOf<String>(); val usedManifests = mutableSetOf<String>()
         var predecessor = LEGACY
-        var current: ActiveManifestCodec.Record? = null
+        val chain = progress.chain
         while (true) {
             val bound = o.terminals.filter { it.boundEpoch == predecessor }
             if (bound.isEmpty()) {
@@ -56,7 +76,7 @@ internal object EpochLineage {
                 break
             }
             if (bound.size > 1) freeze("ambiguous-terminal")
-            val terminal = bound.single(); usedTerminals.add(terminal.generation)
+            val terminal = bound.single(); usedTerminals.add(terminal.generation); chain.add(terminal)
             if (!terminal.cleaned) freeze("cleanup-incomplete")
 
             val stages = o.stages.filter { it.terminalGeneration == terminal.generation }
@@ -72,11 +92,14 @@ internal object EpochLineage {
             if (stage.phase != EnrollmentStageCodec.Phase.PREPARED || stage.indexHash != manifest.indexHash ||
                 stage.claimsHash != manifest.claimsHash) freeze("manifest-stage-mismatch")
             if (stages.any { it.epoch != manifest.epoch && it.phase != EnrollmentStageCodec.Phase.ABANDONED }) freeze("open-stage")
-            current = manifest; predecessor = manifest.epoch
+            // A root destroyed by an EARLIER wipe is never re-listed, even if its files were removed.
+            // (This epoch's own later wipe naturally lists its roots; that is not reuse.)
+            if (manifest.roots.any { root -> chain.any { root in it.roots } }) freeze("root-reuse")
+            progress.current = manifest; predecessor = manifest.epoch
         }
         if (o.terminals.any { it.generation !in usedTerminals } || o.stages.any { it.epoch !in usedStages } ||
             o.manifests.any { it.epoch !in usedManifests }) freeze("unexplained-record")
-        return current?.let { State.Active(it) } ?: State.Legacy
+        return progress.current?.let { State.Active(it, chain.toList()) } ?: State.Legacy
     }
 }
 

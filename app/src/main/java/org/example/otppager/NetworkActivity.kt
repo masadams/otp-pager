@@ -25,6 +25,10 @@ private const val LOCAL_WIPE_WARNING = "This permanently deletes this chat's mes
     "Your friend's phone is NOT wiped. It keeps its copy of the conversation, and nothing is sent to it.\n\n" +
     "Other chats are not affected. To talk again, you'll need to pair both phones in person.\n\nType WIPE to confirm."
 
+private const val WIPE_ALL_WARNING = "This permanently deletes every chat's messages, drafts, message keys and pairings on THIS phone. It cannot be undone.\n\n" +
+    "Your friends' phones are NOT wiped, and nothing is sent to them.\n\n" +
+    "Afterwards you can start fresh. Every friend must be paired again in person; old message keys can never be reused.\n\nType WIPE ALL to confirm."
+
 /** Isolated two-device chats with explicit receiving and physical pairing controls. */
 class NetworkActivity : Activity() {
     private val worker = StationRuntime.worker
@@ -43,7 +47,7 @@ class NetworkActivity : Activity() {
     private lateinit var pairButton: Button
     private lateinit var radioPairButton: Button
     private var advancedShown = false
-    private var selectedPadSize = 4 * PadProtocol.MATERIAL_BYTES
+    private var selectedPadSize = 16 * PadProtocol.MATERIAL_BYTES
     private var draftChatId: String? = null
     private var draftRoom: String? = null
     private var draftId = java.util.UUID.randomUUID().toString()
@@ -131,6 +135,7 @@ class NetworkActivity : Activity() {
     private lateinit var saveButton: Button
     private lateinit var saveRelayButton: Button
     private lateinit var syncButton: Button
+    private lateinit var composeRow: LinearLayout
     private lateinit var navigation: LinearLayout
     private lateinit var trafficTab: Button
     private lateinit var linkTab: Button
@@ -156,13 +161,13 @@ class NetworkActivity : Activity() {
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun text(value: String, size: Float = 14f, color: Int = ink, mono: Boolean = false) = TextView(this).apply {
         this.text = value; textSize = size; setTextColor(color)
-        typeface = if (mono) Typeface.MONOSPACE else Typeface.create("sans-serif", Typeface.NORMAL)
+        typeface = Typeface.MONOSPACE // One typeface across the app, matching the pager screens.
         setLineSpacing(dp(3).toFloat(), 1f)
     }
     private fun column() = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     private fun row() = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-    private fun surface(color: Int, radius: Int = 8, border: Int? = null) = GradientDrawable().apply {
-        setColor(color); cornerRadius = dp(2).toFloat(); border?.let { setStroke(dp(1), it) }
+    private fun surface(color: Int, radius: Int = 8, border: Int? = null, stroke: Int = 1) = GradientDrawable().apply {
+        setColor(color); cornerRadius = dp(2).toFloat(); border?.let { setStroke(dp(stroke), it) }
     }
     private fun button(label: String, primary: Boolean = false, action: () -> Unit) = Button(this).apply {
         text = label; isAllCaps = false; textSize = 13f; typeface = Typeface.MONOSPACE
@@ -196,7 +201,7 @@ class NetworkActivity : Activity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        selectedPadSize = getSharedPreferences("receiving", MODE_PRIVATE).getInt("padSize", 4 * PadProtocol.MATERIAL_BYTES).takeIf { PadProtocol.validSize(it) } ?: 4 * PadProtocol.MATERIAL_BYTES
+        selectedPadSize = getSharedPreferences("receiving", MODE_PRIVATE).getInt("padSize", 16 * PadProtocol.MATERIAL_BYTES).takeIf { PadProtocol.validSize(it) } ?: 16 * PadProtocol.MATERIAL_BYTES
         if (intent.action == Intent.ACTION_MAIN || intent.getBooleanExtra("showInbox", false)) { tab = 4; intent.removeExtra("showInbox") }
         window.protectPrivateContent()
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -274,14 +279,16 @@ class NetworkActivity : Activity() {
         }
         chrome = column(); root.addView(chrome)
         val header = row()
-        header.addView(button("‹") { selectTab(4) }.apply { contentDescription = "Back to chats" }, LinearLayout.LayoutParams(dp(44), dp(44)))
+        header.addView(button("‹") { selectTab(4) }.apply {
+            contentDescription = "Back to chats"; textSize = 24f; background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+        }, LinearLayout.LayoutParams(dp(44), dp(44)))
         chatButton = button("Conversation") { selectTab(6) }.apply {
             textSize = if (compact) 15f else 18f; typeface = Typeface.create("monospace", Typeface.BOLD)
             maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.START or Gravity.CENTER_VERTICAL
             setPadding(0, 0, dp(6), 0); background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
         }
         header.addView(chatButton, LinearLayout.LayoutParams(0, -2, 1f))
-        stationLabel = text("STATION —", 11f, green, true); header.addView(stationLabel)
+        stationLabel = text("STATION —", 11f, green, true).apply { setPadding(dp(4), 0, dp(8), 0); maxLines = 1 }; header.addView(stationLabel)
         receiveButton = button("⋮") { showConversationMenu() }.apply {
             textSize = 22f; minWidth = 0; minimumWidth = 0; contentDescription = "Conversation options"
             setOnClickListener { showConversationMenu() } // Not busy-gated: the menu holds the local wipe.
@@ -321,7 +328,7 @@ class NetworkActivity : Activity() {
             filters = arrayOf(android.text.InputFilter.LengthFilter(8192))
         }
         traffic.addView(composer)
-        val composeActions = row()
+        val composeActions = row().also { composeRow = it }
         count = text("0 / 2048 bytes", 10f, muted, true); composeActions.addView(count, LinearLayout.LayoutParams(0, -2, 1f))
         syncButton = button("Sync") { runTask(network = true) { syncChats() } }; composeActions.addView(syncButton)
         syncButton.visibility = View.GONE
@@ -518,7 +525,7 @@ class NetworkActivity : Activity() {
             if (chrome.visibility != next) chrome.visibility = next
         }
         screens = PagerScreens(this, object : PagerScreens.Actions {
-            override fun back(destination: Int) { selectTab(destination) }
+            override fun back(destination: Int) { leavePage(destination) }
             override fun appMenu() { showAppMenu() }
             override fun addFriend() {
                 if (busy) { pendingAdd = true; pendingFriend = null; screens.opening("Opening setup…") } else editChatName(create = true)
@@ -534,6 +541,7 @@ class NetworkActivity : Activity() {
             override fun rename() { if (!busy) editChatName(false) }
             override fun retryRetirement() { retryLocalRetirement() }
             override fun freshPairing() { startFreshPairing() }
+            override fun dismissRetired() { dismissRetiredChat() }
             override fun status() { if (!busy) showStationStatus() }
             override fun wipe() { confirmWipe() }
         })
@@ -620,7 +628,8 @@ class NetworkActivity : Activity() {
                     importedDeviceCard = card
                     "PUBLIC CARD IMPORTED · compare the full fingerprint before pinning"
                 } else if (operation == 81) {
-                    val bundle = checkNotNull(engine).generatePad(selectedPadSize)
+                    // The plaintext pad file holds the whole pad in memory, so it stays at 4 MiB or less.
+                    val bundle = checkNotNull(engine).generatePad(minOf(selectedPadSize, PadProtocol.MEMORY_MAX_BYTES))
                     try { contentResolver.openOutputStream(uri, "wt")!!.use { it.write(bundle); it.flush() } }
                     finally { bundle.fill(0) }
                     "PAD INSTALLED · transfer file to Station B before sending"
@@ -688,7 +697,7 @@ class NetworkActivity : Activity() {
     }
     private fun beginRadioPairing(renew: Boolean) {
         confirm(if (renew) "Renew over local Wi-Fi?" else "Pair over local Wi-Fi?",
-            "Both devices need version 0.12, NFC and the same private Wi-Fi. Tap to share a temporary secret, then compare codes before the encrypted pad transfer. No pad goes to the relay. Keep the tap private; use USB if you prefer a cable. Existing pairings are preserved. Pad size on this device: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB.") {
+            "Both devices need the same app version, NFC and the same private Wi-Fi. Tap to share a temporary secret, then compare codes before the encrypted pad transfer. No pad goes to the relay. Keep the tap private; use USB if you prefer a cable. Existing pairings are preserved. Pad size on this device: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB.") {
             launchNearbyPairing(renew)
         }
     }
@@ -729,7 +738,7 @@ class NetworkActivity : Activity() {
         }
         if (tab == 7) {
             val contact = retiredChat; val observed = retirementStatus
-            if (contact != null && observed != null) screens.renderRetired(contact.name, observed, busy)
+            if (contact != null && observed != null) screens.renderRetired(contact.name, observed, busy, peerWipeNote(contact.id))
         }
         val view = latest ?: return
         if (tab in listOf(5, 6)) screens.renderFriend(contacts.active().name, view, selectedPadSize)
@@ -752,6 +761,22 @@ class NetworkActivity : Activity() {
             if (result.completed) "Local cleanup completed" else "Local cleanup incomplete · retry when storage is available"
         }
     }
+    private fun dismissRetiredChat() {
+        val id = retiredChat?.id ?: return
+        runTask(onSuccess = {
+            pendingFriend = null; pendingAdd = false
+            reopenChat(4)
+        }) {
+            checkNotNull(book).dismissRetired(id)
+            "Retired chat removed from Chats"
+        }
+    }
+    /** Leaving a completed notice acknowledges it; incomplete recovery stays in the list. */
+    private fun leavePage(destination: Int) {
+        if (tab == 7 && destination == 4 && retiredChat != null &&
+            retirementStatus?.state == VaultRetirement.LocalState.COMPLETE) dismissRetiredChat()
+        else selectTab(destination)
+    }
     private fun startFreshPairing() {
         val id = retiredChat?.id ?: return
         confirm("Start a fresh pairing?", "This starts an empty pairing for this contact. No old messages, keys, credentials or device identity are restored. Set up and physically pair both devices again. Other contacts stay unchanged. No remote wipe is requested.") {
@@ -769,11 +794,29 @@ class NetworkActivity : Activity() {
             }
         }
     }
+    /** Evidence-based wording only (docs/PEER_WIPE_PROTOCOL.md §4): never claims the friend's copy is gone. */
+    private fun peerWipeNote(id: String): String? = when {
+        PeerWipe.removedByFriend(this, id) -> "Your friend's phone asked to remove this chat, and it was removed on this phone (unreviewed peer wipe)."
+        else -> PeerWipe.describe(PeerWipe.status(this, id))?.let { "This phone asked your friend's phone to remove its copy (unreviewed peer wipe). $it." }
+    }
+    private fun showPeerWipeSetting() {
+        val on = PeerWipe.enabled(this)
+        AlertDialog.Builder(this).setTitle("Peer wipe · unreviewed")
+            .setMessage("When this is on, wiping a chat also asks your friend's phone to remove its copy of that chat. Wipe all asks every friend's phone.\n\n" +
+                "Both phones need this setting on. Only chats paired in person with this version can send or receive a request. " +
+                "Your phone is always wiped first and never waits for the friend's phone. A phone that is offline, switched off or modified may never act on the request. " +
+                "The status shown is only what the friend's phone reported.\n\n" +
+                "This feature has not had its independent security review yet. Leave it off unless you are testing it.\n\nCurrently: ${if (on) "ON" else "OFF"}")
+            .setPositiveButton(if (on) "Turn off" else "Turn on") { _, _ -> PeerWipe.setEnabled(this, !on); report(if (on) "Peer wipe off" else "Peer wipe on · unreviewed") }
+            .setNegativeButton("Close", null).create().also(::secureShow)
+    }
     private fun showAppMenu() {
-        if (busy) return
+        // Not busy-gated: the menu holds the wipe-all action; its other entries ignore busy work themselves.
         AlertDialog.Builder(this).setTitle("Field")
-            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help")) { _, which ->
+            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help", "Wipe all chats from this phone", "Peer wipe (unreviewed) · ${if (PeerWipe.enabled(this)) "on" else "off"}")) { _, which ->
                 when (which) {
+                    3 -> confirmWipeAll()
+                    4 -> showPeerWipeSetting()
                     0 -> showReceiving()
                     1 -> runTask {
                         val contacts = checkNotNull(book); inboxCycle.pollOne(contacts) { active && unlocked && tab == 4 }
@@ -784,6 +827,54 @@ class NetworkActivity : Activity() {
                         .setPositiveButton("Close", null).create().also(::secureShow)
                 }
             }.setNegativeButton("Close", null).create().also(::secureShow)
+    }
+    private fun confirmWipeAll() {
+        val input = field("Type WIPE ALL").apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+            contentDescription = "Type WIPE ALL to confirm"
+        }
+        val dialog = AlertDialog.Builder(this).setTitle("Wipe all chats from this phone?")
+            .setMessage(if (PeerWipe.enabled(this)) WIPE_ALL_WARNING.replace("Your friends' phones are NOT wiped, and nothing is sent to them.", "Peer wipe (unreviewed) is on: each friend's phone paired with this version is asked to remove its copy. This phone does not wait for them.") else WIPE_ALL_WARNING)
+            .setView(input).setNegativeButton("Cancel", null).setPositiveButton("Wipe all", null).create()
+        dialog.setOnShowListener {
+            val wipe = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            fun armed() = input.text.toString().trim().replace(Regex("\\s+"), " ").equals("WIPE ALL", ignoreCase = true)
+            fun refresh() { wipe.isEnabled = armed(); wipe.alpha = if (wipe.isEnabled) 1f else 0.45f }
+            refresh()
+            input.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: Editable?) { refresh() }
+            })
+            wipe.setOnClickListener { if (armed()) { dialog.dismiss(); wipeAll() } }
+        }
+        secureShow(dialog)
+    }
+    /** Same local-first order as a single-chat wipe, never behind the station worker. */
+    private fun wipeAll() {
+        val contacts = book
+        generation++
+        val wipeGeneration = generation
+        handler.removeCallbacks(poll); handler.removeCallbacks(saveDraft)
+        openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
+        pairingDialog?.dismiss(); pairingDialog = null
+        closeVisibleContact()
+        clearPrivateState()
+        engine = null; busy = true; tab = 4; updateNavigation()
+        showWipeScreen("Wiping all chats…", "Deleting every chat's keys and files on this phone. Nothing is sent to your friends.", null)
+        LocalWipe.submitAll(this, contacts) { outcome ->
+            runOnUiThread {
+                if (!active || !unlocked || isFinishing || isDestroyed || generation != wipeGeneration) return@runOnUiThread
+                busy = false
+                val result = outcome.getOrNull()
+                val (title, detail) = when {
+                    result?.completed == true -> "All chats wiped from this phone" to "Every chat's messages, drafts, message keys and pairings were deleted on this phone. Your friends' phones were not changed. Continue to check the cleanup and start fresh."
+                    result != null -> "Wipe not finished" to "All chats are disabled on this phone, but some cleanup did not finish. Continue to retry. Your friends' phones were not changed."
+                    else -> "Wipe status unknown" to "All chats are disabled on this phone. Continue to check the cleanup. Your friends' phones were not changed."
+                }
+                showWipeScreen(title, detail) { book = null; engine = null; showTerminal() }
+            }
+        }
     }
     private fun showConversationMenu() {
         // Stays available while a check is running so the local wipe is never blocked by networking.
@@ -808,7 +899,7 @@ class NetworkActivity : Activity() {
             contentDescription = "Type WIPE to confirm"
         }
         val dialog = AlertDialog.Builder(this).setTitle("Wipe ${chat.name} from this phone?")
-            .setMessage(LOCAL_WIPE_WARNING)
+            .setMessage(if (PeerWipe.enabled(this)) LOCAL_WIPE_WARNING.replace("Your friend's phone is NOT wiped. It keeps its copy of the conversation, and nothing is sent to it.", "Peer wipe (unreviewed) is on: if this chat was paired with this version, your friend's phone is asked to remove its copy too. This phone does not wait for it, and it may never act on the request.") else LOCAL_WIPE_WARNING)
             .setView(input).setNegativeButton("Cancel", null).setPositiveButton("Wipe", null).create()
         dialog.setOnShowListener {
             val wipe = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
@@ -840,7 +931,7 @@ class NetworkActivity : Activity() {
         closeVisibleContact()
         clearPrivateState() // Drops composer text and draft ownership without saving the draft again.
         engine = null; busy = true; tab = 4; updateNavigation()
-        showWipeScreen("Wiping ${chat.name}…", "Deleting this chat's keys and files on this phone. Nothing is sent to your friend.", null)
+        showWipeScreen("Wiping ${chat.name}…", "Deleting this chat's keys and files on this phone. " + if (PeerWipe.enabled(this)) "A wipe request goes to your friend's phone afterwards (unreviewed)." else "Nothing is sent to your friend.", null)
         LocalWipe.submit(contacts, chat.id) { outcome ->
             runOnUiThread {
                 if (active && unlocked && !isFinishing && !isDestroyed && generation == wipeGeneration) showWipeOutcome(chat.name, outcome)
@@ -853,6 +944,9 @@ class NetworkActivity : Activity() {
         // Report only what local evidence supports; the friend's device is never described as wiped.
         val (title, detail) = when {
             result == null -> "Wipe did not start" to "${(outcome.exceptionOrNull()?.message ?: "This chat could not be checked").trimEnd('.')}. Continue to check this chat."
+            result.completed && PeerWipe.enabled(this) -> "Wiped from this phone" to "$name's messages, drafts, message keys and pairing were deleted on this phone. " +
+                (PeerWipe.describe(PeerWipe.status(this, result.namespace))?.let { "$it (unreviewed peer wipe)." } ?: "Your friend's phone could not be asked: this chat was paired before peer wipe existed, so it still has its copy.") +
+                " To talk again, pair both phones in person."
             result.completed -> "Wiped from this phone" to "$name's messages, drafts, message keys and pairing were deleted on this phone. Your friend's phone was not changed and still has its copy. To talk again, pair both phones in person."
             result.terminalDurable -> "Wipe not finished" to "This chat is permanently disabled on this phone, but some cleanup did not finish. Continue to retry. Your friend's phone was not changed."
             else -> "Wipe not recorded" to "This chat is disabled until the app closes, but the wipe could not be saved and some data may remain. Continue and retry now. Your friend's phone was not changed."
@@ -882,8 +976,8 @@ class NetworkActivity : Activity() {
             .setNegativeButton("Cancel", null).create().also(::secureShow)
     }
     private fun choosePadSize(renew: Boolean, launch: Boolean = true) {
-        val choices = arrayOf("1 MiB · 127 slots each way", "2 MiB · 254 slots each way", "4 MiB · 508 slots each way")
-        val sizes = intArrayOf(PadProtocol.MATERIAL_BYTES, 2 * PadProtocol.MATERIAL_BYTES, 4 * PadProtocol.MATERIAL_BYTES)
+        val sizes = PadProtocol.SIZES
+        val choices = sizes.map(PadProtocol::sizeLabel).toTypedArray()
         var selected = sizes.indexOf(selectedPadSize).coerceAtLeast(0)
         AlertDialog.Builder(this).setTitle(if (renew) "Renew this friend's pad" else "Choose a pad size")
             .setSingleChoiceItems(choices, selected) { _, which -> selected = which }
@@ -1242,12 +1336,16 @@ class NetworkActivity : Activity() {
         val hint = when {
             view.relayRevoked -> "Access was revoked. Open friend details."
             !view.pairingComplete -> "Pairing was interrupted. Tap for help."
-            !view.setupComplete -> "Pair your devices to start this conversation."
+            // A brand-new chat's empty state already explains pairing; half-paired chats still need the hint.
+            !view.setupComplete && (view.messages.isNotEmpty() || view.padCheck != null) -> "Pair your devices to start this conversation."
             view.padRemaining == 0 -> "Message keys used up. Tap to renew."
             (view.padRemaining ?: Int.MAX_VALUE) <= 10 -> "Message keys are running low. Tap to renew."
             else -> ""
         }
         setupHint.visibility = if (hint.isEmpty()) View.GONE else View.VISIBLE
+        // Without a pad nothing can ever be sent (OTP-only); the empty state already explains pairing.
+        val writable = if (view.padCheck != null) View.VISIBLE else View.GONE
+        if (composer.visibility != writable) { composer.visibility = writable; composeRow.visibility = writable }
         if (setupHint.text.toString() != hint) setupHint.text = hint
         renderSimpleScreens()
         val verifyLabel = if (view.padVerified) "Send readiness again" else "Verify codes & announce"
@@ -1289,7 +1387,8 @@ class NetworkActivity : Activity() {
             }
             val card = column().apply {
                 setPadding(dp(14), dp(11), dp(14), dp(12))
-                background = surface(Color.WHITE, 2, lineColor)
+                // Your own messages get a heavier ink border: readable on e-ink without colour.
+                background = if (m.incoming) surface(Color.WHITE, 2, lineColor) else surface(Color.WHITE, 2, ink, stroke = 2)
             }
             val label = if (m.incoming) (if (m.unread) "New" else "Received") else when (m.status) { "queued" -> "Waiting to send"; "relayed" -> "Sent · awaiting delivery"; "delivered" -> "Delivered to device"; else -> "Expired" }
             card.addView(text(m.text, 16f, ink, true).apply { isSaveEnabled = false })
@@ -1400,7 +1499,7 @@ class NetworkActivity : Activity() {
     }
     private fun navigateBack(): Boolean {
         if (!unlocked || !::screens.isInitialized || tab == 4) return false
-        selectTab(when (tab) { 6 -> 0; 1, 2, 3 -> if (latest?.setupComplete == true) 6 else 5; else -> 4 })
+        leavePage(when (tab) { 6 -> 0; 1, 2, 3 -> if (latest?.setupComplete == true) 6 else 5; else -> 4 })
         return true
     }
     override fun onStop() {

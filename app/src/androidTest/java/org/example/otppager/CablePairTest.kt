@@ -36,10 +36,13 @@ class CablePairTest {
                 val bf = pool.submit { CableProtocol.run(false, bin, tappedBout, b, review) {} }
                 af.get(30, TimeUnit.SECONDS); bf.get(30, TimeUnit.SECONDS)
                 val captured = capture.toString("ISO-8859-1")
-                for (name in listOf("token", "secret", "pad")) {
+                for (name in listOf("token", "secret", "padKeys")) {
                     val value = a.state!!.getString(name)
                     assertFalse("USB exposed $name", captured.contains(value.take(128)))
                 }
+                val padText = java.util.Base64.getEncoder().encodeToString(a.padSnapshot())
+                assertFalse("USB exposed pad", captured.contains(padText.substring(3000, 3128)))
+                assertFalse("Pad left in the vault", a.state!!.has("pad"))
                 assertFalse(captured.contains("\"kind\":\"setup\""))
                 assertEquals(2, codes.size); assertEquals(codes[0], codes[1])
                 assertEquals("A", a.view().role); assertEquals("B", b.view().role)
@@ -48,10 +51,12 @@ class CablePairTest {
                 assertEquals(127, a.view().padRemaining); assertEquals(127, b.view().padRemaining)
                 assertTrue(a.view().canSend); assertTrue(b.view().canSend)
                 assertTrue(StationEngine(sa).view().pairingComplete); assertTrue(StationEngine(sb).view().pairingComplete)
-                val pad = java.util.Base64.getDecoder().decode(a.state!!.getString("pad"))
+                val pad = a.padSnapshot()
                 a.send("CABLE PAIRED")
                 val wire = a.state!!.getJSONArray("outbox").getJSONObject(0).getString("packet")
-                assertTrue(IdentityProtocol.isSigned(PadProtocol.open(pad, wire, 'A').payload)); pad.fill(0)
+                // The snapshot has used slots zeroed, so name the pad by its stored id rather than re-hashing it.
+                val stable = a.state!!.getString("padId").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+                assertTrue(IdentityProtocol.isSigned(PadProtocol.open(pad, wire, 'A', stable).payload)); pad.fill(0)
                 val packets = mutableListOf<String>()
                 val relay = object : RelayTransport {
                     override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String {
@@ -75,6 +80,50 @@ class CablePairTest {
                 listOf(ain, bin, aout, bout).forEach { try { it.close() } catch (_: Exception) {} }
                 pool.shutdownNow(); stores.forEach { it.forget(); it.sibling("pads").forget() }
             }
+        }
+    }
+    @Test fun largePadsStreamIntoStorageOnBothSidesWithoutPassingThroughTheVault() {
+        for (mib in listOf(16, 32, 64)) checkStreamedPad(mib * PadProtocol.MATERIAL_BYTES)
+    }
+    private fun checkStreamedPad(size: Int) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val sa = SecureStore(context, "cable-large-a"); val sb = SecureStore(context, "cable-large-b")
+        val stores = listOf(sa, sb); stores.forEach { it.forget(); it.sibling("pads").forget() }
+        val pool = Executors.newFixedThreadPool(2)
+        val ain = PipedInputStream(65536); val bout = PipedOutputStream(ain)
+        val bin = PipedInputStream(65536); val aout = PipedOutputStream(bin)
+        val slots = PadProtocol.slotsFor(size)
+        try {
+            val a = StationEngine(sa); val b = StationEngine(sb)
+            a.configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "B")
+            val ready = CountDownLatch(2)
+            val review: (String, String) -> Unit = { _, _ -> ready.countDown(); check(ready.await(20, TimeUnit.SECONDS)) }
+            val progress = java.util.concurrent.CopyOnWriteArrayList<String>()
+            val af = pool.submit { CableProtocol.run(true, ain, aout, a, review, { progress.add(it) }, false, size) }
+            val bf = pool.submit { CableProtocol.run(false, bin, bout, b, review, { progress.add(it) }, false, size) }
+            af.get(240, TimeUnit.SECONDS); bf.get(240, TimeUnit.SECONDS)
+            assertTrue(progress.any { it.startsWith("Sending message keys") } && progress.any { it == "Receiving message keys · 100%" })
+            for (engine in listOf(a, b)) {
+                assertEquals(slots, engine.view().padRemaining)
+                assertFalse(engine.state!!.has("pad")); assertTrue(engine.view().canSend)
+            }
+            assertEquals(a.view().padCheck, b.view().padCheck)
+            for (store in stores) {
+                assertTrue(java.io.File(context.noBackupFilesDir, "${store.namespace}.bin").length() < 1_000_000)
+                assertEquals(PadMaterial.HEADER + 2L * slots * PadMaterial.RECORD,
+                    PadMaterial.file(context.noBackupFilesDir, store.namespace, a.state!!.getString("padId")).length())
+            }
+            // The slot at the far end of the B half is identical on both phones.
+            val last = slots.toLong()
+            fun slot(engine: StationEngine, store: SecureStore): ByteArray {
+                val keys = java.util.Base64.getDecoder().decode(engine.state!!.getString("padKeys"))
+                return PadMaterial.slot(PadMaterial.file(context.noBackupFilesDir, store.namespace, engine.state!!.getString("padId")), engine.state!!.getString("padId"), keys, 'B', last)
+            }
+            assertArrayEquals(slot(a, sa), slot(b, sb))
+        } finally {
+            listOf(ain, bin, aout, bout).forEach { try { it.close() } catch (_: Exception) {} }
+            pool.shutdownNow()
+            stores.forEach { it.forget(); it.sibling("pads").forget(); PadMaterial.deleteAll(context.noBackupFilesDir, it.namespace) }
         }
     }
     @Test fun decliningConfirmationSendsNoCredentialsOrPad() {
@@ -153,7 +202,7 @@ class CablePairTest {
             assertEquals("t".repeat(43), pending.state!!.getString("token"))
             assertNotEquals(previousSecret, pending.state!!.getString("secret"))
             assertEquals(retired, store.sibling("pads").load()!!.toString())
-            assertTrue(pending.view().cableEligible); assertFalse(pending.state!!.has("pad"))
+            assertTrue(pending.view().cableEligible); assertFalse(StationEngine.hasPad(pending.state!!))
         } finally { other.forget(); store.forget(); store.sibling("pads").forget() }
     }
 }

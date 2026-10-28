@@ -28,6 +28,7 @@ internal object RetainedGuardReader {
     private val roomId = Regex("[a-f0-9]{64}")
     private val integer = Regex("0|[1-9][0-9]*")
     private val ledgerName = Regex("(station-v2|chat-[a-f0-9]{20})-pads")
+    private val claimsName = Regex("chat-index-claims|enr-[a-f0-9]{20}-claims")
     private val aad = "OTP Pager local vault v2".toByteArray(Charsets.UTF_8)
 
     sealed class Guard {
@@ -37,7 +38,7 @@ internal object RetainedGuardReader {
     data class Reservation(val high: Long, val capacity: Int)
     data class Reference(val namespace: String, val sha256: String) {
         init {
-            require(namespace == "chat-index-claims" || ledgerName.matches(namespace)) { "Not a retained guard namespace" }
+            require(claimsName.matches(namespace) || ledgerName.matches(namespace)) { "Not a retained guard namespace" }
             require(roomId.matches(sha256)) { "Invalid guard commitment" }
         }
     }
@@ -51,8 +52,11 @@ internal object RetainedGuardReader {
         return read(context, namespace, null)
     }
     private fun read(context: Context, namespace: String, expected: String?): Verified = synchronized(VaultLifecycle.lock) {
-        val directory = context.noBackupFilesDir
-        check(GlobalRetirement.isFrozen(directory)) { "Retained guard inspection requires global freeze" }
+        check(GlobalRetirement.isFrozen(context.noBackupFilesDir)) { "Retained guard inspection requires global freeze" }
+        readUngated(context.noBackupFilesDir, namespace, expected)
+    }
+    /** Callers must establish authority first: a freeze, or sealed references from an ACTIVE lineage. */
+    private fun readUngated(directory: File, namespace: String, expected: String?): Verified = synchronized(VaultLifecycle.lock) {
         try {
             val base = File(directory, "${namespace}.bin")
             check(VaultLifecycle.variants(base).drop(1).none { Files.exists(it.toPath(), LinkOption.NOFOLLOW_LINKS) })
@@ -131,7 +135,7 @@ internal object RetainedGuardReader {
             .onUnmappableCharacter(CodingErrorAction.REPORT)
         JsonReader(InputStreamReader(ByteArrayInputStream(clear), decoder)).use { reader ->
             reader.isLenient = false
-            val claims = namespace == "chat-index-claims"
+            val claims = claimsName.matches(namespace)
             val fields = mutableSetOf<String>(); val budget = Budget()
             var pads: Map<String, String>? = null; var rooms: Map<String, String>? = null
             var highs: Map<String, Long>? = null; var capacities: Map<String, Long>? = null
@@ -162,14 +166,53 @@ internal object RetainedGuardReader {
 
     /** Bounded complete supplied cohort, NOT complete discovery or pre-cleanup provenance. */
     fun readCohortFrozen(context: Context, references: List<Reference>, knownRoots: Set<String>): List<Verified> = synchronized(VaultLifecycle.lock) {
+        check(GlobalRetirement.isFrozen(context.noBackupFilesDir)) { "Retained guard inspection requires global freeze" }
+        readCohort(context.noBackupFilesDir, references, knownRoots)
+    }
+
+    /** Pad and room identifiers that no ACTIVE epoch may claim again. */
+    data class Exclusions(val pads: Set<String>, val rooms: Set<String>)
+    private val activeCache = mutableMapOf<String, Exclusions>()
+
+    /**
+     * Every retained cohort sealed by the terminals in [epoch]'s ACTIVE lineage. References come
+     * only from authenticated terminal evidence, never from the caller. Missing, altered or
+     * unreadable guards throw (fail closed) and are never read as empty. Results are cached per
+     * exact sealed commitment set; a cached set only ever keeps enforcing exclusions.
+     */
+    fun activeExclusions(directory: File, epoch: String): Exclusions = synchronized(VaultLifecycle.lock) {
+        val state = EpochState.resolve(directory) as? EpochLineage.State.Active
+            ?: throw IllegalStateException("Retained reuse guard is unavailable or invalid")
+        check(state.manifest.epoch == epoch && state.chain.isNotEmpty()) { "Retained reuse guard is unavailable or invalid" }
+        val key = directory.absolutePath + "|" + epoch + "|" + state.chain.joinToString(",") { it.commitment }
+        activeCache[key]?.let { return@synchronized it }
+        verifyChain(directory, state.chain).also { activeCache[key] = it }
+    }
+
+    /** Authenticates every sealed cohort of [chain] (from [EpochState] only) and returns their union. */
+    internal fun verifyChain(directory: File, chain: List<EpochLineage.Terminal>): Exclusions = synchronized(VaultLifecycle.lock) {
+        val pads = mutableSetOf<String>(); val rooms = mutableSetOf<String>()
+        for (terminal in chain) {
+            check(terminal.guards.isNotEmpty()) { "Retained reuse guard is unavailable or invalid" }
+            for (record in readCohort(directory, terminal.guards.map { Reference(it.namespace, it.sha256) }, terminal.roots)) {
+                when (val guard = record.guard) {
+                    is Guard.Claims -> { pads.addAll(guard.pads.keys); rooms.addAll(guard.rooms.keys) }
+                    is Guard.Ledger -> pads.addAll(guard.reservations.keys)
+                }
+            }
+        }
+        Exclusions(Collections.unmodifiableSet(pads), Collections.unmodifiableSet(rooms))
+    }
+
+    private fun readCohort(directory: File, references: List<Reference>, knownRoots: Set<String>): List<Verified> {
         check(references.size in 1..MAX_ENTRIES)
         check(knownRoots.size <= MAX_ENTRIES && knownRoots.all(VaultLifecycle::isContact))
         check(references.map { it.namespace }.toSet().size == references.size)
-        check(references.count { it.namespace == "chat-index-claims" } == 1)
+        check(references.count { claimsName.matches(it.namespace) } == 1)
         val records = mutableListOf<Verified>()
         var bytes = 0L; var claimsEntries = 0; var ledgerEntries = 0
         for (reference in references) {
-            val record = readFrozen(context, reference)
+            val record = readUngated(directory, reference.namespace, reference.sha256)
             bytes += record.ciphertextBytes
             check(bytes <= MAX_COHORT_BYTES)
             when (val guard = record.guard) {
@@ -181,7 +224,7 @@ internal object RetainedGuardReader {
             records.add(record)
         }
         validateCohort(records, knownRoots)
-        Collections.unmodifiableList(records.toList())
+        return Collections.unmodifiableList(records.toList())
     }
     /** Consistency only; callers cannot bypass authenticated reads with fabricated parsed records. */
     private fun validateCohort(records: List<Verified>, knownRoots: Set<String>) {
@@ -189,10 +232,10 @@ internal object RetainedGuardReader {
         check(records.size in 1..MAX_ENTRIES)
         check(records.map { it.reference.namespace }.toSet().size == records.size)
         for (record in records) when (val guard = record.guard) {
-            is Guard.Claims -> check(record.reference.namespace == "chat-index-claims")
+            is Guard.Claims -> check(claimsName.matches(record.reference.namespace))
             is Guard.Ledger -> check(record.reference.namespace == "${guard.owner}-pads" && guard.owner in knownRoots)
         }
-        val claims = records.single { it.reference.namespace == "chat-index-claims" }.guard as Guard.Claims
+        val claims = records.single { claimsName.matches(it.reference.namespace) }.guard as Guard.Claims
         check((claims.pads.values + claims.rooms.values).all { it in knownRoots })
         val ledgers = records.mapNotNull { it.guard as? Guard.Ledger }.associateBy { it.owner }
         check(ledgers.values.sumOf { it.reservations.size.toLong() } <= MAX_ENTRIES)

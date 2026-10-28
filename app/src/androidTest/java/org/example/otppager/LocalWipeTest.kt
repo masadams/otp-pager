@@ -65,12 +65,14 @@ class LocalWipeTest {
             val ledger = File(context.noBackupFilesDir, "$id-pads.bin").readBytes()
             val claims = SecureStore(context, "$index-claims").load()!!.toString()
 
+            assertFalse(PadMaterial.gone(context.noBackupFilesDir, id))
             release = blockWorker()
             val result = wipe(book, id)
             assertTrue(result.terminalDurable); assertTrue(result.completed); assertTrue(result.failures.isEmpty())
             assertEquals(VaultRetirement.LocalState.COMPLETE, VaultRetirement.inspect(context, id).state)
             for (slot in listOf(id, "$id-draft"))
                 assertTrue("$slot survived", VaultLifecycle.variants(File(context.noBackupFilesDir, "$slot.bin")).none { it.exists() })
+            assertTrue("Pad material survived the wipe", PadMaterial.gone(context.noBackupFilesDir, id))
             assertNull("Live engine kept the wiped snapshot", engine.state)
             assertTrue(book.summary(id).retired)
             // Reuse guards and the contact entry stay; the neighbor is untouched and still usable.
@@ -167,12 +169,14 @@ class LocalWipeTest {
                 input.setText("wip"); assertFalse(wipe.isEnabled)
                 input.setText(" wipe "); assertTrue(wipe.isEnabled)
             }
+            InterfaceTest().capture(instrumentation, a, "wipe-confirm")
             assertFalse(VaultLifecycle.isRetired(context.noBackupFilesDir, id))
 
             // The normal app worker is stuck (e.g. a hung relay request); the wipe must still complete.
             release = blockWorker()
             instrumentation.runOnMainSync { dialog(a).getButton(AlertDialog.BUTTON_POSITIVE).performClick() }
             await { shown(a).filterIsInstance<TextView>().any { it.text.toString() == "Wiped from this phone" } }
+            InterfaceTest().capture(instrumentation, a, "wipe-result")
             instrumentation.runOnMainSync {
                 val text = shown(a).filterIsInstance<TextView>().joinToString("\n") { it.text.toString() }
                 assertTrue(text.contains("Your friend's phone was not changed"))
@@ -191,6 +195,7 @@ class LocalWipeTest {
             instrumentation.runOnMainSync { shown(a).filterIsInstance<Button>().first { it.text.toString() == "Continue" }.performClick() }
             await { shown(a).filterIsInstance<TextView>().any { it.text.toString() == "Local cleanup completed" } }
             instrumentation.runOnMainSync { assertTrue(shown(a).filterIsInstance<Button>().any { it.text.toString() == "Start fresh pairing" && it.isEnabled }) }
+            InterfaceTest().capture(instrumentation, a, "wipe-recovery")
         } finally {
             release?.countDown()
             activity?.let { a -> instrumentation.runOnMainSync { if (!a.isFinishing) a.finish() }; await { a.isDestroyed } }

@@ -267,3 +267,36 @@ test('a slow POST cannot cross a concurrent claim or revocation', async () => {
     assert.equal(JSON.parse(readFileSync(join(dataDir, 'mailboxes.json'))).messages.length, 0);
   } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
 });
+
+test('strict claims: the setup token can create claims but never touch mailbox traffic', async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-'));
+  const { server, base } = await launch({ dataDir, strictClaims: true });
+  const capability = 'c'.repeat(43);
+  const chat = { Authorization: 'Bearer ' + capability, 'Content-Type': 'application/json' };
+  try {
+    // Unclaimed mailbox: no legacy shared access at all.
+    assert.equal((await fetch(base + path, { headers })).status, 401);
+    assert.equal((await post(base, 'YWJjZA==')).status, 401);
+    assert.equal((await fetch(base + path, { method: 'DELETE', headers })).status, 401);
+    // The setup token still provisions a claim; the chat credential then works.
+    const claim = await fetch(base + path + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability }) });
+    assert.equal(claim.status, 201);
+    assert.equal((await fetch(base + path, { method: 'POST', headers: chat, body: JSON.stringify({ packet: 'YWJjZA==' }) })).status, 201);
+    const page = await fetch(base + path, { headers: chat }).then(r => r.json());
+    assert.equal(page.access, 'chat'); assert.equal(page.strict, true);
+    assert.deepEqual(page.messages, [{ seq: 1, packet: 'YWJjZA==' }]);
+    // The setup token is still refused on the claimed mailbox, and a second claim cannot replace it.
+    assert.equal((await fetch(base + path, { headers })).status, 401);
+    const other = await fetch(base + path + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability: 'd'.repeat(43) }) });
+    assert.equal(other.status, 403);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});
+
+test('strict claims is off by default and reported to clients', async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-'));
+  const { server, base } = await launch({ dataDir });
+  try {
+    const page = await fetch(base + path, { headers }).then(r => r.json());
+    assert.equal(page.access, 'shared'); assert.equal(page.strict, false);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});

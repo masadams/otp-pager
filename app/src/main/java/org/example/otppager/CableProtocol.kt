@@ -11,7 +11,14 @@ import java.util.Base64
 
 /** Physical cable transport; identity is authenticated by comparing the displayed transcript code. */
 object CableProtocol {
-    class UpgradeRequired : IllegalArgumentException("Upgrade both devices to 0.11 or later for this USB operation")
+    class UpgradeRequired : IllegalArgumentException("Upgrade both devices to the same latest version of OTP Pager for this pairing")
+    /**
+     * v5: the pad is streamed after setup as authenticated chunks, straight into pad storage.
+     * v6: both phones also exchange peer-wipe control keys (docs/PEER_WIPE_PROTOCOL.md §1).
+     */
+    const val VERSION = 6
+    private const val CHUNK = 32768
+    private const val CHUNK_TAG: Byte = 0x50
     private const val LIMIT = 4096 // Public hello/approval frames only; encrypted material has a separate bound.
     private fun hash(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes)
     private val b64 = Base64.getEncoder()
@@ -25,7 +32,7 @@ object CableProtocol {
         val bytes = ByteArray(size); source.readFully(bytes)
         return try { JSONObject(String(bytes, Charsets.UTF_8)) } finally { bytes.fill(0) }
     }
-    private fun hello(engine: StationEngine, ephemeral: java.security.KeyPair, renew: Boolean, size: Int): JSONObject = JSONObject().put("kind", "hello").put("version", 4)
+    private fun hello(engine: StationEngine, ephemeral: java.security.KeyPair, renew: Boolean, size: Int): JSONObject = JSONObject().put("kind", "hello").put("version", VERSION)
         .put("purpose", if (renew) "renew" else "pair").put("padSize", size)
         .put("ephemeral", b64.encodeToString(ephemeral.public.encoded)).put("key", engine.cableIdentity(renew)).put("nonce", b64.encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) }))
         .also { h -> engine.state?.let {
@@ -39,7 +46,7 @@ object CableProtocol {
         } }
     private fun checkHello(h: JSONObject) {
         require(h.getString("kind") == "hello")
-        if (h.getInt("version") != 4) throw UpgradeRequired()
+        if (h.getInt("version") != VERSION) throw UpgradeRequired()
         require(h.getString("purpose") in listOf("pair", "renew") && PadProtocol.validSize(h.getInt("padSize")))
         IdentityProtocol.publicKey(h.getString("ephemeral")); IdentityProtocol.publicKey(h.getString("key")); require(decoder.decode(h.getString("nonce")).size == 32)
         if (h.has("endpoint")) { Protocol.endpoint(h.getString("endpoint")) }
@@ -55,16 +62,56 @@ object CableProtocol {
         }
         return hash(out.toByteArray())
     }
-    private fun digest(a: JSONObject, b: JSONObject, setup: JSONObject): ByteArray {
+    /** Binds both identities, the setup and the SHA-256 of the streamed pad. */
+    private fun digest(a: JSONObject, b: JSONObject, setup: JSONObject, pad: ByteArray): ByteArray {
+        require(pad.size == 32)
         val out = java.io.ByteArrayOutputStream()
         DataOutputStream(out).use { stream ->
             fun part(bytes: ByteArray) { stream.writeInt(bytes.size); stream.write(bytes) }
-            part("Field physical cable material v3".toByteArray(Charsets.US_ASCII))
+            part("Field physical cable material v5".toByteArray(Charsets.US_ASCII))
             for (h in listOf(a, b)) { part(IdentityProtocol.publicKey(h.getString("key")).encoded); part(decoder.decode(h.getString("nonce"))); part(IdentityProtocol.publicKey(h.getString("ephemeral")).encoded) }
-            for (name in listOf("endpoint", "token", "secret", "pad")) part(setup.getString(name).toByteArray(Charsets.UTF_8))
+            for (name in listOf("endpoint", "token", "secret")) part(setup.getString(name).toByteArray(Charsets.UTF_8))
+            part(setup.getInt("padSize").toString().toByteArray(Charsets.US_ASCII)); part(pad)
         }
         return hash(out.toByteArray())
     }
+    /**
+     * Host: generates the pad in chunks (random slots, zero tails past the last whole slot), writes
+     * each chunk to its own pad storage and sends it. The whole pad is never in memory.
+     */
+    private fun sendPad(channel: CableSession, output: OutputStream, engine: StationEngine, size: Int, progress: (String) -> Unit): PadMaterial.Installed {
+        val random = SecureRandom(); val half = size / 2; val used = PadProtocol.slotsFor(size) * PadProtocol.STRIDE
+        val frame = ByteArray(1 + CHUNK)
+        engine.padWriter(size).use { writer ->
+            var at = 0; var shown = -1
+            try {
+                while (at < size) {
+                    val n = minOf(CHUNK, size - at)
+                    random.nextBytes(frame)
+                    frame[0] = CHUNK_TAG
+                    for (i in 0 until n) if ((at + i) % half >= used) frame[1 + i] = 0
+                    writer.write(frame, 1, n)
+                    channel.send(output, if (n == CHUNK) frame else frame.copyOf(1 + n))
+                    at += n
+                    (at * 10L / size).toInt().let { if (it != shown) { shown = it; progress("Sending message keys · ${it * 10}%") } }
+                }
+                return writer.finish()
+            } finally { frame.fill(0) }
+        }
+    }
+    private fun receivePad(channel: CableSession, input: InputStream, engine: StationEngine, size: Int, progress: (String) -> Unit): PadMaterial.Installed =
+        engine.padWriter(size).use { writer ->
+            var at = 0; var shown = -1
+            while (at < size) {
+                val frame = channel.read(input)
+                try {
+                    require(frame.size in 2..(1 + CHUNK) && frame[0] == CHUNK_TAG && at + frame.size - 1 <= size) { "Unexpected pad frame" }
+                    writer.write(frame, 1, frame.size - 1); at += frame.size - 1
+                } finally { frame.fill(0) }
+                (at * 10L / size).toInt().let { if (it != shown) { shown = it; progress("Receiving message keys · ${it * 10}%") } }
+            }
+            writer.finish()
+        }
     private fun proof(engine: StationEngine, digest: ByteArray, label: String): String = b64.encodeToString(engine.signCable(digest + label.toByteArray(Charsets.US_ASCII)))
     private fun verify(key: String, digest: ByteArray, label: String, proof: String) {
         require(proof.length <= 108 && IdentityProtocol.verify(key, digest + label.toByteArray(Charsets.US_ASCII), decoder.decode(proof))) { "Cable identity proof rejected" }
@@ -157,19 +204,31 @@ object CableProtocol {
                     val credentials = secureRead(); require(credentials.getString("kind") == "server")
                     Protocol.token(credentials.getString("token")).also { verify(peerKey, hash(identityDigest + it.toByteArray(Charsets.UTF_8)), "server-B", credentials.getString("proof")) }
                 }
-                val secret = if (renew) engine.state!!.getString("secret") else Protocol.randomSecret(); val master = Protocol.master(secret)
-                val bundle = try { PadProtocol.generate(PadProtocol.binding(master), a.getInt("padSize")) } finally { master.fill(0) }
-                setup = try { JSONObject().put("endpoint", endpoint).put("token", token)
-                    .put("secret", secret).put("pad", b64.encodeToString(bundle)) } finally { bundle.fill(0) }
-                digest = digest(a, b, setup)
-                if (renew) engine.stageRenewal(setup, peerKey) else engine.stageCable(setup, "A", peerKey)
-                secureSend(JSONObject().put("kind", "setup").put("setup", setup).put("proof", proof(engine, digest, "setup-A")))
+                val secret = if (renew) engine.state!!.getString("secret") else Protocol.randomSecret()
+                val size = a.getInt("padSize")
+                setup = JSONObject().put("endpoint", endpoint).put("token", token).put("secret", secret).put("padSize", size)
+                secureSend(JSONObject().put("kind", "pad").put("padSize", size))
+                val pad = sendPad(channel, output, engine, size, progress)
+                digest = digest(a, b, setup, pad.digest)
+                val padDigest = PadProtocol.hex(pad.digest)
+                if (renew) engine.stageRenewal(setup, peerKey, pad) else engine.stageCable(setup, "A", peerKey, pad)
+                secureSend(JSONObject().put("kind", "setup").put("setup", setup).put("padDigest", padDigest).put("proof", proof(engine, digest, "setup-A")))
+                val control = engine.controlOffer(host = true); secureSend(control)
+                engine.stageControl(control, secureRead(), host = true)
             } else {
-                val packet = secureRead(); require(packet.getString("kind") == "setup")
-                setup = packet.getJSONObject("setup"); require(setup.getString("endpoint") == endpoint)
-                digest = digest(a, b, setup)
-                verify(peerKey, digest, "setup-A", packet.getString("proof"))
-                if (renew) engine.stageRenewal(setup, peerKey) else engine.stageCable(setup, "B", peerKey)
+                val announced = secureRead(); require(announced.getString("kind") == "pad" && announced.getInt("padSize") == a.getInt("padSize"))
+                val pad = receivePad(channel, input, engine, a.getInt("padSize"), progress)
+                try {
+                    val packet = secureRead(); require(packet.getString("kind") == "setup")
+                    setup = packet.getJSONObject("setup"); require(setup.getString("endpoint") == endpoint && setup.getInt("padSize") == a.getInt("padSize"))
+                    require(packet.getString("padDigest") == PadProtocol.hex(pad.digest)) { "Message keys were altered in transfer" }
+                    digest = digest(a, b, setup, pad.digest)
+                    verify(peerKey, digest, "setup-A", packet.getString("proof"))
+                } catch (failure: Exception) { pad.keys.fill(0); pad.file.delete(); throw failure }
+                if (renew) engine.stageRenewal(setup, peerKey, pad) else engine.stageCable(setup, "B", peerKey, pad)
+                val offered = secureRead()
+                val control = engine.controlOffer(host = false); secureSend(control)
+                engine.stageControl(control, offered, host = false)
             }
             if (host) {
                 val accepted = secureRead(); require(accepted.getString("kind") == "saved")

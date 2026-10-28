@@ -1,9 +1,114 @@
 # OTP Pager developer handoff
 
+For the current review graph, exact source heads, execution evidence and next steps,
+read [the continuation record](CONTINUATION_2026_10_28.md).
+
 Updated 2026-10-27. Repository: `masadams/otp-pager`. Start from `main`.
 This file is sufficient to resume without the original chat. The owner requested
 integration of the completed development work, an accurate plan and a transferable
 handoff. Do not interpret merged foundations as a completed emergency-wipe feature.
+
+## Current continuation state — verified 2026-10-28
+
+Baseline `main`: `9a968a8750657b438524902dbdac98429b080b46` (#40).
+The sections explicitly marked historical below preserve prior evidence, not current
+completion or merge instructions. [PIPELINE.md](PIPELINE.md) controls work order.
+
+| Work | Current status |
+| --- | --- |
+| Local/global retirement, ACTIVE epochs, fresh enrollment, vault-key rotation | Merged development functionality; physical/review limits remain |
+| Separate pad storage | #38 merged, `9ce0325689d36ab3d30343a3eef3398d93733238` |
+| Streamed 16/32/64 MiB pads | #39 merged, `d50ecd655381a0e605ddb88d1a21f59521923315` |
+| Peer wipe | #40 merged; off-by-default, unreviewed; see implemented-vs-draft notes in PEER_WIPE_PROTOCOL.md |
+| #41 packet-size audit | Open, `test/fixed-size-packets`; independent |
+| #42 pipeline/USB regression notes | Open draft, `docs/pipeline-status-and-usb-regression`; this documentation follow-up stacks here |
+| #43 USB negotiation retry | Open draft, `fix/usb-accessory-negotiation-retry`; regression follow-up stacks here |
+| #44 strict-chat contract | Open draft, `design/strict-chat-security-contract`; protocol follow-up stacks here |
+| Strict chats, relay failover, groups | Not implemented |
+
+No PR is authorized for automatic merge. #27's Node major-version update is also
+open; do not duplicate it or change the pinned deployment image as incidental cleanup.
+Recheck heads and CI before continuing; this update does not assert fresh CI results.
+
+Implementation decisions: stacked PRs; one strict-unlock authority; no inactivity
+share deletion; proposed 60-second foreground lease; new physical pairing for strict
+v1. Fixed-membership full-mesh groups are the implementation default while the owner
+has no stronger preference. Each recipient uses an independent pairwise pad.
+
+Next: USB discovery/cancellation regression coverage, then strict protocol/vectors,
+relay authorization, locked storage/control separation and physical enrollment UI.
+Failover follows with per-relay cursors/epochs and byte-identical retries; strict
+unlock does not fail over. Groups follow with authenticated roster agreement and
+per-recipient delivery state. Keep each coherent slice in a separate review PR.
+
+Critical source constraints: `CablePairActivity` owns discovery and lifecycle;
+`UsbPairChannel` already implements ZLP handling; `CableProtocol` v6 streams pads
+and provisions control keys. `SecureStore` currently decrypts using local Keystore
+keys alone, and `StationEngine.pollControl` reads control keys from that vault.
+Strict mode needs a new envelope and separately accessible control state; an online
+check around the current engine is insufficient. Preserve constructor ABIs, pad
+ledgers, retained cohorts, terminal gates and no-fallback behavior.
+
+Outstanding physical evidence: phone models/Android/builds, cable and host roles,
+permission sequence and exact regression stage; both host directions; 16/32/64 MiB;
+interrupted pairing/renewal and power loss. Never clear an owner's active app data to
+test. Emulator streams do not validate AOA hardware. Independent review, signer
+custody, live-host recovery and production readiness remain open.
+
+## Historical state and evidence — 2026-10-27/28
+
+### Historical integration snapshot — superseded by current continuation state
+
+> **Pipeline:** the ordered work list and the owner's answers now live in
+> [PIPELINE.md](PIPELINE.md). PRs #18–#26 are merged into `main` (the stacked ones via #33).
+
+Open PRs, all green on CI at the time of writing unless noted. **Merge order matters**
+for the stack; GitHub retargets each to `main` as its base merges.
+
+| PR | Branch | Content | Base |
+| --- | --- | --- | --- |
+| #18 | `feat/active-epoch-lineage` | B3a design + pure lineage core | `main` |
+| #19 | `feat/epoch-capability-routing` | B3b capability, freeze, routing wiring | #18 |
+| #20 | `feat/active-retained-cohorts` | B3c–B3f cohorts, repeat wipe, activation, Start fresh / Wipe all | #19 |
+| #22 | `feat/vault-key-rotation` | Package C: contact-vault key rotation (erasable history) | #20 |
+| #21 | `docs/own-direction-license` | Drop Jericho references; MIT license | `main` (independent) |
+| #23 | `tools/ui-preview` | Opt-in screenshot workflow | `main` (independent) |
+
+CI evidence (all three workflows green, API 29/31/35 emulators incl. every restart fixture):
+#20 at `672a9e9` (Android run 40685329719); #22 at `3ab0e38` (Android run 40688581949).
+Fixes found by the new fixtures before merge: the lineage root-reuse check compared an
+epoch's roots with its *own* later wipe record (froze the chain after a second wipe; also
+caused the "global-intent" wipe failure); recovery-screen status text regression; Clear
+history now always rotates even when the snapshot is unchanged. Throwaway branches
+`ui-preview/diag20*`, `ui-preview/diag22`, `ui-shots/diag*` can be deleted (the session
+could not delete branches).
+
+Owner decisions on 2026-10-28: go our own way (no Jericho compatibility); MIT license;
+continue through the plan, then do a full use + security assessment and UI/UX passes.
+An automated merge without review was declined by a permission check, so the owner merges.
+
+**Screenshots:** push any commit to a `ui-preview/<name>` branch (with
+`.github/workflows/ui-preview.yml` present, i.e. after #23 or merged into that branch);
+the workflow runs the UI tests on API 31 (Kompakt-sized) and API 35 and commits PNGs to
+`ui-shots/<name>`, fetchable with `git clone -b ui-shots/<name>`. CI artifact downloads are
+not reachable from the cloud editing workspace.
+
+**Local checks without an Android SDK** (used in the editing workspace): Kotlin 2.0.21
+compiler from GitHub releases, an API 35 `android.jar`, and small stubs for ZXing/AndroidX/
+androidx.test allow a type-check of main + unit + instrumentation sources and running the
+JVM unit suite. CI remains the reference for build, lint and emulator tests.
+
+**Next work, in order:**
+1. Owner review/merge of #18 → #19 → #20 → #22, plus #21 and #23.
+2. UI/UX pass using the screenshot workflow: add captures for the wipe dialogs, wipe result,
+   recovery Start fresh and Wipe all; tighten compact-screen layout.
+3. Phase 3/D peer-wipe **specification only** (control keys, command format, acks, migration,
+   vectors). Destructive peer code stays blocked until independent protocol review.
+4. Phase 4/G relay work that does not depend on D: per-device scoped access (F06), retention
+   and Docker/Nginx/Portainer hardening (pin `node:22-alpine` by digest), live-host evidence.
+5. Owner-requested **use and security assessment** of the whole app against its goals,
+   then decide additions (e.g. the "strict / online-check" per-chat option discussed on
+   2026-10-27: relay-held key share so a seized offline phone cannot open strict chats).
 
 ## Read first
 
@@ -104,6 +209,9 @@ All paths below are under `app/src/main/java/org/example/otppager/`.
 | `ChatBook.kt` | Index schema 3 separates stable entryId from operational id; reload durable metadata per operation; confirmed per-contact replacement copies no old secrets |
 | `RetainedGuardReader.kt`, `RetainedGuardInventory.kt` | Exact authenticated immutable reuse metadata; strict parsing/bounds; no key creation, repair, operational-vault opening or missing-as-empty fallback |
 | `RetirementEvidenceCodec.kt`, `RetirementEvidence.kt` | `OTPTERM1`: INTENT/SEALED/CLEANED; one initial lineage, one-use pre-cleanup capture ticket. Authenticated roots must equal cleanup journal roots |
+| `EpochManifests.kt` (`EpochManifests`, `EpochState`), `VaultGeneration.kt`, `ChatBook.EpochRouting` | B3b wiring: authenticated manifest files; real-record observation; sealed `Legacy/Blocked/Active(epoch)` capability with namespace allowlist; lineage-aware `isFrozen`; default index routing. Without a manifest file all of these apply the previous rules |
+| `EpochTerminalCodec.kt`, `EpochEvidence.kt` (`EpochEvidence`, `EpochGuardInventory`) | `OTPTERM2` per-generation wipe evidence for ACTIVE epochs; epoch cohort capture/verify |
+| `FreshEnrollment.kt` | One-use-token activation transaction; manifest is the last commit; releases the freeze latch |
 | `ActiveManifestCodec.kt`, `EpochLineage.kt` | Pure B3a core: `OTPACT01` canonical codec; lineage resolution with no head pointer (any inconsistency → Frozen); ACTIVE namespace allowlist. Not yet consulted by storage |
 | `EnrollmentStageCodec.kt`, `EnrollmentStaging.kt` | `OTPSTG01`: PREPARING/PREPARED/ABANDONED only; up to 32 attempts. Auth key + record permanently reserve each attempt; new empty AES slots only |
 
@@ -114,14 +222,18 @@ metadata. All lifecycle ownership checks use the reentrant `VaultLifecycle.lock`
 External Strings/JSON, active stack locals, OS/IME/clipboard, flash and exported pads
 are outside any claim of guaranteed erasure.
 
-## Next implementation package — finish Phase 2/B before enrollment UI
+## Historical next-package notes — Phase 2/B (since integrated)
 
 **B3 design is now written:** [ACTIVE_EPOCH_DESIGN.md](ACTIVE_EPOCH_DESIGN.md) treats steps
 1–4 below as one lineage model and splits the work into slices B3a–B3f. B3a (#18) adds the
 pure, unwired decision core: `ActiveManifestCodec` (`OTPACT01`), `EpochLineage.resolve`
 and `EpochScope.permits`, with JVM tests. **Next: B3b** — sealed capability,
 namespace-aware `requireCurrent`, lineage-based `isFrozen`, `ChatBook` routing and
-manifest append, with real-record adapters (still no manifest writer).
+manifest append, with real-record adapters (still no manifest writer). **B3b is in #19**
+(stacked on #18). **B3c–B3f are in #20** (stacked on #19): retained cohorts during
+messaging, `OTPTERM2` repeat wipes, the activation transaction, Start fresh and Wipe all.
+Package B is implementation-complete pending review/CI and physical checks. **Next:
+package C** (separately erasable history and old-key migration).
 
 In parallel (documentation only, no destructive code): start the Phase 3/D peer-wipe
 specification so independent protocol review — the long-lead gate — can begin early.
@@ -155,7 +267,7 @@ retrospective provenance or authorize an empty reset. No supported recovery path
 clears tombstones/claims to make a failed test pass. Coordinated OS/filesystem and
 Keystore rollback remains an explicit limitation, not a solved invariant.
 
-## Remaining work after that, in order
+## Historical package order — current order is PIPELINE.md
 
 | Order | Deliverable / completion gate |
 | --- | --- |
@@ -220,3 +332,61 @@ main, not from an old stacked base. Do not delete history or deployment volumes 
 cleanup. Keep future work in reviewable slices; update this handoff, checklist and
 progress with actual implemented scope and exact evidence. Passing CI alone never
 replaces invariant review, independent assessment or physical two-device validation.
+
+## Packet serialization follow-up — 2026-10-28
+
+Branch `test/production-packet-serialization` stacks on open #41. The production
+POST serializer is shared with an Android instrumentation test; the misleading
+hand-built JSON length assertion is removed. Binary/base64 lengths remain fixed;
+Android JSON slash escaping can vary HTTP body size. No wire, pad reservation or
+retry behavior changes. Local build/test evidence is recorded in the PR; emulator
+execution and physical-device validation must not be inferred from compilation.
+
+## Peer-wipe recipient ordering correction — 2026-10-28
+
+Independent branch `fix/peer-wipe-local-first` starts from main 9a968a8. A verified
+peer request previously posted RECEIVED before retirement, and ACK persistence
+failure could prevent local destruction. The recipient now attempts local retirement
+before any transport and despite ACK preparation errors (S05); final status preserves
+actual cleanup evidence (S10). JVM tests block transport and inject persistence
+failures; the end-to-end instrumentation fixture asserts POST occurs only after
+retirement. Physical peer-wipe, partial cleanup/restart and independent review remain
+open. Peer wipe stays unreviewed and off by default; see the PR for execution evidence.
+
+## USB discovery follow-up — 2026-10-28
+
+Branch `test/usb-negotiation-lifecycle` depends on #43, not a duplicate fix. The
+wizard now uses `UsbPairDiscovery`: failed negotiation can retry; denial needs an
+explicit permission retry; late callbacks cannot restart a stopped/retired owner;
+transfer is terminal to discovery. No wire format, pad ledger or lifecycle ownership
+rules changed. Tests cover discovery transitions and transport packet boundaries;
+streaming instrumentation covers 16/32/64 MiB. See the PR for exact build evidence.
+Physical hardware regression is still open: record both models, OS/build versions,
+host direction, cable, permission sequence and failure stage; test interruption,
+renewal and power loss without clearing existing operational pads.
+
+## Retired chat dismissal — 2026-10-28
+
+Branch `fix/dismiss-retired-chats`, based on main after #50, implements removal of
+completed retirement notices with **Done · remove from Chats** or returning to
+Chats after viewing the notice. Incomplete/unavailable cleanup remains recoverable.
+The index operation rechecks actual local cleanup under the lifecycle lock; it
+retains pad ledgers, claims, tombstones, and queued peer-wipe delivery. Removing the
+last entry creates an unused fresh setup slot (hidden by the existing empty-list UI),
+never reviving an old pad namespace. No automatic unread-notice expiry is added.
+Android instrumentation covers cleanup guards, durable removal, last-entry handling,
+stale replacement and the Done action. See the PR for executed build/CI results;
+physical device accessibility/back-navigation and pending peer-wipe delivery after
+dismissal remain outstanding. No protocol or pad accounting changes.
+
+## Optional loss-of-contact policy — proposed, 2026-10-28
+
+Owner requests a separate off-by-default advanced option, outside normal setup,
+for mutually agreed retirement after loss of authenticated peer contact. See
+[design boundaries and remaining decisions](LOSS_OF_CONTACT_POLICY.md). This is
+not implemented and does not change ordinary strict v1's no-inactivity-deletion
+policy. Endpoint enforcement, clock/reboot rules, consent, protocol tests and
+physical-device validation remain outstanding. A relay cannot be trusted with
+arbitrary wipe authority; suppressed traffic can nevertheless trigger expiry.
+Develop this separately after the relevant strict lifecycle/protocol decisions;
+no existing USB, strict codec or diagnostics PR is superseded by this proposal.

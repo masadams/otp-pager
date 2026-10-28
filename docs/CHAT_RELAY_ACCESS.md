@@ -22,6 +22,18 @@ The first client uses the setup token to `POST /v1/mailbox/<room>/claim` with `{
 
 The client saves successful protection before traffic. A protected chat never falls back to the setup token for message GET/POST. If the relay volume is replaced, the client may recreate the same claim using the setup token, then requests traffic only with its chat capability; a legacy relay or failed claim cannot trigger downgrade. Preserving the original volume is the supported deployment path. Losing it also loses revocation records, ciphertext and epoch; clients that never learned a previous revocation cannot reconstruct that lost server history. Backups may likewise roll back revocations. Server administrators remain trusted for access control, not message confidentiality.
 
+## Strict claims (optional, recommended once migrated)
+
+Set `RELAY_STRICT_CLAIMS=1` in the stack once **every** chat on both phones shows **Private chat**
+in its status details. The setup token can then only create a chat's claim; it can no longer
+read, post or delete mailbox traffic, so a leaked setup token cannot reach unclaimed mailboxes
+(finding F06). The relay reports `"strict": true` in mailbox responses.
+
+Leave it off while any chat still uses shared access: those chats would see *Access denied*
+until they are protected. Chats are protected automatically on the first sync after their
+pad exists. The token can still create new claims, so keep it secret and rotate it if leaked.
+Per-device credentials (each phone its own) remain future work.
+
 ## Revocation
 
 Status → Chat access → Revoke this chat → confirm. This sends DELETE using the chat credential, removes its server packets and saves a permanent revocation tombstone. **Both devices** lose relay access for this pairing. Local history and pad reservations remain. A new physical pairing with a new secret/pad is required to continue. This is per-chat revocation, not separate credentials per device and not erasure of downloaded copies or forensic disk cleanup.
