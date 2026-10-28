@@ -27,6 +27,45 @@ moves to the review package.
 Also confirmed 2026-10-28: separate pad storage before bigger pads ([design](PAD_STORAGE.md));
 group chats by per-member fan-out; multi-relay ideas kept in the plan (items 6 and 8).
 
+## Strict chats — implementation gate for item 4
+
+**Status: not implemented.** A strict chat must require fresh relay authorization
+before opening locally encrypted conversation state. Merely storing a second key
+share on the relay is insufficient if the phone persists the unwrapped key.
+
+**Security boundaries:** a stolen, powered-off phone should not unlock a strict chat
+offline even with a flash copy. A seized unlocked phone, compromised OS, RAM copies,
+screenshots and previously exported content are not protected. The relay may deny
+service and observe unlock timing; it must not be able to decrypt content alone.
+Never label a chat "strict" before the actual enforcement is complete.
+
+**Ordered implementation slices (separate reviewable PRs):**
+
+1. Pure versioned protocol and vectors: per-chat generation, device identity,
+   nonce, expiry, authorization epoch and replay/cross-chat rejection.
+2. Relay: authenticated share enrollment, bounded unlock authorization, durable
+   revocation epochs, rate limiting and explicit fail-closed errors. The relay
+   must never store OTP pads or plaintext chat content.
+3. Android: Keystore-bound local envelope, no persisted unwrapped key/share,
+   strict locked state on cold start, bounded foreground unlock lease, stale
+   async response rejection and private UI clearing on expiry/background/wipe.
+4. In-person enrollment on both devices, signed transcript downgrade protection,
+   peer-wipe coordination, backup/migration rules and two-device tests.
+5. Multi-relay integration decision: one authoritative strict-unlock service
+   or a documented revocation-safe quorum. Copying a reusable share to each
+   failover relay can defeat remote revocation.
+
+**Acceptance tests:** offline cold-start strict chat remains locked; ordinary chat
+still works; wrong generation/device and replayed or expired unlocks fail; relay
+outage never downgrades strict mode; local wipe succeeds offline; late unlock
+responses cannot resurrect a wiped chat; lease expiry clears accessible content;
+restored older storage cannot silently disable strict protection. Require physical
+two-device validation and independent protocol review before a security claim.
+
+**Handoff:** this is an implementation contract, not completed code. See
+[peer wipe Appendix A](PEER_WIPE_PROTOCOL.md), [security plan](SECURITY_DEVELOPMENT_PLAN.md)
+and [threat model](THREAT_MODEL.md) for related constraints.
+
 ## Ordered pipeline
 
 | # | Item | Why | Notes |
