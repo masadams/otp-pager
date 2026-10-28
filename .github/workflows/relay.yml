@@ -23,6 +23,10 @@ jobs:
           docker compose config --quiet
           docker compose -f deploy/portainer-stack.yml config --quiet
           docker build -t otp-pager-relay:local ./relay
+      - name: Unit tests on the image's own Node runtime
+        run: |
+          docker run --rm --user node -v "$PWD/relay:/src:ro" -w /tmp otp-pager-relay:local \
+            sh -c 'cp -r /src /tmp/relay && cd /tmp/relay && node --version && node --test test.mjs'
       - name: Container smoke test with persistent volume
         shell: bash
         run: |
