@@ -111,9 +111,11 @@ class RetirementRecoveryTest {
             instrumentation.runOnMainSync {
                 val freshButton = views(a).filterIsInstance<Button>().first { it.text.toString() == "Start fresh pairing" }
                 assertFalse(freshButton.isEnabled); assertTrue(freshButton.alpha < 0.5f)
+                assertFalse(views(a).filterIsInstance<Button>().first { it.text.toString() == "Done · remove from Chats" }.isShown)
             }
             InterfaceTest().capture(instrumentation, a, "14-retired-incomplete", windowOnly = true)
             tap(a, "Back to chats")
+            assertTrue(ChatBook(context).chats().any { it.id == id })
             instrumentation.runOnMainSync { views(a).filterIsInstance<Button>().first { it.isShown && it.contentDescription?.toString()?.startsWith("Bob.") == true }.performClick() }
             await { field(a, "busy") == false && (field(a, "composer") as EditText).text.toString() == "Other contact draft" }
             instrumentation.runOnMainSync { a.onBackPressed() }
@@ -167,6 +169,98 @@ class RetirementRecoveryTest {
             if (previousClaims == null) claims.forget() else claims.save(previousClaims)
         }
     }
+    @Test fun dismissalRequiresVerifiedCleanupAndPreservesGuards() {
+        val id = root(); val indexName = "dismiss-" + UUID.randomUUID().toString().take(8)
+        val index = SecureStore(context, indexName)
+        val ids = mutableSetOf(id)
+        val dispatch = File(context.noBackupFilesDir, "peerwipe/out-test-$id.json")
+        try {
+            index.save(JSONObject().put("version", 3).put("active", id).put("chats", JSONArray()
+                .put(JSONObject().put("id", id).put("entryId", id).put("name", "Alice"))))
+            val book = ChatBook(context, indexName, id)
+            try { book.dismissRetired(id); fail("Dismissed active chat") } catch (_: IllegalStateException) {}
+            val other = book.add("Bob", null); ids.add(other.id)
+            val ledger = SecureStore(context, "$id-pads")
+            val padId = "a".repeat(32)
+            PadLedger(ledger).register(padId)
+            assertEquals(1L, PadLedger(ledger).reserve(padId))
+            val claims = PairingClaims(SecureStore(context, "$indexName-claims"))
+            claims.pad(padId, id)
+            val claimBytes = File(context.noBackupFilesDir, "$indexName-claims.bin").readBytes()
+            dispatch.parentFile!!.mkdirs()
+            val dispatchBytes = "retained dispatch fixture".toByteArray()
+            dispatch.writeBytes(dispatchBytes)
+            assertTrue(VaultRetirement.retireContact(context, id).completed)
+            val ledgerBytes = File(context.noBackupFilesDir, "$id-pads.bin").readBytes()
+            val marker = VaultLifecycle.marker(context.noBackupFilesDir, id).readBytes()
+            val residue = File(context.noBackupFilesDir, "$id.bin.new").apply { writeText("restored residue") }
+            try { book.dismissRetired(id); fail("Dismissed incomplete cleanup") } catch (_: IllegalStateException) {}
+            assertTrue(book.chats().any { it.id == id })
+            residue.delete()
+            assertTrue(book.dismissRetired(id))
+            assertEquals(other.id, book.active().id)
+            assertEquals(listOf(other), ChatBook(context, indexName, id).chats())
+            assertArrayEquals(ledgerBytes, File(context.noBackupFilesDir, "$id-pads.bin").readBytes())
+            assertArrayEquals(marker, VaultLifecycle.marker(context.noBackupFilesDir, id).readBytes())
+            assertArrayEquals(claimBytes, File(context.noBackupFilesDir, "$indexName-claims.bin").readBytes())
+            assertArrayEquals(dispatchBytes, dispatch.readBytes())
+            try { claims.pad(padId, other.id); fail("Reassigned retired pad") } catch (_: IllegalArgumentException) {}
+            assertTrue(id in ContactInventory.scan(context))
+            try { VaultLifecycle.requireActive(context.noBackupFilesDir, id); fail("Reopened retired root") } catch (_: IllegalStateException) {}
+            assertFalse(book.dismissRetired(id))
+            assertTrue(VaultRetirement.retireContact(context, other.id).completed)
+            assertTrue(book.dismissRetired(other.id))
+            val placeholder = book.active(); ids.add(placeholder.id)
+            assertEquals("Chat 1", placeholder.name)
+            assertFalse(placeholder.id in setOf(id, other.id))
+            assertNull(SecureStore(context, placeholder.id).load())
+            assertEquals(placeholder, ChatBook(context, indexName, id).active())
+            // A stale dismissal must never remove a replacement sharing the old entryId.
+            assertTrue(VaultRetirement.retireContact(context, placeholder.id).completed)
+            val fresh = book.replaceRetired(placeholder.id); ids.add(fresh.id)
+            assertFalse(book.dismissRetired(placeholder.id))
+            assertEquals(fresh, book.active())
+        } finally { dispatch.delete(); ids.forEach(::cleanup); index.forget(); SecureStore(context, "$indexName-claims").forget() }
+    }
+
+    @Test fun completedNoticeCanBeDismissedFromTheScreen() = dismissCompletedNotice(false)
+    @Test fun backAcknowledgesCompletedNotice() = dismissCompletedNotice(true)
+
+    private fun dismissCompletedNotice(back: Boolean) {
+        StationRuntime.worker.submit {}.get(15, TimeUnit.SECONDS)
+        val index = SecureStore(context, "chat-index"); val previous = index.load()
+        val id = root(); val ids = mutableSetOf(id); var activity: NetworkActivity? = null
+        try {
+            index.save(JSONObject().put("version", 3).put("active", id).put("chats", JSONArray()
+                .put(JSONObject().put("id", id).put("entryId", id).put("name", "Dismiss me"))))
+            assertTrue(VaultRetirement.retireContact(context, id).completed)
+            val a = instrumentation.startActivitySync(Intent(context, NetworkActivity::class.java)
+                .setAction(Intent.ACTION_MAIN).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) as NetworkActivity
+            activity = a
+            await { field(a, "busy") == false && field(a, "retiredChat") != null }
+            instrumentation.runOnMainSync {
+                if (field(a, "tab") == 4) views(a).filterIsInstance<Button>().first {
+                    it.isShown && it.contentDescription?.toString() == "Dismiss me. Retired on this device"
+                }.performClick()
+            }
+            await { field(a, "busy") == false && views(a).filterIsInstance<Button>().any {
+                it.isShown && it.text.toString() == "Done · remove from Chats" && it.isEnabled
+            } }
+            if (back) instrumentation.runOnMainSync { a.onBackPressed() }
+            else tap(a, "Done · remove from Chats")
+            await { field(a, "busy") == false && field(a, "tab") == 4 }
+            val book = ChatBook(context); ids.addAll(book.chats().map { it.id })
+            assertFalse(book.chats().any { it.id == id })
+            assertTrue(VaultLifecycle.isRetired(context.noBackupFilesDir, id))
+        } finally {
+            activity?.let { a -> instrumentation.runOnMainSync { a.finish() }; await { a.isDestroyed } }
+            StationRuntime.worker.submit {}.get(15, TimeUnit.SECONDS)
+            try { ids.addAll(ChatBook(context).chats().map { it.id }) } catch (_: Exception) {}
+            ids.forEach(::cleanup)
+            if (previous == null) index.forget() else index.save(previous)
+        }
+    }
+
     private fun ChatBook.recoverRetiredSafelyForTest(id: String): Boolean {
         try { recoverRetired(id); fail("Recovery action retired an active contact") } catch (_: IllegalStateException) {}
         return VaultRetirement.retireContact(context, id).completed

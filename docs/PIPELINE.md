@@ -119,3 +119,15 @@ Strict item 4 continuation: [OTPSTR01 candidate](STRICT_CHAT_PROTOCOL.md) implem
 only an unwired codec/response guard and development vectors on a follow-up to #44.
 No strict-chat relay, storage or UI is implemented. One authority, no inactivity
 share deletion, maximum 60-second foreground lease, new physical enrollment only.
+
+## Optional loss-of-contact policy — proposed, 2026-10-28
+
+Owner requests a separate off-by-default advanced option, outside normal setup,
+for mutually agreed retirement after loss of authenticated peer contact. See
+[design boundaries and remaining decisions](LOSS_OF_CONTACT_POLICY.md). This is
+not implemented and does not change ordinary strict v1's no-inactivity-deletion
+policy. Endpoint enforcement, clock/reboot rules, consent, protocol tests and
+physical-device validation remain outstanding. A relay cannot be trusted with
+arbitrary wipe authority; suppressed traffic can nevertheless trigger expiry.
+Develop this separately after the relevant strict lifecycle/protocol decisions;
+no existing USB, strict codec or diagnostics PR is superseded by this proposal.
