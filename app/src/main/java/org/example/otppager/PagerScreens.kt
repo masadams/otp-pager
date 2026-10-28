@@ -48,8 +48,13 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         isSaveEnabled = false
     }
     private fun header(title: String, back: Int? = null, menu: Boolean = false) = row().apply {
-        if (back != null) addView(button("‹") { actions.back(back) }.apply { contentDescription = "Back" }, LinearLayout.LayoutParams(dp(44), dp(44)))
-        addView(label(title, 24f).apply { setPadding(dp(if (back == null) 0 else 10), 0, 0, 0); typeface = Typeface.create("monospace", Typeface.BOLD) }, LinearLayout.LayoutParams(0, dp(60), 1f))
+        if (back != null) addView(button("‹") { actions.back(back) }.apply {
+            contentDescription = "Back"; textSize = 24f; background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+        }, LinearLayout.LayoutParams(dp(44), dp(44)))
+        addView(label(title, 24f).apply {
+            setPadding(dp(if (back == null) 0 else 4), 0, 0, 0); typeface = Typeface.create("monospace", Typeface.BOLD)
+            gravity = Gravity.CENTER_VERTICAL; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+        }, LinearLayout.LayoutParams(0, dp(60), 1f))
         if (menu) addView(button("⋮") { actions.appMenu() }.apply { contentDescription = "App options" }, LinearLayout.LayoutParams(dp(44), dp(44)))
     }
     val inbox = column()
@@ -151,7 +156,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     }
     fun renderInbox(friends: List<Friend>, receiving: Boolean, busy: Boolean) {
         addButton.isEnabled = true; addButton.alpha = 1f
-        inboxStatus.text = if (busy) "Checking for messages…" else if (receiving) "Background receiving is on" else "Tap here for receiving options"
+        inboxStatus.text = if (busy) "Checking for messages…" else if (receiving) "Background receiving is on · Change" else "Messages arrive while the app is open · Change"
         if (friends == shownFriends) return
         shownFriends = friends.toList()
         inboxRows.removeAllViews()

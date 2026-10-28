@@ -167,12 +167,14 @@ class LocalWipeTest {
                 input.setText("wip"); assertFalse(wipe.isEnabled)
                 input.setText(" wipe "); assertTrue(wipe.isEnabled)
             }
+            InterfaceTest().capture(instrumentation, a, "wipe-confirm")
             assertFalse(VaultLifecycle.isRetired(context.noBackupFilesDir, id))
 
             // The normal app worker is stuck (e.g. a hung relay request); the wipe must still complete.
             release = blockWorker()
             instrumentation.runOnMainSync { dialog(a).getButton(AlertDialog.BUTTON_POSITIVE).performClick() }
             await { shown(a).filterIsInstance<TextView>().any { it.text.toString() == "Wiped from this phone" } }
+            InterfaceTest().capture(instrumentation, a, "wipe-result")
             instrumentation.runOnMainSync {
                 val text = shown(a).filterIsInstance<TextView>().joinToString("\n") { it.text.toString() }
                 assertTrue(text.contains("Your friend's phone was not changed"))
@@ -191,6 +193,7 @@ class LocalWipeTest {
             instrumentation.runOnMainSync { shown(a).filterIsInstance<Button>().first { it.text.toString() == "Continue" }.performClick() }
             await { shown(a).filterIsInstance<TextView>().any { it.text.toString() == "Local cleanup completed" } }
             instrumentation.runOnMainSync { assertTrue(shown(a).filterIsInstance<Button>().any { it.text.toString() == "Start fresh pairing" && it.isEnabled }) }
+            InterfaceTest().capture(instrumentation, a, "wipe-recovery")
         } finally {
             release?.countDown()
             activity?.let { a -> instrumentation.runOnMainSync { if (!a.isFinishing) a.finish() }; await { a.isDestroyed } }
