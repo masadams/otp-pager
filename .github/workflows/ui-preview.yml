@@ -67,7 +67,7 @@ jobs:
     permissions:
       contents: write # Only this job writes, and only to the ui-shots/ branch below.
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: shots
       - name: Commit screenshots to ui-shots/<branch>
