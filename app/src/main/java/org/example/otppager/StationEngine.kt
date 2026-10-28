@@ -5,6 +5,8 @@ import org.json.JSONObject
 
 /** Call only from the single station worker. Save snapshot before publishing it in memory. */
 class StationEngine(private val store: SecureStore, relay: RelayTransport = RelayClient, private val claims: PairingClaims? = null) {
+    /** Unscoped transport for best-effort peer-wipe acknowledgements sent after this chat is retired. */
+    private val baseRelay = relay
     private val relay = relay.forContact(store)
     companion object {
         /** Paired with pad material, either in the vault (pre-migration "pad") or separate storage ("padKeys"). */
@@ -91,6 +93,12 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         check(s.getLong("counter") >= 0 && s.getLong("cursor") >= 0)
         window(s)
         check(!(s.has("pad") && s.has("padKeys")))
+        s.optJSONObject("control")?.let { c ->
+            check(Regex("[a-f0-9]{32}").matches(c.getString("generation")))
+            for (name in listOf("credential", "ctlOut", "ctlIn", "ackOut", "ackIn")) check(Regex("[a-f0-9]{64}").matches(c.getString(name)))
+            check(c.getString("ctlOut") != c.getString("ctlIn") && c.getString("ackOut") != c.getString("ackIn"))
+            check(c.optLong("cursor", 0) >= 0)
+        }
         if (s.has("padKeys")) {
             val keys = b64d.decode(s.getString("padKeys"))
             try {
@@ -280,6 +288,72 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         finally { pad.keys.fill(0) }
     }
     fun signCable(bytes: ByteArray) = identity.sign(bytes)
+    /**
+     * Peer-wipe control material (docs/PEER_WIPE_PROTOCOL.md §1), generated during in-person
+     * pairing and exchanged inside the authenticated pairing channel. Role A also names the
+     * pairing generation and the control-mailbox credential. Never derived from pad bytes.
+     */
+    internal fun controlOffer(host: Boolean): JSONObject {
+        fun random(n: Int) = PadProtocol.hex(ByteArray(n).also { java.security.SecureRandom().nextBytes(it) })
+        val offer = JSONObject().put("kind", "control").put("ctl", random(32)).put("ack", random(32))
+        if (host) offer.put("generation", random(16)).put("credential", random(32))
+        return offer
+    }
+    internal fun stageControl(own: JSONObject, peer: JSONObject, host: Boolean) {
+        val staged = checkNotNull(stagedCable) { "No staged pairing" }
+        require(own.getString("kind") == "control" && peer.getString("kind") == "control")
+        val origin = if (host) own else peer
+        staged.put("control", JSONObject().put("generation", origin.getString("generation")).put("credential", origin.getString("credential"))
+            .put("ctlOut", own.getString("ctl")).put("ctlIn", peer.getString("ctl"))
+            .put("ackOut", own.getString("ack")).put("ackIn", peer.getString("ack")).put("cursor", 0L))
+        validate(staged)
+    }
+    internal val hasControl: Boolean get() = state?.has("control") == true
+    private fun unhex(value: String) = ByteArray(value.length / 2) { value.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
+    /**
+     * UNREVIEWED peer wipe, recipient side (§5). Only with the setting on. Verifies a WIPE for this
+     * pairing's own generation and the peer's direction, precomputes the acknowledgements, then
+     * retires THIS chat only with the ordinary local primitive. Returns a status line, or null.
+     */
+    private fun pollControl(): String? {
+        val s = state ?: return null
+        val c = s.optJSONObject("control") ?: return null
+        if (!PeerWipe.enabled(store.context)) return null
+        val credential = unhex(c.getString("credential"))
+        val generation = unhex(c.getString("generation"))
+        val peer = if (s.getString("role") == "A") ControlProtocol.Direction.B_TO_A else ControlProtocol.Direction.A_TO_B
+        val requested: Boolean
+        try {
+            val room = ControlProtocol.mailbox(credential); val capability = PeerWipe.capability(credential)
+            if (!c.optBoolean("scoped") && relay.scope(s.getString("endpoint"), room, s.getString("token"), capability))
+                transaction { it.getJSONObject("control").put("scoped", true) }
+            val access = if (state!!.getJSONObject("control").optBoolean("scoped")) capability else s.getString("token")
+            val page = JSONObject(relay.request(s.getString("endpoint"), room, access, "GET", cursor = c.optLong("cursor")))
+            val messages = page.getJSONArray("messages"); require(messages.length() <= 50) { "Relay returned an oversized page" }
+            var cursor = c.optLong("cursor"); var found = false
+            val epoch = page.optString("epoch")
+            if (c.optString("epoch").isNotEmpty() && epoch != c.optString("epoch")) cursor = 0
+            for (i in 0 until messages.length()) {
+                val item = messages.getJSONObject(i); cursor = maxOf(cursor, item.getLong("seq"))
+                val frame = try { java.util.Base64.getDecoder().decode(item.getString("packet")) } catch (_: Exception) { continue }
+                if (frame.size != ControlProtocol.WIPE_BYTES) continue
+                val key = unhex(c.getString("ctlIn"))
+                try { ControlProtocol.openWipe(key, frame, peer, generation); found = true } catch (_: Exception) {} finally { key.fill(0) }
+            }
+            transaction { it.getJSONObject("control").put("cursor", cursor).put("epoch", epoch) }
+            requested = found
+        } catch (_: Exception) { return null } // Control polling never blocks ordinary sync.
+        finally { credential.fill(0); generation.fill(0) }
+        if (!requested) return null
+        val snapshot = JSONObject(checkNotNull(state).toString())
+        val root = VaultLifecycle.root(store.namespace)
+        val received = PeerWipe.acknowledge(store.context, root, snapshot)
+        PeerWipe.postNow(baseRelay, snapshot, received)
+        val result = VaultRetirement.retireContact(store.context, root)
+        PeerWipe.finish(store.context, snapshot.getJSONObject("control").getString("generation"), result.completed)
+        PeerWipe.pump(store.context, baseRelay)
+        return "Your friend's phone asked to remove this chat. It was removed from this phone."
+    }
     fun stageCable(setup: JSONObject, role: String, peer: String) {
         requireCableEligible(); check(stagedCable == null)
         stageCable(setup, role, peer, installBundle(setup, setup.getString("secret")))
@@ -649,6 +723,8 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     }
     fun sync(): String {
         store.requireActive()
+        // Control first: a wipe request must work after pad exhaustion and relay revocation (S11).
+        pollControl()?.let { return it }
         check(state?.optBoolean("renewalPaused") != true) { "USB renewal paused; reconnect both devices to recover" }
         check(state?.optBoolean("relayRevoked") != true) { "Chat access revoked; pair a fresh chat on both devices" }
         check(state?.optBoolean("cableComplete", true) != false) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }

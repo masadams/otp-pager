@@ -28,6 +28,7 @@ class SecureStore private constructor(context: Context, namespace: String, priva
     fun identity() = DeviceIdentity.scoped("otp-pager-$slot-device", ::requireActive, ::requireResettable)
     fun sibling(suffix: String): SecureStore = SecureStore(contextRef, "$slot-$suffix", generation)
     private val contextRef = context.applicationContext
+    internal val context: Context get() = contextRef
     private val rotates = VaultKeys.rotates(slot)
     private fun keys() = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
     private fun generate(alias: String): SecretKey = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").run {

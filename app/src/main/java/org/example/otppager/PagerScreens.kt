@@ -10,6 +10,8 @@ import android.view.View
 import android.widget.*
 
 /** Everyday screens contain presentation and explicit actions, never keys or protocol logic. */
+private const val NO_REMOTE_WIPE = "This pairing is permanently disabled on this device. No remote wipe has been requested; the other device may still hold its copy."
+
 internal class PagerScreens(private val activity: Activity, private val actions: Actions) {
     interface Actions {
         fun back(destination: Int)
@@ -84,6 +86,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     private val retiredName = label("Retired pairing", 24f)
     private val retiredStatus = label("Local cleanup status unavailable", 18f)
     private val retiredNotice = label("", 13f).apply { visibility = View.GONE }
+    private val retiredRemote = label(NO_REMOTE_WIPE, 15f).apply { setPadding(0, dp(16), 0, dp(16)) }
     private val retryRetirementButton = button("Retry local cleanup") { actions.retryRetirement() }.apply { isEnabled = false; alpha = 0.45f }
     private val freshPairingButton = button("Start fresh pairing", true) { actions.freshPairing() }.apply { isEnabled = false; alpha = 0.45f }
     init {
@@ -91,7 +94,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         retired.addView(ScrollView(activity).apply { isFillViewport = true; scrollBarStyle = View.SCROLLBARS_INSIDE_INSET; setPadding(0, 0, dp(8), dp(12)); addView(column().apply {
             addView(retiredName.apply { setPadding(0, dp(20), 0, dp(16)) })
             addView(retiredStatus)
-            addView(label("This pairing is permanently disabled on this device. No remote wipe has been requested; the other device may still hold its copy.", 15f).apply { setPadding(0, dp(16), 0, dp(16)) })
+            addView(retiredRemote)
             addView(label("Local cleanup removes this pairing's vault, draft and identity keys and their files. The contact name and minimal reuse/retirement records remain. Flash, memory and exported copies cannot be guaranteed erased.", 13f, true))
             addView(retiredNotice)
             addView(retryRetirementButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(20) })
@@ -184,8 +187,10 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         recoveryStep.visibility = if (!view.cableEligible) View.VISIBLE else View.GONE
         sizeButton.text = "Pad size · ${padSize / PadProtocol.MATERIAL_BYTES} MiB · Change"
     }
-    fun renderRetired(name: String, status: VaultRetirement.Status, busy: Boolean) {
+    /** [remote]: honest peer-wipe status (unreviewed feature), or null when none was involved. */
+    fun renderRetired(name: String, status: VaultRetirement.Status, busy: Boolean, remote: String? = null) {
         retiredName.text = name
+        retiredRemote.text = remote ?: NO_REMOTE_WIPE
         retiredStatus.text = when (status.state) {
             VaultRetirement.LocalState.COMPLETE -> "Local cleanup completed"
             VaultRetirement.LocalState.INCOMPLETE -> "Local cleanup incomplete"

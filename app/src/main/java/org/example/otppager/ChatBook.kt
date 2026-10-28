@@ -14,7 +14,7 @@ internal object EpochRouting {
 /** Encrypted contact index. Existing station-v2 data stays in place; keys are never copied. */
 class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(context), legacyNamespace: String = EpochRouting.initialRoot(context)) {
     companion object { const val MAX_CHATS = 12 }
-    private val context = context.applicationContext
+    internal val context: Context = context.applicationContext
     private val index = SecureStore(context, indexNamespace)
     private val claims = PairingClaims(SecureStore(context, "$indexNamespace-claims"))
     // Reload durable state for every operation: stale UI/receiver objects cannot overwrite a replacement.
@@ -140,12 +140,19 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
             require(VaultLifecycle.isContact(id)) { "Not a conversation" }
             require(chats().any { it.id == id }) { "Unknown chat" }
         }
+        // Unreviewed peer wipe (setting off by default): seal the request before destruction. Never blocks it.
+        if (PeerWipe.enabled(context)) PeerWipe.prepare(context, id, try { engine(id).state } catch (_: Exception) { null })
         // Retirement dispatches cancellation; never call it while holding an outer lifecycle lock.
         val result = VaultRetirement.retireContact(context, id)
         refresh(id)
         return result
     }
     internal fun ensureClaimsRegistry() = claims.ensureRegistry()
+    /** Wipe all: seal one peer request per chat that has control material, before the freeze. */
+    internal fun preparePeerWipes() {
+        if (!PeerWipe.enabled(context)) return
+        for (chat in chats()) PeerWipe.prepare(context, chat.id, try { engine(chat.id).state } catch (_: Exception) { null })
+    }
     fun forgetActive() = synchronized(VaultLifecycle.lock) { ChatDraft(SecureStore(context, active().id).sibling("draft")).clear(); SecureStore(context, active().id).forget(); refresh() }
     fun summary(id: String): Summary {
         if (VaultLifecycle.isRetired(context.noBackupFilesDir, id)) return Summary(eligible = false, retired = true)

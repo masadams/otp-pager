@@ -737,7 +737,7 @@ class NetworkActivity : Activity() {
         }
         if (tab == 7) {
             val contact = retiredChat; val observed = retirementStatus
-            if (contact != null && observed != null) screens.renderRetired(contact.name, observed, busy)
+            if (contact != null && observed != null) screens.renderRetired(contact.name, observed, busy, peerWipeNote(contact.id))
         }
         val view = latest ?: return
         if (tab in listOf(5, 6)) screens.renderFriend(contacts.active().name, view, selectedPadSize)
@@ -777,12 +777,29 @@ class NetworkActivity : Activity() {
             }
         }
     }
+    /** Evidence-based wording only (docs/PEER_WIPE_PROTOCOL.md §4): never claims the friend's copy is gone. */
+    private fun peerWipeNote(id: String): String? = when {
+        PeerWipe.removedByFriend(this, id) -> "Your friend's phone asked to remove this chat, and it was removed on this phone (unreviewed peer wipe)."
+        else -> PeerWipe.describe(PeerWipe.status(this, id))?.let { "This phone asked your friend's phone to remove its copy (unreviewed peer wipe). $it." }
+    }
+    private fun showPeerWipeSetting() {
+        val on = PeerWipe.enabled(this)
+        AlertDialog.Builder(this).setTitle("Peer wipe · unreviewed")
+            .setMessage("When this is on, wiping a chat also asks your friend's phone to remove its copy of that chat. Wipe all asks every friend's phone.\n\n" +
+                "Both phones need this setting on. Only chats paired in person with this version can send or receive a request. " +
+                "Your phone is always wiped first and never waits for the friend's phone. A phone that is offline, switched off or modified may never act on the request. " +
+                "The status shown is only what the friend's phone reported.\n\n" +
+                "This feature has not had its independent security review yet. Leave it off unless you are testing it.\n\nCurrently: ${if (on) "ON" else "OFF"}")
+            .setPositiveButton(if (on) "Turn off" else "Turn on") { _, _ -> PeerWipe.setEnabled(this, !on); report(if (on) "Peer wipe off" else "Peer wipe on · unreviewed") }
+            .setNegativeButton("Close", null).create().also(::secureShow)
+    }
     private fun showAppMenu() {
         // Not busy-gated: the menu holds the wipe-all action; its other entries ignore busy work themselves.
         AlertDialog.Builder(this).setTitle("Field")
-            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help", "Wipe all chats from this phone")) { _, which ->
+            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help", "Wipe all chats from this phone", "Peer wipe (unreviewed) · ${if (PeerWipe.enabled(this)) "on" else "off"}")) { _, which ->
                 when (which) {
                     3 -> confirmWipeAll()
+                    4 -> showPeerWipeSetting()
                     0 -> showReceiving()
                     1 -> runTask {
                         val contacts = checkNotNull(book); inboxCycle.pollOne(contacts) { active && unlocked && tab == 4 }
@@ -800,7 +817,7 @@ class NetworkActivity : Activity() {
             contentDescription = "Type WIPE ALL to confirm"
         }
         val dialog = AlertDialog.Builder(this).setTitle("Wipe all chats from this phone?")
-            .setMessage(WIPE_ALL_WARNING)
+            .setMessage(if (PeerWipe.enabled(this)) WIPE_ALL_WARNING.replace("Your friends' phones are NOT wiped, and nothing is sent to them.", "Peer wipe (unreviewed) is on: each friend's phone paired with this version is asked to remove its copy. This phone does not wait for them.") else WIPE_ALL_WARNING)
             .setView(input).setNegativeButton("Cancel", null).setPositiveButton("Wipe all", null).create()
         dialog.setOnShowListener {
             val wipe = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
@@ -865,7 +882,7 @@ class NetworkActivity : Activity() {
             contentDescription = "Type WIPE to confirm"
         }
         val dialog = AlertDialog.Builder(this).setTitle("Wipe ${chat.name} from this phone?")
-            .setMessage(LOCAL_WIPE_WARNING)
+            .setMessage(if (PeerWipe.enabled(this)) LOCAL_WIPE_WARNING.replace("Your friend's phone is NOT wiped. It keeps its copy of the conversation, and nothing is sent to it.", "Peer wipe (unreviewed) is on: if this chat was paired with this version, your friend's phone is asked to remove its copy too. This phone does not wait for it, and it may never act on the request.") else LOCAL_WIPE_WARNING)
             .setView(input).setNegativeButton("Cancel", null).setPositiveButton("Wipe", null).create()
         dialog.setOnShowListener {
             val wipe = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
@@ -897,7 +914,7 @@ class NetworkActivity : Activity() {
         closeVisibleContact()
         clearPrivateState() // Drops composer text and draft ownership without saving the draft again.
         engine = null; busy = true; tab = 4; updateNavigation()
-        showWipeScreen("Wiping ${chat.name}…", "Deleting this chat's keys and files on this phone. Nothing is sent to your friend.", null)
+        showWipeScreen("Wiping ${chat.name}…", "Deleting this chat's keys and files on this phone. " + if (PeerWipe.enabled(this)) "A wipe request goes to your friend's phone afterwards (unreviewed)." else "Nothing is sent to your friend.", null)
         LocalWipe.submit(contacts, chat.id) { outcome ->
             runOnUiThread {
                 if (active && unlocked && !isFinishing && !isDestroyed && generation == wipeGeneration) showWipeOutcome(chat.name, outcome)
@@ -910,6 +927,9 @@ class NetworkActivity : Activity() {
         // Report only what local evidence supports; the friend's device is never described as wiped.
         val (title, detail) = when {
             result == null -> "Wipe did not start" to "${(outcome.exceptionOrNull()?.message ?: "This chat could not be checked").trimEnd('.')}. Continue to check this chat."
+            result.completed && PeerWipe.enabled(this) -> "Wiped from this phone" to "$name's messages, drafts, message keys and pairing were deleted on this phone. " +
+                (PeerWipe.describe(PeerWipe.status(this, result.namespace))?.let { "$it (unreviewed peer wipe)." } ?: "Your friend's phone could not be asked: this chat was paired before peer wipe existed, so it still has its copy.") +
+                " To talk again, pair both phones in person."
             result.completed -> "Wiped from this phone" to "$name's messages, drafts, message keys and pairing were deleted on this phone. Your friend's phone was not changed and still has its copy. To talk again, pair both phones in person."
             result.terminalDurable -> "Wipe not finished" to "This chat is permanently disabled on this phone, but some cleanup did not finish. Continue to retry. Your friend's phone was not changed."
             else -> "Wipe not recorded" to "This chat is disabled until the app closes, but the wipe could not be saved and some data may remain. Continue and retry now. Your friend's phone was not changed."
