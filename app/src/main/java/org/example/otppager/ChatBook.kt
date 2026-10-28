@@ -5,8 +5,14 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
+/** Routes the default contact index to the current lineage: legacy `chat-index`, or an ACTIVE epoch's own index. */
+internal object EpochRouting {
+    fun index(context: Context): String = EpochState.activeIfStaged(context.noBackupFilesDir)?.index ?: "chat-index"
+    fun initialRoot(context: Context): String = EpochState.activeIfStaged(context.noBackupFilesDir)?.initialRoot ?: "station-v2"
+}
+
 /** Encrypted contact index. Existing station-v2 data stays in place; keys are never copied. */
-class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNamespace: String = "station-v2") {
+class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(context), legacyNamespace: String = EpochRouting.initialRoot(context)) {
     companion object { const val MAX_CHATS = 12 }
     private val context = context.applicationContext
     private val index = SecureStore(context, indexNamespace)
@@ -23,6 +29,8 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
         synchronized(VaultLifecycle.lock) {
             val saved = index.load()
             if (saved == null) {
+                // An ACTIVE epoch's index is created by activation only; a missing one is never recreated.
+                check(EpochState.activeIfStaged(context.noBackupFilesDir) == null) { "Contact index unavailable" }
                 // A lost index must not silently reopen a terminal legacy generation.
                 VaultLifecycle.requireActive(context.noBackupFilesDir, legacyNamespace)
                 claims.migrate(SecureStore(context, legacyNamespace))
@@ -87,11 +95,14 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
         val files = checkNotNull(directory.listFiles()) { "Contact storage unavailable" }.map { it.name }
         val keys = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         val aliases = keys.aliases().toList()
-        return generateSequence { "chat-" + UUID.randomUUID().toString().replace("-", "").take(20) }.first { candidate ->
+        val root = generateSequence { "chat-" + UUID.randomUUID().toString().replace("-", "").take(20) }.first { candidate ->
             chats().none { it.id == candidate || it.entryId == candidate } &&
                 files.none { it.startsWith("$candidate.") || it.startsWith("$candidate-") } &&
                 aliases.none { it == "otp-pager-$candidate" || it.startsWith("otp-pager-$candidate-") }
         }
+        // In an ACTIVE epoch the root is listed durably before its first key or file exists.
+        EpochState.activeIfStaged(directory)?.let { EpochManifests.appendRoot(directory, it.epoch, root) }
+        return root
     }
     /** A recovery action can only retry a known terminal generation, never retire an active contact. */
     internal fun recoverRetired(id: String): VaultRetirement.Result {

@@ -449,9 +449,22 @@ a repeat wipe needs a successor `OTPTERM2` (slice B3d). Added pure `ActiveManife
 ambiguity, unexplained records, second-wipe freeze, order independence, scope refusal).
 All 64 JVM unit tests pass locally; Android/emulator evidence belongs to #18's CI.
 
+### 2026-10-27 — B3b capability, freeze and routing wiring (#19)
+
+#18 passed all workflows; merge awaits the owner (an automated merge without review was
+declined by a permission check). #19 is stacked on it. Added `EpochManifests`/`EpochState`
+adapters, sealed capability with namespace-aware `requireCurrent`, lineage-aware
+`isFrozen` (in-process latch first), `ChatBook` default routing, manifest append in
+`freshNamespace`, and a guard stopping staging recovery from abandoning an activated
+stage. Without a manifest file every decision equals the previous presence rule.
+Tests: `CapabilityDecisionTest` (JVM), `EpochManifestsTest` (isolated directory: create,
+append, tamper, variants, strays, missing key, manifest-alone stays frozen/blocked),
+updated `VaultGenerationTest`. Local type-check and 66 JVM tests pass; emulator results
+belong to #19's CI.
+
 ## Next task
 
-Slice B3b (see ACTIVE_EPOCH_DESIGN.md): implement reviewed ACTIVE epoch capability/namespace allowlist publication and
+Slice B3c (see ACTIVE_EPOCH_DESIGN.md), then B3d–B3f. Original package wording: implement reviewed ACTIVE epoch capability/namespace allowlist publication and
 current-index routing together with immutable retained-cohort checks during normal
 pairing/messaging and repeat-wipe/forward-lineage handling. Follow the staged
 acceptance tasks in [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md). Do not enable fresh

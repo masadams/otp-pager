@@ -40,7 +40,7 @@ class SecureStore private constructor(context: Context, namespace: String, priva
         }
     }
     internal fun requireActive() {
-        VaultGeneration.requireCurrent(base.parentFile!!, generation)
+        VaultGeneration.requireCurrent(base.parentFile!!, generation, slot)
         VaultLifecycle.requireActive(base.parentFile!!, slot)
     }
     fun load(): JSONObject? = synchronized(VaultLifecycle.lock) { requireActive(); loadActive() }
@@ -74,7 +74,7 @@ class SecureStore private constructor(context: Context, namespace: String, priva
         catch (e: Exception) { file.failWrite(stream); throw IllegalStateException("Local storage commit failed. No new packet will be sent; restart the station before retrying.", e) }
     }
     private fun requireResettable() {
-        VaultGeneration.requireCurrent(base.parentFile!!, generation)
+        VaultGeneration.requireCurrent(base.parentFile!!, generation, slot)
         check(!GlobalRetirement.isFrozen(base.parentFile!!)) { "Global retirement blocks ordinary storage reset" }
     }
     fun forget() = synchronized(VaultLifecycle.lock) {

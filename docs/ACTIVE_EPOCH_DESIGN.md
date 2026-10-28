@@ -130,12 +130,31 @@ readback; invalidate caches. Only owners constructed afterwards capture `Active(
 Interruption before the manifest commit leaves PREPARED (frozen, retryable); after it, the
 lineage is `Active`. Background receiving stays off; physical pairing is required.
 
+## B3b implementation notes
+
+- `EpochManifests` reads/appends authenticated manifests; `create` (sequence 1) has no
+  production caller until B3e. `EpochState.observe` turns real evidence, staging and
+  manifest files into an observation; any read failure is `unreadable` → Frozen.
+- **Behaviour without a manifest is unchanged.** `isFrozen`, `capture` and `ChatBook`
+  routing consult the lineage only when an `epoch-active-*` file exists; otherwise they
+  apply exactly the previous presence rules with no extra reads. A stray manifest file now
+  counts as staging presence (fail closed).
+- An in-process freeze latch always wins over an ACTIVE lineage.
+- Lineage reads are uncached. B3e must add a validated cache before ACTIVE makes them a
+  per-operation path, and must clear or reconcile the in-process freeze latch left by the
+  preceding wipe (simplest: activation completes, then the process restarts).
+- Interim guard for B3d: interrupted-staging recovery refuses to abandon a stage that has a
+  manifest (an active epoch's index/claims delta are live state and retained guards); the
+  cleanup reports incomplete instead of destroying them.
+- End-to-end ACTIVE routing needs a real CLEANED terminal record, which only a full global
+  wipe produces; it is tested in B3e's exclusive host fixture, not in shared-process tests.
+
 ## Slice plan and gates
 
 | Slice | Content | Reachable by users? |
 | --- | --- | --- |
 | **B3a (this PR)** | Design; `ActiveManifestCodec`, `EpochLineage`, `EpochScope` pure logic + JVM tests | No |
-| B3b | Sealed capability, namespace-aware `requireCurrent`, lineage-based `isFrozen`, `ChatBook` routing, manifest append; adapters read real records | No (no manifest writer) |
+| **B3b (#19)** | Sealed capability, namespace-aware `requireCurrent`, lineage-based `isFrozen`, `ChatBook` routing, manifest append; adapters read real records | No (no manifest writer) |
 | B3c | Active retained-cohort reader and `PairingClaims` enforcement | No |
 | B3d | `OTPTERM2`, per-generation evidence keys, epoch-scoped wipe and recovery | No |
 | B3e | Activation transaction; interruption tests at every boundary; two full wipe→enroll cycles refusing old material | Backend only |

@@ -21,8 +21,13 @@ internal object GlobalRetirement {
     private val executor = Executors.newSingleThreadExecutor { task -> Thread(task, "pager-retire-all").apply { isDaemon = true } }
     fun marker(directory: File) = File(directory, JOURNAL)
     fun isFrozen(directory: File): Boolean = synchronized(VaultLifecycle.lock) {
-        hasLegacyIntent(directory) || RetirementEvidence.presence(directory) != RetirementEvidence.Presence.NONE ||
+        // An in-process freeze latch always wins, including during a wipe of an ACTIVE epoch.
+        if (directory.absolutePath in denied) return@synchronized true
+        val lifecycle = hasLegacyIntent(directory) || RetirementEvidence.presence(directory) != RetirementEvidence.Presence.NONE ||
             EnrollmentStaging.presence(directory) != EnrollmentStaging.Presence.NONE
+        // Lifecycle records stay forever once an epoch is ACTIVE, so only the lineage can unfreeze.
+        // Without a manifest file this is exactly the previous presence rule.
+        lifecycle && EpochState.resolveIfManifest(directory) !is EpochLineage.State.Active
     }
     internal fun hasLegacyIntent(directory: File): Boolean = synchronized(VaultLifecycle.lock) {
         directory.absolutePath in denied || VaultLifecycle.variants(marker(directory)).any {

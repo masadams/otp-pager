@@ -104,6 +104,7 @@ All paths below are under `app/src/main/java/org/example/otppager/`.
 | `ChatBook.kt` | Index schema 3 separates stable entryId from operational id; reload durable metadata per operation; confirmed per-contact replacement copies no old secrets |
 | `RetainedGuardReader.kt`, `RetainedGuardInventory.kt` | Exact authenticated immutable reuse metadata; strict parsing/bounds; no key creation, repair, operational-vault opening or missing-as-empty fallback |
 | `RetirementEvidenceCodec.kt`, `RetirementEvidence.kt` | `OTPTERM1`: INTENT/SEALED/CLEANED; one initial lineage, one-use pre-cleanup capture ticket. Authenticated roots must equal cleanup journal roots |
+| `EpochManifests.kt` (`EpochManifests`, `EpochState`), `VaultGeneration.kt`, `ChatBook.EpochRouting` | B3b wiring: authenticated manifest files; real-record observation; sealed `Legacy/Blocked/Active(epoch)` capability with namespace allowlist; lineage-aware `isFrozen`; default index routing. Without a manifest file all of these apply the previous rules |
 | `ActiveManifestCodec.kt`, `EpochLineage.kt` | Pure B3a core: `OTPACT01` canonical codec; lineage resolution with no head pointer (any inconsistency → Frozen); ACTIVE namespace allowlist. Not yet consulted by storage |
 | `EnrollmentStageCodec.kt`, `EnrollmentStaging.kt` | `OTPSTG01`: PREPARING/PREPARED/ABANDONED only; up to 32 attempts. Auth key + record permanently reserve each attempt; new empty AES slots only |
 
@@ -121,7 +122,9 @@ are outside any claim of guaranteed erasure.
 pure, unwired decision core: `ActiveManifestCodec` (`OTPACT01`), `EpochLineage.resolve`
 and `EpochScope.permits`, with JVM tests. **Next: B3b** — sealed capability,
 namespace-aware `requireCurrent`, lineage-based `isFrozen`, `ChatBook` routing and
-manifest append, with real-record adapters (still no manifest writer).
+manifest append, with real-record adapters (still no manifest writer). **B3b is in #19**
+(stacked on #18). **Next: B3c** — active retained-cohort reader and `PairingClaims`
+enforcement across every cohort in the chain.
 
 In parallel (documentation only, no destructive code): start the Phase 3/D peer-wipe
 specification so independent protocol review — the long-lead gate — can begin early.
