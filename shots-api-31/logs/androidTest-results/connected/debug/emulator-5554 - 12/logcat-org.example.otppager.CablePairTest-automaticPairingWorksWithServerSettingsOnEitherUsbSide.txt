@@ -1,0 +1,3 @@
+10-28 18:35:05.517  2222  2237 I TestRunner: started: automaticPairingWorksWithServerSettingsOnEitherUsbSide(org.example.otppager.CablePairTest)
+10-28 18:35:05.540   540   637 I RoleService: Granting default roles...
+10-28 18:35:07.115  2222  2237 I TestRunner: finished: automaticPairingWorksWithServerSettingsOnEitherUsbSide(org.example.otppager.CablePairTest)

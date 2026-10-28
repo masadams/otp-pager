@@ -1,0 +1,17 @@
+10-28 18:35:57.027  2222  2237 I TestRunner: started: orphanScanDoesNotDecryptDamagedVaultsOrDependOnAnIndex(org.example.otppager.RetirementRecoveryTest)
+10-28 18:35:57.033   344  1487 D resolv  :  Calling SSL_connect with mark 0xf0064
+10-28 18:35:57.033   344  1487 D resolv  :  SSL_connect returned -1 with mark 0xf0064
+10-28 18:35:57.033   344  1487 W resolv  : SSL_connect ssl error =5, mark 0xf0064: Connection refused
+10-28 18:35:57.033   344  1487 W resolv  : TLS Handshake failed
+10-28 18:35:57.033   344  1487 D resolv  : Initialization failed.
+10-28 18:35:57.033   344  1487 D resolv  : Destructor
+10-28 18:35:57.033   344  1487 D resolv  : Destructor completed
+10-28 18:35:57.033   344  1487 D resolv  : Failing all pending queries.
+10-28 18:35:57.033   344  1487 W resolv  : query failed
+10-28 18:35:57.033   344  1487 D resolv  : Destructor
+10-28 18:35:57.033   344  1487 D resolv  : Locked destruction procedure
+10-28 18:35:57.033   344  1487 D resolv  : Destructor completed
+10-28 18:35:57.033   344  1487 W resolv  : validateDnsTlsServer returned 0 for 10.0.2.3
+10-28 18:35:57.033   344  1487 D resolv  : Sending validation failure event on netId 100 for 10.0.2.3 with hostname {}
+10-28 18:35:57.033   344  1487 W resolv  : Validation failed
+10-28 18:35:57.056  2222  2237 I TestRunner: finished: orphanScanDoesNotDecryptDamagedVaultsOrDependOnAnIndex(org.example.otppager.RetirementRecoveryTest)

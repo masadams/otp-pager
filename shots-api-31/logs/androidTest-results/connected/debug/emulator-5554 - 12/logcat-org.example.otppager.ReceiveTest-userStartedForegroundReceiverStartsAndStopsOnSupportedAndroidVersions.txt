@@ -1,0 +1,24 @@
+10-28 18:35:46.789  2222  2237 I TestRunner: started: userStartedForegroundReceiverStartsAndStopsOnSupportedAndroidVersions(org.example.otppager.ReceiveTest)
+10-28 18:35:46.798   762   810 D SplashScreenView: Build android.window.SplashScreenView{e11bda6 V.E...... ......ID 0,0-0,0}
+10-28 18:35:46.798   762   810 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 18:35:46.798   762   810 D SplashScreenView: Branding: view: android.view.View{9ba83e7 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 18:35:46.804  2222  2222 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@8d0c47a in: PRE_ON_CREATE
+10-28 18:35:46.807  2222  2222 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@8d0c47a in: CREATED
+10-28 18:35:46.808  2222  2222 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@8d0c47a in: STARTED
+10-28 18:35:46.814   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3ffd69000 0x3ffee0000]
+10-28 18:35:46.821   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fef5e000 0x3ff0d5000]
+10-28 18:35:46.823   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3ff0d5000 0x3ff24c000]
+10-28 18:35:46.827   388   388 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 18:35:46.852   762  1045 D EGL_emulation: app_time_stats: avg=1162.07ms min=124.53ms max=2199.60ms count=2
+10-28 18:35:46.872  2222  2222 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@8d0c47a in: RESUMED
+10-28 18:35:46.892   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fca41000 0x3fcbb8000]
+10-28 18:35:46.895   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3ff24c000 0x3ff3c3000]
+10-28 18:35:46.900   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fd790000 0x3fd907000]
+10-28 18:35:46.914   540   570 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +119ms
+10-28 18:35:46.937   540  1379 W InputManager-JNI: Input channel object '84e35e3 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 18:35:46.968  2222  2222 D CompatibilityChangeReporter: Compat change id reported: 160794467; UID 10105; state: ENABLED
+10-28 18:35:47.014   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fdbf5000 0x3fdd6c000]
+10-28 18:35:47.017   540  2277 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 18:35:47.017   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3ffd69000 0x3ffee0000]
+10-28 18:35:47.031  2222  2222 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@8d0c47a in: PAUSED
+10-28 18:35:47.034  2222  2237 I TestRunner: finished: userStartedForegroundReceiverStartsAndStopsOnSupportedAndroidVersions(org.example.otppager.ReceiveTest)

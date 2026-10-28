@@ -1,0 +1,2 @@
+10-28 18:35:23.611  2222  2237 I TestRunner: started: encryptedDraftsExpireStayInTheirRoomAndNeverConsumePad(org.example.otppager.DraftTest)
+10-28 18:35:23.814  2222  2237 I TestRunner: finished: encryptedDraftsExpireStayInTheirRoomAndNeverConsumePad(org.example.otppager.DraftTest)

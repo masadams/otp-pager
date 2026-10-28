@@ -1,0 +1,14 @@
+10-28 18:35:48.862  2222  2237 I TestRunner: started: renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates(org.example.otppager.RenewalTest)
+10-28 18:35:49.127  1554  2120 I Dialer  : OmtpVvmCarrierCfgHlpr - OmtpEvent:CONFIG_STATUS_SMS_TIME_OUT
+10-28 18:35:49.127  1554  1554 I Dialer  : RetryPolicy - discarding deferred status: configuration_state=4
+10-28 18:35:49.128  1554  1554 I Dialer  : VvmTaskExecutor - no more tasks, stopping service if no task are added in 5000 millis
+10-28 18:35:49.130  1554  1554 I Dialer  : VvmTaskReceiver - task received
+10-28 18:35:49.130  1554  1554 I Dialer  : VvmTaskReceiver - TaskExecutor already running
+10-28 18:35:49.130  1554  1554 I Dialer  : Task.createTask - create task:com.android.voicemail.impl.ActivationTask
+10-28 18:35:49.130  1554  1554 I Dialer  : RetryPolicy - retry #1 for com.android.voicemail.impl.ActivationTask@5c42283 queued, executing in 5000
+10-28 18:35:49.130  1554  1554 I Dialer  : VvmTaskExecutor - com.android.voicemail.impl.ActivationTask@5c42283 added
+10-28 18:35:49.130  1554  1554 I Dialer  : VvmTaskExecutor - minimal wait time:5000
+10-28 18:35:49.130  1554  1554 I Dialer  : VvmTaskExecutor - sleep for 5000 millis
+10-28 18:35:49.727   540  1379 D WifiNl80211Manager: Scan result ready event
+10-28 18:35:49.727   540  1379 D WifiNative: Scan result ready event
+10-28 18:35:52.790  2222  2237 I TestRunner: finished: renewalKeepsIdentityAndHistoryChangesPadAndRecoversBothInterruptedStates(org.example.otppager.RenewalTest)

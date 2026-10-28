@@ -1,0 +1,9 @@
+10-28 18:35:54.176  2222  2237 I TestRunner: started: replacementIsEmptyKeepsStableEntryAndClaimsAndCannotBeUndoneByStaleBook(org.example.otppager.RetiredContactTest)
+10-28 18:35:54.182  1339  1668 I VoicemailNotifier: receivers for android.intent.action.PROVIDER_CHANGED :[]
+10-28 18:35:54.182  1554  2120 I Dialer  : VvmActivationTask - VVM content provider configured - vvm_type_cvvm
+10-28 18:35:54.182  1554  2120 I Dialer  : OmtpVvmCarrierCfgHlpr - OmtpEvent:CONFIG_ACTIVATING
+10-28 18:35:54.184  1339  1668 I VoicemailNotifier: receivers for android.intent.action.PROVIDER_CHANGED :[]
+10-28 18:35:54.197   944   967 D SmsNumberUtils: enter filterDestAddr. destAddr="[BajqU4K5_YhSYbs-7QUn0dOwcmI]"
+10-28 18:35:54.199   944   967 D SmsNumberUtils: destAddr is not formatted.
+10-28 18:35:54.199   944   967 D SmsNumberUtils: leave filterDestAddr, new destAddr="[BajqU4K5_YhSYbs-7QUn0dOwcmI]"
+10-28 18:35:54.513  2222  2237 I TestRunner: finished: replacementIsEmptyKeepsStableEntryAndClaimsAndCannotBeUndoneByStaleBook(org.example.otppager.RetiredContactTest)

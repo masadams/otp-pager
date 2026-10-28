@@ -1,0 +1,32 @@
+10-28 18:35:42.570  2222  2237 I TestRunner: started: scanRequiresReviewThenSavesOppositeRoleWithoutAnotherManualStep(org.example.otppager.PairingInterfaceTest)
+10-28 18:35:42.584   762   810 D SplashScreenView: Build android.window.SplashScreenView{87b9688 V.E...... ......ID 0,0-0,0}
+10-28 18:35:42.584   762   810 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 18:35:42.584   762   810 D SplashScreenView: Branding: view: android.view.View{9acb821 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 18:35:42.593  2222  2222 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@4d322f2 in: PRE_ON_CREATE
+10-28 18:35:42.601   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fdbf5000 0x3fdd6c000]
+10-28 18:35:42.608   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fd790000 0x3fd907000]
+10-28 18:35:42.609   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fd907000 0x3fda7e000]
+10-28 18:35:42.610  2222  2222 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@4d322f2 in: CREATED
+10-28 18:35:42.610  2222  2222 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@4d322f2 in: STARTED
+10-28 18:35:42.611   388   388 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 18:35:42.667  2222  2222 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@4d322f2 in: RESUMED
+10-28 18:35:42.685   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3ff365000 0x3ff4dc000]
+10-28 18:35:42.695   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fca41000 0x3fcbb8000]
+10-28 18:35:42.698  1071  1648 W FrameTracker: Missing SF jank callback for vsyncId: 2440
+10-28 18:35:42.712   540   570 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +134ms
+10-28 18:35:42.715   540   618 W InputManager-JNI: Input channel object '90d230a Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 18:35:42.718   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fd790000 0x3fd907000]
+10-28 18:35:43.108   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fcbb8000 0x3fcd65000]
+10-28 18:35:43.110   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fcd65000 0x3fcf12000]
+10-28 18:35:43.115   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fcf12000 0x3fd0bf000]
+10-28 18:35:43.158   540   618 W InputManager-JNI: Input channel object 'd0cfed3 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 18:35:43.170   762  1045 D EGL_emulation: app_time_stats: avg=350.42ms min=148.53ms max=539.61ms count=4
+10-28 18:35:43.281   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fcbb8000 0x3fcd65000]
+10-28 18:35:43.285   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fcd65000 0x3fcf12000]
+10-28 18:35:43.286   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fcf12000 0x3fd0bf000]
+10-28 18:35:43.309   540  1262 W InputManager-JNI: Input channel object 'bdcd896 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 18:35:43.406   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fd907000 0x3fda7e000]
+10-28 18:35:43.409   540  2277 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 18:35:43.410   362   464 D goldfish-address-space: claimShared: Ask to claim region [0x3fdbf5000 0x3fdd6c000]
+10-28 18:35:43.420  2222  2222 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@4d322f2 in: PAUSED
+10-28 18:35:43.439  2222  2237 I TestRunner: finished: scanRequiresReviewThenSavesOppositeRoleWithoutAnotherManualStep(org.example.otppager.PairingInterfaceTest)

@@ -1,0 +1,3 @@
+10-28 18:35:37.459  2222  2237 I TestRunner: started: inVaultPadMigratesWithUsedSlotsAlreadyErased(org.example.otppager.PadStorageTest)
+10-28 18:35:37.465   763   929 I PermissionControllerServiceImpl: Updating user sensitive for user 0
+10-28 18:35:37.968  2222  2237 I TestRunner: finished: inVaultPadMigratesWithUsedSlotsAlreadyErased(org.example.otppager.PadStorageTest)

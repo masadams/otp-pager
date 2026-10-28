@@ -1,0 +1,10 @@
+10-28 18:35:47.091  2222  2237 I TestRunner: started: receiverPersistsUnreadAndReceiptsWithoutAnActivityAndHonorsPause(org.example.otppager.ReceiveTest)
+10-28 18:35:47.101  1071  1082 I OpenGLRenderer: Davey! duration=2443ms; Flags=0, FrameTimelineVsyncId=2666, IntendedVsync=89255867673, Vsync=89255867673, InputEventId=0, HandleInputStart=89258947868, AnimationStart=89258948278, PerformTraversalsStart=89259003361, DrawStart=89259194017, FrameDeadline=89305867671, FrameInterval=89258946215, FrameStartTime=16666666, SyncQueued=89259341593, SyncStart=89259367882, IssueDrawCommandsStart=89259419198, SwapBuffers=89260136367, FrameCompleted=91699824293, DequeueBufferDuration=3557, QueueBufferDuration=987134, GpuCompleted=91699824293, SwapBuffersCompleted=89272473675, DisplayPresentTime=0,
+10-28 18:35:47.117  1071  1082 I OpenGLRenderer: Davey! duration=2443ms; Flags=0, FrameTimelineVsyncId=2669, IntendedVsync=89272534339, Vsync=89272534339, InputEventId=0, HandleInputStart=89284735472, AnimationStart=89284742626, PerformTraversalsStart=89284742866, DrawStart=89285138084, FrameDeadline=89322534337, FrameInterval=89284732937, FrameStartTime=16666666, SyncQueued=89285227401, SyncStart=89285260482, IssueDrawCommandsStart=89285304465, SwapBuffers=89291579442, FrameCompleted=91716440241, DequeueBufferDuration=3757, QueueBufferDuration=1662956, GpuCompleted=91716440241, SwapBuffersCompleted=89300673043, DisplayPresentTime=0,
+10-28 18:35:47.135   362   414 D goldfish-address-space: claimShared: Ask to claim region [0x3ffee0000 0x3fff3e000]
+10-28 18:35:47.158   344   344 I netd    : trafficSwapActiveStatsMap() <23.62ms>
+10-28 18:35:47.160   344   344 I netd    : tetherGetStats() -> {[]} <0.61ms>
+10-28 18:35:47.161   344   344 I netd    : bandwidthSetGlobalAlert(2097152) <0.06ms>
+10-28 18:35:47.163   344   344 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.73ms>
+10-28 18:35:47.164   344   344 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.84ms>
+10-28 18:35:47.965  2222  2237 I TestRunner: finished: receiverPersistsUnreadAndReceiptsWithoutAnActivityAndHonorsPause(org.example.otppager.ReceiveTest)

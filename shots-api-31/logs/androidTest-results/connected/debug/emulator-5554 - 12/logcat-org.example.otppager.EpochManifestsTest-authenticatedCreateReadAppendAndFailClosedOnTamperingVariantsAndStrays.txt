@@ -1,0 +1,2 @@
+10-28 18:35:24.058  2222  2237 I TestRunner: started: authenticatedCreateReadAppendAndFailClosedOnTamperingVariantsAndStrays(org.example.otppager.EpochManifestsTest)
+10-28 18:35:24.142  2222  2237 I TestRunner: finished: authenticatedCreateReadAppendAndFailClosedOnTamperingVariantsAndStrays(org.example.otppager.EpochManifestsTest)

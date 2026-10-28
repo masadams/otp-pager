@@ -1,0 +1,2 @@
+10-28 18:35:57.703  2222  2237 I TestRunner: started: corruptVaultFailsClosedAndReplayWindowSurvivesReopen(org.example.otppager.StorageTest)
+10-28 18:35:57.734  2222  2237 I TestRunner: finished: corruptVaultFailsClosedAndReplayWindowSurvivesReopen(org.example.otppager.StorageTest)

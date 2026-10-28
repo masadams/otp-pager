@@ -1,0 +1,2 @@
+10-28 18:35:57.164  2222  2237 I TestRunner: started: unreadableJournalEnumerationDisablesVaultAccessWithoutResettingData(org.example.otppager.RetirementStartupTest)
+10-28 18:35:57.183  2222  2237 I TestRunner: finished: unreadableJournalEnumerationDisablesVaultAccessWithoutResettingData(org.example.otppager.RetirementStartupTest)

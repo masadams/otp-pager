@@ -1,0 +1,2 @@
+10-28 18:35:57.126  2222  2237 I TestRunner: started: oneIncompleteRetirementDoesNotStopRecoveryOrDisableUnrelatedContacts(org.example.otppager.RetirementStartupTest)
+10-28 18:35:57.162  2222  2237 I TestRunner: finished: oneIncompleteRetirementDoesNotStopRecoveryOrDisableUnrelatedContacts(org.example.otppager.RetirementStartupTest)

@@ -1,0 +1,9 @@
+10-28 18:35:54.032  2222  2237 I TestRunner: started: authenticatedCiphertextTamperingAndCapacityLimitsFailClosed(org.example.otppager.RetainedGuardReaderTest)
+10-28 18:35:54.048   187  2254 E keystore2: keystore2::error: In KeystoreOperation::finish
+10-28 18:35:54.048   187  2254 E keystore2:
+10-28 18:35:54.048   187  2254 E keystore2: Caused by:
+10-28 18:35:54.048   187  2254 E keystore2:     0: In finish: KeyMint::finish failed.
+10-28 18:35:54.048   187  2254 E keystore2:     1: Error::Km(ErrorCode(-30))
+10-28 18:35:54.169  1554  2120 I Dialer  : VvmTaskExecutor - executing task com.android.voicemail.impl.ActivationTask@5c42283
+10-28 18:35:54.169  1554  2120 I Dialer  : PreOMigrationHandler - ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, ***, UserHandle{0} already migrated
+10-28 18:35:54.174  2222  2237 I TestRunner: finished: authenticatedCiphertextTamperingAndCapacityLimitsFailClosed(org.example.otppager.RetainedGuardReaderTest)
