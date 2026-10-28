@@ -108,11 +108,11 @@ fan-out groups; remaining security/reliability/usability work.
 | 5 | **Fixed-size packets** | Message length should leak nothing to the relay | **Checked:** every pad packet is 5,540 base64 chars whatever it carries (test added); remaining relay-visible metadata listed in [PAD_PROTOCOL.md](PAD_PROTOCOL.md) |
 | 6 | **Relay failover** | Availability with more than one relay | Ordered relay list per chat; same capability on each |
 | 7 | **Group chats** | Owner request | Fan-out: each message encrypted separately per member with the existing pairwise pads; no shared pads between 3+ phones |
-| 8 | **Split-relay experiment** | Neither relay sees both phones' connections | Post via relay A, fetch via relay B, private link between them (e.g. ZeroTier); timing still links traffic without delays/cover traffic |
+| 8 | **Split-relay experiment** | Neither relay sees both phones' connections | **Planned:** design and owner prerequisites in [PRIVATE_NETWORK.md](PRIVATE_NETWORK.md#split-relay-experiment-pipeline-item-8-plan-not-implemented); needs a second relay and private link first |
 | 9 | **Entropy and wording** | Pads come from SecureRandom, not a true OTP | Optional extra entropy mixed into pad generation; plainer user-facing wording |
 | 10 | **Relay storage scaling** | Whole state file rewritten per message | Append-only log or per-mailbox files |
 | 11 | **Owner tasks** | Cannot be done from CI | Release signing key, first signed release, two-phone hands-on test incl. power loss |
-| 12 | **Community review package** | Owner's chosen review route | Threat model, specs, vectors, known limits, how to test |
+| 12 | **Community review package** | Owner's chosen review route | **Started:** [REVIEW_PACKAGE.md](REVIEW_PACKAGE.md): scope, specs and vectors per area, how to test, known limits, open questions |
 
 Already done on 2026-10-28: relay strict claims (#34, F06 first step); base image pinned (#25).
 Per-device relay credentials were considered and dropped: both phones share the pad and
