@@ -122,10 +122,34 @@ internal object PeerWipe {
     }
     fun forget(context: Context, root: String) { records(context, "out").filter { read(it)?.optString("root") == root }.forEach { it.delete() } }
 
+    /**
+     * Strict chats: before local destruction, queue deletion of this phone's relay share (always)
+     * and the friend's share (only with peer wipe on). The record holds the share rooms and the
+     * control capability, never a share. Without its share a strict vault can never be opened.
+     */
+    fun prepareShareDeletion(context: Context, root: String, stored: JSONObject): Boolean = try {
+        val w = stored.optJSONObject("strict")
+        if (w == null) false else {
+            val rooms = org.json.JSONArray().put(w.getString("room"))
+            if (enabled(context) && w.has("peerRoom")) rooms.put(w.getString("peerRoom"))
+            write(File(directory(context), "del-$root.json"), JSONObject().put("version", 1).put("kind", "del").put("root", root)
+                .put("endpoint", w.getString("endpoint")).put("capability", w.getString("capability")).put("rooms", rooms)
+                .put("created", System.currentTimeMillis()))
+            true
+        }
+    } catch (_: Exception) { false }
     /** Post pending frames and match acknowledgements. Best effort; every record is independent. */
     fun pump(context: Context, relay: RelayTransport = RelayClient, now: Long = System.currentTimeMillis()) {
+        for (file in records(context, "del")) try { pumpDelete(file, relay, now) } catch (_: Exception) {}
         for (file in records(context, "out")) try { pumpOut(file, relay, now) } catch (_: Exception) {}
         for (file in records(context, "ack")) try { pumpAck(file, relay, now) } catch (_: Exception) {}
+    }
+    private fun pumpDelete(file: File, relay: RelayTransport, now: Long) {
+        val record = read(file) ?: return
+        if (now - record.getLong("created") > EXPIRY_MS) { file.delete(); return } // The relay deadline has long removed it.
+        val rooms = record.getJSONArray("rooms")
+        for (i in 0 until rooms.length()) relay.share(record.getString("endpoint"), rooms.getString(i), record.getString("capability"), "DELETE")
+        file.delete()
     }
     private fun post(relay: RelayTransport, record: JSONObject, frame: String) {
         relay.request(record.getString("endpoint"), record.getString("room"), record.getString("credential"), "POST", JSONObject().put("packet", frame).toString())

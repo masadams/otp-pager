@@ -26,6 +26,7 @@ internal object LocalWipe {
                 // Best effort: an empty registry lets a never-used phone produce complete wipe evidence.
                 try { book?.ensureClaimsRegistry() } catch (_: Exception) {}
                 try { book?.preparePeerWipes() } catch (_: Exception) {}
+                try { book?.prepareShareDeletions() } catch (_: Exception) {}
                 GlobalRetirement.submit(context.applicationContext).get()
             }
             try { done(outcome) } catch (_: Exception) {}
@@ -36,7 +37,7 @@ internal object LocalWipe {
     /** Network is never on the wipe thread: destruction must not wait on the relay (S05). */
     fun sendPeerRequests(context: android.content.Context) {
         val app = context.applicationContext
-        if (PeerWipe.enabled(app)) sender.execute { try { PeerWipe.pump(app) } catch (_: Exception) {} }
+        sender.execute { try { PeerWipe.pump(app) } catch (_: Exception) {} } // Also strict share deletions, which are always on.
     }
 
     /** [done] runs on the wipe thread; post to the UI thread before touching views. */

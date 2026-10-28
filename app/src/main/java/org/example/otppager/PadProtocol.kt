@@ -39,6 +39,7 @@ object PadProtocol {
     }
     fun id(pad: ByteArray): ByteArray { require(validSize(pad.size)); return MessageDigest.getInstance("SHA-256").digest(pad).copyOf(16) }
     fun hex(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(it) }
+    fun hexBytes(value: String): ByteArray { require(value.length % 2 == 0 && Regex("[a-f0-9]*").matches(value)); return ByteArray(value.length / 2) { value.substring(it * 2, it * 2 + 2).toInt(16).toByte() } }
     private fun offset(pad: ByteArray, role: Char, counter: Long): Int {
         require(role == 'A' || role == 'B'); require(counter in 1..slots(pad).toLong()) { "Pad exhausted; exchange a fresh pad" }
         return (if (role == 'A') 0 else pad.size / 2) + (counter.toInt() - 1) * STRIDE

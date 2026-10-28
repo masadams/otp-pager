@@ -365,6 +365,18 @@ Physical hardware regression is still open: record both models, OS/build version
 host direction, cable, permission sequence and failure stage; test interruption,
 renewal and power loss without clearing existing operational pads.
 
+## Strict protocol core follow-up — 2026-10-28
+
+Branch `feat/strict-chat-protocol-core` stacks on #44. Read
+[STRICT_CHAT_PROTOCOL.md](STRICT_CHAT_PROTOCOL.md): only the canonical frame codec,
+pinned-signer verification and one-use pending-unlock guard are implemented and
+unwired. Python fixtures are consumed by JVM tests; CI checks regeneration. This
+is not independent review. No strict relay/storage/UI feature is available.
+Next: review the candidate enrollment contract, then relay persistence/revocation,
+strict envelope plus separately accessible wipe control, and physical enrollment.
+Use one authority, no inactivity deletion, fresh physical pairings and a maximum
+60-second foreground lease. Physical/upgrade/security claims remain outstanding.
+
 ## Retired chat dismissal — 2026-10-28
 
 Branch `fix/dismiss-retired-chats`, based on main after #50, implements removal of

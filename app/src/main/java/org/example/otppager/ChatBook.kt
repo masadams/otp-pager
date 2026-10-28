@@ -23,7 +23,7 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
     data class Chat(val id: String, val name: String, val entryId: String) {
         constructor(id: String, name: String) : this(id, name, id)
     }
-    data class Summary(val unread: Int = 0, val queued: Int = 0, val problem: Boolean = false, val draft: Boolean = false, val paired: Boolean = false, val eligible: Boolean = true, val retired: Boolean = false)
+    data class Summary(val unread: Int = 0, val queued: Int = 0, val problem: Boolean = false, val draft: Boolean = false, val paired: Boolean = false, val eligible: Boolean = true, val retired: Boolean = false, val locked: Boolean = false)
     private val summaries = java.util.concurrent.ConcurrentHashMap<String, Summary>()
     init {
         synchronized(VaultLifecycle.lock) {
@@ -168,6 +168,9 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
         }
         // Unreviewed peer wipe (setting off by default): seal the request before destruction. Never blocks it.
         if (PeerWipe.enabled(context)) PeerWipe.prepare(context, id, try { engine(id).state } catch (_: Exception) { null })
+        // A strict chat's relay share is deleted too (this phone's always; the friend's with peer wipe on).
+        try { SecureStore(context, id).load()?.let { PeerWipe.prepareShareDeletion(context, id, it) } } catch (_: Exception) {}
+        StrictChat.forget(id)
         // Retirement dispatches cancellation; never call it while holding an outer lifecycle lock.
         val result = VaultRetirement.retireContact(context, id)
         refresh(id)
@@ -178,6 +181,11 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
     internal fun preparePeerWipes() {
         if (!PeerWipe.enabled(context)) return
         for (chat in chats()) PeerWipe.prepare(context, chat.id, try { engine(chat.id).state } catch (_: Exception) { null })
+    }
+    /** Wipe all: queue strict share deletion for every strict chat, before the freeze. */
+    internal fun prepareShareDeletions() {
+        for (chat in chats()) try { SecureStore(context, chat.id).load()?.let { PeerWipe.prepareShareDeletion(context, chat.id, it) } } catch (_: Exception) {}
+        StrictChat.lockAll()
     }
     fun forgetActive() = synchronized(VaultLifecycle.lock) { ChatDraft(SecureStore(context, active().id).sibling("draft")).clear(); SecureStore(context, active().id).forget(); refresh() }
     fun summary(id: String): Summary {
@@ -207,6 +215,7 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
                 if (out == null) 0 else (0 until out.length()).count { live(out.getJSONObject(it)) && out.getJSONObject(it).getString("status") == "queued" }, draft = draft,
                 paired = s != null && StationEngine.hasPad(s) && s.has("peerDevice") && s.optBoolean("padVerified") && s.optBoolean("peerReady") && s.optBoolean("cableComplete", true) && !s.optBoolean("renewalPaused") && !s.optBoolean("relayRevoked"),
                 eligible = s == null || (!StationEngine.hasPad(s) && s.getLong("counter") == 0L && s.getLong("high") == 0L && s.getJSONArray("inbox").length() == 0 && s.getJSONArray("outbox").length() == 0))
+        } catch (_: StrictChat.Locked) { summaries[id] = Summary(locked = true, paired = true, eligible = false)
         } catch (_: Exception) { summaries[id] = Summary(problem = true) }
     }
     private fun refreshSummaries() { chats().forEach { refresh(it.id) } }
@@ -219,6 +228,7 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
             val peer = engine(chat.id, relay)
             if (peer.state != null && peer.view().pairingComplete) peer.sync()
             refresh(chat.id)
+        } catch (_: StrictChat.Locked) { summaries[chat.id] = Summary(locked = true, paired = true, eligible = false) // Never unlocked in the background.
         } catch (_: Exception) { summaries[chat.id] = summary(chat.id).copy(problem = true) }
     }
 }

@@ -10,6 +10,11 @@ interface RelayTransport {
     /** False means an older relay without claims. Never downgrade a previously protected chat. */
     fun scope(endpoint: String, room: String, bootstrap: String, capability: String): Boolean = false
     fun request(endpoint: String, room: String, token: String, method: String, body: String? = null, cursor: Long = 0): String
+    /** Strict-chat share store: PUT `/v1/share/<room>` (enroll once), POST `…/unlock` (signed lease), DELETE. */
+    fun share(endpoint: String, room: String, capability: String, method: String, body: String? = null, unlock: Boolean = false): String =
+        throw IllegalStateException("This connection cannot reach strict-chat key shares")
+    /** The relay's strict-chat authority public key (base64 SPKI), pinned at pairing. */
+    fun authority(endpoint: String): String = throw IllegalStateException("This connection cannot reach the strict-chat authority")
 }
 object RelayClient : RelayTransport {
     /** Shared production serializer; Android JSON may escape '/' in base64 ciphertext. */
@@ -20,6 +25,20 @@ object RelayClient : RelayTransport {
             ContactOperations.open(store.operationKey, store::requireActive).use { scopeWith(endpoint, room, bootstrap, capability, it, connection) }
         override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String =
             ContactOperations.open(store.operationKey, store::requireActive).use { exchange(endpoint, room, token, method, body, cursor, lease = it, connection = connection) }
+        override fun share(endpoint: String, room: String, capability: String, method: String, body: String?, unlock: Boolean): String =
+            ContactOperations.open(store.operationKey, store::requireActive).use { exchange(endpoint, room, capability, method, body, 0, if (unlock) "/unlock" else "", lease = it, connection = connection, kind = "share") }
+        override fun authority(endpoint: String): String = this@RelayClient.authority(endpoint)
+    }
+    override fun share(endpoint: String, room: String, capability: String, method: String, body: String?, unlock: Boolean): String =
+        exchange(endpoint, room, capability, method, body, 0, if (unlock) "/unlock" else "", kind = "share")
+    override fun authority(endpoint: String): String {
+        val conn = openConnection(URL("${Protocol.endpoint(endpoint)}/v1/strict/authority"))
+        conn.instanceFollowRedirects = false; conn.connectTimeout = 8000; conn.readTimeout = 10000
+        try {
+            if (conn.responseCode != 200) throw RelayHttpException(conn.responseCode)
+            val text = conn.inputStream.use { String(it.readBytes(), Charsets.UTF_8) }
+            return org.json.JSONObject(text).getString("key").also { IdentityProtocol.publicKey(it) }
+        } finally { conn.disconnect() }
     }
     override fun scope(endpoint: String, room: String, bootstrap: String, capability: String): Boolean =
         scopeWith(endpoint, room, bootstrap, capability, null)
@@ -38,9 +57,10 @@ object RelayClient : RelayTransport {
     override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String =
         exchange(endpoint, room, token, method, body, cursor)
     private fun openConnection(url: URL) = url.openConnection() as HttpsURLConnection
-    private fun exchange(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long, path: String = "", lease: ContactOperations.Lease? = null, connection: (URL) -> HttpsURLConnection = ::openConnection): String {
-        val suffix = if (method == "GET") "?after=$cursor&limit=50" else ""
-        val conn = connection(URL("$endpoint/v1/mailbox/$room$path$suffix"))
+    private fun exchange(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long, path: String = "", lease: ContactOperations.Lease? = null, connection: (URL) -> HttpsURLConnection = ::openConnection, kind: String = "mailbox"): String {
+        require(kind in listOf("mailbox", "share"))
+        val suffix = if (method == "GET" && kind == "mailbox") "?after=$cursor&limit=50" else ""
+        val conn = connection(URL("$endpoint/v1/$kind/$room$path$suffix"))
         lease?.onCancel { conn.disconnect() }
         lease?.check()
         conn.instanceFollowRedirects = false

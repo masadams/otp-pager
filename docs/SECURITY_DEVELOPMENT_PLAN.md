@@ -299,6 +299,16 @@ This is a review candidate, not a verified fix for the owner's physical regressi
 Android instrumentation, signed upgrade and two-phone/power-loss evidence remain
 separate from local compilation/JVM results recorded in the PR.
 
+## Strict protocol core candidate — 2026-10-28
+
+The #44 follow-up `feat/strict-chat-protocol-core` adds the unwired OTPSTR01 codec,
+signer binding and one-use unlock response guard with Python/Kotlin test fixtures.
+See [candidate contract](STRICT_CHAT_PROTOCOL.md). It preserves S01–S12 by making
+no operational pad/storage/relay changes. Strict enrollment, relay authorization,
+locked envelopes, control separation and UI are still proposed. Developer-produced
+vectors do not satisfy independent review; physical offline-lock, wipe, upgrade and
+power-loss acceptance gates remain open. No inactivity share expiry is selected.
+
 ## Retired chat dismissal — 2026-10-28
 
 Branch `fix/dismiss-retired-chats`, based on main after #50, implements removal of
