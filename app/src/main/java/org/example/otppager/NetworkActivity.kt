@@ -1298,7 +1298,8 @@ class NetworkActivity : Activity() {
         val hint = when {
             view.relayRevoked -> "Access was revoked. Open friend details."
             !view.pairingComplete -> "Pairing was interrupted. Tap for help."
-            !view.setupComplete && view.messages.isNotEmpty() -> "Pair your devices to start this conversation."
+            // A brand-new chat's empty state already explains pairing; half-paired chats still need the hint.
+            !view.setupComplete && (view.messages.isNotEmpty() || view.padCheck != null) -> "Pair your devices to start this conversation."
             view.padRemaining == 0 -> "Message keys used up. Tap to renew."
             (view.padRemaining ?: Int.MAX_VALUE) <= 10 -> "Message keys are running low. Tap to renew."
             else -> ""
