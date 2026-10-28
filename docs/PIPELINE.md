@@ -114,3 +114,8 @@ fan-out groups; remaining security/reliability/usability work.
 Already done on 2026-10-28: relay strict claims (#34, F06 first step); base image pinned (#25).
 Per-device relay credentials were considered and dropped: both phones share the pad and
 secret, so revoking one phone's relay access protects nothing extra.
+
+Strict item 4 continuation: [OTPSTR01 candidate](STRICT_CHAT_PROTOCOL.md) implements
+only an unwired codec/response guard and development vectors on a follow-up to #44.
+No strict-chat relay, storage or UI is implemented. One authority, no inactivity
+share deletion, maximum 60-second foreground lease, new physical enrollment only.

@@ -37,7 +37,9 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Check enrollment protocol design model (not Android activation)
-        run: python3 scripts/test_enrollment_protocol.py
+        run: |
+          python3 scripts/test_enrollment_protocol.py
+          python3 scripts/strict_chat_vectors.py --check
       - name: Assemble debug APK
         run: gradle --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
       - uses: actions/upload-artifact@v4
