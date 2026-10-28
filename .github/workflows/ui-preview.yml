@@ -1,0 +1,24 @@
+name: UI preview screenshots
+# THROWAWAY (not for merge): resolve the node:22-alpine multi-arch digest for pinning.
+on:
+  push:
+    branches: ['ui-preview/**']
+permissions:
+  contents: write
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve and publish digest
+        env:
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          mkdir out && cd out && git init -q -b shots
+          docker buildx imagetools inspect node:22-alpine > inspect.txt
+          docker buildx imagetools inspect node:22-alpine --format '{{json .Manifest}}' > manifest.json
+          docker pull -q node:22-alpine >/dev/null && docker run --rm node:22-alpine node --version > node-version.txt
+          git add -A
+          git -c user.name=ui-preview -c user.email=ui-preview@users.noreply.github.com commit -q -m digest
+          git push -f "https://x-access-token:${TOKEN}@github.com/${REPO}.git" "shots:refs/heads/ui-shots/digest"
