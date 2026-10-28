@@ -7,6 +7,8 @@ services:
     environment:
       RELAY_TOKEN: ${RELAY_TOKEN:?Set a random relay access token}
       DATA_DIR: /data
+      # Set to 1 once every chat shows "Private chat": the setup token then only creates claims.
+      RELAY_STRICT_CLAIMS: ${RELAY_STRICT_CLAIMS:-0}
     expose:
       - '8080'
     volumes:
