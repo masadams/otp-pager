@@ -109,7 +109,7 @@ fan-out groups; remaining security/reliability/usability work.
 | 6 | **Relay failover** | Availability with more than one relay | **In review:** up to two backup relays per chat; read all, send via primary then backups; v8 copies them at pairing; see [RELAY_FAILOVER.md](RELAY_FAILOVER.md) |
 | 7 | **Group chats** | Owner request | **In review:** labels on pairwise chats, one pad copy per member, membership in each member vault, manual member linking; see [GROUP_CHATS.md](GROUP_CHATS.md) |
 | 8 | **Split-relay experiment** | Neither relay sees both phones' connections | Post via relay A, fetch via relay B, private link between them (e.g. ZeroTier); timing still links traffic without delays/cover traffic |
-| 9 | **Entropy and wording** | Pads come from SecureRandom, not a true OTP | Optional extra entropy mixed into pad generation; plainer user-facing wording |
+| 9 | **Entropy and wording** | Pads come from SecureRandom, not a true OTP | **In review:** pairing v9 mixes a peer seed into every streamed pad (AES-CTR keystream XOR); plainer wording in pairing help and PAD_PROTOCOL.md |
 | 10 | **Relay storage scaling** | Whole state file rewritten per message | Append-only log or per-mailbox files |
 | 11 | **Owner tasks** | Cannot be done from CI | Release signing key, first signed release, two-phone hands-on test incl. power loss |
 | 12 | **Community review package** | Owner's chosen review route | Threat model, specs, vectors, known limits, how to test |

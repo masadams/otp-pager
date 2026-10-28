@@ -17,8 +17,9 @@ object CableProtocol {
      * v6: both phones also exchange peer-wipe control keys (docs/PEER_WIPE_PROTOCOL.md §1).
      * v7: both phones state the strict-chat mode; it must match and is bound into the code.
      * v8: the phone that supplies the server also supplies its backup relays (signed setup).
+     * v9: both phones contribute randomness to the pad (see [mixer]).
      */
-    const val VERSION = 8
+    const val VERSION = 9
     private const val CHUNK = 32768
     private const val CHUNK_TAG: Byte = 0x50
     private const val LIMIT = 4096 // Public hello/approval frames only; encrypted material has a separate bound.
@@ -82,9 +83,27 @@ object CableProtocol {
      * Host: generates the pad in chunks (random slots, zero tails past the last whole slot), writes
      * each chunk to its own pad storage and sends it. The whole pad is never in memory.
      */
-    private fun sendPad(channel: CableSession, output: OutputStream, engine: StationEngine, size: Int, progress: (String) -> Unit): PadMaterial.Installed {
+    /**
+     * Pipeline item 9: both phones contribute randomness. The host XORs its own SecureRandom
+     * output with an AES-256-CTR keystream keyed by SHA-256(label ‖ peer seed ‖ host seed). The
+     * peer's 32-byte seed arrives inside the authenticated pairing channel. A weak or
+     * predictable random generator on one phone alone then no longer determines the pad. This
+     * is defence in depth: the result is still computational randomness, not a certified
+     * true-random one-time pad.
+     */
+    internal fun mixer(peerSeed: ByteArray, ownSeed: ByteArray): javax.crypto.Cipher {
+        require(peerSeed.size == 32 && ownSeed.size == 32)
+        val key = MessageDigest.getInstance("SHA-256").digest("OTP Pager pad mix v1".toByteArray(Charsets.US_ASCII) + peerSeed + ownSeed)
+        return try { javax.crypto.Cipher.getInstance("AES/CTR/NoPadding").apply {
+            init(javax.crypto.Cipher.ENCRYPT_MODE, javax.crypto.spec.SecretKeySpec(key, "AES"), javax.crypto.spec.IvParameterSpec(ByteArray(16))) } }
+        finally { key.fill(0) }
+    }
+    private fun sendPad(channel: CableSession, output: OutputStream, engine: StationEngine, size: Int, progress: (String) -> Unit, peerSeed: ByteArray): PadMaterial.Installed {
         val random = SecureRandom(); val half = size / 2; val used = PadProtocol.slotsFor(size) * PadProtocol.STRIDE
         val frame = ByteArray(1 + CHUNK)
+        val ownSeed = ByteArray(32).also(random::nextBytes)
+        val mix = try { mixer(peerSeed, ownSeed) } finally { ownSeed.fill(0); peerSeed.fill(0) }
+        val stream = ByteArray(CHUNK)
         engine.padWriter(size).use { writer ->
             var at = 0; var shown = -1
             try {
@@ -92,6 +111,8 @@ object CableProtocol {
                     val n = minOf(CHUNK, size - at)
                     random.nextBytes(frame)
                     frame[0] = CHUNK_TAG
+                    stream.fill(0); mix.update(stream, 0, n, stream, 0)
+                    for (i in 0 until n) frame[1 + i] = (frame[1 + i].toInt() xor stream[i].toInt()).toByte()
                     for (i in 0 until n) if ((at + i) % half >= used) frame[1 + i] = 0
                     writer.write(frame, 1, n)
                     channel.send(output, if (n == CHUNK) frame else frame.copyOf(1 + n))
@@ -99,7 +120,7 @@ object CableProtocol {
                     (at * 10L / size).toInt().let { if (it != shown) { shown = it; progress("Sending message keys · ${it * 10}%") } }
                 }
                 return writer.finish()
-            } finally { frame.fill(0) }
+            } finally { frame.fill(0); stream.fill(0) }
         }
     }
     private fun receivePad(channel: CableSession, input: InputStream, engine: StationEngine, size: Int, progress: (String) -> Unit): PadMaterial.Installed =
@@ -220,7 +241,9 @@ object CableProtocol {
                 val size = a.getInt("padSize")
                 setup = JSONObject().put("endpoint", endpoint).put("token", token).put("secret", secret).put("padSize", size).put("backups", relays)
                 secureSend(JSONObject().put("kind", "pad").put("padSize", size))
-                val pad = sendPad(channel, output, engine, size, progress)
+                val entropy = secureRead(); require(entropy.getString("kind") == "entropy")
+                val peerSeed = decoder.decode(entropy.getString("seed")).also { require(it.size == 32) }
+                val pad = sendPad(channel, output, engine, size, progress, peerSeed)
                 digest = digest(a, b, setup, pad.digest)
                 val padDigest = PadProtocol.hex(pad.digest)
                 if (renew) engine.stageRenewal(setup, peerKey, pad) else engine.stageCable(setup, "A", peerKey, pad)
@@ -230,6 +253,8 @@ object CableProtocol {
                 engine.stageStrict(own.getLong("strict"))
             } else {
                 val announced = secureRead(); require(announced.getString("kind") == "pad" && announced.getInt("padSize") == a.getInt("padSize"))
+                val seed = ByteArray(32).also { SecureRandom().nextBytes(it) }
+                try { secureSend(JSONObject().put("kind", "entropy").put("seed", b64.encodeToString(seed))) } finally { seed.fill(0) }
                 val pad = receivePad(channel, input, engine, a.getInt("padSize"), progress)
                 try {
                     val packet = secureRead(); require(packet.getString("kind") == "setup")

@@ -73,3 +73,16 @@ Unread messages remain unread while you are scrolled away from the bottom. Jump 
   option, not planned.
 - **Legacy pre-pad chats** only ever send receipts under AES-GCM, which have variable length.
   Text can't be sent without a pad.
+
+## Where pad randomness comes from (pipeline item 9, 2026-10-28)
+
+From pairing protocol v9, **both phones contribute randomness**:
+- the receiving phone sends a fresh 32-byte seed inside the authenticated pairing channel;
+- the host XORs its own `SecureRandom` output with an AES-256-CTR keystream keyed by
+  SHA-256("OTP Pager pad mix v1" ‖ peer seed ‖ host seed).
+
+A weak, broken or backdoored random generator on one phone alone then no longer determines
+the pad (`PadMixerTest`). This is defence in depth, not a change of kind. Pads are
+computer-generated randomness, not a certified true-random one-time pad, and the app says so
+in plain words. The manual plaintext pad file (Advanced setup, ≤ 4 MiB) still comes from one
+phone only.
