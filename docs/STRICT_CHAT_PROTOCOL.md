@@ -1,10 +1,71 @@
-# Strict chat v1 — candidate protocol and unwired codec
+# Strict chat v1 — signed short lease plus check-in deadline
 
-Status: **not a usable strict-chat feature**. `StrictChatProtocol` implements only
-canonical frames, pinned-signer verification and one pending unlock response guard.
-No relay endpoints, strict vault envelope, pairing enrollment or UI are wired.
-Depends on #44's acceptance contract. Python fixtures and Kotlin tests are produced
-in the same development effort; they are not independent review.
+Status: **implemented for review, owner decision 2026-10-28: "combine both"**. It combines
+the signed 60-second unlock lease below with the relay check-in deadline from
+[peer wipe Appendix A](PEER_WIPE_PROTOCOL.md). It isn't independently reviewed and hasn't been
+tested on two physical phones. Normal chats are unchanged.
+
+## As built
+
+- **Choosing it:** strict is chosen per new pairing on both phones: normal, or strict with a
+  12-hour, 3-day or 14-day check-in. Pairing protocol v7 carries the choice in both hellos; it
+  must match and it is bound into the compared code. Renewal keeps the chat's mode.
+- **Enrollment at commit:** each phone
+  - claims its own share room, derived from the control credential;
+  - pins the relay's authority key (`GET /v1/strict/authority`, over HTTPS at pairing; trust on first use);
+  - enrolls a fresh 32-byte share bound to its non-exportable device key
+    (`PUT /v1/share/<room>`, stored once, never replaced);
+  - seals its vault under an inner AES-256-GCM layer keyed by HMAC(share, chat root).
+  Outside that layer only routing and public keys remain: endpoint, share rooms, control
+  capability, authority key, role and generation. A relay without share support fails the
+  pairing rather than creating a normal chat.
+- **Opening the chat:** the phone signs an `OTPSTR01` UNLOCK with its device key and sends it to
+  `POST /v1/share/<room>/unlock`.
+  - The relay verifies the signature against the enrolled device key, then checks the
+    authority and device fingerprints, a lease of at most 60 s, clock skew of at most 5 min,
+    and nonce replay.
+  - It answers with a GRANT signed by its authority key.
+  - `StrictChatProtocol.PendingUnlock` accepts only the exact echo of the request, signed by the
+    pinned authority.
+  - The share is held **in memory only** for the rest of the lease. When the lease ends, or the
+    app leaves the foreground, live engines drop their decrypted state.
+- **While open:** every foreground check (about every 30 s) requests a new grant, which renews
+  the lease and is also the relay **check-in**.
+- **Check-in deadline:** if a share isn't unlocked within its deadline, the relay deletes it.
+  - The next check, or the next open, gets 404 and wipes that chat locally.
+  - A phone kept offline past the deadline can never open the chat again, even with a full
+    storage copy.
+- **Wipes:**
+  - wiping a strict chat (single or all) queues deletion of this phone's share, always, and of
+    the friend's share when peer wipe is on;
+  - a peer-wipe recipient also deletes its own share.
+- **What strict chats don't do:** they skip drafts and background receiving. Messages wait on
+  the relay (24 h), so open strict chats daily.
+- **Code:**
+  - `StrictChat` (inner layer, leases, unlock);
+  - `StrictChatProtocol` (codec and grant guard from #48);
+  - relay `server.mjs` (authority key in `authority-key.pem`, shares, unlock);
+  - `StationEngine.establishStrict` and `checkInStrict`;
+  - `PeerWipe.prepareShareDeletion`.
+- **Tests:**
+  - relay: the setup token never enrolls or unlocks; replay, wrong signer, long lease, clock
+    mismatch, wrong authority and tampering are rejected; check-ins survive a restart and lapse
+    past the deadline;
+  - `StrictChatTest`: nothing secret outside the layer; lock on background; a fresh signed grant
+    is needed; an impostor authority is refused; a lapsed share wipes the chat; wipe deletes the
+    share; both phones must choose the same mode.
+
+**Limits:**
+- An unlocked phone, a compromised OS or RAM, screenshots and exports aren't protected.
+- The relay operator can deny access and sees unlock timing.
+- A seized phone that is put online before the deadline (or before a wipe deletes the share)
+  can still be unlocked by whoever can operate the phone. The device key never leaves the phone,
+  but a stolen storage image alone can't sign an unlock.
+- The authority key is trusted on first use at pairing.
+- Relay backups may retain shares.
+
+The candidate notes below are kept from #48 for review history. Where they say "no inactivity
+deletion", the owner's decision replaced that with the check-in deadline.
 
 ## Fixed decisions and security boundary
 

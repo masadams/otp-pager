@@ -150,7 +150,7 @@ class CablePairActivity : Activity() {
                             confirm.isEnabled = true
                         } }
                         check(latch.await(90, TimeUnit.SECONDS) && approved && !cancelled.get() && operation?.cancelled != true) { "Confirmation cancelled or timed out" }
-                    }, progress = ::note, renew = renewal, size = padSize)
+                    }, progress = ::note, renew = renewal, size = padSize, strict = if (renewal) 0L else intent.getLongExtra("strict", 0L))
                 }
                 runOnUiThread { if (active && !cancelled.get()) { status.text = if (renewal) "Keys renewed. Your chat is ready." else "Paired. You're ready to chat."; finish.text = "Open conversation"; confirm.isEnabled = false } }
             } catch (failure: Exception) {

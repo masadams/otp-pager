@@ -15,8 +15,9 @@ object CableProtocol {
     /**
      * v5: the pad is streamed after setup as authenticated chunks, straight into pad storage.
      * v6: both phones also exchange peer-wipe control keys (docs/PEER_WIPE_PROTOCOL.md §1).
+     * v7: both phones state the strict-chat mode; it must match and is bound into the code.
      */
-    const val VERSION = 6
+    const val VERSION = 7
     private const val CHUNK = 32768
     private const val CHUNK_TAG: Byte = 0x50
     private const val LIMIT = 4096 // Public hello/approval frames only; encrypted material has a separate bound.
@@ -32,8 +33,8 @@ object CableProtocol {
         val bytes = ByteArray(size); source.readFully(bytes)
         return try { JSONObject(String(bytes, Charsets.UTF_8)) } finally { bytes.fill(0) }
     }
-    private fun hello(engine: StationEngine, ephemeral: java.security.KeyPair, renew: Boolean, size: Int): JSONObject = JSONObject().put("kind", "hello").put("version", VERSION)
-        .put("purpose", if (renew) "renew" else "pair").put("padSize", size)
+    private fun hello(engine: StationEngine, ephemeral: java.security.KeyPair, renew: Boolean, size: Int, strict: Long): JSONObject = JSONObject().put("kind", "hello").put("version", VERSION)
+        .put("purpose", if (renew) "renew" else "pair").put("padSize", size).put("strict", if (renew) 0L else strict)
         .put("ephemeral", b64.encodeToString(ephemeral.public.encoded)).put("key", engine.cableIdentity(renew)).put("nonce", b64.encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) }))
         .also { h -> engine.state?.let {
             h.put("endpoint", it.getString("endpoint"))
@@ -58,7 +59,7 @@ object CableProtocol {
             part("Field cable identity comparison v4".toByteArray(Charsets.US_ASCII))
             for (h in listOf(a, b)) { part(IdentityProtocol.publicKey(h.getString("key")).encoded); part(decoder.decode(h.getString("nonce"))); part(IdentityProtocol.publicKey(h.getString("ephemeral")).encoded) }
             part(endpoint.toByteArray(Charsets.UTF_8))
-            for (h in listOf(a, b)) for (name in listOf("purpose", "padSize", "room", "role", "padId", "paused")) part(h.optString(name).toByteArray(Charsets.UTF_8))
+            for (h in listOf(a, b)) for (name in listOf("purpose", "padSize", "strict", "room", "role", "padId", "paused")) part(h.optString(name).toByteArray(Charsets.UTF_8))
         }
         return hash(out.toByteArray())
     }
@@ -119,17 +120,22 @@ object CableProtocol {
     fun run(host: Boolean, input: InputStream, output: OutputStream, engine: StationEngine,
             review: (String, String) -> Unit, progress: (String) -> Unit) =
         run(host, input, output, engine, review, progress, false, PadProtocol.MATERIAL_BYTES)
+    fun run(host: Boolean, input: InputStream, output: OutputStream, engine: StationEngine,
+            review: (String, String) -> Unit, progress: (String) -> Unit, renew: Boolean, size: Int) =
+        run(host, input, output, engine, review, progress, renew, size, 0L)
     /** review blocks only this transfer worker; closing its channel cancels the wizard. */
     fun run(host: Boolean, input: InputStream, output: OutputStream, engine: StationEngine,
-            review: (String, String) -> Unit, progress: (String) -> Unit, renew: Boolean, size: Int) {
+            review: (String, String) -> Unit, progress: (String) -> Unit, renew: Boolean, size: Int, strict: Long) {
         if (renew) engine.requireRenewalIdentity() else engine.requireCableEligible()
+        require(strict == 0L || (!renew && strict in StrictChat.DEADLINES)) { "Unknown strict-chat mode" }
         val ephemeral = CableSession.ephemeral()
-        val own = hello(engine, ephemeral, renew, size)
+        val own = hello(engine, ephemeral, renew, size, strict)
         val peer: JSONObject
         if (host) { send(output, own); peer = read(input); checkHello(peer) }
         else { peer = read(input); checkHello(peer); send(output, own) }
         require(own.getString("key") != peer.getString("key"))
         require(peer.getString("purpose") == own.getString("purpose")) { "Choose the same USB operation on both devices" }
+        require(peer.optLong("strict", -1) == own.getLong("strict")) { "Choose the same chat type (normal or strict, same check-in time) on both devices" }
         if (renew) {
             val state = checkNotNull(engine.state)
             check(peer.getString("key") == state.getString("peerDevice")) { "This is not the pinned friend's device" }
@@ -143,7 +149,8 @@ object CableProtocol {
         val identityDigest = identityDigest(a, b, endpoint)
         val code = PadProtocol.hex(identityDigest.copyOf(16)).chunked(4).joinToString(" ")
         // No relay token, pairing secret or pad is sent until BOTH people approve.
-        review(code, "$endpoint\nPad: ${a.getInt("padSize") / PadProtocol.MATERIAL_BYTES} MiB · ${if (recover) "recover current pad" else if (renew) "renew existing friend" else "new pairing"}")
+        review(code, "$endpoint\nPad: ${a.getInt("padSize") / PadProtocol.MATERIAL_BYTES} MiB · ${if (recover) "recover current pad" else if (renew) "renew existing friend" else "new pairing"}" +
+            if (own.getLong("strict") > 0) " · ${StrictChat.label(own.getLong("strict"))}" else "")
         progress("Waiting for confirmation on the other device…")
         val peerKey = peer.getString("key")
         if (host) {
@@ -215,6 +222,7 @@ object CableProtocol {
                 secureSend(JSONObject().put("kind", "setup").put("setup", setup).put("padDigest", padDigest).put("proof", proof(engine, digest, "setup-A")))
                 val control = engine.controlOffer(host = true); secureSend(control)
                 engine.stageControl(control, secureRead(), host = true)
+                engine.stageStrict(own.getLong("strict"))
             } else {
                 val announced = secureRead(); require(announced.getString("kind") == "pad" && announced.getInt("padSize") == a.getInt("padSize"))
                 val pad = receivePad(channel, input, engine, a.getInt("padSize"), progress)
@@ -229,6 +237,7 @@ object CableProtocol {
                 val offered = secureRead()
                 val control = engine.controlOffer(host = false); secureSend(control)
                 engine.stageControl(control, offered, host = false)
+                engine.stageStrict(own.getLong("strict"))
             }
             if (host) {
                 val accepted = secureRead(); require(accepted.getString("kind") == "saved")

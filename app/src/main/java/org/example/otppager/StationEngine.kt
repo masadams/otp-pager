@@ -172,7 +172,8 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             StrictChat.remember(strictRoot, share, StrictChatProtocol.MAX_LEASE_MS, store.operationKey)
         } finally { share.fill(0) }
         next.remove("strictPending")
-        next.put("strictShare", JSONObject().put("room", room).put("capability", capability).put("deadline", deadline).put("authority", authority))
+        val peerRoom = unhex(c.getString("credential")).let { try { StrictChat.room(it, if (next.getString("role") == "A") "B" else "A") } finally { it.fill(0) } }
+        next.put("strictShare", JSONObject().put("room", room).put("peerRoom", peerRoom).put("capability", capability).put("deadline", deadline).put("authority", authority))
     }
     /**
      * Every foreground check renews the lease with a fresh signed unlock (which is also the
@@ -410,7 +411,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         val snapshot = JSONObject(checkNotNull(state).toString())
         val root = VaultLifecycle.root(store.namespace)
         val result = PeerWipeRecipient.retire(
-            prepare = { PeerWipe.acknowledge(store.context, root, snapshot) },
+            prepare = { PeerWipe.acknowledge(store.context, root, snapshot); store.load()?.let { PeerWipe.prepareShareDeletion(store.context, root, it) } },
             destroy = { VaultRetirement.retireContact(store.context, root) },
             finish = { PeerWipe.finish(store.context, snapshot.getJSONObject("control").getString("generation"), it.completed) },
             dispatch = { PeerWipe.pump(store.context, baseRelay) })

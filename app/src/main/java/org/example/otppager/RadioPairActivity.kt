@@ -226,7 +226,7 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
                 confirm.isEnabled = true
             } }
             check(latch.await(90, TimeUnit.SECONDS) && approved && !stopped.get() && operation?.cancelled != true) { "Confirmation cancelled" }
-        }, progress = { note(it.replace("USB", "local Wi-Fi")) }, renew = renew, size = size)
+        }, progress = { note(it.replace("USB", "local Wi-Fi")) }, renew = renew, size = size, strict = if (renew) 0L else intent.getLongExtra("strict", 0L))
         operation?.check()
         complete = true
         runOnUiThread { if (active && !stopped.get()) { done.text = "Done · open messages"; confirm.isEnabled = false } }

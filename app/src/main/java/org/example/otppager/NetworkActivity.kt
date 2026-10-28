@@ -48,6 +48,8 @@ class NetworkActivity : Activity() {
     private lateinit var radioPairButton: Button
     private var advancedShown = false
     private var selectedPadSize = 16 * PadProtocol.MATERIAL_BYTES
+    /** 0 = normal chat. Chosen per pairing; both phones must choose the same. */
+    private var selectedStrict = 0L
     private var draftChatId: String? = null
     private var draftRoom: String? = null
     private var draftId = java.util.UUID.randomUUID().toString()
@@ -151,7 +153,7 @@ class NetworkActivity : Activity() {
                 runTask {
                     val contacts = checkNotNull(book)
                     inboxCycle.pollOne(contacts) { active && unlocked && tab == 4 }
-                    engine = if (contacts.summary(contacts.active().id).retired) null else contacts.engine()
+                    engine = if (contacts.summary(contacts.active().id).retired) null else openEngine(contacts)
                     "Chats updated"
                 }
             } else if (active && unlocked && automatic && !busy && !errorLoading && tab != 5 && latest != null && latest?.role != "—" && latest?.pairingComplete == true && latest?.relayRevoked != true) runTask(network = true) { syncChats() }
@@ -588,11 +590,11 @@ class NetworkActivity : Activity() {
             }
             observeStore(loadedChat!!, openingGeneration)
             loadedOpen = selected
-            engine = checkNotNull(book).engine()
+            engine = openEngine(checkNotNull(book))
             engine?.state?.let { s ->
                 val master = Protocol.master(s.getString("secret"))
                 loadedRoom = try { Protocol.room(master) } finally { master.fill(0) }
-                try { restoredDraft = ChatDraft(SecureStore(this, loadedChat!!).sibling("draft")).read(loadedRoom!!, s.optString("lastSentDraft")) }
+                if (!s.has("strictShare")) try { restoredDraft = ChatDraft(SecureStore(this, loadedChat!!).sibling("draft")).read(loadedRoom!!, s.optString("lastSentDraft")) }
                 catch (_: Exception) { draftProblem = true }
             }
             val scanned = scanResult
@@ -688,7 +690,7 @@ class NetworkActivity : Activity() {
     private fun atBottom() = !::messageScroll.isInitialized || messageScroll.getChildAt(0) == null ||
         messageScroll.getChildAt(0).height - (messageScroll.scrollY + messageScroll.height) < dp(24)
     private fun beginCablePairing(replace: Boolean, renew: Boolean = false) {
-        runTask(onSuccess = { startActivity(Intent(this, CablePairActivity::class.java).putExtra("chat", checkNotNull(book).active().id).putExtra("renew", renew).putExtra("padSize", selectedPadSize)) }) {
+        runTask(onSuccess = { startActivity(Intent(this, CablePairActivity::class.java).putExtra("chat", checkNotNull(book).active().id).putExtra("renew", renew).putExtra("padSize", selectedPadSize).putExtra("strict", if (renew) 0L else selectedStrict)) }) {
             val station = checkNotNull(engine)
             if (replace) station.resetForCable()
             if (renew) station.requireRenewalIdentity() else station.requireCableEligible(); "Opening USB connection"
@@ -697,12 +699,12 @@ class NetworkActivity : Activity() {
     private fun beginRadioPairing(renew: Boolean) {
         confirm(if (renew) "Renew over local Wi-Fi?" else "Pair over local Wi-Fi?",
             "Both devices need the same app version, NFC and the same private Wi-Fi. Tap to share a temporary secret, then compare codes before the encrypted pad transfer. No pad goes to the relay. Keep the tap private; use USB if you prefer a cable. Existing pairings are preserved. Pad size on this device: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB.") {
-            launchNearbyPairing(renew)
+            if (renew) launchNearbyPairing(true) else chooseChatType { launchNearbyPairing(false) }
         }
     }
     private fun launchNearbyPairing(renew: Boolean) {
         runTask(onSuccess = { startActivity(Intent(this, RadioPairActivity::class.java)
-            .putExtra("chat", checkNotNull(book).active().id).putExtra("renew", renew).putExtra("padSize", selectedPadSize)) }) {
+            .putExtra("chat", checkNotNull(book).active().id).putExtra("renew", renew).putExtra("padSize", selectedPadSize).putExtra("strict", selectedStrict)) }) {
             if (renew) checkNotNull(engine).requireRenewalIdentity() else checkNotNull(engine).requireCableEligible()
             "Opening nearby transfer"
         }
@@ -803,7 +805,7 @@ class NetworkActivity : Activity() {
                     0 -> showReceiving()
                     1 -> runTask {
                         val contacts = checkNotNull(book); inboxCycle.pollOne(contacts) { active && unlocked && tab == 4 }
-                        engine = if (contacts.summary(contacts.active().id).retired) null else contacts.engine(); "Chats updated"
+                        engine = if (contacts.summary(contacts.active().id).retired) null else openEngine(contacts); "Chats updated"
                     }
                     else -> AlertDialog.Builder(this).setTitle("Getting started")
                         .setMessage("Add a friend and pair your devices together. Only one device needs the server address and token. USB transfers the setup, message keys and device identities after you compare the codes.\n\nOpen a chat to write. Delivery appears under each message. For messages while the screen is off, turn on background receiving; it uses more battery.\n\nThis is an experimental messenger. Keep physical pairing private and use Advanced setup only when you need it.")
@@ -958,6 +960,23 @@ class NetworkActivity : Activity() {
             .setNeutralButton("Tap + Wi-Fi") { _, _ -> beginRadioPairing(true) }
             .setNegativeButton("Cancel", null).create().also(::secureShow)
     }
+    /** New pairings only: normal, or strict with a relay check-in deadline. Both phones must match. */
+    private fun chooseChatType(next: () -> Unit) {
+        val modes = listOf(0L) + StrictChat.DEADLINES
+        var selected = modes.indexOf(selectedStrict).coerceAtLeast(0)
+        AlertDialog.Builder(this).setTitle("Chat type")
+            .setSingleChoiceItems(modes.map(StrictChat::label).toTypedArray(), selected) { _, which -> selected = which }
+            .setNeutralButton("About strict") { _, _ ->
+                AlertDialog.Builder(this).setTitle("Strict chats")
+                    .setMessage("A strict chat opens only while the server is reachable, a minute at a time, and locks again when you leave the app.\n\n" +
+                        "If this phone does not reach the server within the check-in time, or the chat is wiped, it can never be opened on this phone again. " +
+                        "Someone holding the phone while it is offline cannot open it, even with a full copy of its storage.\n\n" +
+                        "Both phones must choose the same type. Background receiving skips strict chats, so open them within a day to read new messages.")
+                    .setPositiveButton("Back") { _, _ -> chooseChatType(next) }.create().also(::secureShow)
+            }
+            .setPositiveButton("Continue") { _, _ -> selectedStrict = modes[selected]; next() }
+            .setNegativeButton("Cancel", null).create().also(::secureShow)
+    }
     private fun choosePadSize(renew: Boolean, launch: Boolean = true) {
         val sizes = PadProtocol.SIZES
         val choices = sizes.map(PadProtocol::sizeLabel).toTypedArray()
@@ -967,7 +986,8 @@ class NetworkActivity : Activity() {
             .setPositiveButton(if (launch) "Continue by USB" else "Save") { _, _ ->
                 selectedPadSize = sizes[selected]
                 getSharedPreferences("receiving", MODE_PRIVATE).edit().putInt("padSize", selectedPadSize).apply()
-                if (launch) beginCablePairing(false, renew) else { renderSimpleScreens(); report("Pad size: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB") }
+                if (launch && !renew) chooseChatType { beginCablePairing(false, renew) }
+                else if (launch) beginCablePairing(false, renew) else { renderSimpleScreens(); report("Pad size: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB") }
             }.setNegativeButton("Cancel", null).create().also(::secureShow)
     }
     private fun showReceiving() {
@@ -1150,6 +1170,7 @@ class NetworkActivity : Activity() {
     }
     private fun persistDraft() {
         handler.removeCallbacks(saveDraft)
+        if (engine?.isStrict == true) return // Strict chats never keep drafts outside the locked vault.
         if (visibleContact?.cancelled == true) return
         val id = draftChatId ?: return; val room = draftRoom ?: return
         val value = composer.text.toString(); val revision = draftId; val visibleGeneration = generation
@@ -1254,6 +1275,14 @@ class NetworkActivity : Activity() {
             runTask(onSuccess = { reopenChat() }) { checkNotNull(book).select(id); "CHAT SELECTED" }
         }
     }
+    /** Worker thread. A strict chat is unlocked here with one signed lease (needs the server). */
+    private fun openEngine(contacts: ChatBook): StationEngine = try { contacts.engine() }
+        catch (_: StrictChat.Locked) {
+            val id = contacts.active().id
+            try { StrictChat.unlock(this, id) }
+            catch (gone: StrictChat.Gone) { contacts.wipeLocal(id); throw gone }
+            contacts.engine()
+        }
     private fun reopenChat(destination: Int = 0) {
         persistDraft()
         draftChatId = null; draftRoom = null; restoringDraft = true
@@ -1458,6 +1487,8 @@ class NetworkActivity : Activity() {
         }
     }
     private fun friendly(e: Exception): String = when (e) {
+        is StrictChat.Locked -> "STRICT CHAT LOCKED // connect to the server to open it"
+        is StrictChat.Gone -> "STRICT CHAT REMOVED // its key share is gone from the server, so it was wiped here"
         is RelayHttpException -> when (e.status) {
             401, 403 -> "ACCESS DENIED // check chat access or the setup token in Settings"
             410 -> "CHAT ACCESS REVOKED // pair a fresh chat on both devices"
@@ -1487,6 +1518,7 @@ class NetworkActivity : Activity() {
     }
     override fun onStop() {
         if (::composer.isInitialized) persistDraft()
+        StrictChat.lockAll() // Leaving the app ends every strict lease at once.
         openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
         pairingDialog?.dismiss(); pairingDialog = null
         generation++; active = false; StationRuntime.uiVisible = false; unlocked = false; needsTerminal = true; handler.removeCallbacks(poll)

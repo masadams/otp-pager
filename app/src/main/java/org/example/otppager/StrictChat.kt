@@ -76,7 +76,7 @@ internal object StrictChat {
             val sealed = try { cipher.doFinal(clear) } finally { clear.fill(0) }
             return JSONObject().put("version", 6).put("strict", JSONObject().put("v", 1)
                 .put("endpoint", state.getString("endpoint")).put("room", s.getString("room")).put("capability", s.getString("capability"))
-                .put("authority", s.getString("authority")).put("role", state.getString("role"))
+                .put("authority", s.getString("authority")).put("role", state.getString("role")).put("peerRoom", s.getString("peerRoom"))
                 .put("generation", state.getJSONObject("control").getString("generation"))
                 .put("iv", b64e.encodeToString(iv)).put("ct", Base64.getEncoder().encodeToString(sealed)))
         } finally { key.fill(0) }
