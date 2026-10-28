@@ -2,7 +2,7 @@
 
 Experimental, open-source, physically paired text messenger. Android, including Android e-ink readers, is the primary target. Dedicated handhelds remain an optional future target.
 
-> **Security status: NOT AUDITED. NOT READY FOR SENSITIVE COMMUNICATIONS.** This repository begins with specifications and testable scaffolding, not a claim of secure or Jericho-compatible messaging.
+> **Security status: NOT AUDITED. NOT READY FOR SENSITIVE COMMUNICATIONS.** This repository begins with specifications and testable scaffolding, not a claim of secure messaging.
 
 ## Current development source: v0.14 plus lifecycle foundations
 
@@ -57,14 +57,15 @@ as historical material; its debug APK is not the current installation path.
 - [v0.14 security inventory and findings](docs/SECURITY_INVENTORY_V014.md)
 - [Threat model](docs/THREAT_MODEL.md)
 - [Protocol sketch](docs/PROTOCOL.md)
-- [Jericho review](docs/JERICHO_REVIEW.md)
 - [Roadmap](docs/ROADMAP.md)
 
 ## Important distinction
 A cryptographically secure pseudorandom stream is not an information-theoretically secure one-time pad. We will not describe Android's SecureRandom output as independently validated full-entropy OTP material. Physical pairing must authenticate peers and protect the transfer of key bytes. A genuine OTP additionally requires independent uniformly random secret key bytes, never reused.
 
 ## License
-No project-wide code license has been selected yet. Do not copy Jericho source into this repository until its exact license and attribution obligations are reviewed.
+[MIT](LICENSE). Bundled third-party libraries keep their own licenses; see
+[third-party notices](docs/THIRD_PARTY_NOTICES.md). OTP Pager is an independent design and
+protocol; it does not aim for compatibility with any other messenger.
 
 
 ## Two-phone deployment prototype
@@ -73,7 +74,7 @@ See [Docker / Portainer + Nginx setup](docs/DEPLOYMENT.md) and
 [two-device testing](docs/TWO_DEVICE_TEST.md). The historical prototype offered AES-GCM test mode and a finite-pad mode as described
 below. Current code requires a verified pad for new user text; conventional legacy
 packet/receipt recovery remains explicit compatibility. Validated physical entropy,
-information-theoretic authentication and Jericho compatibility remain future work.
+and information-theoretic authentication remain future work.
 
 ## Android v0.2 hardening
 

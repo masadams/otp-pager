@@ -49,6 +49,6 @@ Nominal 1 MiB per pair, split equally by direction (512 KiB each), before any se
 ## Relay
 A relay stores opaque authenticated ciphertext envelopes, with no plaintext or keys. Transport confidentiality and authentication are still required. Metadata minimization is a separate problem.
 
-## Compatibility gate
-Do not assert compatibility with Jericho until independent message vectors and actual cross-client exchange succeed.
+## Compatibility
+This is an independent protocol. It makes no compatibility claim with any other messenger.
 

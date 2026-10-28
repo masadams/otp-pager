@@ -12,5 +12,5 @@ https://github.com/zxing/zxing/blob/master/LICENSE
 Transitive AndroidX components are under the Apache License, Version 2.0:
 https://source.android.com/docs/setup/about/licenses
 
-These libraries are used for embedded offline barcode scanning/encoding. Their
-licenses do not determine a license for this project's own source code.
+These libraries are used for embedded offline barcode scanning/encoding. They keep
+their own licenses; this project's own source code is under the MIT License (see LICENSE).
