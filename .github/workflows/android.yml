@@ -84,6 +84,7 @@ jobs:
             python3 scripts/verify_global_retirement_restart.py
             python3 scripts/verify_lifecycle_evidence_restart.py
             python3 scripts/verify_enrollment_staging_restart.py
+            python3 scripts/verify_epoch_cycle_restart.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:

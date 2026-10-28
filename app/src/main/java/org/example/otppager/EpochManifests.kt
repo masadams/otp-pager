@@ -106,36 +106,60 @@ internal object EpochManifests {
 }
 
 /**
- * Reads real lifecycle records into an [EpochLineage.Observation]. Any read failure becomes
- * `unreadable`, which resolves to Frozen. Uncached by design in this slice: no manifest can
- * exist yet, so callers only reach here in already-frozen states; B3e adds a validated cache
- * before ACTIVE epochs make this a per-operation path.
+ * Reads real lifecycle records into an [EpochLineage.Observation]; any read failure becomes
+ * `unreadable`, which resolves to Frozen. Resolution is cached per directory and keyed by a
+ * cheap fingerprint (name, size, mtime) of every lifecycle record file, so a changed, added or
+ * removed record re-resolves; in-process writers also invalidate explicitly. External Keystore
+ * deletion is detected on the next uncached read (the documented compromised-endpoint limit).
  */
 internal object EpochState {
+    private val lifecyclePrefixes = listOf("retirement-evidence-", "global-retirement-", "enrollment-stage-", "epoch-active-", "epoch-terminal-")
+    private data class Cached(val fingerprint: String, val detail: EpochLineage.Detail)
+    private val cache = mutableMapOf<String, Cached>()
+
+    fun invalidate(directory: File) = synchronized(VaultLifecycle.lock) { cache.remove(directory.absolutePath); Unit }
+
+    private fun fingerprint(directory: File): String? = directory.listFiles()?.filter { f -> lifecyclePrefixes.any { f.name.startsWith(it) } }
+        ?.sortedBy { it.name }?.joinToString("|") { "${it.name}:${it.length()}:${it.lastModified()}" }
+
     fun observe(directory: File): EpochLineage.Observation = synchronized(VaultLifecycle.lock) {
         try {
             val journal = VaultLifecycle.variants(GlobalRetirement.marker(directory))
                 .any { Files.exists(it.toPath(), LinkOption.NOFOLLOW_LINKS) }
-            val terminals = when (RetirementEvidence.probe(directory)) {
+            val legacy = when (RetirementEvidence.probe(directory)) {
                 RetirementEvidence.Presence.NONE -> emptyList()
                 RetirementEvidence.Presence.UNAVAILABLE -> error("Terminal evidence unavailable")
                 RetirementEvidence.Presence.PRESENT -> {
                     val record = RetirementEvidence.read(directory)
                     listOf(EpochLineage.Terminal(record.generation, EpochLineage.LEGACY, RetirementEvidence.commitment(directory),
-                        record.phase == RetirementEvidenceCodec.Phase.CLEANED))
+                        record.phase == RetirementEvidenceCodec.Phase.CLEANED, record.roots, record.guards))
                 }
+            }
+            val epochs = EpochEvidence.readAll(directory).map { record ->
+                EpochLineage.Terminal(record.generation, record.epoch, EpochEvidence.commitment(directory, record.generation),
+                    record.phase == RetirementEvidenceCodec.Phase.CLEANED, record.roots, record.guards)
             }
             val stages = when (EnrollmentStaging.probe(directory)) {
                 EnrollmentStaging.Presence.NONE -> emptyList()
                 EnrollmentStaging.Presence.UNAVAILABLE -> error("Staging unavailable")
                 EnrollmentStaging.Presence.PRESENT -> EnrollmentStaging.records(directory)
             }
-            EpochLineage.Observation(legacyJournal = journal, terminals = terminals, stages = stages,
+            EpochLineage.Observation(legacyJournal = journal, terminals = legacy + epochs, stages = stages,
                 manifests = EpochManifests.readAll(directory))
         } catch (_: Exception) { EpochLineage.Observation(unreadable = true) }
     }
 
-    fun resolve(directory: File): EpochLineage.State = EpochLineage.resolve(observe(directory))
+    fun detail(directory: File): EpochLineage.Detail = synchronized(VaultLifecycle.lock) {
+        val key = directory.absolutePath
+        val print = fingerprint(directory) ?: return@synchronized EpochLineage.detail(EpochLineage.Observation(unreadable = true))
+        cache[key]?.takeIf { it.fingerprint == print }?.let { return@synchronized it.detail }
+        val detail = EpochLineage.detail(observe(directory))
+        // Only cache if nothing changed while reading.
+        if (fingerprint(directory) == print) cache[key] = Cached(print, detail)
+        detail
+    }
+
+    fun resolve(directory: File): EpochLineage.State = detail(directory).state
 
     /** Without any manifest file the answer is never Active, so skip all reads. */
     fun resolveIfManifest(directory: File): EpochLineage.State =
@@ -148,4 +172,30 @@ internal object EpochState {
 
     /** Active manifest when the lineage resolves to an ACTIVE epoch, else null. */
     fun active(directory: File): ActiveManifestCodec.Record? = (resolveIfManifest(directory) as? EpochLineage.State.Active)?.manifest
+
+    /** What a global wipe or its recovery may destroy. */
+    sealed interface WipeScope {
+        /** No epoch was ever activated: the original legacy wipe. */
+        data object Legacy : WipeScope
+        /** [manifest]'s epoch, with every earlier destroyed root and [chain] of earlier terminals. */
+        data class Epoch(val manifest: ActiveManifestCodec.Record, val priorRoots: Set<String>, val chain: List<EpochLineage.Terminal>,
+                         val terminal: EpochTerminalCodec.Record?) : WipeScope
+        /** Records exist but cannot be read: destroy nothing unless the user asked in this process. */
+        data object Unknown : WipeScope
+    }
+
+    /**
+     * Never destroys a fresh epoch on boot without durable intent: an epoch scope is returned
+     * only when [requested] (an in-process wipe) or an `OTPTERM2` record is bound to that epoch.
+     */
+    fun wipeScope(directory: File, requested: Boolean): WipeScope = synchronized(VaultLifecycle.lock) {
+        if (!EpochManifests.anyPresent(directory)) return@synchronized WipeScope.Legacy
+        invalidate(directory)
+        val detail = detail(directory)
+        val manifest = detail.lastEpoch ?: return@synchronized WipeScope.Unknown
+        val terminal = try { EpochEvidence.readAll(directory).singleOrNull { it.epoch == manifest.epoch } } catch (_: Exception) { null }
+        if (!requested && terminal == null) return@synchronized WipeScope.Unknown
+        val chain = detail.chain.filter { it.boundEpoch != manifest.epoch }
+        WipeScope.Epoch(manifest, chain.flatMap { it.roots }.toSet(), chain, terminal)
+    }
 }

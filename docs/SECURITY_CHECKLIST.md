@@ -38,9 +38,9 @@ physical validation, deployment or production readiness. Phase 2 remains open.
       implement the pure `OTPACT01` codec, lineage resolver and namespace scope (#18, B3a;
       [design](ACTIVE_EPOCH_DESIGN.md)). Not wired to storage access.
 - [x] Wire ACTIVE epoch capabilities, namespace allowlists, lineage-based freeze and current-index routing (#19, B3b; unreachable until activation, behaviour unchanged without a manifest).
-- [ ] Enforce immutable retained-cohort exclusions during active pairing/messaging (B3c).
-- [ ] Implement repeat-wipe/forward lineage and preserve every prior exclusion/reservation (B3d).
-- [ ] Safely enable fresh enrollment after global destruction (B3e activation, B3f UI).
+- [x] Enforce immutable retained-cohort exclusions during active pairing/messaging (#20, B3c).
+- [x] Implement repeat-wipe/forward lineage (`OTPTERM2`) and preserve every prior exclusion/reservation (#20, B3d).
+- [x] Safely enable fresh enrollment after global destruction (#20, B3e activation, B3f UI; emulator CI only).
 - [ ] Separate erasable history keys and safely migrate older storage/operational keys.
 - [ ] Complete local-protection invariant review and remaining fault/upgrade tests.
 
@@ -59,7 +59,7 @@ physical validation, deployment or production readiness. Phase 2 remains open.
 ## 5. Android emergency wipe
 
 - [ ] Add selected-conversation and all-conversation emergency actions (local-only
-      selected-conversation wipe exists; peer command and wipe-all remain).
+      selected and wipe-all controls exist, #17/#20; peer command remains).
 - [ ] Implement authenticated peer destruction and honest local/remote status.
 - [ ] Verify two-device connected/offline/interrupted/malicious-relay behavior.
 
@@ -81,7 +81,7 @@ physical validation, deployment or production readiness. Phase 2 remains open.
 - [ ] Physical-device, power-loss, entropy and full two-device testing.
 - [ ] Signing/update/supply-chain review and production-readiness decision.
 
-Phase 2 remains open. Remote wiping and wipe-all initiation have not been implemented. Source tests and
+Phase 2 remains open (history-key separation). Remote wiping has not been implemented. Source tests and
 emulators do not establish physical erasure, compromised-peer compliance, trusted
 rollback resistance or live-host security. Earlier usability/version work is not a
 completion claim for these security phases.

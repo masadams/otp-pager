@@ -18,6 +18,9 @@ class SecureStore private constructor(context: Context, namespace: String, priva
     constructor(context: Context, namespace: String = "station-v2") : this(context, namespace, VaultGeneration.capture(context.noBackupFilesDir))
     private val slot = namespace.also { require(Regex("[a-z0-9-]{1,40}").matches(it)) }
     internal val namespace: String get() = slot
+    internal val directory: File get() = base.parentFile!!
+    /** The epoch this owner captured, or null for legacy/blocked owners. Never re-evaluated. */
+    internal val activeEpoch: String? get() = (generation as? VaultGeneration.Capability.Active)?.epoch
     internal val operationKey: String get() = VaultLifecycle.marker(base.parentFile!!, VaultLifecycle.root(slot)).absolutePath
     internal fun operation() = ContactOperations.open(operationKey, ::requireActive)
     private val base = File(context.noBackupFilesDir, "$slot.bin")
