@@ -1,5 +1,8 @@
 # Security, data lifecycle and emergency destruction development plan
 
+For the current review graph, exact source heads, execution evidence and next steps,
+read [the continuation record](CONTINUATION_2026_10_28.md).
+
 Status: active development reference; security features below are requirements, not release claims.
 Owner direction: 2026-10-26. Baseline: Android v0.14, main commit
 `cfe01af255bebbd195337b9d1b0c72017e39f7c1`.

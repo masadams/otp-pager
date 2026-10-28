@@ -1,5 +1,8 @@
 # Development pipeline — owner direction 2026-10-28
 
+For the current review graph, exact source heads, execution evidence and next steps,
+read [the continuation record](CONTINUATION_2026_10_28.md).
+
 This is the ordered work list after the 2026-10-28 use and security assessment. It takes
 precedence over older "next task" notes where they differ. Each item ships as its own
 reviewable PR with tests; the plan's invariants S01–S12 still apply.

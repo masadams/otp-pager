@@ -1,5 +1,8 @@
 # OTP Pager developer handoff
 
+For the current review graph, exact source heads, execution evidence and next steps,
+read [the continuation record](CONTINUATION_2026_10_28.md).
+
 Updated 2026-10-27. Repository: `masadams/otp-pager`. Start from `main`.
 This file is sufficient to resume without the original chat. The owner requested
 integration of the completed development work, an accurate plan and a transferable
