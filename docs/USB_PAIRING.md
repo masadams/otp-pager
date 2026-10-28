@@ -60,3 +60,18 @@ Emulators can't do USB host or accessory mode, so this needs two real phones.
 
 When reporting a problem, include both phone models, which phone was host, the
 pad size and the last status line shown.
+
+## Discovery lifecycle regression coverage (follow-up to #43)
+
+`UsbPairDiscovery` is the main-thread state controller used by `CablePairActivity`.
+Negotiation failure returns to discovery, but cannot overlap another attempt or
+extend the original three-minute discovery deadline. Permission denial waits for
+**Retry USB permission**; polling never repeatedly prompts. Stop/cancellation and
+retirement suppress late completion callbacks. Once transfer starts, discovery
+cannot retry it: exposed-pad retirement and renewal recovery remain protocol-owned.
+
+`UsbPairDiscoveryTest` injects worker/UI queues and a monotonic clock. Transport
+coverage now includes 64/512/1024-byte packets, short writes, failed ZLP writes,
+disconnects and close behavior. `CablePairTest` exercises streamed 16/32/64 MiB
+pads; existing staging and renewal tests cover their distinct interrupted states.
+These are automated models/fixtures, not proof of USB hardware compatibility.

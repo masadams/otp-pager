@@ -242,3 +242,13 @@ Global recovery observation/retry and empty staging are merged development found
 activation remains unimplemented; v1 terminal journals cannot prove absent reuse
 registry provenance and must never authorize an empty reset. Executable design-model
 checks do not complete package B or replace Android lifecycle/physical evidence.
+
+## USB discovery implementation follow-up — 2026-10-28
+
+The follow-up branch `test/usb-negotiation-lifecycle` stacks on #43 and adds tested
+retry/permission/stop transitions, wider transport tests and large-pad streaming
+coverage. S03/S07 are preserved by leaving pad activation/recovery in CableProtocol
+and rejecting discovery after transfer starts or its captured operation is cancelled.
+This is a review candidate, not a verified fix for the owner's physical regression.
+Android instrumentation, signed upgrade and two-phone/power-loss evidence remain
+separate from local compilation/JVM results recorded in the PR.
