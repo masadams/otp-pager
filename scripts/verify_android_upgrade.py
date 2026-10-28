@@ -58,7 +58,8 @@ def main():
         run(["adb", "install", "-t", "app/build/outputs/apk/androidTest/release/app-release-androidTest.apk"])
         instrument("seed")
         info = inspect_apk(second_apk)
-        assert info["version_code"] == initial_version + 1 and info["certificate_sha256"] == signer
+        # Updates only need a strictly higher versionCode; releases may skip numbers.
+        assert info["version_code"] > initial_version and info["certificate_sha256"] == signer
         apks = [first_apk, second_apk]
         verify_update(apks[0], apks[1], signer)
         run(["adb", "shell", "am", "force-stop", PACKAGE])
