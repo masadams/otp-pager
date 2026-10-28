@@ -75,21 +75,30 @@ class UsbPairChannel internal constructor(private val receive: (ByteArray, Int, 
             { b, at, n -> if (ready()) read(b, at, n).let { if (it > 0) it else -1 } else -1 }
 
         fun isAccessory(device: UsbDevice) = device.vendorId == 0x18d1 && device.productId in listOf(0x2d00, 0x2d01)
-        fun switchToAccessory(manager: UsbManager, device: UsbDevice) {
-            val connection = manager.openDevice(device) ?: error("USB permission was not granted")
+        /** Returns the peer's AOA protocol version. Failure messages name the exact step for diagnostics. */
+        fun switchToAccessory(manager: UsbManager, device: UsbDevice): Int {
+            val connection = manager.openDevice(device) ?: error("Could not open the USB device (permission missing or device busy)")
             try {
                 val version = ByteArray(2)
-                check(connection.controlTransfer(0xc0, 51, 0, 0, version, 2, 2000) == 2 && version[0].toInt() in 1..2) {
-                    "Other device does not report Android Open Accessory support. Try the other USB host direction or use QR setup."
+                val read = connection.controlTransfer(0xc0, 51, 0, 0, version, 2, 2000)
+                val protocol = (version[0].toInt() and 255) or ((version[1].toInt() and 255) shl 8)
+                check(read == 2 && protocol in 1..2) {
+                    "Other device does not report Android Open Accessory support (version request returned $read, protocol $protocol). Try the other USB host direction or use QR setup."
                 }
                 val strings = listOf("Field", "OTP Pager Pairing", "Physical device pairing", "1", "", "field-pairing")
                 for ((i, value) in strings.withIndex()) {
                     val bytes = (value + "\u0000").toByteArray(Charsets.UTF_8)
-                    check(connection.controlTransfer(0x40, 52, 0, i, bytes, bytes.size, 2000) == bytes.size) { "USB accessory negotiation failed" }
+                    val sent = connection.controlTransfer(0x40, 52, 0, i, bytes, bytes.size, 2000)
+                    check(sent == bytes.size) { "USB accessory negotiation failed at string $i (sent $sent of ${bytes.size})" }
                 }
-                check(connection.controlTransfer(0x40, 53, 0, 0, null, 0, 2000) >= 0) { "USB accessory switch failed" }
+                val start = connection.controlTransfer(0x40, 53, 0, 0, null, 0, 2000)
+                check(start >= 0) { "USB accessory switch failed (start returned $start)" }
+                return protocol
             } finally { connection.close() }
         }
+        /** Diagnostics only: vendor:product and class, never serial numbers. */
+        fun describe(device: UsbDevice) = "%04x:%04x class %d, %d interface(s)%s".format(device.vendorId, device.productId,
+            device.deviceClass, device.interfaceCount, if (isAccessory(device)) ", accessory mode" else "")
         fun host(manager: UsbManager, device: UsbDevice): UsbPairChannel {
             check(isAccessory(device))
             val connection = manager.openDevice(device) ?: error("USB connection unavailable")
