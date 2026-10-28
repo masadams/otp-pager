@@ -110,4 +110,34 @@ class PadMaterialTest {
             rejected { PadMaterial.write(File(keep.parentFile, "other.bin"), id, pad) }
         } finally { base.deleteRecursively() }
     }
+    @Test fun streamedWritesInAnyChunkSizeMatchTheWholePadAndFailClosedOnLength() {
+        val (base, pad, id) = fixture(2 * PadProtocol.MATERIAL_BYTES)
+        try {
+            val dir = PadMaterial.directory(base, root)
+            for (chunk in listOf(1, 4127, 4129, 65536, pad.size)) {
+                val installed = PadMaterial.Writer(dir, pad.size).use { w ->
+                    var at = 0
+                    while (at < pad.size) { val n = minOf(chunk, pad.size - at); w.write(pad, at, n); at += n }
+                    w.finish()
+                }
+                assertEquals(id, installed.padId)
+                assertArrayEquals(java.security.MessageDigest.getInstance("SHA-256").digest(pad), installed.digest)
+                for (role in listOf('A', 'B')) for (counter in listOf(1L, 77L, 254L))
+                    assertArrayEquals(legacySlot(pad, role, counter), PadMaterial.slot(installed.file, id, installed.keys, role, counter))
+                installed.file.delete()
+            }
+            // Short, long and abandoned streams leave no material behind.
+            PadMaterial.Writer(dir, pad.size).use { w -> w.write(pad, 0, 100); rejected { w.finish() } }
+            PadMaterial.Writer(dir, pad.size).use { w -> w.write(pad); rejected { w.write(ByteArray(1)) } }
+            PadMaterial.Writer(dir, pad.size).use { w -> w.write(pad, 0, 5000) }
+            assertTrue(dir.listFiles()!!.none { it.name.startsWith("pending-") })
+            rejected { PadMaterial.Writer(dir, 3 * PadProtocol.MATERIAL_BYTES) }
+            // Two files of the same pad never share record binding (fresh nonce and keys each time).
+            val a = PadMaterial.Writer(dir, pad.size).use { it.write(pad); it.finish() }
+            val aBytes = a.file.readBytes(); a.file.delete()
+            val b = PadMaterial.Writer(dir, pad.size).use { it.write(pad); it.finish() }
+            rejected { PadMaterial.slot(b.file, id, a.keys, 'A', 1) }
+            assertFalse(aBytes.copyOfRange(8, 24).contentEquals(b.file.readBytes().copyOfRange(8, 24)))
+        } finally { base.deleteRecursively() }
+    }
 }

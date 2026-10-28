@@ -18,11 +18,17 @@ on every save. That is slow on regular phones and can exhaust the app's memory.
 
 ### Material file, one key per slot (implemented)
 
-- `padmaterial/<root>/<padId>.bin` (`PadMaterial`): a 32-byte header (magic `OTPMAT01`, pad id,
-  slot count, pad size), then one record per slot:
-  `iv (12) ‖ AES-256-GCM(slotKey, slot bytes) (4128 + 16)`, with AAD = magic ‖ pad id ‖ slot index.
-  Written once to a `.new` file, fsynced, renamed, directory-synced and fully verified, then never
-  rewritten. Already-used slots (all zero in a migrated pad) are written as zeros and get no key.
+- `padmaterial/<root>/<padId>.bin` (`PadMaterial`): a 48-byte header (magic `OTPMAT01`, random
+  file nonce, pad id, slot count, pad size), then one record per slot:
+  `iv (12) ‖ AES-256-GCM(slotKey, slot bytes) (4128 + 16)`, with AAD = magic ‖ file nonce ‖ slot index.
+  - Records are bound to the per-file nonce rather than the pad id. That lets `PadMaterial.Writer`
+    stream a pad in before its id (a hash of the whole pad) is known, which item 2 needs for
+    16–64 MiB pads.
+  - The pad id in the header ties the file to the vault.
+  - The file is written once as `pending-<nonce>.new`, fsynced, renamed, directory-synced and fully
+    verified, then never rewritten.
+  - Already-used slots (all zero in a migrated pad) are written as zeros and get no key. A migrated
+    pad keeps its vault-authenticated id, because its zeroed bytes no longer hash to it.
 - **Key table:** the 32-byte random `slotKey`s are one base64 field, `padKeys`, inside the contact's
   existing encrypted, rotating vault. This replaces the in-vault `pad` field. An all-zero key means
   "used or retired". Using a slot zeroes its key in the same atomic vault save that records the
