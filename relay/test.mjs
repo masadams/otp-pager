@@ -300,3 +300,65 @@ test('strict claims is off by default and reported to clients', async () => {
     assert.equal(page.access, 'shared'); assert.equal(page.strict, false);
   } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
 });
+
+test('strict-chat shares: device-signed unlocks get short signed grants and lapse without check-in', async () => {
+  const { generateKeyPairSync, sign: signWith, verify: verifyWith, createPublicKey } = await import('node:crypto');
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-')); let clock = 1_800_000_000_000;
+  let { server, base } = await launch({ dataDir, now: () => clock });
+  const room = 'd'.repeat(64), capability = 'c'.repeat(43), share = Buffer.alloc(32, 7).toString('base64url');
+  const scoped = { Authorization: 'Bearer ' + capability, 'Content-Type': 'application/json' };
+  const deviceKeys = generateKeyPairSync('ec', { namedCurve: 'P-256' });
+  const device = deviceKeys.publicKey.export({ type: 'spki', format: 'der' });
+  const sha = b => createHash('sha256').update(b).digest();
+  const enroll = (body, h = scoped) => fetch(base + '/v1/share/' + room, { method: 'PUT', headers: h, body: JSON.stringify(body) });
+  const authority = async () => Buffer.from((await (await fetch(base + '/v1/strict/authority')).json()).key, 'base64');
+  const frame = (auth, { issued = clock, expires = clock + 60000, nonce = randomBytes(32), kind = 2, dev = device } = {}) => {
+    const f = Buffer.alloc(178); f.write('OTPSTR01', 0, 'latin1'); f[8] = kind; f[9] = 65;
+    randomBytes(16).copy(f, 10); sha(dev).copy(f, 26); sha(auth).copy(f, 58); f.writeBigInt64BE(1n, 90);
+    nonce.copy(f, 98); f.writeBigInt64BE(BigInt(issued), 130); f.writeBigInt64BE(BigInt(expires), 138); return f;
+  };
+  const unlock = (f, key = deviceKeys.privateKey) => fetch(base + '/v1/share/' + room + '/unlock', { method: 'POST', headers: scoped,
+    body: JSON.stringify({ frame: f.toString('base64'), signature: signWith('sha256', f, key).toString('base64') }) });
+  try {
+    const auth = await authority();
+    assert.equal(auth.length > 60, true);
+    const body = { share, deadline: 2 * 3600000, device: device.toString('base64') };
+    assert.equal((await enroll(body, headers)).status, 403); // The setup token never enrolls or unlocks.
+    assert.equal((await fetch(base + '/v1/mailbox/' + room + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability }) })).status, 201);
+    assert.equal((await enroll({ ...body, deadline: 1000 })).status, 400);
+    assert.equal((await enroll({ ...body, device: 'bm90IGEga2V5' })).status, 400);
+    assert.equal((await enroll(body)).status, 201);
+    assert.equal((await enroll(body)).status, 200);
+    assert.equal((await enroll({ ...body, share: Buffer.alloc(32, 8).toString('base64url') })).status, 409);
+    assert.ok(!readFileSync(join(dataDir, 'mailboxes.json'), 'utf8').includes(capability));
+
+    // A valid device-signed request returns the share inside a grant signed by the authority.
+    const request = frame(auth);
+    const reply = await unlock(request); assert.equal(reply.status, 200);
+    const { frame: g, signature } = await reply.json(); const grant = Buffer.from(g, 'base64');
+    assert.ok(verifyWith('sha256', grant, createPublicKey({ key: auth, format: 'der', type: 'spki' }), Buffer.from(signature, 'base64')));
+    assert.equal(grant[8], 3); assert.deepEqual(grant.subarray(9, 146), request.subarray(9, 146));
+    assert.deepEqual(grant.subarray(146), Buffer.alloc(32, 7));
+    // Replay, wrong signer, long lease, clock mismatch, wrong authority or device, and tampering all fail.
+    assert.equal((await unlock(request)).status, 409);
+    assert.equal((await unlock(frame(auth), generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey)).status, 403);
+    assert.equal((await unlock(frame(auth, { expires: clock + 60001 }))).status, 400);
+    assert.equal((await unlock(frame(auth, { issued: clock - 400000, expires: clock - 340000 }))).status, 409);
+    assert.equal((await unlock(frame(Buffer.from('other')))).status, 400);
+    assert.equal((await unlock(frame(auth, { kind: 3 }))).status, 400);
+    const tampered = frame(auth); const sig = signWith('sha256', tampered, deviceKeys.privateKey); tampered[100] ^= 1;
+    assert.equal((await fetch(base + '/v1/share/' + room + '/unlock', { method: 'POST', headers: scoped,
+      body: JSON.stringify({ frame: tampered.toString('base64'), signature: sig.toString('base64') }) })).status, 403);
+
+    // Unlocks are check-ins; the authority key survives restart; silence past the deadline discards the share.
+    clock += 90 * 60000; assert.equal((await unlock(frame(auth))).status, 200);
+    await stop(server); ({ server, base } = await launch({ dataDir, now: () => clock }));
+    assert.deepEqual(await authority(), auth);
+    clock += 90 * 60000; assert.equal((await unlock(frame(auth))).status, 200);
+    clock += 2 * 3600000 + 1; assert.equal((await unlock(frame(auth))).status, 404);
+    assert.equal((await enroll(body)).status, 201);
+    assert.equal((await fetch(base + '/v1/share/' + room, { method: 'DELETE', headers: scoped })).status, 200);
+    assert.equal((await unlock(frame(auth))).status, 404);
+    assert.equal((await fetch(base + '/v1/share/' + room, { method: 'GET', headers: scoped })).status, 405);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});

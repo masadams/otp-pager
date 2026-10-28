@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { timingSafeEqual, createHash, randomUUID } from 'node:crypto';
+import { timingSafeEqual, createHash, randomUUID, generateKeyPairSync, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
 import { mkdirSync, readFileSync, openSync, writeFileSync, fsyncSync, closeSync, renameSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -19,6 +19,12 @@ export function makeServer(options = {}) {
   const maxMessages = options.maxMessages ?? 2000;
   const maxRoom = options.maxRoom ?? 200;
   const maxClaims = options.maxClaims ?? 1000;
+  const maxShares = options.maxShares ?? 1000;
+  // Strict chats: a phone stores one 32-byte share per chat here. It must check in within its
+  // own deadline or the share is discarded; without it, that phone can no longer open the chat.
+  const MIN_DEADLINE = 3600000, MAX_DEADLINE = 30 * 86400000, CHECK_IN_WRITE = 60000;
+  // Unlock grants are signed OTPSTR01 frames (docs/STRICT_CHAT_PROTOCOL.md) valid for at most 60 s.
+  const FRAME = 178, MAX_LEASE = 60000, MAX_SKEW = options.maxSkew ?? 300000, MAX_NONCES = 32;
   const now = options.now ?? Date.now;
   const rateLimit = options.rateLimit ?? 360;
   // Strict claims (finding F06): the setup token may only create chat claims; it can never
@@ -31,6 +37,20 @@ export function makeServer(options = {}) {
   const digest = packet => createHash('sha256').update(Buffer.from(packet, 'base64')).digest('hex');
   mkdirSync(dataDir, { recursive: true, mode: 0o700 });
   const file = join(dataDir, 'mailboxes.json');
+  // Strict-chat unlock authority: one P-256 key per relay volume, created once, never sent anywhere.
+  const authorityFile = join(dataDir, 'authority-key.pem');
+  let authorityKey;
+  try { authorityKey = createPrivateKey(readFileSync(authorityFile, 'utf8')); }
+  catch (e) {
+    if (e.code !== 'ENOENT') throw e;
+    const pem = generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({ type: 'pkcs8', format: 'pem' });
+    const fd = openSync(authorityFile + '.tmp', 'w', 0o600);
+    try { writeFileSync(fd, pem); fsyncSync(fd); } finally { closeSync(fd); }
+    renameSync(authorityFile + '.tmp', authorityFile);
+    authorityKey = createPrivateKey(pem);
+  }
+  const authoritySpki = createPublicKey(authorityKey).export({ type: 'spki', format: 'der' });
+  const authorityFingerprint = createHash('sha256').update(authoritySpki).digest();
   let state = { version: 1, seq: 0, messages: [] };
   try { state = JSON.parse(readFileSync(file, 'utf8')); }
   catch (e) { if (e.code !== 'ENOENT') throw e; }
@@ -45,6 +65,12 @@ export function makeServer(options = {}) {
       Object.entries(state.access).some(([room, entry]) => !ROOM.test(room) || !entry ||
         typeof entry.hash !== 'string' || !/^[a-f0-9]{64}$/.test(entry.hash) || typeof entry.revoked !== 'boolean'))
     throw new Error('Invalid mailbox access state');
+  if (state.shares === undefined) state.shares = {};
+  if (!state.shares || typeof state.shares !== 'object' || Array.isArray(state.shares) ||
+      Object.entries(state.shares).some(([room, s]) => !ROOM.test(room) || !s || !/^[A-Za-z0-9_-]{43}$/.test(s.share) ||
+        !Number.isSafeInteger(s.deadline) || s.deadline < MIN_DEADLINE || s.deadline > MAX_DEADLINE || !Number.isFinite(s.checked) ||
+        typeof s.device !== 'string' || !Array.isArray(s.nonces) || s.nonces.length > MAX_NONCES))
+    throw new Error('Invalid share state');
   function commit(next) {
     if (poisoned) throw new Error('Storage unavailable');
     try {
@@ -64,7 +90,9 @@ export function makeServer(options = {}) {
   if (sequences.some((seq, i) => i > 0 && seq <= sequences[i - 1])) throw new Error('Invalid stored sequence ordering');
   function clean() {
     const live = state.messages.filter(m => now() - m.time < ttl);
-    if (live.length !== state.messages.length) commit({ ...state, messages: live });
+    const shares = Object.fromEntries(Object.entries(state.shares).filter(([, s]) => now() - s.checked <= s.deadline));
+    if (live.length !== state.messages.length || Object.keys(shares).length !== Object.keys(state.shares).length)
+      commit({ ...state, messages: live, shares });
   }
   function json(res, status, body) {
     if (res.destroyed || res.writableEnded) return;
@@ -96,7 +124,10 @@ export function makeServer(options = {}) {
       // this is a shared proxy budget; configure per-public-IP limits at Nginx.
       const actual = Buffer.from(req.headers.authorization || '');
       const bootstrap = actual.length === expected.length && timingSafeEqual(actual, expected);
-      const match = /^\/v1\/mailbox\/([a-f0-9]{64})(\/claim)?$/.exec(url.pathname);
+      if (url.pathname === '/v1/strict/authority' && req.method === 'GET')
+        return json(res, 200, { key: authoritySpki.toString('base64') });
+      const shareMatch = /^\/v1\/share\/([a-f0-9]{64})(\/unlock)?$/.exec(url.pathname);
+      const match = /^\/v1\/mailbox\/([a-f0-9]{64})(\/claim)?$/.exec(url.pathname) ?? (shareMatch && [shareMatch[0], shareMatch[1], undefined]);
       const room = match?.[1];
       const claim = state.access[room];
       const bearer = /^Bearer ([A-Za-z0-9_-]{43,128})$/.exec(req.headers.authorization || '')?.[1];
@@ -140,6 +171,69 @@ export function makeServer(options = {}) {
       }
       if (!authorized) return json(res, 401, { error: 'unauthorized' });
       if (claim?.revoked) return json(res, 410, { error: 'chat revoked' });
+      if (shareMatch) {
+        // Shares are only ever reachable with a claimed capability, never the setup token.
+        if (!scoped) return json(res, 403, { error: 'chat credential required' });
+        clean();
+        const held = state.shares[room];
+        if (req.method === 'DELETE' && !shareMatch[2]) {
+          if (held) { const { [room]: _, ...rest } = state.shares; commit({ ...state, shares: rest }); }
+          return json(res, 200, { share: 'deleted' });
+        }
+        const expected = shareMatch[2] ? 'POST' : 'PUT';
+        if (req.method !== expected) { res.setHeader('Allow', shareMatch[2] ? 'POST' : 'PUT, DELETE'); return json(res, 405, { error: 'method not allowed' }); }
+        if (!/^application\/json(?:;|$)/i.test(req.headers['content-type'] || ''))
+          return json(res, 415, { error: 'JSON content type required' });
+        let data;
+        try { data = JSON.parse(await readBody(req)); }
+        catch (e) {
+          if (e?.status) { res.setHeader('Connection', 'close'); res.once('finish', () => req.destroy()); }
+          return json(res, e?.status || 400, { error: 'invalid request' });
+        }
+        if (shareMatch[2]) {
+          // Unlock: an OTPSTR01 UNLOCK frame signed by the enrolled device key. Doubles as the check-in.
+          const current = state.shares[room];
+          if (!current) return json(res, 404, { error: 'no share' });
+          if (!data || typeof data.frame !== 'string' || typeof data.signature !== 'string') return json(res, 400, { error: 'invalid unlock' });
+          const frame = Buffer.from(data.frame, 'base64'), signature = Buffer.from(data.signature, 'base64');
+          if (frame.length !== FRAME || frame.toString('base64') !== data.frame || signature.length < 8 || signature.length > 80)
+            return json(res, 400, { error: 'invalid unlock' });
+          const device = Buffer.from(current.device, 'base64');
+          let signed = false;
+          try { signed = verify('sha256', frame, { key: device, format: 'der', type: 'spki' }, signature); } catch { signed = false; }
+          if (!signed) return json(res, 403, { error: 'unlock signature rejected' });
+          const issued = Number(frame.readBigInt64BE(130)), expires = Number(frame.readBigInt64BE(138));
+          const nonce = frame.subarray(98, 130).toString('hex');
+          if (frame.subarray(0, 8).toString('latin1') !== 'OTPSTR01' || frame[8] !== 2 || ![65, 66].includes(frame[9]) ||
+              !frame.subarray(26, 58).equals(createHash('sha256').update(device).digest()) ||
+              !frame.subarray(58, 90).equals(authorityFingerprint) || frame.readBigInt64BE(90) <= 0n ||
+              !frame.subarray(146, 178).equals(Buffer.alloc(32)) || !(expires > issued && expires - issued <= MAX_LEASE))
+            return json(res, 400, { error: 'invalid unlock' });
+          if (Math.abs(time - issued) > MAX_SKEW || time >= expires + MAX_SKEW) return json(res, 409, { error: 'unlock clock mismatch' });
+          if (current.nonces.some(n => n.nonce === nonce)) return json(res, 409, { error: 'unlock replayed' });
+          const nonces = [...current.nonces.filter(n => n.until > time), { nonce, until: expires + MAX_SKEW }].slice(-MAX_NONCES);
+          commit({ ...state, shares: { ...state.shares, [room]: { ...current, checked: time, nonces } } });
+          const grant = Buffer.from(frame); grant[8] = 3; Buffer.from(current.share, 'base64url').copy(grant, 146);
+          const response = { frame: grant.toString('base64'), signature: sign('sha256', grant, authorityKey).toString('base64') };
+          grant.fill(0);
+          return json(res, 200, response);
+        }
+        // Enrollment: store a share once, bound to the device key that may unlock it.
+        if (!data || typeof data.share !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(data.share) ||
+            !Number.isSafeInteger(data.deadline) || data.deadline < MIN_DEADLINE || data.deadline > MAX_DEADLINE ||
+            typeof data.device !== 'string' || data.device.length > 200)
+          return json(res, 400, { error: 'invalid share' });
+        try { createPublicKey({ key: Buffer.from(data.device, 'base64'), format: 'der', type: 'spki' }); }
+        catch { return json(res, 400, { error: 'invalid device key' }); }
+        const current = state.shares[room]; // Recheck after the async body read; a share is never replaced.
+        if (current) {
+          const same = current.share === data.share && current.device === data.device && current.deadline === data.deadline;
+          return json(res, same ? 200 : 409, same ? { share: 'stored' } : { error: 'share exists' });
+        }
+        if (Object.keys(state.shares).length >= maxShares) return json(res, 429, { error: 'share capacity reached' });
+        commit({ ...state, shares: { ...state.shares, [room]: { share: data.share, deadline: data.deadline, checked: now(), device: data.device, nonces: [] } } });
+        return json(res, 201, { share: 'stored' });
+      }
       if (req.method === 'DELETE') {
         if (!scoped) return json(res, 403, { error: 'chat credential required' });
         commit({ ...state, access: { ...state.access, [room]: { ...state.access[room], revoked: true } },
