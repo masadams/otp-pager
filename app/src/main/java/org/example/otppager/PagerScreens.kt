@@ -28,6 +28,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         fun rename()
         fun retryRetirement()
         fun freshPairing()
+        fun dismissRetired()
         fun status()
         fun wipe()
     }
@@ -88,6 +89,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     private val retiredNotice = label("", 13f).apply { visibility = View.GONE }
     private val retiredRemote = label(NO_REMOTE_WIPE, 15f).apply { setPadding(0, dp(16), 0, dp(16)) }
     private val retryRetirementButton = button("Retry local cleanup") { actions.retryRetirement() }.apply { isEnabled = false; alpha = 0.45f }
+    private val dismissRetiredButton = button("Done · remove from Chats", true) { actions.dismissRetired() }.apply { visibility = View.GONE }
     private val freshPairingButton = button("Start fresh pairing", true) { actions.freshPairing() }.apply { isEnabled = false; alpha = 0.45f }
     init {
         retired.addView(header("Pairing recovery", back = 4))
@@ -95,8 +97,9 @@ internal class PagerScreens(private val activity: Activity, private val actions:
             addView(retiredName.apply { setPadding(0, dp(20), 0, dp(16)) })
             addView(retiredStatus)
             addView(retiredRemote)
-            addView(label("Local cleanup removes this pairing's vault, draft and identity keys and their files. The contact name and minimal reuse/retirement records remain. Flash, memory and exported copies cannot be guaranteed erased.", 13f, true))
+            addView(label("Local cleanup removes this pairing's vault, draft and identity keys and their files. After cleanup completes, Done or returning to Chats removes this entry. Minimal reuse/retirement records and queued peer-wipe requests remain. Flash, memory and exported copies cannot be guaranteed erased.", 13f, true))
             addView(retiredNotice)
+            addView(dismissRetiredButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
             addView(retryRetirementButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(20) })
             addView(freshPairingButton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
             addView(button("Back to chats") { actions.back(4) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
@@ -196,6 +199,8 @@ internal class PagerScreens(private val activity: Activity, private val actions:
             VaultRetirement.LocalState.INCOMPLETE -> "Local cleanup incomplete"
             else -> "Local cleanup status unavailable"
         }
+        dismissRetiredButton.visibility = if (status.state == VaultRetirement.LocalState.COMPLETE) View.VISIBLE else View.GONE
+        dismissRetiredButton.isEnabled = !busy && status.state == VaultRetirement.LocalState.COMPLETE
         retryRetirementButton.isEnabled = !busy
         freshPairingButton.isEnabled = !busy && status.state == VaultRetirement.LocalState.COMPLETE
         retryRetirementButton.alpha = if (retryRetirementButton.isEnabled) 1f else 0.45f
