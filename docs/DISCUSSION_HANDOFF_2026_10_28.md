@@ -1,6 +1,9 @@
 # Discussion handoff and outstanding work — 2026-10-28
 
 Snapshot of main `356cbe2` and open PRs as checked on 2026-10-28 (America/Toronto).
+**Update, later 2026-10-28:** the owner handed the pipeline to one session. #53, #54, #55
+and #56 merged; #48 closed as superseded by #54. Relay failover is in #57. Group chats
+(item 7) are in progress on `feat/group-chats`. #27 (Node 26) is waiting for its in-image test run.
 This records the discussion's decisions and known unfinished work so continuation
 requires no chat history. It is not a new audit, an exhaustive vulnerability list,
 or a release-readiness claim. Recheck PR heads and main before starting work.
@@ -83,7 +86,18 @@ independent review to the final community review package, not out of the plan.
 forensic deletion. Separate ordinary per-device relay credentials were considered
 and dropped; do not revive that work without new direction.
 
-## Strict-design reconciliation required before integration
+## Strict-design reconciliation — resolved 2026-10-28
+
+The owner chose to **combine both** designs: a signed foreground unlock lease of at most
+60 s, plus a relay check-in deadline (12 h / 3 days / 14 days). The deadline is chosen when a
+strict chat is paired. Expiry is part of strict mode, not a separate opt-in, and normal chats
+never expire. #54 implemented this, superseded #48 (closed) and merged; see
+[STRICT_CHAT_PROTOCOL.md](STRICT_CHAT_PROTOCOL.md). Automatic retirement of a *whole
+conversation* after loss of peer contact
+([LOSS_OF_CONTACT_POLICY.md](LOSS_OF_CONTACT_POLICY.md)) remains a separate, proposed,
+off-by-default policy. A strict share lapsing only stops *that phone* from opening the chat.
+
+### Original reconciliation note (historical)
 
 Earlier #44/#48 and main's plan selected one unlock authority, a maximum 60-second
 foreground lease, fresh physical enrollment and **no inactivity share deletion**.

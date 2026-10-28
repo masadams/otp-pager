@@ -144,3 +144,16 @@ loopback address. Container Nginx instead needs the shared-network Portainer sta
 An external overlay can restrict access to Nginx while retaining HTTPS and message
 encryption. Built-in WireGuard/ZeroTier/Nebula is not implemented in this release.
 See [PRIVATE_NETWORK.md](PRIVATE_NETWORK.md) for the proposed integration.
+
+
+## Relay storage files (2026-10-28)
+
+The data volume holds:
+- `mailboxes.json`: snapshot;
+- `journal.log`: recent posts, expiries and strict-chat check-ins, one fsynced line each, folded
+  into the snapshot every 256 changes;
+- `authority-key.pem`: the strict-chat unlock authority key.
+
+Back up or move all three together. A `journal.log` from a different snapshot is ignored by
+design. Never copy `authority-key.pem` between relays, because each relay is its own unlock
+authority.
