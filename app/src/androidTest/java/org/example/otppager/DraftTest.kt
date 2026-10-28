@@ -20,13 +20,13 @@ class DraftTest {
             engine.generatePad().fill(0)
             val master = Protocol.master(engine.state!!.getString("secret"))
             val room = try { Protocol.room(master) } finally { master.fill(0) }
-            val counter = engine.state!!.getLong("counter"); val pad = engine.state!!.getString("pad")
+            val counter = engine.state!!.getLong("counter"); val pad = engine.state!!.getString("padKeys")
             val id = UUID.randomUUID().toString(); val draft = ChatDraft(small)
             draft.save(room, id, "Unsent private draft", now = 1000)
             assertEquals("Unsent private draft", draft.read(room, now = 2000)!!.text)
             assertFalse(java.io.File(context.noBackupFilesDir, "draft-test-draft.bin").readText(Charsets.ISO_8859_1).contains("Unsent private draft"))
             assertEquals(counter, StationEngine(station).state!!.getLong("counter"))
-            assertEquals(pad, StationEngine(station).state!!.getString("pad"))
+            assertEquals(pad, StationEngine(station).state!!.getString("padKeys"))
             // Saving the same revision on backgrounding does not extend its original lifetime.
             draft.save(room, id, "Unsent private draft", now = 9000)
             assertNull(draft.read(room, now = 1000 + ChatDraft.RETENTION))

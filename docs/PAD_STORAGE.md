@@ -1,6 +1,7 @@
 # Separate pad storage and larger pads (pipeline items 1–2)
 
-Status: design. Owner direction 2026-10-28: pads should be 10 MiB or larger.
+Status: item 1 (separate storage) implemented; item 2 (bigger pads, streamed transfer) next.
+Owner direction 2026-10-28: pads should be 10 MiB or larger.
 
 ## Problem
 
@@ -15,32 +16,49 @@ on every save. That is slow on regular phones and can exhaust the app's memory.
 
 ## Design
 
-### Material file, one key per slot
+### Material file, one key per slot (implemented)
 
-- `<root>-material.bin`: immutable after installation. A header (magic `OTPMAT01`, pad id,
-  size, slot count per direction), then one record per slot:
-  `iv (12) ‖ AES-256-GCM(slotKey, slot bytes) (4128 + 16)`, with AAD = pad id ‖ direction ‖ slot index.
-  Written once, streamed in, fsynced, verified, then never rewritten.
-- `<root>-padkeys`: a contact-vault store (the same rotating `VaultKeys` envelope) holding
-  each unused slot's 32-byte random `slotKey`. Using a slot deletes its key from this table.
-  That deletion, plus the table's own key rotation, is the erasure: consumed slot bytes may
-  remain in the material file and in flash, but nothing can decrypt them.
-- Table size: 32 bytes × slots. 64 MiB is about 16,000 slots (about 512 KB), a small fraction of
-  today's per-save rewrite.
+- `padmaterial/<root>/<padId>.bin` (`PadMaterial`): a 48-byte header (magic `OTPMAT01`, random
+  file nonce, pad id, slot count, pad size), then one record per slot:
+  `iv (12) ‖ AES-256-GCM(slotKey, slot bytes) (4128 + 16)`, with AAD = magic ‖ file nonce ‖ slot index.
+  - Records are bound to the per-file nonce rather than the pad id. That lets `PadMaterial.Writer`
+    stream a pad in before its id (a hash of the whole pad) is known, which item 2 needs for
+    16–64 MiB pads.
+  - The pad id in the header ties the file to the vault.
+  - The file is written once as `pending-<nonce>.new`, fsynced, renamed, directory-synced and fully
+    verified, then never rewritten.
+  - Already-used slots (all zero in a migrated pad) are written as zeros and get no key. A migrated
+    pad keeps its vault-authenticated id, because its zeroed bytes no longer hash to it.
+- **Key table:** the 32-byte random `slotKey`s are one base64 field, `padKeys`, inside the contact's
+  existing encrypted, rotating vault. This replaces the in-vault `pad` field. An all-zero key means
+  "used or retired". Using a slot zeroes its key in the same atomic vault save that records the
+  message. That zeroing, plus vault key rotation, is the erasure: consumed slot bytes may remain in
+  the material file and in flash, but nothing can decrypt them.
+  - *Change from the first draft:* the table stays inside the vault rather than in a separate
+    `-padkeys` store. This keeps one atomic commit for "message recorded + slot erased". It also
+    puts the table under the existing contact retirement, rotation and epoch scope unchanged.
+  - Size: 32 bytes × slots, which is about 43 KB of base64 at 4 MiB and about 700 KB at 64 MiB.
+    Today's vault carries 5.6 MB of base64 at 4 MiB.
+- Wire format, message ids and pad check codes are unchanged (`PadProtocol.sealSlot/openSlot`
+  produce exactly what `seal/open` produce from the whole pad).
 
 ### Ordering and crash safety
 
-- **Install:** write the table (all keys) first, then stream the material, then commit `padId`
-  and `padStorage: 1` in the vault last. Interruption leaves unreferenced files that the next
-  install or retirement removes; the ledger reservation rules are unchanged.
+- **Install / pairing / renewal:** register the pad in the ledger, write and verify the material
+  file, then commit `padKeys` and `padId` in the vault. A crash before the commit leaves an
+  unreferenced file. Unreferenced files are removed when a pairing, install or reset commits, or
+  when an engine opens while it is the only live owner of that chat. A file is never removed
+  while another owner may have a staged pairing that refers to it.
 - **Send:** reserve in the ledger (unchanged, before encryption), decrypt that one slot,
-  encrypt, and delete its key in the same transaction that records the outbox entry. A crash
-  after the reservation burns the slot, exactly as today.
-- **Receive:** decrypt the slot named by the counter. A missing key means the slot was used
-  or retired, the same as today's all-zero check.
-- **Retirement and wipes:** `<root>-material` and `<root>-padkeys` join the contact's
-  destroyed scope. Discovery patterns and `VaultRetirement` add them. The `-pads` ledger
-  stays retained as now.
+  encrypt, and zero its key in the same transaction that records the outbox entry. A crash
+  after the reservation burns the slot, exactly as before.
+- **Receive:** decrypt the slot named by the counter. A zeroed key means the slot was used or
+  retired, the same as the old all-zero check.
+- **Missing or damaged material** fails closed: the engine refuses to open, and a record that
+  fails authentication is rejected. Nothing falls back to another key.
+- **Retirement and wipes:** `VaultRetirement` deletes `padmaterial/<root>/` (step
+  `pad-material`), and `inspect` reports COMPLETE only once it is gone. The global wipe runs the
+  same contact retirement. *Forget pairing* deletes it too. The `-pads` ledger stays retained as now.
 
 ### Identity, check codes and export
 
@@ -54,11 +72,13 @@ USB and Wi-Fi pairing send the pad in chunks over the existing encrypted channel
 64 KiB frames with a running hash), after the approvals and before the final confirmation.
 The receiver writes it straight into the material file. JSON setup carries only metadata.
 
-### Migration
+### Migration (implemented)
 
-On first open, an existing in-vault pad is moved: build the table and material from the current
-pad, which already has zeros for used slots (those get no key), verify, then remove `pad` from the
-vault in a forced-rotation save. Until verified, the in-vault pad stays authoritative.
+On first open after the update, an in-vault pad is moved. The material and table are built from
+the current pad; the pad already has zeros for used slots, and those get no key. The material is
+verified, then `pad` is replaced by `padKeys` in a forced-rotation save. Until that save commits,
+the in-vault pad stays authoritative. A crash leaves the old vault untouched and an unreferenced
+file. The signed-update CI job exercises this with a real v0.13 install followed by `install -r`.
 
 ## Sizes
 
@@ -68,7 +88,20 @@ meeting again.
 
 ## Tests
 
-JVM: material record codec, AAD binding, wrong-slot and wrong-pad refusal, table encode/decode.
-Instrumentation: install/send/receive across restart, crash at each install step, migration from
-v3–v6 in-vault pads with used slots, retirement removing both new files and every key
-generation, export round trip. Existing delivery, renewal and pairing suites must pass unchanged.
+- **JVM (`PadMaterialTest`):**
+  - every slot round-trips at 1, 2 and 4 MiB;
+  - wire output is identical to the whole-pad path;
+  - no plaintext pad bytes appear in the file;
+  - retired slots have no key;
+  - swapped records, swapped keys, flipped bits, the wrong pad id and a truncated table are all rejected;
+  - prune and delete stay inside one root and reject path tricks.
+- **Instrumentation:**
+  - `PadStorageTest`:
+    - a 4 MiB pad leaves the vault under 120 KB;
+    - each send erases exactly one key, and the material file is never rewritten;
+    - missing material fails closed;
+    - forget removes the material;
+    - an in-vault pad with used and reserved slots migrates.
+  - `LocalWipeTest` checks that the wipe removes the material.
+  - The delivery, migration, draft, pairing and upgrade suites now read the pad through
+    `padSnapshot()`, and they check that no pad remains in the vault.

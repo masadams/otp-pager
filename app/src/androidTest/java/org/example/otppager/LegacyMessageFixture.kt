@@ -5,7 +5,7 @@ import org.json.JSONObject
 /** A pre-upgrade AES outbox snapshot. Production send APIs must never create this. */
 internal fun legacyQueuedText(store: SecureStore, text: String) {
     val state = checkNotNull(store.load())
-    check(!state.has("pad"))
+    check(!StationEngine.hasPad(state))
     val master = Protocol.master(state.getString("secret"))
     val counter = state.getLong("counter") + 1
     val packet = try {

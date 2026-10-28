@@ -65,12 +65,14 @@ class LocalWipeTest {
             val ledger = File(context.noBackupFilesDir, "$id-pads.bin").readBytes()
             val claims = SecureStore(context, "$index-claims").load()!!.toString()
 
+            assertFalse(PadMaterial.gone(context.noBackupFilesDir, id))
             release = blockWorker()
             val result = wipe(book, id)
             assertTrue(result.terminalDurable); assertTrue(result.completed); assertTrue(result.failures.isEmpty())
             assertEquals(VaultRetirement.LocalState.COMPLETE, VaultRetirement.inspect(context, id).state)
             for (slot in listOf(id, "$id-draft"))
                 assertTrue("$slot survived", VaultLifecycle.variants(File(context.noBackupFilesDir, "$slot.bin")).none { it.exists() })
+            assertTrue("Pad material survived the wipe", PadMaterial.gone(context.noBackupFilesDir, id))
             assertNull("Live engine kept the wiped snapshot", engine.state)
             assertTrue(book.summary(id).retired)
             // Reuse guards and the contact entry stay; the neighbor is untouched and still usable.
