@@ -958,12 +958,13 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             val routes = (listOfNotNull(primaryCredential?.let { s.getString("endpoint") to it }) + reachable)
             for (entry in pending) {
                 store.requireActive()
-                var sent = false
+                var sent = false; var failure: Exception? = null
                 for ((url, credential) in routes) {
                     try { relay.request(url, room, credential, "POST", RelayClient.packetBody(entry.getString("packet"))); sent = true; break }
-                    catch (e: RelayHttpException) { if (e.status == 410) throw e } catch (_: java.io.IOException) {}
+                    catch (e: RelayHttpException) { if (e.status == 410) throw e; failure = e } catch (e: java.io.IOException) { failure = e }
                 }
-                if (!sent) break
+                // No relay took it: report the failure exactly as before backups existed. The packet stays queued.
+                if (!sent) throw checkNotNull(failure)
                 transaction { next ->
                     items(next.getJSONArray("outbox")).firstOrNull { it.getString("id") == entry.getString("id") }?.put("status", "relayed")
                     prune(next)
