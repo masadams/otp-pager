@@ -32,6 +32,7 @@
             <meta-data android:name="android.nfc.cardemulation.host_apdu_service" android:resource="@xml/nfc_setup"/>
         </service>
         <activity android:name=".CablePairActivity" android:exported="false"/>
+        <activity android:name=".GroupActivity" android:exported="false"/>
         <activity android:name=".PairingScannerActivity" android:exported="false" android:screenOrientation="portrait" android:theme="@style/zxing_CaptureTheme"/>
         <activity android:name=".MainActivity" android:exported="false"/>
     </application>

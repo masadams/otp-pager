@@ -1,5 +1,5 @@
 # Pinned multi-arch index digest (node v22.23.4, resolved 2026-10-28). Dependabot proposes updates.
-FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914
+FROM node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797
 ENV NODE_ENV=production PORT=8080 DATA_DIR=/data
 WORKDIR /app
 RUN mkdir /data && chown node:node /data

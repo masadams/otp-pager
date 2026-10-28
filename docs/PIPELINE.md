@@ -106,10 +106,10 @@ fan-out groups; remaining security/reliability/usability work.
 | 3 | **Peer wipe** | Wipe should reach the friend's phone | **Merged (#40):** implemented behind an off-by-default "Peer wipe (unreviewed)" setting; pairing protocol v6 provisions control keys; independent vector reproduction still required |
 | 4 | **Strict chats** | A seized offline phone should not open high-risk chats | **In review:** signed 60 s unlock lease plus relay check-in deadline (owner: combine both); pairing v7; see [STRICT_CHAT_PROTOCOL.md](STRICT_CHAT_PROTOCOL.md) |
 | 5 | **Fixed-size packets** | Message length should leak nothing to the relay | **Checked:** every pad packet is 5,540 base64 chars whatever it carries (test added); remaining relay-visible metadata listed in [PAD_PROTOCOL.md](PAD_PROTOCOL.md) |
-| 6 | **Relay failover** | Availability with more than one relay | Ordered relay list per chat; same capability on each |
-| 7 | **Group chats** | Owner request | Fan-out: each message encrypted separately per member with the existing pairwise pads; no shared pads between 3+ phones |
+| 6 | **Relay failover** | Availability with more than one relay | **Merged (#57):** up to two backup relays per chat; read all, send via primary then backups; v8 copies them at pairing; see [RELAY_FAILOVER.md](RELAY_FAILOVER.md) |
+| 7 | **Group chats** | Owner request | **Merged (#58):** labels on pairwise chats, one pad copy per member, membership in each member vault, manual member linking; see [GROUP_CHATS.md](GROUP_CHATS.md) |
 | 8 | **Split-relay experiment** | Neither relay sees both phones' connections | Post via relay A, fetch via relay B, private link between them (e.g. ZeroTier); timing still links traffic without delays/cover traffic |
-| 9 | **Entropy and wording** | Pads come from SecureRandom, not a true OTP | Optional extra entropy mixed into pad generation; plainer user-facing wording |
+| 9 | **Entropy and wording** | Pads come from SecureRandom, not a true OTP | **Merged (#59):** pairing v9 mixes a peer seed into every streamed pad (AES-CTR keystream XOR); plainer wording in pairing help and PAD_PROTOCOL.md |
 | 10 | **Relay storage scaling** | Whole state file rewritten per message | **In review:** relay journals posts, expiry and unlock check-ins (one fsynced line each) and compacts every 256 changes; generation-tagged so stale journals never replay; torn tails are folded into a fresh snapshot |
 | 11 | **Owner tasks** | Cannot be done from CI | Release signing key, first signed release, two-phone hands-on test incl. power loss |
 | 12 | **Community review package** | Owner's chosen review route | Threat model, specs, vectors, known limits, how to test |
