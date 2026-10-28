@@ -37,7 +37,7 @@ physical validation, deployment or production readiness. Phase 2 remains open.
 - [x] Design ACTIVE epochs as one lineage (capability, routing, cohorts, repeat wipe) and
       implement the pure `OTPACT01` codec, lineage resolver and namespace scope (#18, B3a;
       [design](ACTIVE_EPOCH_DESIGN.md)). Not wired to storage access.
-- [ ] Implement ACTIVE epoch capabilities, namespace allowlists and current-index routing (B3b).
+- [x] Wire ACTIVE epoch capabilities, namespace allowlists, lineage-based freeze and current-index routing (#19, B3b; unreachable until activation, behaviour unchanged without a manifest).
 - [ ] Enforce immutable retained-cohort exclusions during active pairing/messaging (B3c).
 - [ ] Implement repeat-wipe/forward lineage and preserve every prior exclusion/reservation (B3d).
 - [ ] Safely enable fresh enrollment after global destruction (B3e activation, B3f UI).

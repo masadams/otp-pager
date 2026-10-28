@@ -49,7 +49,7 @@ internal object EnrollmentStaging {
     fun probe(directory: File): Presence = synchronized(VaultLifecycle.lock) {
         try {
             val s = sources(directory)
-            val found = s.names.any { it.startsWith(prefix) || it.startsWith("enr-") } ||
+            val found = s.names.any { it.startsWith(prefix) || it.startsWith("enr-") || it.startsWith("epoch-active-") } ||
                 s.aliases.any { it.startsWith(keyPrefix(directory)) || it.startsWith("otp-pager-enr-") }
             if (found) none.remove(directory.absolutePath) else none.add(directory.absolutePath)
             if (found) Presence.PRESENT else Presence.NONE
@@ -129,6 +129,11 @@ internal object EnrollmentStaging {
         var failed = false
         for (r in records) {
             try {
+                // An activated epoch's index/claims delta are live state and retained guards, never
+                // abandoned staging. Epoch-scoped wipe recovery is slice B3d; until then stay blocked.
+                if (VaultLifecycle.variants(EpochManifests.file(context.noBackupFilesDir, r.epoch)).any { exists(it) }) {
+                    failed = true; continue
+                }
                 if (r.phase == EnrollmentStageCodec.Phase.PREPARED) {
                     try { Vault.verify(context.noBackupFilesDir, r) } catch (_: Exception) { abandonRecord(context.noBackupFilesDir, r) }
                 } else abandonRecord(context.noBackupFilesDir, r)
@@ -153,6 +158,8 @@ internal object EnrollmentStaging {
         if (r.phase != EnrollmentStageCodec.Phase.ABANDONED) write(directory, r.copy(phase = EnrollmentStageCodec.Phase.ABANDONED,
             indexHash = EnrollmentStageCodec.zeroHash, claimsHash = EnrollmentStageCodec.zeroHash))
     }
+    /** Authenticated attempt records for lineage resolution; never repairs or creates anything. */
+    fun records(directory: File): List<EnrollmentStageCodec.Record> = synchronized(VaultLifecycle.lock) { readAll(directory) }
     private fun readAll(directory: File): List<EnrollmentStageCodec.Record> {
         val s = sources(directory)
         val files = s.names.filter { it.startsWith(prefix) }.map {
