@@ -34,10 +34,9 @@ Finite-pad mechanics are implemented below. Independent entropy validation,
 information-theoretic authentication and a cryptographic audit remain open. The
 following is the original protocol acceptance plan, not a claim that each step is complete.
 
-1. Pin Jericho upstream source and review its license, packet construction,
-   authentication, physical key import and consumption behavior. Build reproducible
-   reference vectors. Decide and document compatibility rather than silently
-   claiming it; current AES frames are not Jericho-compatible.
+1. Define this project's own packet construction, authentication, physical key import and
+   consumption behavior, with reproducible reference vectors. (Decided 2026-10-28: OTP
+   Pager follows its own design; no interoperability with other messengers is planned.)
 2. Specify a versioned 1 MiB physical pairing bundle, split into non-overlapping
    A→B and B→A pools. Account explicitly for message padding, identifiers and
    authentication bytes; usable text capacity is less than the raw pad size.

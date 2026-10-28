@@ -1,6 +1,6 @@
 # Android station v0.2: security, reliability, and e-ink
 
-This is an experimental AES-GCM messenger, **not a true OTP**, not Jericho-compatible,
+This is an experimental AES-GCM messenger, **not a true OTP**,
 and not independently audited. Android (including Android e-ink readers) is now
 the primary target. T-Deck / Thistle is optional future work, not a prerequisite.
 

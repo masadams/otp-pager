@@ -10,7 +10,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-/** Experimental v2 framing. AES-GCM, not OTP or Jericho. No Android dependencies. */
+/** Experimental v2 framing. AES-GCM, not OTP. No Android dependencies. */
 object Protocol {
     private val rng = SecureRandom()
     private const val HEADER = 38 // version, role, counter(8), id(16), nonce(12)

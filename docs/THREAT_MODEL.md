@@ -33,7 +33,7 @@ review gates. This earlier sketch is retained as background, not completion evid
 - Never put actual secrets in Git or test fixtures.
 
 ## Open questions
-- Jericho interoperability requirements and authenticated message format.
+- Final authenticated message format.
 - Whether the available hardware entropy source can support full-entropy OTP claims.
 - Safe durable allocation/reservation of pad offsets on Android and ESP32 flash.
 - Exact authenticated physical-transfer mechanism.
