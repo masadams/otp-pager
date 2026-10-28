@@ -32,7 +32,7 @@ group chats by per-member fan-out; multi-relay ideas kept in the plan (items 6 a
 
 ## Current status and physical USB regression (2026-10-28)
 
-Items 1–3 below have now merged into `main` via PRs #38, #39 and #40. Item 5 is under review in PR #41. The table below records implementation status; review and physical validation remain separate gates. Peer wipe is unreviewed and off by default; successful CI is not evidence of physical peer-wipe safety.
+Items 1–3 below have now merged into `main` via PRs #38, #39 and #40. Item 5 (#41, #47), the USB negotiation retry (#43, #46), the peer-wipe recipient ordering fix (#49) and the docs and strict-chat acceptance gates (#42, #44, #45) merged together through the 2026-10-28 integration review. The strict-chat protocol direction (#48, and the parked `feat/strict-chats` branch) is awaiting an owner decision. The table below records implementation status; review and physical validation remain separate gates. Peer wipe is unreviewed and off by default; successful CI is not evidence of physical peer-wipe safety.
 
 **Open physical USB pairing regression:** the owner reports that transfer worked in an earlier APK but failed with the newer October 28 build. Before changing code, capture both device models, Android versions, host/accessory roles, cable, permission prompts, app versions and exact failure stage. Compare with the last known working build without uninstalling active pad material. Add a two-device physical USB check to the release gate; emulator tests do not establish compatibility. This remains unresolved.
 
