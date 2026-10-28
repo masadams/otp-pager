@@ -54,6 +54,32 @@ export function makeServer(options = {}) {
   let state = { version: 1, seq: 0, messages: [] };
   try { state = JSON.parse(readFileSync(file, 'utf8')); }
   catch (e) { if (e.code !== 'ENOENT') throw e; }
+  // Pipeline item 10: frequent changes (posts, expiry, unlock check-ins) are appended to a
+  // journal instead of rewriting the whole snapshot. The journal's first line names the
+  // snapshot generation it extends; a journal left over from before a newer snapshot is ignored,
+  // so a crash between snapshot and journal reset can never replay stale operations.
+  const journalFile = join(dataDir, 'journal.log');
+  const compactEvery = options.compactEvery ?? 256;
+  let journaled = 0, torn = false;
+  function apply(s, op) {
+    if (op.t === 'msg') return op.m.seq <= s.seq ? s : { ...s, seq: op.m.seq, messages: [...s.messages, op.m] };
+    if (op.t === 'clean') {
+      const drop = new Set(op.seqs), gone = new Set(op.rooms);
+      return { ...s, messages: s.messages.filter(m => !drop.has(m.seq)),
+        shares: Object.fromEntries(Object.entries(s.shares || {}).filter(([room]) => !gone.has(room))) };
+    }
+    if (op.t === 'share') return { ...s, shares: { ...(s.shares || {}), [op.room]: op.value } };
+    throw new Error('Unknown journal operation');
+  }
+  try {
+    const lines = readFileSync(journalFile, 'utf8').split('\n');
+    const head = (() => { try { return JSON.parse(lines[0]); } catch { return null; } })();
+    if (head && head.gen === (state.journal ?? 0)) {
+      journaled = 1;
+      // A torn final line (crash mid-append) was never acknowledged; stop at the first bad line.
+      for (const line of lines.slice(1)) { if (!line) continue; let op; try { op = JSON.parse(line); } catch { torn = true; break; } state = apply(state, op); journaled++; }
+    }
+  } catch (e) { if (e.code !== 'ENOENT') throw e; }
   if (![1, 2].includes(state.version) || !Number.isSafeInteger(state.seq) || state.seq < 0 ||
       !Array.isArray(state.messages) || state.messages.some(m => !ROOM.test(m.room) ||
         !Number.isSafeInteger(m.seq) || m.seq <= 0 || m.seq > state.seq ||
@@ -71,17 +97,32 @@ export function makeServer(options = {}) {
         !Number.isSafeInteger(s.deadline) || s.deadline < MIN_DEADLINE || s.deadline > MAX_DEADLINE || !Number.isFinite(s.checked) ||
         typeof s.device !== 'string' || !Array.isArray(s.nonces) || s.nonces.length > MAX_NONCES))
     throw new Error('Invalid share state');
-  function commit(next) {
+  function syncDir() { const dir = openSync(dataDir, 'r'); try { fsyncSync(dir); } finally { closeSync(dir); } }
+  function writeJournalHead(gen) {
+    const fd = openSync(journalFile + '.tmp', 'w', 0o600);
+    try { writeFileSync(fd, JSON.stringify({ gen }) + '\n'); fsyncSync(fd); } finally { closeSync(fd); }
+    renameSync(journalFile + '.tmp', journalFile); syncDir();
+  }
+  /** [op] journals a small change; without one (or when the journal is long) a snapshot is written. */
+  function commit(next, op = null) {
     if (poisoned) throw new Error('Storage unavailable');
     try {
-    const fd = openSync(file + '.tmp', 'w', 0o600);
-    try { writeFileSync(fd, JSON.stringify(next)); fsyncSync(fd); } finally { closeSync(fd); }
-    renameSync(file + '.tmp', file);
-    const dir = openSync(dataDir, 'r');
-    try { fsyncSync(dir); } finally { closeSync(dir); }
-    state = next;
+      if (op && journaled > 0 && journaled < compactEvery) {
+        const fd = openSync(journalFile, 'a', 0o600);
+        try { writeFileSync(fd, JSON.stringify(op) + '\n'); fsyncSync(fd); } finally { closeSync(fd); }
+        journaled++; state = next; return;
+      }
+      const gen = (next.journal ?? 0) + 1, snapshot = { ...next, journal: gen };
+      const fd = openSync(file + '.tmp', 'w', 0o600);
+      try { writeFileSync(fd, JSON.stringify(snapshot)); fsyncSync(fd); } finally { closeSync(fd); }
+      renameSync(file + '.tmp', file);
+      syncDir();
+      writeJournalHead(gen); journaled = 1; // Counts the head line, so the next small change appends.
+      state = snapshot;
     } catch (e) { poisoned = true; throw e; }
   }
+  // Never append after a torn line: fold everything replayed into a fresh snapshot first.
+  if (torn) commit(state);
   // Migrate existing v1 volume in place, preserving all ciphertext and cursors.
   if (state.version === 1 && !state.epoch) commit({ ...state, epoch: randomUUID() });
   if (typeof state.epoch !== 'string' || !/^[a-f0-9-]{36}$/.test(state.epoch))
@@ -91,8 +132,11 @@ export function makeServer(options = {}) {
   function clean() {
     const live = state.messages.filter(m => now() - m.time < ttl);
     const shares = Object.fromEntries(Object.entries(state.shares).filter(([, s]) => now() - s.checked <= s.deadline));
-    if (live.length !== state.messages.length || Object.keys(shares).length !== Object.keys(state.shares).length)
-      commit({ ...state, messages: live, shares });
+    if (live.length !== state.messages.length || Object.keys(shares).length !== Object.keys(state.shares).length) {
+      const kept = new Set(live.map(m => m.seq));
+      commit({ ...state, messages: live, shares }, { t: 'clean', seqs: state.messages.filter(m => !kept.has(m.seq)).map(m => m.seq),
+        rooms: Object.keys(state.shares).filter(room => !(room in shares)) });
+    }
   }
   function json(res, status, body) {
     if (res.destroyed || res.writableEnded) return;
@@ -212,7 +256,8 @@ export function makeServer(options = {}) {
           if (Math.abs(time - issued) > MAX_SKEW || time >= expires + MAX_SKEW) return json(res, 409, { error: 'unlock clock mismatch' });
           if (current.nonces.some(n => n.nonce === nonce)) return json(res, 409, { error: 'unlock replayed' });
           const nonces = [...current.nonces.filter(n => n.until > time), { nonce, until: expires + MAX_SKEW }].slice(-MAX_NONCES);
-          commit({ ...state, shares: { ...state.shares, [room]: { ...current, checked: time, nonces } } });
+          const value = { ...current, checked: time, nonces };
+          commit({ ...state, shares: { ...state.shares, [room]: value } }, { t: 'share', room, value });
           const grant = Buffer.from(frame); grant[8] = 3; Buffer.from(current.share, 'base64url').copy(grant, 146);
           const response = { frame: grant.toString('base64'), signature: sign('sha256', grant, authorityKey).toString('base64') };
           grant.fill(0);
@@ -279,7 +324,8 @@ export function makeServer(options = {}) {
         return json(res, 429, { error: 'mailbox capacity reached' });
       if (state.seq === Number.MAX_SAFE_INTEGER) return json(res, 503, { error: 'cursor exhausted' });
       const seq = state.seq + 1;
-      commit({ ...state, seq, messages: [...state.messages, { room, seq, packet: data.packet, time: now() }] });
+      const message = { room, seq, packet: data.packet, time: now() };
+      commit({ ...state, seq, messages: [...state.messages, message] }, { t: 'msg', m: message });
       return json(res, 201, { seq });
     } catch {
       // Deliberately omit URL, tokens, bodies and exception details from logs.

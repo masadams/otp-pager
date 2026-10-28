@@ -110,7 +110,7 @@ fan-out groups; remaining security/reliability/usability work.
 | 7 | **Group chats** | Owner request | Fan-out: each message encrypted separately per member with the existing pairwise pads; no shared pads between 3+ phones |
 | 8 | **Split-relay experiment** | Neither relay sees both phones' connections | Post via relay A, fetch via relay B, private link between them (e.g. ZeroTier); timing still links traffic without delays/cover traffic |
 | 9 | **Entropy and wording** | Pads come from SecureRandom, not a true OTP | Optional extra entropy mixed into pad generation; plainer user-facing wording |
-| 10 | **Relay storage scaling** | Whole state file rewritten per message | Append-only log or per-mailbox files |
+| 10 | **Relay storage scaling** | Whole state file rewritten per message | **In review:** relay journals posts, expiry and unlock check-ins (one fsynced line each) and compacts every 256 changes; generation-tagged so stale journals never replay; torn tails are folded into a fresh snapshot |
 | 11 | **Owner tasks** | Cannot be done from CI | Release signing key, first signed release, two-phone hands-on test incl. power loss |
 | 12 | **Community review package** | Owner's chosen review route | Threat model, specs, vectors, known limits, how to test |
 
