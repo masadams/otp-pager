@@ -129,7 +129,9 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         details.addView(header("Friend details", back = 0))
         details.addView(detailsNotice)
         val body = column()
-        details.addView(ScrollView(activity).apply { addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
+        details.addView(ScrollView(activity).apply {
+            scrollBarStyle = View.SCROLLBARS_INSIDE_INSET; setPadding(0, 0, dp(8), 0); addView(body) // Keep text off the screen edge.
+        }, LinearLayout.LayoutParams(-1, 0, 1f))
         body.addView(friendName.apply { setPadding(0, dp(20), 0, dp(8)) })
         body.addView(friendState.apply { setPadding(0, 0, 0, dp(24)) })
         body.addView(button("Connection details") { actions.status() }, LinearLayout.LayoutParams(-1, -2))
