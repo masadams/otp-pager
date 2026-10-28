@@ -77,12 +77,12 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         val body = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(ScrollView(this).apply { addView(body) }, LinearLayout.LayoutParams(-1, 0, 1f))
         body.addView(label("Use the same private Wi-Fi on both devices. Share on one, Read on the other. Tap, then compare codes."))
-        status = label("Ready · 0.12 required on both", 14f); body.addView(status)
+        status = label("Ready · same app version required on both", 14f); body.addView(status)
         padChoice = Button(this).apply { text = "Pad size · ${size / PadProtocol.MATERIAL_BYTES} MiB"; setOnClickListener {
-            val sizes = intArrayOf(PadProtocol.MATERIAL_BYTES, 2 * PadProtocol.MATERIAL_BYTES, 4 * PadProtocol.MATERIAL_BYTES)
+            val sizes = PadProtocol.SIZES
             var selected = sizes.indexOf(size)
             val dialog = AlertDialog.Builder(this@RadioPairActivity).setTitle("Choose a pad size")
-                .setSingleChoiceItems(arrayOf("1 MiB · 127 slots each way", "2 MiB · 254 slots each way", "4 MiB · 508 slots each way"), selected) { _, which -> selected = which }
+                .setSingleChoiceItems(sizes.map(PadProtocol::sizeLabel).toTypedArray(), selected) { _, which -> selected = which }
                 .setNegativeButton("Cancel", null).setPositiveButton("Use this size") { _, _ ->
                     size = sizes[selected]; text = "Pad size · ${size / PadProtocol.MATERIAL_BYTES} MiB"
                 }.create()

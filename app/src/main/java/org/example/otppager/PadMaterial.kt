@@ -123,6 +123,7 @@ internal object PadMaterial {
                 out.write(ByteBuffer.allocate(HEADER).put(MAGIC).put(nonce).put(raw(id)).putInt(slots).putInt(size).array())
                 out.flush(); out.fd.sync(); out.close()
                 val target = File(directory, "$id.bin")
+                require(!target.exists()) { "This pad was already installed. Exchange a fresh pad; re-import is blocked." } // Never replace live material.
                 check(temporary.renameTo(target)) { "Pad storage rename failed" }
                 syncDirectory(directory)
                 verify(target, id, keys)

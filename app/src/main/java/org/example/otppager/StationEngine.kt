@@ -58,6 +58,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         if (s.has("pad")) {
             val id = s.getString("padId")
             val pad = b64d.decode(s.getString("pad"))
+            materialFile(id).delete() // Only an interrupted earlier migration could have left it; the vault never referenced it.
             val keys = try { writeMaterial(id, pad) } finally { pad.fill(0) }
             transaction(rekey = true) { it.remove("pad"); it.put("padKeys", keys) }
         }
@@ -93,7 +94,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         if (s.has("padKeys")) {
             val keys = b64d.decode(s.getString("padKeys"))
             try {
-                check(PadMaterial.slots(keys) in listOf(PadProtocol.SLOTS, 2 * PadProtocol.MATERIAL_BYTES / 2 / PadProtocol.STRIDE, PadProtocol.MAX_SLOTS))
+                check(PadProtocol.validSlots(PadMaterial.slots(keys)))
                 check(Regex("[a-f0-9]{32}").matches(s.getString("padId")))
                 check(padLedger.high(s.getString("padId")) >= s.getLong("counter"))
             } finally { keys.fill(0) }
@@ -101,7 +102,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         if (s.has("pad")) {
             val pad = java.util.Base64.getDecoder().decode(s.getString("pad"))
             try {
-                check(PadProtocol.validSize(pad.size))
+                check(PadProtocol.validMemorySize(pad.size))
                 check(Regex("[a-f0-9]{32}").matches(s.getString("padId")))
                 // Schema 5's original ID is authenticated by the vault; retired material no longer hashes to it.
                 if (s.getInt("version") < 5) check(PadProtocol.hex(PadProtocol.id(pad)) == s.getString("padId"))
@@ -245,50 +246,62 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         if (renew) { requireRenewalIdentity(); return state!!.getString("ownDevice") }
         requireCableEligible(); return identity.card(create = true)
     }
-    fun stageRenewal(setup: JSONObject, peer: String) {
-        requireRenewalEligible()
-        val old = checkNotNull(state)
-        check(old.optBoolean("renewalPaused") && peer == old.getString("peerDevice"))
-        check(setup.getString("secret") == old.getString("secret") && setup.getString("endpoint") == old.getString("endpoint"))
-        val history = JSONArray(view().messages.map { m -> JSONObject().put("incoming", m.incoming).put("text", m.text).put("status", m.status)
-            .put("time", m.time).put("unread", m.unread).put("deviceVerified", m.deviceVerified) })
-        val master = Protocol.master(old.getString("secret"))
+    /** Pairing-time destination for a pad streamed over the encrypted channel (never whole in memory). */
+    internal fun padWriter(size: Int): PadMaterial.Writer {
+        store.requireActive()
+        return PadMaterial.Writer(PadMaterial.directory(store.directory, materialRoot), size, VaultLifecycle::syncDirectory)
+    }
+    /** In-memory bundle form (pad file, tests, pre-v5 peers): installed through the same staging. */
+    private fun installBundle(setup: JSONObject, secret: String): PadMaterial.Installed {
+        require(setup.getString("pad").length <= 5600000)
+        val master = Protocol.master(secret)
         val bundle = java.util.Base64.getDecoder().decode(setup.getString("pad"))
         val pad = try { PadProtocol.material(bundle, PadProtocol.binding(master)) } finally { bundle.fill(0); master.fill(0) }
+        return try { padWriter(pad.size).use { it.write(pad); it.finish() } } finally { pad.fill(0) }
+    }
+    fun stageRenewal(setup: JSONObject, peer: String) = stageRenewal(setup, peer, installBundle(setup, checkNotNull(state).getString("secret")))
+    internal fun stageRenewal(setup: JSONObject, peer: String, pad: PadMaterial.Installed) {
         try {
-            val id = PadProtocol.hex(PadProtocol.id(pad))
+            requireRenewalEligible()
+            val old = checkNotNull(state)
+            check(old.optBoolean("renewalPaused") && peer == old.getString("peerDevice"))
+            check(setup.getString("secret") == old.getString("secret") && setup.getString("endpoint") == old.getString("endpoint"))
+            val history = JSONArray(view().messages.map { m -> JSONObject().put("incoming", m.incoming).put("text", m.text).put("status", m.status)
+                .put("time", m.time).put("unread", m.unread).put("deviceVerified", m.deviceVerified) })
+            val id = pad.padId
             check(id != old.getString("padId"))
-            claims?.pad(id, store.namespace); padLedger.register(id, PadProtocol.slots(pad))
-            val keys = writeMaterial(id, pad)
+            claims?.pad(id, store.namespace); padLedger.register(id, PadMaterial.slots(pad.keys))
             stagedCable = JSONObject(old.toString()).put("version", 6).put("history", history).put("padId", id)
-                .put("padKeys", keys).put("counter", 0).put("high", 0).put("seen", JSONArray())
+                .put("padKeys", b64e.encodeToString(pad.keys)).put("counter", 0).put("high", 0).put("seen", JSONArray())
                 .put("inbox", JSONArray()).put("outbox", JSONArray()).put("opened", JSONObject()).put("acceptedPackets", JSONObject()).put("cableComplete", false)
             stagedCable!!.remove("readyPacket"); stagedCable!!.remove("readyId"); stagedCable!!.remove("pad")
             stagedRenewal = true
-        } finally { pad.fill(0) }
+        } catch (failure: Exception) { pad.file.delete(); throw failure }
+        finally { pad.keys.fill(0) }
     }
     fun signCable(bytes: ByteArray) = identity.sign(bytes)
     fun stageCable(setup: JSONObject, role: String, peer: String) {
         requireCableEligible(); check(stagedCable == null)
-        val endpoint = Protocol.endpoint(setup.getString("endpoint")); val token = Protocol.token(setup.getString("token"))
-        val secret = setup.getString("secret"); val master = Protocol.master(secret)
-        require(setup.getString("pad").length <= 5600000)
-        val bundle = java.util.Base64.getDecoder().decode(setup.getString("pad"))
-        val pad = try { PadProtocol.material(bundle, PadProtocol.binding(master)) } finally { master.fill(0); bundle.fill(0) }
+        stageCable(setup, role, peer, installBundle(setup, setup.getString("secret")))
+    }
+    internal fun stageCable(setup: JSONObject, role: String, peer: String, pad: PadMaterial.Installed) {
         try {
+            requireCableEligible(); check(stagedCable == null)
+            val endpoint = Protocol.endpoint(setup.getString("endpoint")); val token = Protocol.token(setup.getString("token"))
+            val secret = setup.getString("secret"); Protocol.master(secret).fill(0)
             require(role in listOf("A", "B")); IdentityProtocol.publicKey(peer)
             val own = identity.card(); require(peer != own)
-            val id = PadProtocol.hex(PadProtocol.id(pad))
+            val id = pad.padId; val slots = PadMaterial.slots(pad.keys)
             claims?.room(secret, store.namespace, existing = false); claims?.pad(id, store.namespace)
-            padLedger.register(id, PadProtocol.slots(pad))
-            val keys = writeMaterial(id, pad)
-            stagedCable = JSONObject().put("version", if (pad.size > PadProtocol.MATERIAL_BYTES) 6 else 4).put("endpoint", endpoint).put("token", token).put("secret", secret)
+            padLedger.register(id, slots)
+            stagedCable = JSONObject().put("version", if (slots > PadProtocol.SLOTS) 6 else 4).put("endpoint", endpoint).put("token", token).put("secret", secret)
                 .put("role", role).put("counter", 0L).put("cursor", 0L).put("high", 0L).put("seen", JSONArray())
                 .put("outbox", JSONArray()).put("inbox", JSONArray()).put("epoch", "")
-                .put("padKeys", keys).put("padId", id)
+                .put("padKeys", b64e.encodeToString(pad.keys)).put("padId", id)
                 .put("ownDevice", own).put("peerDevice", peer).put("padVerified", true).put("peerReady", true)
                 .put("cableComplete", false)
-        } finally { pad.fill(0) }
+        } catch (failure: Exception) { pad.file.delete(); throw failure }
+        finally { pad.keys.fill(0) }
     }
     fun commitCable(complete: Boolean) {
         if (stagedRenewal) requireRenewalEligible() else requireCableEligible()
@@ -417,7 +430,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         val s = checkNotNull(state)
         if (s.has("pad")) return b64d.decode(s.getString("pad"))
         val slots = padCapacity(s)
-        val size = listOf(1, 2, 4).map { it * PadProtocol.MATERIAL_BYTES }.first { it / 2 / PadProtocol.STRIDE == slots }
+        val size = PadProtocol.SIZES.first { it / 2 / PadProtocol.STRIDE == slots }
         val pad = ByteArray(size)
         val keys = b64d.decode(s.getString("padKeys"))
         try {

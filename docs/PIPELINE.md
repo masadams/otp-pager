@@ -32,7 +32,7 @@ group chats by per-member fan-out; multi-relay ideas kept in the plan (items 6 a
 | # | Item | Why | Notes |
 | --- | --- | --- | --- |
 | 1 | **Separate pad storage** ([design](PAD_STORAGE.md)) | Pads live inside the JSON vault, rewritten on every save; 10+ MiB pads would make every message slow | **In review (#38):** write-once per-slot AES-GCM file per chat; slot keys in the vault are zeroed on use; in-vault pads migrate on first open |
-| 2 | **Bigger pads (16, 32, 64 MiB)** | Owner wants ≥10 MiB; group fan-out multiplies slot use | Depends on 1; USB transfer time and Wi-Fi handoff limits checked |
+| 2 | **Bigger pads (16, 32, 64 MiB)** | Owner wants ≥10 MiB; group fan-out multiplies slot use | **In review:** pairing protocol v5 streams the pad in 32 KiB authenticated chunks into storage on both phones; default 16 MiB; manual pad file stays ≤4 MiB |
 | 3 | **Peer wipe** | Wipe should reach the friend's phone | Spec in `PEER_WIPE_PROTOCOL.md`; gate above; needs relay control mailbox |
 | 4 | **Strict chats** | A seized offline phone should not open high-risk chats | Appendix A of the peer-wipe spec; after 3 (shares control mailbox) |
 | 5 | **Fixed-size packets** | Message length should leak nothing to the relay | Pad slots already fixed; check the wire frame and receipts |

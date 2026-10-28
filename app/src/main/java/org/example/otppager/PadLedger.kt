@@ -13,7 +13,7 @@ class PadLedger(private val store: SecureStore) {
     fun register(id: String, capacity: Int = PadProtocol.SLOTS) = synchronized(reservationLock) {
         val s = load(); val pads = s.getJSONObject("pads")
         require(!pads.has(id)) { "This pad was already installed. Exchange a fresh pad; re-import is blocked." }
-        require(capacity in listOf(PadProtocol.SLOTS, 2 * PadProtocol.MATERIAL_BYTES / 2 / PadProtocol.STRIDE, PadProtocol.MAX_SLOTS))
+        require(PadProtocol.validSlots(capacity))
         val capacities = s.optJSONObject("capacities") ?: JSONObject().also { s.put("capacities", it) }
         capacities.put(id, capacity)
         pads.put(id, 0); save(s)

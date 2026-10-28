@@ -392,7 +392,7 @@ class InterfaceTest {
                 tap(instrumentation, activity, "Renew message keys")
                 instrumentation.runOnMainSync { latestDialog().getButton(android.app.AlertDialog.BUTTON_POSITIVE).performClick() }
                 instrumentation.waitForIdleSync()
-                instrumentation.runOnMainSync { assertEquals(3, latestDialog().listView.adapter.count) }
+                instrumentation.runOnMainSync { assertEquals(PadProtocol.SIZES.size, latestDialog().listView.adapter.count) }
                 capture(instrumentation, activity, "pad-size")
                 instrumentation.runOnMainSync { latestDialog().getButton(android.app.AlertDialog.BUTTON_NEGATIVE).performClick() }
                 instrumentation.runOnMainSync { all(content(activity)).filterIsInstance<Button>().first { it.contentDescription?.toString() == "Back" && it.isShown }.performClick() }

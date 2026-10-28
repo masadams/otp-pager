@@ -82,6 +82,47 @@ class CablePairTest {
             }
         }
     }
+    @Test fun largestPadStreamsIntoStorageOnBothSidesWithoutPassingThroughTheVault() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val sa = SecureStore(context, "cable-large-a"); val sb = SecureStore(context, "cable-large-b")
+        val stores = listOf(sa, sb); stores.forEach { it.forget(); it.sibling("pads").forget() }
+        val pool = Executors.newFixedThreadPool(2)
+        val ain = PipedInputStream(65536); val bout = PipedOutputStream(ain)
+        val bin = PipedInputStream(65536); val aout = PipedOutputStream(bin)
+        val size = PadProtocol.MAX_MATERIAL_BYTES
+        try {
+            val a = StationEngine(sa); val b = StationEngine(sb)
+            a.configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "B")
+            val ready = CountDownLatch(2)
+            val review: (String, String) -> Unit = { _, _ -> ready.countDown(); check(ready.await(20, TimeUnit.SECONDS)) }
+            val progress = java.util.concurrent.CopyOnWriteArrayList<String>()
+            val af = pool.submit { CableProtocol.run(true, ain, aout, a, review, { progress.add(it) }, false, size) }
+            val bf = pool.submit { CableProtocol.run(false, bin, bout, b, review, { progress.add(it) }, false, size) }
+            af.get(240, TimeUnit.SECONDS); bf.get(240, TimeUnit.SECONDS)
+            assertTrue(progress.any { it.startsWith("Sending message keys") } && progress.any { it == "Receiving message keys · 100%" })
+            for (engine in listOf(a, b)) {
+                assertEquals(PadProtocol.MAX_SLOTS, engine.view().padRemaining)
+                assertFalse(engine.state!!.has("pad")); assertTrue(engine.view().canSend)
+            }
+            assertEquals(a.view().padCheck, b.view().padCheck)
+            for (store in stores) {
+                assertTrue(java.io.File(context.noBackupFilesDir, "${store.namespace}.bin").length() < 1_000_000)
+                assertEquals(PadMaterial.HEADER + 2L * PadProtocol.MAX_SLOTS * PadMaterial.RECORD,
+                    PadMaterial.file(context.noBackupFilesDir, store.namespace, a.state!!.getString("padId")).length())
+            }
+            // The slot at the far end of the B half is identical on both phones.
+            val last = PadProtocol.MAX_SLOTS.toLong()
+            fun slot(engine: StationEngine, store: SecureStore): ByteArray {
+                val keys = java.util.Base64.getDecoder().decode(engine.state!!.getString("padKeys"))
+                return PadMaterial.slot(PadMaterial.file(context.noBackupFilesDir, store.namespace, engine.state!!.getString("padId")), engine.state!!.getString("padId"), keys, 'B', last)
+            }
+            assertArrayEquals(slot(a, sa), slot(b, sb))
+        } finally {
+            listOf(ain, bin, aout, bout).forEach { try { it.close() } catch (_: Exception) {} }
+            pool.shutdownNow()
+            stores.forEach { it.forget(); it.sibling("pads").forget(); PadMaterial.deleteAll(context.noBackupFilesDir, it.namespace) }
+        }
+    }
     @Test fun decliningConfirmationSendsNoCredentialsOrPad() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val sa = SecureStore(context, "cable-decline-a"); val sb = SecureStore(context, "cable-decline-b")

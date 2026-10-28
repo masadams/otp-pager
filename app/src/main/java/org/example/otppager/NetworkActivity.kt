@@ -47,7 +47,7 @@ class NetworkActivity : Activity() {
     private lateinit var pairButton: Button
     private lateinit var radioPairButton: Button
     private var advancedShown = false
-    private var selectedPadSize = 4 * PadProtocol.MATERIAL_BYTES
+    private var selectedPadSize = 16 * PadProtocol.MATERIAL_BYTES
     private var draftChatId: String? = null
     private var draftRoom: String? = null
     private var draftId = java.util.UUID.randomUUID().toString()
@@ -201,7 +201,7 @@ class NetworkActivity : Activity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        selectedPadSize = getSharedPreferences("receiving", MODE_PRIVATE).getInt("padSize", 4 * PadProtocol.MATERIAL_BYTES).takeIf { PadProtocol.validSize(it) } ?: 4 * PadProtocol.MATERIAL_BYTES
+        selectedPadSize = getSharedPreferences("receiving", MODE_PRIVATE).getInt("padSize", 16 * PadProtocol.MATERIAL_BYTES).takeIf { PadProtocol.validSize(it) } ?: 16 * PadProtocol.MATERIAL_BYTES
         if (intent.action == Intent.ACTION_MAIN || intent.getBooleanExtra("showInbox", false)) { tab = 4; intent.removeExtra("showInbox") }
         window.protectPrivateContent()
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -627,7 +627,8 @@ class NetworkActivity : Activity() {
                     importedDeviceCard = card
                     "PUBLIC CARD IMPORTED · compare the full fingerprint before pinning"
                 } else if (operation == 81) {
-                    val bundle = checkNotNull(engine).generatePad(selectedPadSize)
+                    // The plaintext pad file holds the whole pad in memory, so it stays at 4 MiB or less.
+                    val bundle = checkNotNull(engine).generatePad(minOf(selectedPadSize, PadProtocol.MEMORY_MAX_BYTES))
                     try { contentResolver.openOutputStream(uri, "wt")!!.use { it.write(bundle); it.flush() } }
                     finally { bundle.fill(0) }
                     "PAD INSTALLED · transfer file to Station B before sending"
@@ -695,7 +696,7 @@ class NetworkActivity : Activity() {
     }
     private fun beginRadioPairing(renew: Boolean) {
         confirm(if (renew) "Renew over local Wi-Fi?" else "Pair over local Wi-Fi?",
-            "Both devices need version 0.12, NFC and the same private Wi-Fi. Tap to share a temporary secret, then compare codes before the encrypted pad transfer. No pad goes to the relay. Keep the tap private; use USB if you prefer a cable. Existing pairings are preserved. Pad size on this device: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB.") {
+            "Both devices need the same app version, NFC and the same private Wi-Fi. Tap to share a temporary secret, then compare codes before the encrypted pad transfer. No pad goes to the relay. Keep the tap private; use USB if you prefer a cable. Existing pairings are preserved. Pad size on this device: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB.") {
             launchNearbyPairing(renew)
         }
     }
@@ -938,8 +939,8 @@ class NetworkActivity : Activity() {
             .setNegativeButton("Cancel", null).create().also(::secureShow)
     }
     private fun choosePadSize(renew: Boolean, launch: Boolean = true) {
-        val choices = arrayOf("1 MiB · 127 slots each way", "2 MiB · 254 slots each way", "4 MiB · 508 slots each way")
-        val sizes = intArrayOf(PadProtocol.MATERIAL_BYTES, 2 * PadProtocol.MATERIAL_BYTES, 4 * PadProtocol.MATERIAL_BYTES)
+        val sizes = PadProtocol.SIZES
+        val choices = sizes.map(PadProtocol::sizeLabel).toTypedArray()
         var selected = sizes.indexOf(selectedPadSize).coerceAtLeast(0)
         AlertDialog.Builder(this).setTitle(if (renew) "Renew this friend's pad" else "Choose a pad size")
             .setSingleChoiceItems(choices, selected) { _, which -> selected = which }

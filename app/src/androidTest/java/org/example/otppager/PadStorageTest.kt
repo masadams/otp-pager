@@ -10,6 +10,8 @@ import java.io.File
 import java.util.UUID
 
 /** Separate pad storage (docs/PAD_STORAGE.md): small vault, per-slot erasure, restart, cleanup. */
+private val FOUR_MIB_SLOTS = PadProtocol.slotsFor(4 * PadProtocol.MATERIAL_BYTES)
+
 @RunWith(AndroidJUnit4::class)
 class PadStorageTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
@@ -34,9 +36,9 @@ class PadStorageTest {
             val vault = File(context.noBackupFilesDir, "$id.bin")
             assertTrue("Vault still carries pad-sized data: ${vault.length()}", vault.length() < 120_000)
             val material = PadMaterial.file(context.noBackupFilesDir, id, padId)
-            assertEquals(PadMaterial.HEADER + 2L * PadProtocol.MAX_SLOTS * PadMaterial.RECORD, material.length())
+            assertEquals(PadMaterial.HEADER + 2L * FOUR_MIB_SLOTS * PadMaterial.RECORD, material.length())
             val before = material.readBytes()
-            assertEquals(PadProtocol.MAX_SLOTS, a.view().padRemaining)
+            assertEquals(FOUR_MIB_SLOTS, a.view().padRemaining)
             assertArrayEquals(original.copyOf(PadProtocol.STRIDE), a.padSnapshot().copyOf(PadProtocol.STRIDE))
 
             a.confirmPad(padId.takeLast(8)) // Uses A1 for the readiness packet.
@@ -47,7 +49,7 @@ class PadStorageTest {
             assertTrue("A1 key was not erased", snapshot.copyOf(PadProtocol.STRIDE).all { it == 0.toByte() })
             assertArrayEquals(original.copyOfRange(PadProtocol.STRIDE, 2 * PadProtocol.STRIDE), snapshot.copyOfRange(PadProtocol.STRIDE, 2 * PadProtocol.STRIDE))
             assertArrayEquals("Material file was rewritten", before, material.readBytes())
-            assertEquals(PadProtocol.MAX_SLOTS - 1, reopened.view().padRemaining)
+            assertEquals(FOUR_MIB_SLOTS - 1, reopened.view().padRemaining)
             // The peer can still open what was sent: the wire format is unchanged.
             assertTrue(PadProtocol.open(original, ready, 'A').payload.contains("ready"))
             original.fill(0)
@@ -60,7 +62,7 @@ class PadStorageTest {
             val saved = material.readBytes(); material.delete()
             try { StationEngine(store, relay); fail("Opened without pad material") } catch (_: IllegalStateException) {}
             material.writeBytes(saved)
-            assertEquals(PadProtocol.MAX_SLOTS - 1, StationEngine(store, relay).view().padRemaining)
+            assertEquals(FOUR_MIB_SLOTS - 1, StationEngine(store, relay).view().padRemaining)
 
             StationEngine(store, relay).forget()
             assertTrue("Forget left pad material", PadMaterial.gone(context.noBackupFilesDir, id))

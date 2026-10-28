@@ -1,6 +1,6 @@
 # Separate pad storage and larger pads (pipeline items 1–2)
 
-Status: item 1 (separate storage) implemented; item 2 (bigger pads, streamed transfer) next.
+Status: item 1 (separate storage) and item 2 (bigger pads, streamed transfer) implemented.
 Owner direction 2026-10-28: pads should be 10 MiB or larger.
 
 ## Problem
@@ -59,6 +59,10 @@ on every save. That is slow on regular phones and can exhaust the app's memory.
 - **Retirement and wipes:** `VaultRetirement` deletes `padmaterial/<root>/` (step
   `pad-material`), and `inspect` reports COMPLETE only once it is gone. The global wipe runs the
   same contact retirement. *Forget pairing* deletes it too. The `-pads` ledger stays retained as now.
+  The wipe-all inventory still finds contacts by their vault, key and marker names. A material
+  directory whose vault is already gone (a crash in between) isn't rediscovered. It can't be
+  decrypted, because the slot keys were in that vault, but it stays until a later retirement
+  of the same root.
 
 ### Identity, check codes and export
 
@@ -66,11 +70,23 @@ on every save. That is slow on regular phones and can exhaust the app's memory.
 The pad check shown to users is unchanged. The plaintext export file stays available, but
 streamed. The 64 MiB in-memory array goes away.
 
-### Transfer (item 2)
+### Transfer (item 2, implemented: pairing protocol v5)
 
-USB and Wi-Fi pairing send the pad in chunks over the existing encrypted channel (for example
-64 KiB frames with a running hash), after the approvals and before the final confirmation.
-The receiver writes it straight into the material file. JSON setup carries only metadata.
+USB and Wi-Fi pairing share `CableProtocol`. In v5, after both approvals:
+
+1. The host announces `{"kind":"pad","padSize":…}`.
+2. The host generates the pad in 32 KiB chunks and streams each one as an encrypted
+   `CableSession` frame tagged `0x50`. Each chunk is random over slots and zero past the last whole
+   slot of each half. The host writes the same chunk into its own `PadMaterial.Writer`.
+3. The receiver writes each chunk straight into its writer, so neither phone ever holds the whole
+   pad in memory.
+4. The host sends the setup JSON (endpoint, token, secret, pad size; no pad) with the pad's
+   SHA-256 and a signature over both identities, the setup and that hash. The receiver
+   compares the hash to what it stored before staging.
+5. The saved/complete confirmations are unchanged.
+
+v4 peers are refused with an upgrade message, so both phones need the same version. The manual
+plaintext pad file (Advanced setup) stays at 4 MiB or less, because it is one in-memory array.
 
 ### Migration (implemented)
 
@@ -82,8 +98,8 @@ file. The signed-update CI job exercises this with a real v0.13 install followed
 
 ## Sizes
 
-After item 2: 1, 2, 4, 16, 32 and 64 MiB. That is 127, 254, 508, 2,032, 4,064 and 8,128 slots per
-direction. In an even conversation with receipts, 64 MiB lasts about 4,000 messages each before
+1, 2, 4, 16, 32 and 64 MiB (USB and tap pairing). That is 127, 254, 508, 2,032, 4,064 and 8,128
+slots per direction. New pairings default to 16 MiB. In an even conversation with receipts, 64 MiB lasts about 4,000 messages each before
 meeting again.
 
 ## Tests
