@@ -1,0 +1,908 @@
+--------- beginning of system
+10-28 12:12:40.808   537  1925 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: clear data
+10-28 12:12:40.809   537   578 I ActivityManager: Force stopping org.example.otppager appid=10105 user=-1: clearApplicationUserData
+--------- beginning of main
+10-28 12:12:40.814   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:40.814   537   578 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10038; state: DISABLED
+10-28 12:12:40.814   537   578 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10038; state: DISABLED
+10-28 12:12:40.814   537   578 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10038; state: DISABLED
+10-28 12:12:40.814   537   578 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10038; state: ENABLED
+10-28 12:12:40.815   537   579 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10038; state: ENABLED
+10-28 12:12:40.818   747   747 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_DATA_CLEARED
+10-28 12:12:40.821   344   344 D Zygote  : Forked child process 2180
+10-28 12:12:40.821   537   579 I ActivityManager: Start proc 2180:com.android.documentsui/u0a38 for broadcast {com.android.documentsui/com.android.documentsui.PackageReceiver}
+10-28 12:12:40.825  2180  2180 W oid.documentsu: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:40.830   440   459 I adbd    : jdwp connection from 2180
+10-28 12:12:40.831   537  1925 D CompatibilityChangeReporter: Compat change id reported: 168419799; UID 10038; state: DISABLED
+10-28 12:12:40.832  2180  2180 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10038; state: DISABLED
+10-28 12:12:40.837  2180  2180 V GraphicsEnvironment: ANGLE Developer option for 'com.android.documentsui' set to: 'default'
+10-28 12:12:40.837  2180  2180 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-28 12:12:40.838  2180  2180 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:40.838  2180  2180 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:40.843  2180  2180 E StrictMode: Tried to access the API:LayoutInflater which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@e2cd76a The API:LayoutInflater needs a proper configuration. Use UI contexts such as an activity or a context created via createWindowContext(Display, int, Bundle) or  createConfigurationContext(Configuration) with a proper configuration.
+10-28 12:12:40.843  2180  2180 E StrictMode: java.lang.IllegalAccessException: Tried to access the API:LayoutInflater which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@e2cd76a
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.os.StrictMode.assertConfigurationContext(StrictMode.java:2296)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.view.LayoutInflater.<init>(LayoutInflater.java:260)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at com.android.internal.policy.PhoneLayoutInflater.<init>(PhoneLayoutInflater.java:44)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.app.SystemServiceRegistry$33.createService(SystemServiceRegistry.java:534)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.app.SystemServiceRegistry$33.createService(SystemServiceRegistry.java:531)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.app.SystemServiceRegistry$CachedServiceFetcher.getService(SystemServiceRegistry.java:1848)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.app.SystemServiceRegistry.getSystemService(SystemServiceRegistry.java:1525)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.app.ContextImpl.getSystemService(ContextImpl.java:2065)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.content.ContextWrapper.getSystemService(ContextWrapper.java:859)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.view.LayoutInflater.from(LayoutInflater.java:288)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:166)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:145)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1211)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6725)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.app.ActivityThread.access$1500(ActivityThread.java:247)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2053)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.os.Looper.loop(Looper.java:288)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at android.app.ActivityThread.main(ActivityThread.java:7839)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+10-28 12:12:40.843  2180  2180 E StrictMode: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1003)
+10-28 12:12:40.844  2180  2180 E StrictMode: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@e2cd76a The API:ViewConfiguration needs a proper configuration. Use UI contexts such as an activity or a context created via createWindowContext(Display, int, Bundle) or  createConfigurationContext(Configuration) with a proper configuration.
+10-28 12:12:40.844  2180  2180 E StrictMode: java.lang.IllegalAccessException: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@e2cd76a
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.os.StrictMode.assertConfigurationContext(StrictMode.java:2296)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.ViewConfiguration.get(ViewConfiguration.java:522)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.View.<init>(View.java:5307)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.View.<init>(View.java:5452)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.ViewGroup.<init>(ViewGroup.java:702)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:254)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:250)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:246)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:858)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:780)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at com.android.internal.policy.PhoneLayoutInflater.onCreateView(PhoneLayoutInflater.java:58)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:934)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:954)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:1008)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:965)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:663)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:538)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:485)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:166)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:145)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1211)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6725)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.app.ActivityThread.access$1500(ActivityThread.java:247)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2053)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.os.Looper.loop(Looper.java:288)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at android.app.ActivityThread.main(ActivityThread.java:7839)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+10-28 12:12:40.844  2180  2180 E StrictMode: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1003)
+10-28 12:12:40.845  2180  2180 E ContextImpl: Tried to access visual service WindowManager from a non-visual Context:com.android.documentsui.DocumentsApplication@e2cd76a WindowManager should be accessed from Activity or other visual Context. Use an Activity or a Context created with Context#createWindowContext(int, Bundle), which are adjusted to the configuration and visual bounds of an area on screen.
+10-28 12:12:40.845  2180  2180 E ContextImpl: java.lang.IllegalAccessException: Tried to access visual service WindowManager from a non-visual Context:com.android.documentsui.DocumentsApplication@e2cd76a
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.app.ContextImpl.getSystemService(ContextImpl.java:2060)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.content.ContextWrapper.getSystemService(ContextWrapper.java:859)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.content.Context.getSystemService(Context.java:3945)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.ViewConfiguration.<init>(ViewConfiguration.java:436)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.ViewConfiguration.get(ViewConfiguration.java:529)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.View.<init>(View.java:5307)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.View.<init>(View.java:5452)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.ViewGroup.<init>(ViewGroup.java:702)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.widget.LinearLayout.<init>(LinearLayout.java:254)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.widget.LinearLayout.<init>(LinearLayout.java:250)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.widget.LinearLayout.<init>(LinearLayout.java:246)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.LayoutInflater.createView(LayoutInflater.java:858)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.LayoutInflater.createView(LayoutInflater.java:780)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at com.android.internal.policy.PhoneLayoutInflater.onCreateView(PhoneLayoutInflater.java:58)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:934)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:954)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:1008)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:965)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:663)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:538)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:485)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:166)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:145)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1211)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6725)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.app.ActivityThread.access$1500(ActivityThread.java:247)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2053)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.os.Looper.loop(Looper.java:288)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at android.app.ActivityThread.main(ActivityThread.java:7839)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+10-28 12:12:40.845  2180  2180 E ContextImpl: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1003)
+10-28 12:12:40.851  2180  2180 E StrictMode: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@e2cd76a The API:ViewConfiguration needs a proper configuration. Use UI contexts such as an activity or a context created via createWindowContext(Display, int, Bundle) or  createConfigurationContext(Configuration) with a proper configuration.
+10-28 12:12:40.851  2180  2180 E StrictMode: java.lang.IllegalAccessException: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@e2cd76a
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.os.StrictMode.assertConfigurationContext(StrictMode.java:2296)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.ViewConfiguration.get(ViewConfiguration.java:522)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.View.<init>(View.java:5307)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.View.<init>(View.java:5452)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.ViewGroup.<init>(ViewGroup.java:702)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:254)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:250)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.widget.LinearLayout.<init>(LinearLayout.java:246)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:858)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:780)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at com.android.internal.policy.PhoneLayoutInflater.onCreateView(PhoneLayoutInflater.java:58)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:934)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:954)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:1008)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:965)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.rInflate(LayoutInflater.java:1127)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.rInflateChildren(LayoutInflater.java:1088)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:686)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:538)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:485)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:166)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:145)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1211)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6725)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.app.ActivityThread.access$1500(ActivityThread.java:247)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2053)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.os.Looper.loop(Looper.java:288)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at android.app.ActivityThread.main(ActivityThread.java:7839)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+10-28 12:12:40.851  2180  2180 E StrictMode: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1003)
+10-28 12:12:40.859   537  1925 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10048; state: DISABLED
+10-28 12:12:40.860   537  1925 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10048; state: DISABLED
+10-28 12:12:40.860   537  1925 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10048; state: DISABLED
+10-28 12:12:40.860   537  1925 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10048; state: ENABLED
+10-28 12:12:40.860   537   579 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10048; state: ENABLED
+10-28 12:12:40.861  2180  2180 E StrictMode: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@e2cd76a The API:ViewConfiguration needs a proper configuration. Use UI contexts such as an activity or a context created via createWindowContext(Display, int, Bundle) or  createConfigurationContext(Configuration) with a proper configuration.
+10-28 12:12:40.861  2180  2180 E StrictMode: java.lang.IllegalAccessException: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@e2cd76a
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.os.StrictMode.assertConfigurationContext(StrictMode.java:2296)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.ViewConfiguration.get(ViewConfiguration.java:522)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.View.<init>(View.java:5307)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.View.<init>(View.java:5452)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.widget.ImageView.<init>(ImageView.java:195)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.widget.ImageView.<init>(ImageView.java:190)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.widget.ImageView.<init>(ImageView.java:186)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at com.android.documentsui.DropBadgeView.<init>(DropBadgeView.java:40)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:858)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:1010)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.LayoutInflater.parseInclude(LayoutInflater.java:1237)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.LayoutInflater.rInflate(LayoutInflater.java:1123)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.LayoutInflater.rInflateChildren(LayoutInflater.java:1088)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.LayoutInflater.rInflate(LayoutInflater.java:1130)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.LayoutInflater.rInflateChildren(LayoutInflater.java:1088)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:686)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:538)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:485)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:166)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:145)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1211)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6725)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.app.ActivityThread.access$1500(ActivityThread.java:247)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2053)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.os.Looper.loop(Looper.java:288)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at android.app.ActivityThread.main(ActivityThread.java:7839)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+10-28 12:12:40.861  2180  2180 E StrictMode: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1003)
+10-28 12:12:40.864  2180  2180 E StrictMode: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@e2cd76a The API:ViewConfiguration needs a proper configuration. Use UI contexts such as an activity or a context created via createWindowContext(Display, int, Bundle) or  createConfigurationContext(Configuration) with a proper configuration.
+10-28 12:12:40.864  2180  2180 E StrictMode: java.lang.IllegalAccessException: Tried to access the API:ViewConfiguration which needs to have proper configuration from a non-UI Context:com.android.documentsui.DocumentsApplication@e2cd76a
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.os.StrictMode.assertConfigurationContext(StrictMode.java:2296)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.ViewConfiguration.get(ViewConfiguration.java:522)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.View.<init>(View.java:5307)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.View.<init>(View.java:5452)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.widget.TextView.<init>(TextView.java:1032)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.widget.TextView.<init>(TextView.java:1026)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.widget.TextView.<init>(TextView.java:1022)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at java.lang.reflect.Constructor.newInstance0(Native Method)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at java.lang.reflect.Constructor.newInstance(Constructor.java:343)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:858)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createView(LayoutInflater.java:780)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at com.android.internal.policy.PhoneLayoutInflater.onCreateView(PhoneLayoutInflater.java:58)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:934)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.onCreateView(LayoutInflater.java:954)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:1008)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.createViewFromTag(LayoutInflater.java:965)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.rInflate(LayoutInflater.java:1127)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.rInflateChildren(LayoutInflater.java:1088)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.rInflate(LayoutInflater.java:1130)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.rInflateChildren(LayoutInflater.java:1088)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:686)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:538)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.view.LayoutInflater.inflate(LayoutInflater.java:485)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at com.android.documentsui.DragShadowBuilder.<init>(DragShadowBuilder.java:49)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:195)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager$RuntimeDragAndDropManager.<init>(DragAndDropManager.java:166)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at com.android.documentsui.DragAndDropManager.create(DragAndDropManager.java:163)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at com.android.documentsui.DocumentsApplication.onCreate(DocumentsApplication.java:145)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1211)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6725)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.app.ActivityThread.access$1500(ActivityThread.java:247)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2053)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.os.Handler.dispatchMessage(Handler.java:106)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.os.Looper.loop(Looper.java:288)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at android.app.ActivityThread.main(ActivityThread.java:7839)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+10-28 12:12:40.864  2180  2180 E StrictMode: 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1003)
+10-28 12:12:40.866   344   344 D Zygote  : Forked child process 2205
+10-28 12:12:40.866   537   579 I ActivityManager: Start proc 2205:com.android.externalstorage/u0a48 for content provider {com.android.externalstorage/com.android.externalstorage.ExternalStorageProvider}
+10-28 12:12:40.873  2205  2205 W externalstorag: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:40.879  2180  2180 D DocumentsApplication: OverlayManager.setEnabled() result: true
+10-28 12:12:40.879   537   565 I ActivityManager: Killing 1856:com.android.camera2/u0a82 (adj 975): empty #17
+10-28 12:12:40.881   440   459 I adbd    : jdwp connection from 2205
+10-28 12:12:40.887   344   344 I Zygote  : Process 1856 exited due to signal 9 (Killed)
+10-28 12:12:40.891  2205  2205 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10048; state: ENABLED
+10-28 12:12:40.896   537   565 I ActivityManager: Killing 1874:com.android.contacts/u0a72 (adj 975): empty #17
+10-28 12:12:40.904  1275  1788 I MediaProvider: Begin Intent { act=android.intent.action.PACKAGE_DATA_CLEARED dat=package:org.example.otppager flg=0x1000010 cmp=com.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+10-28 12:12:40.905  1275  1788 D MediaProvider: Deleted 0 Android/media items belonging to org.example.otppager on /data/user/0/com.android.providers.media.module/databases/external.db
+10-28 12:12:40.905   344   344 I Zygote  : Process 1874 exited due to signal 9 (Killed)
+10-28 12:12:40.906  1275  1788 I MediaProvider: End Intent { act=android.intent.action.PACKAGE_DATA_CLEARED dat=package:org.example.otppager flg=0x1000010 cmp=com.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+10-28 12:12:40.907  2205  2205 V GraphicsEnvironment: ANGLE Developer option for 'com.android.externalstorage' set to: 'default'
+10-28 12:12:40.907  2205  2205 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-28 12:12:40.908  2205  2205 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:40.908  2205  2205 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:40.911  2205  2205 D ExternalStorage: After updating volumes, found 1 active roots
+10-28 12:12:40.926   537   580 I libprocessgroup: Successfully killed process cgroup uid 10082 pid 1856 in 43ms
+10-28 12:12:40.926   537   580 I libprocessgroup: Successfully killed process cgroup uid 10072 pid 1874 in 0ms
+10-28 12:12:40.945  2181  2181 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-28 12:12:40.949  2181  2181 I AndroidRuntime: Using default boot image
+10-28 12:12:40.949  2181  2181 I AndroidRuntime: Leaving lock profiling enabled
+10-28 12:12:40.949  2181  2181 W libc    : Access denied finding property "odsign.verification.success"
+10-28 12:12:40.951  2181  2181 W app_process: ART APEX data files are untrusted.
+10-28 12:12:40.951  2181  2181 I app_process: Core platform API reporting enabled, enforcing=false
+10-28 12:12:40.948  2181  2181 W app_process: type=1400 audit(0.0:5): avc: denied { read } for name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=206 scontext=u:r:shell:s0 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0
+10-28 12:12:41.007   537   632 I RoleService: Granting default roles...
+10-28 12:12:41.024  2181  2181 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+10-28 12:12:41.024  2181  2181 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+10-28 12:12:41.035  2181  2181 W app_process: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:41.050  2181  2181 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+10-28 12:12:41.053   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: start instr
+10-28 12:12:41.054   537   565 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10105; state: DISABLED
+10-28 12:12:41.054   537   565 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10105; state: DISABLED
+10-28 12:12:41.054   537   565 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10105; state: DISABLED
+10-28 12:12:41.054   537   565 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10105; state: ENABLED
+10-28 12:12:41.054   537   579 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10105; state: ENABLED
+10-28 12:12:41.059   344   344 D Zygote  : Forked child process 2232
+10-28 12:12:41.059   537   579 I ActivityManager: Start proc 2232:org.example.otppager/u0a105 for added application org.example.otppager
+10-28 12:12:41.064  2232  2232 I xample.otppage: Late-enabling -Xcheck:jni
+10-28 12:12:41.075  2232  2232 W xample.otppage: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:41.078   440   459 I adbd    : jdwp connection from 2232
+10-28 12:12:41.089  2232  2232 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10105; state: ENABLED
+10-28 12:12:41.096  2232  2232 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318])
+10-28 12:12:41.098  2232  2232 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460])
+10-28 12:12:41.181  2232  2232 V GraphicsEnvironment: ANGLE Developer option for 'org.example.otppager' set to: 'default'
+10-28 12:12:41.181  2232  2232 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-28 12:12:41.183  2232  2232 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:41.184  2232  2232 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:41.185  2232  2232 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=2 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]})
+10-28 12:12:41.186  2232  2232 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=3 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:41.186  2232  2232 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:41.187  2232  2232 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:41.266  2232  2232 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:41.267  2232  2232 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:41.267  2232  2232 I AndroidJUnitRunner: newApplication org.example.otppager.PagerApplication
+10-28 12:12:41.271  2232  2232 I AndroidJUnitRunner: onCreate Bundle[mParcelledData.dataSize=176]
+10-28 12:12:41.272  2232  2232 D AndroidJUnitRunner: Use the raw file system for managing file I/O.
+10-28 12:12:41.276  2232  2232 V TestEventClient: No service name argument was given (testDiscoveryService, testRunEventService or orchestratorService)
+10-28 12:12:41.276  2232  2247 D AndroidJUnitRunner: onStart is called.
+10-28 12:12:41.351  2232  2247 I TestRunner: run started: 1 tests
+10-28 12:12:41.352  2232  2247 I TestRunner: started: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:41.684  2232  2249 E OTPDIAG : capture detail state=Legacy last=null chain=0 obs=unreadable=false t=0 s=0 m=0
+10-28 12:12:41.738  2232  2249 E OTPDIAG : recover scope=Legacy requested=true
+10-28 12:12:42.022   537   565 D WifiNl80211Manager: Scan result ready event
+10-28 12:12:42.022   537   565 D WifiNative: Scan result ready event
+10-28 12:12:42.475  2232  2247 I TestRunner: finished: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:42.476  2232  2247 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored
+10-28 12:12:42.481   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: finished inst
+10-28 12:12:42.482   537   565 I ActivityManager: Killing 2232:org.example.otppager/u0a105 (adj 0): stop org.example.otppager due to finished inst
+10-28 12:12:42.484  2181  2181 I app_process: System.exit called, status: 0
+10-28 12:12:42.484  2181  2181 I AndroidRuntime: VM exiting with result code 0.
+--------- beginning of kernel
+10-28 12:12:42.703     0     0 I binder  : undelivered TRANSACTION_COMPLETE
+10-28 12:12:42.704     0     0 I binder  : undelivered transaction 110839, process died.
+10-28 12:12:42.495   537  1925 V ActivityManager: Got obituary of 2232:org.example.otppager
+10-28 12:12:42.495   344   344 I Zygote  : Process 2232 exited due to signal 9 (Killed)
+10-28 12:12:42.512   537  1925 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: from pid 2255
+10-28 12:12:42.514   537   580 I libprocessgroup: Successfully killed process cgroup uid 10105 pid 2232 in 32ms
+10-28 12:12:42.518   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:42.582  2259  2259 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-28 12:12:42.585  2259  2259 I AndroidRuntime: Using default boot image
+10-28 12:12:42.585  2259  2259 I AndroidRuntime: Leaving lock profiling enabled
+10-28 12:12:42.590  2259  2259 W libc    : Access denied finding property "odsign.verification.success"
+10-28 12:12:42.584  2259  2259 W app_process: type=1400 audit(0.0:6): avc: denied { read } for name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=206 scontext=u:r:shell:s0 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0
+10-28 12:12:42.593  2259  2259 W app_process: ART APEX data files are untrusted.
+10-28 12:12:42.593  2259  2259 I app_process: Core platform API reporting enabled, enforcing=false
+10-28 12:12:42.656  2259  2259 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+10-28 12:12:42.656  2259  2259 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+10-28 12:12:42.662  2259  2259 W app_process: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:42.674  2259  2259 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+10-28 12:12:42.677   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: start instr
+10-28 12:12:42.678   537   565 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10105; state: DISABLED
+10-28 12:12:42.678   537   565 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10105; state: DISABLED
+10-28 12:12:42.678   537   565 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10105; state: DISABLED
+10-28 12:12:42.678   537   565 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10105; state: ENABLED
+10-28 12:12:42.679   537   579 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10105; state: ENABLED
+10-28 12:12:42.683   344   344 D Zygote  : Forked child process 2272
+10-28 12:12:42.684   537   579 I ActivityManager: Start proc 2272:org.example.otppager/u0a105 for added application org.example.otppager
+10-28 12:12:42.687  2272  2272 I xample.otppage: Late-enabling -Xcheck:jni
+10-28 12:12:42.698  2272  2272 W xample.otppage: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:42.701   440   459 I adbd    : jdwp connection from 2272
+10-28 12:12:42.715  2272  2272 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10105; state: ENABLED
+10-28 12:12:42.720  2272  2272 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318])
+10-28 12:12:42.721  2272  2272 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460])
+10-28 12:12:42.803  2272  2272 V GraphicsEnvironment: ANGLE Developer option for 'org.example.otppager' set to: 'default'
+10-28 12:12:42.803  2272  2272 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-28 12:12:42.805  2272  2272 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:42.806  2272  2272 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:42.807  2272  2272 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=2 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]})
+10-28 12:12:42.808  2272  2272 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=3 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:42.809  2272  2272 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:42.809  2272  2272 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:42.891  2272  2272 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:42.891  2272  2272 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:42.891  2272  2272 I AndroidJUnitRunner: newApplication org.example.otppager.PagerApplication
+10-28 12:12:42.896  2272  2272 I AndroidJUnitRunner: onCreate Bundle[mParcelledData.dataSize=180]
+10-28 12:12:42.896  2272  2272 D AndroidJUnitRunner: Use the raw file system for managing file I/O.
+10-28 12:12:42.900  2272  2272 V TestEventClient: No service name argument was given (testDiscoveryService, testRunEventService or orchestratorService)
+10-28 12:12:42.901  2272  2287 D AndroidJUnitRunner: onStart is called.
+10-28 12:12:43.023  2272  2287 I TestRunner: run started: 1 tests
+10-28 12:12:43.024  2272  2287 I TestRunner: started: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:43.503  2272  2289 E OTPDIAG : capture detail state=Active(manifest=Record(epoch=cee7869792952278250fa7469d72977c, predecessorGeneration=6a154d659ff153ec27c24daba2f77061, predecessorCommitment=7f4556c554106070dd6425f0e50687b82dbe1f20f660c75c13cfde73373b913e, indexHash=45a6c242e86d08ccab34d05e3e40b55c23f2ab50a01072b02779548ae06afc50, claimsHash=c423981aa15e82758c2e47b260cb93c8954f055c9c41c61dd1ec7b537388b3a5, sequence=2, roots=[chat-b24c3d90309e48d9ac0c, chat-cee7869792952278250f]), chain=[Terminal(generation=6a154d659ff153ec27c24daba2f77061, boundEpoch=legacy, commitment=7f4556c554106070dd6425f0e50687b82dbe1f20f660c75c13cfde73373b913e, cleaned=true, roots=[station-v2], guards=[Guard(namespace=chat-index-claims, sha256=b45c65805c46ad45e790e055602570c1c6809067dd8ce379dfead5792275604b), Guard(namespace=station-v2-pads, sha256=38493c43a3d946727f2225468b0ba0b97ab9b88033999743ab75724c4483546b)])]) last=cee7869792952278250fa7469d72977c chain=1 obs=unreadable=false t=1 s=1 m=1
+10-28 12:12:43.586  1891  1891 D CompatibilityChangeReporter: Compat change id reported: 150939131; UID 10080; state: DISABLED
+10-28 12:12:43.589  2272  2289 E OTPDIAG : recover scope=Epoch(manifest=Record(epoch=cee7869792952278250fa7469d72977c, predecessorGeneration=6a154d659ff153ec27c24daba2f77061, predecessorCommitment=7f4556c554106070dd6425f0e50687b82dbe1f20f660c75c13cfde73373b913e, indexHash=45a6c242e86d08ccab34d05e3e40b55c23f2ab50a01072b02779548ae06afc50, claimsHash=c423981aa15e82758c2e47b260cb93c8954f055c9c41c61dd1ec7b537388b3a5, sequence=2, roots=[chat-b24c3d90309e48d9ac0c, chat-cee7869792952278250f]), priorRoots=[station-v2], chain=[Terminal(generation=6a154d659ff153ec27c24daba2f77061, boundEpoch=legacy, commitment=7f4556c554106070dd6425f0e50687b82dbe1f20f660c75c13cfde73373b913e, cleaned=true, roots=[station-v2], guards=[Guard(namespace=chat-index-claims, sha256=b45c65805c46ad45e790e055602570c1c6809067dd8ce379dfead5792275604b), Guard(namespace=station-v2-pads, sha256=38493c43a3d946727f2225468b0ba0b97ab9b88033999743ab75724c4483546b)])], terminal=Record(generation=6d8c4bc777c284f3dc6076933fd4d5f5, epoch=cee7869792952278250fa7469d72977c, phase=SEALED, roots=[chat-b24c3d90309e48d9ac0c, chat-cee7869792952278250f], guards=[Guard(namespace=chat-cee7869792952278250f-pads, sha256=3ef0f68648121d0b90ff762921f5ba5e4470f5fc92fb7b1c4927bd1d2ddd65bf), Guard(namespace=enr-cee7869792952278250f-claims, sha256=d728609b112cb72cf4928fce37d16e58a8d0c3dc1ea04566cfebcc3cd339e85d)])) requested=true
+10-28 12:12:43.603  2272  2289 E OTPDIAG : write terminals=[cee786:SEALED]
+10-28 12:12:43.612  2272  2289 E OTPDIAG : write terminals=[cee786:SEALED]
+10-28 12:12:43.658  2272  2289 E OTPDIAG : write terminals=[cee786:SEALED]
+10-28 12:12:44.683  2272  2287 I TestRunner: finished: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:44.684  2272  2287 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored
+10-28 12:12:44.687   537  1925 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: finished inst
+10-28 12:12:44.688  2259  2259 I app_process: System.exit called, status: 0
+10-28 12:12:44.688  2259  2259 I AndroidRuntime: VM exiting with result code 0.
+10-28 12:12:44.689   537  1925 I ActivityManager: Killing 2272:org.example.otppager/u0a105 (adj 0): stop org.example.otppager due to finished inst
+10-28 12:12:44.917     0     0 I binder  : undelivered TRANSACTION_COMPLETE
+10-28 12:12:44.919     0     0 I binder  : undelivered transaction 119484, process died.
+10-28 12:12:44.710   537  1925 V ActivityManager: Got obituary of 2272:org.example.otppager
+10-28 12:12:44.711   344   344 I Zygote  : Process 2272 exited due to signal 9 (Killed)
+10-28 12:12:44.716   537  1925 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: from pid 2295
+10-28 12:12:44.719   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:44.724   537   580 I libprocessgroup: Successfully killed process cgroup uid 10105 pid 2272 in 33ms
+10-28 12:12:44.777  2298  2298 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-28 12:12:44.780  2298  2298 I AndroidRuntime: Using default boot image
+10-28 12:12:44.780  2298  2298 I AndroidRuntime: Leaving lock profiling enabled
+10-28 12:12:44.785  2298  2298 W libc    : Access denied finding property "odsign.verification.success"
+10-28 12:12:44.787  2298  2298 W app_process: ART APEX data files are untrusted.
+10-28 12:12:44.787  2298  2298 I app_process: Core platform API reporting enabled, enforcing=false
+10-28 12:12:44.776  2298  2298 W app_process: type=1400 audit(0.0:7): avc: denied { read } for name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=206 scontext=u:r:shell:s0 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0
+10-28 12:12:44.847  2298  2298 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+10-28 12:12:44.847  2298  2298 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+10-28 12:12:44.852  2298  2298 W app_process: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:44.864  2298  2298 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+10-28 12:12:44.867   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: start instr
+10-28 12:12:44.869   537   565 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10105; state: DISABLED
+10-28 12:12:44.869   537   565 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10105; state: DISABLED
+10-28 12:12:44.869   537   565 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10105; state: DISABLED
+10-28 12:12:44.869   537   565 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10105; state: ENABLED
+10-28 12:12:44.869   537   579 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10105; state: ENABLED
+10-28 12:12:44.873   344   344 D Zygote  : Forked child process 2311
+10-28 12:12:44.876   537   579 I ActivityManager: Start proc 2311:org.example.otppager/u0a105 for added application org.example.otppager
+10-28 12:12:44.878  2311  2311 I xample.otppage: Late-enabling -Xcheck:jni
+10-28 12:12:44.889  2311  2311 W xample.otppage: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:44.891   440   459 I adbd    : jdwp connection from 2311
+10-28 12:12:44.905  2311  2311 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10105; state: ENABLED
+10-28 12:12:44.911  2311  2311 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318])
+10-28 12:12:44.912  2311  2311 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460])
+10-28 12:12:44.994  2311  2311 V GraphicsEnvironment: ANGLE Developer option for 'org.example.otppager' set to: 'default'
+10-28 12:12:44.994  2311  2311 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-28 12:12:44.996  2311  2311 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:44.997  2311  2311 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:44.998  2311  2311 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=2 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]})
+10-28 12:12:44.999  2311  2311 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=3 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:44.999  2311  2311 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:45.000  2311  2311 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:45.081  2311  2311 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:45.082  2311  2311 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:45.082  2311  2311 I AndroidJUnitRunner: newApplication org.example.otppager.PagerApplication
+10-28 12:12:45.086  2311  2311 I AndroidJUnitRunner: onCreate Bundle[mParcelledData.dataSize=180]
+10-28 12:12:45.087  2311  2311 D AndroidJUnitRunner: Use the raw file system for managing file I/O.
+10-28 12:12:45.092  2311  2311 V TestEventClient: No service name argument was given (testDiscoveryService, testRunEventService or orchestratorService)
+10-28 12:12:45.093  2311  2326 D AndroidJUnitRunner: onStart is called.
+10-28 12:12:45.231  2311  2326 I TestRunner: run started: 1 tests
+10-28 12:12:45.232  2311  2326 I TestRunner: started: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:45.624  2311  2326 I TestRunner: finished: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:45.627  2311  2326 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored
+10-28 12:12:45.630   537  1925 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: finished inst
+10-28 12:12:45.631  2298  2298 I app_process: System.exit called, status: 0
+10-28 12:12:45.631  2298  2298 I AndroidRuntime: VM exiting with result code 0.
+10-28 12:12:45.636   537  1925 I ActivityManager: Killing 2311:org.example.otppager/u0a105 (adj 0): stop org.example.otppager due to finished inst
+10-28 12:12:45.641   537   578 W ActivityManager: Error shutting down UiAutomationConnection
+10-28 12:12:45.849     0     0 I binder  : 537:578 transaction failed 29189/-22, size 88-0 line 2847
+10-28 12:12:45.648   537  1925 V ActivityManager: Got obituary of 2311:org.example.otppager
+10-28 12:12:45.648   344   344 I Zygote  : Process 2311 exited due to signal 9 (Killed)
+10-28 12:12:45.856     0     0 I binder  : undelivered TRANSACTION_COMPLETE
+10-28 12:12:45.858     0     0 I binder  : undelivered transaction 121007, process died.
+10-28 12:12:45.656   537  1925 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: from pid 2331
+10-28 12:12:45.659   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:45.681   537   580 I libprocessgroup: Successfully killed process cgroup uid 10105 pid 2311 in 44ms
+10-28 12:12:45.717  2334  2334 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-28 12:12:45.720  2334  2334 I AndroidRuntime: Using default boot image
+10-28 12:12:45.720  2334  2334 I AndroidRuntime: Leaving lock profiling enabled
+10-28 12:12:45.720  2334  2334 W libc    : Access denied finding property "odsign.verification.success"
+10-28 12:12:45.722  2334  2334 W app_process: ART APEX data files are untrusted.
+10-28 12:12:45.722  2334  2334 I app_process: Core platform API reporting enabled, enforcing=false
+10-28 12:12:45.716  2334  2334 W app_process: type=1400 audit(0.0:8): avc: denied { read } for name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=206 scontext=u:r:shell:s0 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0
+10-28 12:12:45.784  2334  2334 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+10-28 12:12:45.784  2334  2334 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+10-28 12:12:45.789  2334  2334 W app_process: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:45.801  2334  2334 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+10-28 12:12:45.803   537  1925 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: start instr
+10-28 12:12:45.805   537  1925 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10105; state: DISABLED
+10-28 12:12:45.805   537  1925 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10105; state: DISABLED
+10-28 12:12:45.805   537  1925 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10105; state: DISABLED
+10-28 12:12:45.805   537  1925 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10105; state: ENABLED
+10-28 12:12:45.805   537   579 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10105; state: ENABLED
+10-28 12:12:45.810   344   344 D Zygote  : Forked child process 2347
+10-28 12:12:45.812   537   579 I ActivityManager: Start proc 2347:org.example.otppager/u0a105 for added application org.example.otppager
+10-28 12:12:45.814  2347  2347 I xample.otppage: Late-enabling -Xcheck:jni
+10-28 12:12:45.825  2347  2347 W xample.otppage: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:45.827   440   459 I adbd    : jdwp connection from 2347
+10-28 12:12:45.839  2347  2347 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10105; state: ENABLED
+10-28 12:12:45.844  2347  2347 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318])
+10-28 12:12:45.845  2347  2347 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460])
+10-28 12:12:45.929  2347  2347 V GraphicsEnvironment: ANGLE Developer option for 'org.example.otppager' set to: 'default'
+10-28 12:12:45.929  2347  2347 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-28 12:12:45.930  2347  2347 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:45.932  2347  2347 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:45.932  2347  2347 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=2 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]})
+10-28 12:12:45.933  2347  2347 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=3 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:45.934  2347  2347 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:45.934  2347  2347 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:46.014  2347  2347 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:46.015  2347  2347 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:46.015  2347  2347 I AndroidJUnitRunner: newApplication org.example.otppager.PagerApplication
+10-28 12:12:46.020  2347  2347 I AndroidJUnitRunner: onCreate Bundle[mParcelledData.dataSize=180]
+10-28 12:12:46.020  2347  2347 D AndroidJUnitRunner: Use the raw file system for managing file I/O.
+10-28 12:12:46.024  2347  2347 V TestEventClient: No service name argument was given (testDiscoveryService, testRunEventService or orchestratorService)
+10-28 12:12:46.025  2347  2362 D AndroidJUnitRunner: onStart is called.
+10-28 12:12:46.145  2347  2347 E OTPDIAG : observe unreadable
+10-28 12:12:46.145  2347  2347 E OTPDIAG : java.lang.IllegalStateException: Manifest authentication failed
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochManifests.read(EpochManifests.kt:47)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochManifests.readAll(EpochManifests.kt:40)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochState.observe(EpochManifests.kt:148)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochState.detail(EpochManifests.kt:156)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochState.resolve(EpochManifests.kt:162)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochState.resolveIfManifest(EpochManifests.kt:166)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at org.example.otppager.GlobalRetirement.isFrozen(GlobalRetirement.kt:30)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at org.example.otppager.RetirementStartup.recover(PagerApplication.kt:30)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at org.example.otppager.PagerApplication.onCreate(PagerApplication.kt:45)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1211)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at androidx.test.runner.MonitoringInstrumentation.callApplicationOnCreate(MonitoringInstrumentation.java:470)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6725)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at android.app.ActivityThread.access$1500(ActivityThread.java:247)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2053)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at android.os.Handler.dispatchMessage(Handler.java:106)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at android.os.Looper.loop(Looper.java:288)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at android.app.ActivityThread.main(ActivityThread.java:7839)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+10-28 12:12:46.145  2347  2347 E OTPDIAG : 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1003)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : observe unreadable
+10-28 12:12:46.174  2347  2347 E OTPDIAG : java.lang.IllegalStateException: Manifest authentication failed
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochManifests.read(EpochManifests.kt:47)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochManifests.readAll(EpochManifests.kt:40)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochState.observe(EpochManifests.kt:148)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochState.detail(EpochManifests.kt:156)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochState.wipeScope(EpochManifests.kt:194)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at org.example.otppager.GlobalRetirement.recover(GlobalRetirement.kt:174)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at org.example.otppager.GlobalRetirement.recover$default(GlobalRetirement.kt:172)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at org.example.otppager.RetirementStartup.recover(PagerApplication.kt:31)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at org.example.otppager.PagerApplication.onCreate(PagerApplication.kt:45)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1211)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at androidx.test.runner.MonitoringInstrumentation.callApplicationOnCreate(MonitoringInstrumentation.java:470)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6725)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at android.app.ActivityThread.access$1500(ActivityThread.java:247)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2053)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at android.os.Handler.dispatchMessage(Handler.java:106)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at android.os.Looper.loop(Looper.java:288)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at android.app.ActivityThread.main(ActivityThread.java:7839)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1003)
+10-28 12:12:46.174  2347  2347 E OTPDIAG : recover scope=Unknown requested=false
+10-28 12:12:46.199  2347  2347 E OTPDIAG : observe unreadable
+10-28 12:12:46.199  2347  2347 E OTPDIAG : java.lang.IllegalStateException: Manifest authentication failed
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochManifests.read(EpochManifests.kt:47)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochManifests.readAll(EpochManifests.kt:40)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochState.observe(EpochManifests.kt:148)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochState.detail(EpochManifests.kt:156)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at org.example.otppager.EpochState.wipeScope(EpochManifests.kt:194)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at org.example.otppager.GlobalRetirement.recordCleanup(GlobalRetirement.kt:286)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at org.example.otppager.RetirementStartup.recordGlobal$app_debug(PagerApplication.kt:17)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at org.example.otppager.RetirementStartup.recover(PagerApplication.kt:31)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at org.example.otppager.PagerApplication.onCreate(PagerApplication.kt:45)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at android.app.Instrumentation.callApplicationOnCreate(Instrumentation.java:1211)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at androidx.test.runner.MonitoringInstrumentation.callApplicationOnCreate(MonitoringInstrumentation.java:470)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at android.app.ActivityThread.handleBindApplication(ActivityThread.java:6725)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at android.app.ActivityThread.access$1500(ActivityThread.java:247)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:2053)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at android.os.Handler.dispatchMessage(Handler.java:106)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at android.os.Looper.loopOnce(Looper.java:201)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at android.os.Looper.loop(Looper.java:288)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at android.app.ActivityThread.main(ActivityThread.java:7839)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:548)
+10-28 12:12:46.199  2347  2347 E OTPDIAG : 	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:1003)
+10-28 12:12:46.213  2347  2362 I TestRunner: run started: 1 tests
+10-28 12:12:46.213  2347  2362 I TestRunner: started: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : observe unreadable
+10-28 12:12:46.240  2347  2362 E OTPDIAG : java.lang.IllegalStateException: Manifest authentication failed
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochManifests.read(EpochManifests.kt:47)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochManifests.readAll(EpochManifests.kt:40)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochState.observe(EpochManifests.kt:148)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochState.detail(EpochManifests.kt:156)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochState.wipeScope(EpochManifests.kt:194)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.example.otppager.GlobalRetirement.inspect(GlobalRetirement.kt:47)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochCycleRestartTest.freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(EpochCycleRestartTest.kt:133)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.Suite.runChild(Suite.java:128)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.Suite.runChild(Suite.java:27)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+10-28 12:12:46.240  2347  2362 E OTPDIAG : 	at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : observe unreadable
+10-28 12:12:46.265  2347  2362 E OTPDIAG : java.lang.IllegalStateException: Manifest authentication failed
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochManifests.read(EpochManifests.kt:47)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochManifests.readAll(EpochManifests.kt:40)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochState.observe(EpochManifests.kt:148)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochState.detail(EpochManifests.kt:156)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.example.otppager.EnrollmentStaging.latestCompleted$app_debug(EnrollmentStaging.kt:73)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.example.otppager.FreshEnrollment.eligible(FreshEnrollment.kt:22)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.example.otppager.EpochCycleRestartTest.freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(EpochCycleRestartTest.kt:134)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at java.lang.reflect.Method.invoke(Native Method)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:59)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:56)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.BlockJUnit4ClassRunner$1.evaluate(BlockJUnit4ClassRunner.java:100)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:366)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:103)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:63)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at androidx.test.ext.junit.runners.AndroidJUnit4.run(AndroidJUnit4.java:162)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.Suite.runChild(Suite.java:128)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.Suite.runChild(Suite.java:27)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:68)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:59)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:463)
+10-28 12:12:46.265  2347  2362 E OTPDIAG : 	at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2248)
+10-28 12:12:46.705  2347  2362 I TestRunner: finished: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:46.707  2347  2362 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored
+10-28 12:12:46.710   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: finished inst
+10-28 12:12:46.711   537   565 I ActivityManager: Killing 2347:org.example.otppager/u0a105 (adj 0): stop org.example.otppager due to finished inst
+10-28 12:12:46.714  2334  2334 I app_process: System.exit called, status: 0
+10-28 12:12:46.714  2334  2334 I AndroidRuntime: VM exiting with result code 0.
+10-28 12:12:46.724   537   565 V ActivityManager: Got obituary of 2347:org.example.otppager
+10-28 12:12:46.725   344   344 I Zygote  : Process 2347 exited due to signal 9 (Killed)
+10-28 12:12:46.932     0     0 I binder  : undelivered TRANSACTION_COMPLETE
+10-28 12:12:46.934     0     0 I binder  : undelivered transaction 122965, process died.
+10-28 12:12:46.738   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: from pid 2367
+10-28 12:12:46.740   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:46.756   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: clear data
+10-28 12:12:46.757   537   578 I ActivityManager: Force stopping org.example.otppager appid=10105 user=-1: clearApplicationUserData
+10-28 12:12:46.757   537   580 I libprocessgroup: Successfully killed process cgroup uid 10105 pid 2347 in 45ms
+10-28 12:12:46.768   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:46.771   747   747 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_DATA_CLEARED
+10-28 12:12:46.782  1275  1788 I MediaProvider: Begin Intent { act=android.intent.action.PACKAGE_DATA_CLEARED dat=package:org.example.otppager flg=0x1000010 cmp=com.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+10-28 12:12:46.782  1275  1788 D MediaProvider: Deleted 0 Android/media items belonging to org.example.otppager on /data/user/0/com.android.providers.media.module/databases/external.db
+10-28 12:12:46.783  1275  1788 I MediaProvider: End Intent { act=android.intent.action.PACKAGE_DATA_CLEARED dat=package:org.example.otppager flg=0x1000010 cmp=com.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+10-28 12:12:46.834  2380  2380 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-28 12:12:46.836  2380  2380 I AndroidRuntime: Using default boot image
+10-28 12:12:46.836  2380  2380 I AndroidRuntime: Leaving lock profiling enabled
+10-28 12:12:46.837  2380  2380 W libc    : Access denied finding property "odsign.verification.success"
+10-28 12:12:46.838  2380  2380 W app_process: ART APEX data files are untrusted.
+10-28 12:12:46.838  2380  2380 I app_process: Core platform API reporting enabled, enforcing=false
+10-28 12:12:46.832  2380  2380 W app_process: type=1400 audit(0.0:9): avc: denied { read } for name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=206 scontext=u:r:shell:s0 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0
+10-28 12:12:46.899  2380  2380 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+10-28 12:12:46.899  2380  2380 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+10-28 12:12:46.905  2380  2380 W app_process: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:46.917  2380  2380 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+10-28 12:12:46.919   537  1925 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: start instr
+10-28 12:12:46.920   537  1925 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10105; state: DISABLED
+10-28 12:12:46.921   537  1925 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10105; state: DISABLED
+10-28 12:12:46.921   537  1925 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10105; state: DISABLED
+10-28 12:12:46.921   537  1925 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10105; state: ENABLED
+10-28 12:12:46.921   537   579 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10105; state: ENABLED
+10-28 12:12:46.925   344   344 D Zygote  : Forked child process 2393
+10-28 12:12:46.927   537   579 I ActivityManager: Start proc 2393:org.example.otppager/u0a105 for added application org.example.otppager
+10-28 12:12:46.929  2393  2393 I xample.otppage: Late-enabling -Xcheck:jni
+10-28 12:12:46.940  2393  2393 W xample.otppage: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:46.942   440   459 I adbd    : jdwp connection from 2393
+10-28 12:12:46.953  2393  2393 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10105; state: ENABLED
+10-28 12:12:46.959  2393  2393 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318])
+10-28 12:12:46.960  2393  2393 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460])
+10-28 12:12:47.040  2393  2393 V GraphicsEnvironment: ANGLE Developer option for 'org.example.otppager' set to: 'default'
+10-28 12:12:47.040  2393  2393 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-28 12:12:47.042  2393  2393 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:47.044  2393  2393 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:47.044  2393  2393 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=2 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]})
+10-28 12:12:47.045  2393  2393 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=3 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:47.046  2393  2393 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:47.046  2393  2393 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:47.126  2393  2393 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:47.127  2393  2393 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:47.127  2393  2393 I AndroidJUnitRunner: newApplication org.example.otppager.PagerApplication
+10-28 12:12:47.133  2393  2393 I AndroidJUnitRunner: onCreate Bundle[mParcelledData.dataSize=184]
+10-28 12:12:47.134  2393  2393 D AndroidJUnitRunner: Use the raw file system for managing file I/O.
+10-28 12:12:47.138  2393  2393 V TestEventClient: No service name argument was given (testDiscoveryService, testRunEventService or orchestratorService)
+10-28 12:12:47.138  2393  2408 D AndroidJUnitRunner: onStart is called.
+10-28 12:12:47.216  2393  2408 I TestRunner: run started: 1 tests
+10-28 12:12:47.216  2393  2408 I TestRunner: started: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:47.460  2393  2410 E OTPDIAG : capture detail state=Legacy last=null chain=0 obs=unreadable=false t=0 s=0 m=0
+10-28 12:12:47.522  2393  2410 E OTPDIAG : recover scope=Legacy requested=true
+10-28 12:12:47.785  2393  2408 I TestRunner: finished: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:47.787  2393  2408 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored
+10-28 12:12:47.789   537  2029 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: finished inst
+10-28 12:12:47.789   537  2029 I ActivityManager: Killing 2393:org.example.otppager/u0a105 (adj 0): stop org.example.otppager due to finished inst
+10-28 12:12:47.792   537  2029 I ActivityManager: Killing 1178:com.android.cellbroadcastreceiver/u0a37 (adj 985): empty #17
+10-28 12:12:47.795   344   344 I Zygote  : Process 1178 exited due to signal 9 (Killed)
+10-28 12:12:47.802  2380  2380 I app_process: System.exit called, status: 0
+10-28 12:12:47.802  2380  2380 I AndroidRuntime: VM exiting with result code 0.
+10-28 12:12:48.021     0     0 I binder  : undelivered TRANSACTION_COMPLETE
+10-28 12:12:48.022     0     0 I binder  : undelivered transaction 125731, process died.
+10-28 12:12:47.815   344   344 I Zygote  : Process 2393 exited due to signal 9 (Killed)
+10-28 12:12:47.815   537  2029 V ActivityManager: Got obituary of 2393:org.example.otppager
+10-28 12:12:47.826   537  2029 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: from pid 2415
+10-28 12:12:47.829   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:47.833   537   580 I libprocessgroup: Successfully killed process cgroup uid 10105 pid 2393 in 43ms
+10-28 12:12:47.834   537   580 I libprocessgroup: Successfully killed process cgroup uid 10037 pid 1178 in 0ms
+10-28 12:12:47.887  2418  2418 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-28 12:12:47.889  2418  2418 I AndroidRuntime: Using default boot image
+10-28 12:12:47.889  2418  2418 I AndroidRuntime: Leaving lock profiling enabled
+10-28 12:12:47.889  2418  2418 W libc    : Access denied finding property "odsign.verification.success"
+10-28 12:12:47.892  2418  2418 W app_process: ART APEX data files are untrusted.
+10-28 12:12:47.892  2418  2418 I app_process: Core platform API reporting enabled, enforcing=false
+10-28 12:12:47.888  2418  2418 W app_process: type=1400 audit(0.0:10): avc: denied { read } for name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=206 scontext=u:r:shell:s0 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0
+10-28 12:12:47.952  2418  2418 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+10-28 12:12:47.952  2418  2418 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+10-28 12:12:47.958  2418  2418 W app_process: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:47.969  2418  2418 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+10-28 12:12:47.972   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: start instr
+10-28 12:12:47.973   537   565 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10105; state: DISABLED
+10-28 12:12:47.974   537   565 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10105; state: DISABLED
+10-28 12:12:47.974   537   565 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10105; state: DISABLED
+10-28 12:12:47.974   537   565 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10105; state: ENABLED
+10-28 12:12:47.975   537   579 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10105; state: ENABLED
+10-28 12:12:47.979   344   344 D Zygote  : Forked child process 2431
+10-28 12:12:47.980   537   579 I ActivityManager: Start proc 2431:org.example.otppager/u0a105 for added application org.example.otppager
+10-28 12:12:47.983  2431  2431 I xample.otppage: Late-enabling -Xcheck:jni
+10-28 12:12:47.994  2431  2431 W xample.otppage: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:47.996   440   459 I adbd    : jdwp connection from 2431
+10-28 12:12:48.011  2431  2431 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10105; state: ENABLED
+10-28 12:12:48.016  2431  2431 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318])
+10-28 12:12:48.017  2431  2431 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460])
+10-28 12:12:48.099  2431  2431 V GraphicsEnvironment: ANGLE Developer option for 'org.example.otppager' set to: 'default'
+10-28 12:12:48.099  2431  2431 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-28 12:12:48.101  2431  2431 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:48.102  2431  2431 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:48.103  2431  2431 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=2 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]})
+10-28 12:12:48.104  2431  2431 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=3 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:48.104  2431  2431 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:48.105  2431  2431 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:48.184  2431  2431 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:48.185  2431  2431 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:48.185  2431  2431 I AndroidJUnitRunner: newApplication org.example.otppager.PagerApplication
+10-28 12:12:48.190  2431  2431 I AndroidJUnitRunner: onCreate Bundle[mParcelledData.dataSize=188]
+10-28 12:12:48.190  2431  2431 D AndroidJUnitRunner: Use the raw file system for managing file I/O.
+10-28 12:12:48.195  2431  2431 V TestEventClient: No service name argument was given (testDiscoveryService, testRunEventService or orchestratorService)
+10-28 12:12:48.196  2431  2446 D AndroidJUnitRunner: onStart is called.
+10-28 12:12:48.248  2431  2431 E OTPDIAG : recover scope=Legacy requested=false
+10-28 12:12:48.369  2431  2446 I TestRunner: run started: 1 tests
+10-28 12:12:48.370  2431  2446 I TestRunner: started: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:48.722  2431  2446 I TestRunner: finished: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:48.725  2431  2446 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored
+10-28 12:12:48.727   537  2029 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: finished inst
+10-28 12:12:48.728  2418  2418 I app_process: System.exit called, status: 0
+10-28 12:12:48.728  2418  2418 I AndroidRuntime: VM exiting with result code 0.
+10-28 12:12:48.729   537  2029 I ActivityManager: Killing 2431:org.example.otppager/u0a105 (adj 0): stop org.example.otppager due to finished inst
+10-28 12:12:48.739   344   344 I Zygote  : Process 2431 exited due to signal 9 (Killed)
+10-28 12:12:48.951     0     0 I binder  : undelivered TRANSACTION_COMPLETE
+10-28 12:12:48.952     0     0 I binder  : undelivered transaction 128514, process died.
+10-28 12:12:48.742   537  2029 V ActivityManager: Got obituary of 2431:org.example.otppager
+10-28 12:12:48.753   537  2029 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: from pid 2452
+10-28 12:12:48.755   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:48.771   537  2029 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: clear data
+10-28 12:12:48.772   537   578 I ActivityManager: Force stopping org.example.otppager appid=10105 user=-1: clearApplicationUserData
+10-28 12:12:48.774   537   580 I libprocessgroup: Successfully killed process cgroup uid 10105 pid 2431 in 43ms
+10-28 12:12:48.779   747   747 V MediaPlayerList: mPackageChangedBroadcastReceiver: action: android.intent.action.PACKAGE_DATA_CLEARED
+10-28 12:12:48.780   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:48.794  1275  1788 I MediaProvider: Begin Intent { act=android.intent.action.PACKAGE_DATA_CLEARED dat=package:org.example.otppager flg=0x1000010 cmp=com.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+10-28 12:12:48.794  1275  1788 D MediaProvider: Deleted 0 Android/media items belonging to org.example.otppager on /data/user/0/com.android.providers.media.module/databases/external.db
+10-28 12:12:48.794  1275  1788 I MediaProvider: End Intent { act=android.intent.action.PACKAGE_DATA_CLEARED dat=package:org.example.otppager flg=0x1000010 cmp=com.android.providers.media.module/com.android.providers.media.MediaService (has extras) }
+10-28 12:12:48.846  2465  2465 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-28 12:12:48.849  2465  2465 I AndroidRuntime: Using default boot image
+10-28 12:12:48.849  2465  2465 I AndroidRuntime: Leaving lock profiling enabled
+10-28 12:12:48.849  2465  2465 W libc    : Access denied finding property "odsign.verification.success"
+10-28 12:12:48.851  2465  2465 W app_process: ART APEX data files are untrusted.
+10-28 12:12:48.851  2465  2465 I app_process: Core platform API reporting enabled, enforcing=false
+10-28 12:12:48.844  2465  2465 W app_process: type=1400 audit(0.0:11): avc: denied { read } for name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=206 scontext=u:r:shell:s0 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0
+10-28 12:12:48.913  2465  2465 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+10-28 12:12:48.913  2465  2465 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+10-28 12:12:48.919  2465  2465 W app_process: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:48.931  2465  2465 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+10-28 12:12:48.933   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: start instr
+10-28 12:12:48.934   537   565 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10105; state: DISABLED
+10-28 12:12:48.935   537   565 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10105; state: DISABLED
+10-28 12:12:48.935   537   565 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10105; state: DISABLED
+10-28 12:12:48.935   537   565 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10105; state: ENABLED
+10-28 12:12:48.935   537   579 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10105; state: ENABLED
+10-28 12:12:48.939   344   344 D Zygote  : Forked child process 2478
+10-28 12:12:48.939   537   579 I ActivityManager: Start proc 2478:org.example.otppager/u0a105 for added application org.example.otppager
+10-28 12:12:48.942  2478  2478 I xample.otppage: Late-enabling -Xcheck:jni
+10-28 12:12:48.953  2478  2478 W xample.otppage: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:48.956   440   459 I adbd    : jdwp connection from 2478
+10-28 12:12:48.968  2478  2478 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10105; state: ENABLED
+10-28 12:12:48.973  2478  2478 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318])
+10-28 12:12:48.974  2478  2478 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460])
+10-28 12:12:49.056  2478  2478 V GraphicsEnvironment: ANGLE Developer option for 'org.example.otppager' set to: 'default'
+10-28 12:12:49.056  2478  2478 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-28 12:12:49.058  2478  2478 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:49.059  2478  2478 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:49.060  2478  2478 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=2 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]})
+10-28 12:12:49.061  2478  2478 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=3 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:49.061  2478  2478 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:49.062  2478  2478 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:49.141  2478  2478 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:49.142  2478  2478 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:49.142  2478  2478 I AndroidJUnitRunner: newApplication org.example.otppager.PagerApplication
+10-28 12:12:49.146  2478  2478 I AndroidJUnitRunner: onCreate Bundle[mParcelledData.dataSize=176]
+10-28 12:12:49.146  2478  2478 D AndroidJUnitRunner: Use the raw file system for managing file I/O.
+10-28 12:12:49.151  2478  2478 V TestEventClient: No service name argument was given (testDiscoveryService, testRunEventService or orchestratorService)
+10-28 12:12:49.151  2478  2493 D AndroidJUnitRunner: onStart is called.
+10-28 12:12:49.232  2478  2493 I TestRunner: run started: 1 tests
+10-28 12:12:49.232  2478  2493 I TestRunner: started: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:49.479  2478  2495 E OTPDIAG : capture detail state=Legacy last=null chain=0 obs=unreadable=false t=0 s=0 m=0
+10-28 12:12:49.538  2478  2495 E OTPDIAG : recover scope=Legacy requested=true
+10-28 12:12:50.229  2478  2493 I TestRunner: finished: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:50.231  2478  2493 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored
+10-28 12:12:50.234   537  2029 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: finished inst
+10-28 12:12:50.235   537  2029 I ActivityManager: Killing 2478:org.example.otppager/u0a105 (adj 0): stop org.example.otppager due to finished inst
+10-28 12:12:50.238  2465  2465 I app_process: System.exit called, status: 0
+10-28 12:12:50.238  2465  2465 I AndroidRuntime: VM exiting with result code 0.
+10-28 12:12:50.249   344   344 I Zygote  : Process 2478 exited due to signal 9 (Killed)
+10-28 12:12:50.458     0     0 I binder  : undelivered TRANSACTION_COMPLETE
+10-28 12:12:50.460     0     0 I binder  : undelivered transaction 133687, process died.
+10-28 12:12:50.251   537  2029 V ActivityManager: Got obituary of 2478:org.example.otppager
+10-28 12:12:50.266   537  2029 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: from pid 2501
+10-28 12:12:50.269   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:50.277   537   580 I libprocessgroup: Successfully killed process cgroup uid 10105 pid 2478 in 42ms
+10-28 12:12:50.326  2504  2504 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+10-28 12:12:50.329  2504  2504 I AndroidRuntime: Using default boot image
+10-28 12:12:50.329  2504  2504 I AndroidRuntime: Leaving lock profiling enabled
+10-28 12:12:50.329  2504  2504 W libc    : Access denied finding property "odsign.verification.success"
+10-28 12:12:50.330  2504  2504 W app_process: ART APEX data files are untrusted.
+10-28 12:12:50.330  2504  2504 I app_process: Core platform API reporting enabled, enforcing=false
+10-28 12:12:50.324  2504  2504 W app_process: type=1400 audit(0.0:12): avc: denied { read } for name="u:object_r:odsign_prop:s0" dev="tmpfs" ino=206 scontext=u:r:shell:s0 tcontext=u:object_r:odsign_prop:s0 tclass=file permissive=0
+10-28 12:12:50.389  2504  2504 D app_process: Time zone APEX ICU file found: /apex/com.android.tzdata/etc/icu/icu_tzdata.dat
+10-28 12:12:50.389  2504  2504 D app_process: I18n APEX ICU file found: /apex/com.android.i18n/etc/icu/icudt68l.dat
+10-28 12:12:50.395  2504  2504 W app_process: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:50.407  2504  2504 D AndroidRuntime: Calling main entry com.android.commands.am.Am
+10-28 12:12:50.409   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: start instr
+10-28 12:12:50.412   537   565 D CompatibilityChangeReporter: Compat change id reported: 135634846; UID 10105; state: DISABLED
+10-28 12:12:50.412   537   565 D CompatibilityChangeReporter: Compat change id reported: 177438394; UID 10105; state: DISABLED
+10-28 12:12:50.412   537   565 D CompatibilityChangeReporter: Compat change id reported: 135772972; UID 10105; state: DISABLED
+10-28 12:12:50.412   537   565 D CompatibilityChangeReporter: Compat change id reported: 135754954; UID 10105; state: ENABLED
+10-28 12:12:50.413   537   579 D CompatibilityChangeReporter: Compat change id reported: 143937733; UID 10105; state: ENABLED
+10-28 12:12:50.417   344   344 D Zygote  : Forked child process 2517
+10-28 12:12:50.418   537   579 I ActivityManager: Start proc 2517:org.example.otppager/u0a105 for added application org.example.otppager
+10-28 12:12:50.420  2517  2517 I xample.otppage: Late-enabling -Xcheck:jni
+10-28 12:12:50.432  2517  2517 W xample.otppage: Unexpected CPU variant for X86 using defaults: x86_64
+10-28 12:12:50.434   440   459 I adbd    : jdwp connection from 2517
+10-28 12:12:50.447  2517  2517 D CompatibilityChangeReporter: Compat change id reported: 171979766; UID 10105; state: ENABLED
+10-28 12:12:50.452  2517  2517 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318])
+10-28 12:12:50.453  2517  2517 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460])
+10-28 12:12:50.535  2517  2517 V GraphicsEnvironment: ANGLE Developer option for 'org.example.otppager' set to: 'default'
+10-28 12:12:50.535  2517  2517 V GraphicsEnvironment: Neither updatable production driver nor prerelease driver is supported.
+10-28 12:12:50.537  2517  2517 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:50.538  2517  2517 D ApplicationLoaders: Returning zygote-cached class loader: /system/framework/android.test.base.jar
+10-28 12:12:50.539  2517  2517 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=2 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]})
+10-28 12:12:50.540  2517  2517 W xample.otppage: ClassLoaderContext shared library size mismatch. Expected=0, found=3 (PCL[] | PCL[]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:50.541  2517  2517 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=1 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:50.541  2517  2517 W xample.otppage: ClassLoaderContext classpath size mismatch. expected=0, found=2 (PCL[] | PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]#PCL[/system/framework/android.test.runner.jar*1585996318]{PCL[/system/framework/android.test.base.jar*3790657674]#PCL[/system/framework/android.test.mock.jar*3278543460]}};PCL[/system/framework/android.test.runner.jar*1585996318:/system/framework/android.test.mock.jar*3278543460:/system/framework/android.test.base.jar*3790657674:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk*1746457270:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes2.dex*4001286351:/data/app/~~2GEMzXAUbJpLlAUGnnwtwQ==/org.example.otppager.test-IbcGxm4V0TSh_lXiIdPxBA==/base.apk!classes3.dex*251239903:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk*3342703667:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes2.dex*2722307465:/data/app/~~BB221AezlhyPqLZOhc-Yhg==/org.example.otppager-PrxLjr9Bpr90i2gUnH4UIQ==/base.apk!classes3.dex*1622036518])
+10-28 12:12:50.623  2517  2517 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:50.623  2517  2517 D NetworkSecurityConfig: No Network Security Config specified, using platform default
+10-28 12:12:50.623  2517  2517 I AndroidJUnitRunner: newApplication org.example.otppager.PagerApplication
+10-28 12:12:50.628  2517  2517 I AndroidJUnitRunner: onCreate Bundle[mParcelledData.dataSize=180]
+10-28 12:12:50.628  2517  2517 D AndroidJUnitRunner: Use the raw file system for managing file I/O.
+10-28 12:12:50.633  2517  2517 V TestEventClient: No service name argument was given (testDiscoveryService, testRunEventService or orchestratorService)
+10-28 12:12:50.634  2517  2532 D AndroidJUnitRunner: onStart is called.
+10-28 12:12:50.767  2517  2517 E OTPDIAG : recover scope=Epoch(manifest=Record(epoch=b8e577ae5f3234b56ed74bb1568f3024, predecessorGeneration=c8203f0196e8a77b76e4aa9f6e32b501, predecessorCommitment=f768cc5eecc9d55b46854fff718bb38cbe2ebd135ae60af2d8d0441eae570f0f, indexHash=a2ec9f0119c90b32705cbf0e95d63952d27be396e08b1a09f1284280e3fcd80a, claimsHash=3dbb296235aca8bd6234f329fb4e90971bb1d2ef46079971c50317e3c92d18f0, sequence=1, roots=[chat-b8e577ae5f3234b56ed7]), priorRoots=[station-v2], chain=[Terminal(generation=c8203f0196e8a77b76e4aa9f6e32b501, boundEpoch=legacy, commitment=f768cc5eecc9d55b46854fff718bb38cbe2ebd135ae60af2d8d0441eae570f0f, cleaned=true, roots=[station-v2], guards=[Guard(namespace=chat-index-claims, sha256=a388747dc993df8dbff07a2dc273832c4cdc44903f19d9c064a280f130fd561f), Guard(namespace=station-v2-pads, sha256=a58cf0d78a86a5e3677deb2d94238e59443301d7db9bdd9daf04d9e1414edc01)])], terminal=Record(generation=d13bc078c74f477ded6f6b2e6ed38aa7, epoch=b8e577ae5f3234b56ed74bb1568f3024, phase=INTENT, roots=[], guards=[])) requested=false
+10-28 12:12:50.783  2517  2517 E OTPDIAG : write terminals=[b8e577:INTENT]
+10-28 12:12:50.792  2517  2517 E OTPDIAG : write terminals=[b8e577:INTENT]
+10-28 12:12:50.823  2517  2517 E OTPDIAG : write terminals=[b8e577:INTENT]
+10-28 12:12:50.865  2517  2532 I TestRunner: run started: 1 tests
+10-28 12:12:50.865  2517  2532 I TestRunner: started: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:50.911  2517  2532 I TestRunner: finished: freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+10-28 12:12:50.913  2517  2532 I TestRunner: run finished: 1 tests, 0 failed, 0 ignored
+10-28 12:12:50.915   537   565 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: finished inst
+10-28 12:12:50.916  2504  2504 I app_process: System.exit called, status: 0
+10-28 12:12:50.916  2504  2504 I AndroidRuntime: VM exiting with result code 0.
+10-28 12:12:50.917   537   565 I ActivityManager: Killing 2517:org.example.otppager/u0a105 (adj 0): stop org.example.otppager due to finished inst
+10-28 12:12:50.925   537  2029 V ActivityManager: Got obituary of 2517:org.example.otppager
+10-28 12:12:50.925   344   344 I Zygote  : Process 2517 exited due to signal 9 (Killed)
+10-28 12:12:50.940   537  2029 I ActivityManager: Force stopping org.example.otppager appid=10105 user=0: from pid 2540
+10-28 12:12:50.942   950   950 D CarrierSvcBindHelper: No carrier app for: 0
+10-28 12:12:50.950  2180  2180 D CompatibilityChangeReporter: Compat change id reported: 150939131; UID 10038; state: ENABLED
+10-28 12:12:50.950  2180  2180 I ProvidersCache: Updating roots due to change on user 0at content://com.android.externalstorage.documents
+10-28 12:12:50.965   537   580 I libprocessgroup: Successfully killed process cgroup uid 10105 pid 2517 in 47ms
+10-28 12:12:51.174     0     0 I logd    : logdr: UID=2000 GID=2000 PID=2548 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
+10-28 12:12:51.191     0     0 I logd    : logdr: UID=2000 GID=2000 PID=2551 n tail=0 logMask=99 pid=0 start=0ns deadline=0ns
