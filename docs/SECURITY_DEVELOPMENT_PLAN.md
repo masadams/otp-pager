@@ -13,8 +13,19 @@ PRs #9–15 are merged. Phase 1's initial source audit and Phase 2's local retir
 global cleanup/recovery, authenticated initial evidence and empty storage staging
 are implemented/tested in their documented scope. Phase 2 remains open: no ACTIVE
 epoch, repeat-wipe lineage, global fresh enrollment or history-key migration yet.
-Phases 3–8 remain outstanding. Remote wipe and active emergency controls are not
+Phases 3–8 remain outstanding. Remote wipe and wipe-all controls are not
 implemented; no production-readiness decision or live deployment follows from merging.
+
+2026-10-27 order review: package A2, a protected **local-only** per-conversation wipe
+control, is pulled forward ahead of the rest of package B. The retirement primitive and
+its recovery/fresh-pairing screen were complete but unreachable, while the only
+user-facing destructive action (Forget) is the non-durable path recorded in F04. A2
+reuses merged code, needs no ACTIVE epoch and keeps reuse guards; see
+[the A2 design](LOCAL_WIPE_CONTROL.md). Wipe-all initiation stays deferred until fresh
+enrollment exists, because the only current exit from a global freeze (clearing app
+storage) also removes pad-reuse protection. Recommended in parallel with package B:
+draft the package D peer-wipe specification early, because independent review is the
+long-lead gate for any peer destruction.
 
 The handoff contains exact merged commits, final-head CI evidence, source entry
 points, test commands, known limitations and ordered continuation criteria. The
@@ -206,6 +217,7 @@ security finding requires it. Tests alone never satisfy an independent-review ga
 | Package | Scope / natural stopping point |
 | --- | --- |
 | A — implemented/tested, merged #10 | Local recovery status, safe per-contact fresh-pairing UI and read-only orphan discovery; physical validation remains open |
+| A2 — implementation candidate, #17 | Protected local-only "wipe this chat from this phone" on the retirement primitive; honest local-only status; never waits for the station worker. No peer command or wipe-all |
 | B — partial, merged #11–15 | Global freeze/cleanup/recovery UI, guard reader, initial provenance and empty staging implemented/tested. ACTIVE publication/routing, retained-cohort enforcement and repeat-wipe lineage remain open |
 | C | Independently erasable history and reviewed crash-safe old-key migration |
 | D | Exact emergency-control/dispatch/ack protocol and migration specification; independent review and vectors before code |

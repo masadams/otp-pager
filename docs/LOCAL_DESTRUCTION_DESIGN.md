@@ -1,5 +1,10 @@
 # Local destruction design — review draft
 
+> Update 2026-10-27: statements below that no active-contact destructive control is
+> exposed describe the merged #10–15 slices. Package A2 now exposes a protected
+> local-only per-conversation wipe on the same retirement primitive; see
+> [LOCAL_WIPE_CONTROL.md](LOCAL_WIPE_CONTROL.md). Wipe-all initiation is still absent.
+
 Targets: F01/F03/F04/F07/F09 and S03/S05/S07/S09/S12 in
 [the security plan](SECURITY_DEVELOPMENT_PLAN.md). The local prerequisite prototype
 below is under implementation review; no emergency wipe guarantee or peer-control
