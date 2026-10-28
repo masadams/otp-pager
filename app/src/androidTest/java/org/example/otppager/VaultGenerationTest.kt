@@ -38,9 +38,9 @@ class VaultGenerationTest {
                 .setKeySize(256).setDigests(KeyProperties.DIGEST_SHA256).build()); generator.generateKey()
             assertEquals(EnrollmentStaging.Presence.PRESENT, EnrollmentStaging.probe(directory))
             val blocked = SecureStore(fixture, namespace)
-            assertEquals(VaultGeneration.Capability.LEGACY, capability(old))
-            assertEquals(VaultGeneration.Capability.LEGACY, capability(old.sibling("other")))
-            assertEquals(VaultGeneration.Capability.BLOCKED, capability(blocked))
+            assertEquals(VaultGeneration.Capability.Legacy, capability(old))
+            assertEquals(VaultGeneration.Capability.Legacy, capability(old.sibling("other")))
+            assertEquals(VaultGeneration.Capability.Blocked, capability(blocked))
             rejected { old.load() }; rejected { draft.save(JSONObject().put("version", 2)) }; rejected { old.forget() }
             rejected { identity.card(false) }; rejected { identity.sign(byteArrayOf(1)) }; rejected { identity.forget() }
             rejected { checkNotNull(lease).check() }

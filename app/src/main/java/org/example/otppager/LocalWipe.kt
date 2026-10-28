@@ -16,6 +16,21 @@ internal object LocalWipe {
         Thread(task, "pager-wipe-contact").apply { isDaemon = true }
     }
 
+    /**
+     * Wipe every chat on this phone. The freeze latch is set synchronously inside
+     * [GlobalRetirement.submit]; this thread only waits for the independent cleanup.
+     */
+    fun submitAll(context: android.content.Context, book: ChatBook?, done: (Result<GlobalRetirementMachine.Result>) -> Unit) {
+        executor.execute {
+            val outcome = runCatching {
+                // Best effort: an empty registry lets a never-used phone produce complete wipe evidence.
+                try { book?.ensureClaimsRegistry() } catch (_: Exception) {}
+                GlobalRetirement.submit(context.applicationContext).get()
+            }
+            try { done(outcome) } catch (_: Exception) {}
+        }
+    }
+
     /** [done] runs on the wipe thread; post to the UI thread before touching views. */
     fun submit(book: ChatBook, id: String, done: (Result<VaultRetirement.Result>) -> Unit) {
         executor.execute {

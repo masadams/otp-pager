@@ -5,8 +5,14 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
+/** Routes the default contact index to the current lineage: legacy `chat-index`, or an ACTIVE epoch's own index. */
+internal object EpochRouting {
+    fun index(context: Context): String = EpochState.activeIfStaged(context.noBackupFilesDir)?.index ?: "chat-index"
+    fun initialRoot(context: Context): String = EpochState.activeIfStaged(context.noBackupFilesDir)?.initialRoot ?: "station-v2"
+}
+
 /** Encrypted contact index. Existing station-v2 data stays in place; keys are never copied. */
-class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNamespace: String = "station-v2") {
+class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(context), legacyNamespace: String = EpochRouting.initialRoot(context)) {
     companion object { const val MAX_CHATS = 12 }
     private val context = context.applicationContext
     private val index = SecureStore(context, indexNamespace)
@@ -23,6 +29,8 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
         synchronized(VaultLifecycle.lock) {
             val saved = index.load()
             if (saved == null) {
+                // An ACTIVE epoch's index is created by activation only; a missing one is never recreated.
+                check(EpochState.activeIfStaged(context.noBackupFilesDir) == null) { "Contact index unavailable" }
                 // A lost index must not silently reopen a terminal legacy generation.
                 VaultLifecycle.requireActive(context.noBackupFilesDir, legacyNamespace)
                 claims.migrate(SecureStore(context, legacyNamespace))
@@ -87,11 +95,14 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
         val files = checkNotNull(directory.listFiles()) { "Contact storage unavailable" }.map { it.name }
         val keys = java.security.KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         val aliases = keys.aliases().toList()
-        return generateSequence { "chat-" + UUID.randomUUID().toString().replace("-", "").take(20) }.first { candidate ->
+        val root = generateSequence { "chat-" + UUID.randomUUID().toString().replace("-", "").take(20) }.first { candidate ->
             chats().none { it.id == candidate || it.entryId == candidate } &&
                 files.none { it.startsWith("$candidate.") || it.startsWith("$candidate-") } &&
-                aliases.none { it == "otp-pager-$candidate" || it.startsWith("otp-pager-$candidate-") }
+                aliases.none { it == "otp-pager-$candidate" || it.startsWith("otp-pager-$candidate-") || it.startsWith("otp-pager-$candidate~") }
         }
+        // In an ACTIVE epoch the root is listed durably before its first key or file exists.
+        EpochState.activeIfStaged(directory)?.let { EpochManifests.appendRoot(directory, it.epoch, root) }
+        return root
     }
     /** A recovery action can only retry a known terminal generation, never retire an active contact. */
     internal fun recoverRetired(id: String): VaultRetirement.Result {
@@ -134,6 +145,7 @@ class ChatBook(context: Context, indexNamespace: String = "chat-index", legacyNa
         refresh(id)
         return result
     }
+    internal fun ensureClaimsRegistry() = claims.ensureRegistry()
     fun forgetActive() = synchronized(VaultLifecycle.lock) { ChatDraft(SecureStore(context, active().id).sibling("draft")).clear(); SecureStore(context, active().id).forget(); refresh() }
     fun summary(id: String): Summary {
         if (VaultLifecycle.isRetired(context.noBackupFilesDir, id)) return Summary(eligible = false, retired = true)
@@ -189,6 +201,13 @@ class PairingClaims(private val store: SecureStore) {
         if (entries.has(key)) {
             require(existing && entries.getString(key) == owner) { "This pairing material was already used. Create a fresh pairing for each friend." }
         } else {
+            // In an ACTIVE epoch every earlier wipe's sealed cohort is checked before the delta grows.
+            store.activeEpoch?.let { epoch ->
+                val retained = RetainedGuardReader.activeExclusions(store.directory, epoch)
+                require(key !in (if (kind == "pads") retained.pads else retained.rooms)) {
+                    "This pairing material was already used. Create a fresh pairing for each friend."
+                }
+            }
             entries.put(key, owner)
             try { store.save(data) } catch (e: Exception) { failed = true; throw e }
         }
@@ -196,6 +215,11 @@ class PairingClaims(private val store: SecureStore) {
     fun room(secret: String, owner: String, existing: Boolean) {
         val master = Protocol.master(secret)
         try { claim("rooms", Protocol.room(master), owner, existing) } finally { master.fill(0) }
+    }
+    /** Global wipe evidence needs an authenticated registry; create the empty one if nothing was ever claimed. */
+    internal fun ensureRegistry() = synchronized(lock) {
+        check(!failed) { "Pairing registry write failed; restart the app" }
+        if (store.load() == null) store.save(JSONObject().put("version", 2).put("pads", JSONObject()).put("rooms", JSONObject()))
     }
     fun pad(id: String, owner: String) { require(Regex("[a-f0-9]{32}").matches(id)); claim("pads", id, owner, existing = true) }
     fun migrate(profile: SecureStore) {

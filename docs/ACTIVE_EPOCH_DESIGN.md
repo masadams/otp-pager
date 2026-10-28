@@ -130,16 +130,64 @@ readback; invalidate caches. Only owners constructed afterwards capture `Active(
 Interruption before the manifest commit leaves PREPARED (frozen, retryable); after it, the
 lineage is `Active`. Background receiving stays off; physical pairing is required.
 
+## B3b implementation notes
+
+- `EpochManifests` reads/appends authenticated manifests; `create` (sequence 1) has no
+  production caller until B3e. `EpochState.observe` turns real evidence, staging and
+  manifest files into an observation; any read failure is `unreadable` → Frozen.
+- **Behaviour without a manifest is unchanged.** `isFrozen`, `capture` and `ChatBook`
+  routing consult the lineage only when an `epoch-active-*` file exists; otherwise they
+  apply exactly the previous presence rules with no extra reads. A stray manifest file now
+  counts as staging presence (fail closed).
+- An in-process freeze latch always wins over an ACTIVE lineage.
+- (Resolved in #20: fingerprint-validated lineage cache; activation releases the latch.)
+- Interrupted-staging recovery never abandons a stage that has a manifest (an active epoch's
+  index/claims delta are live state and retained guards).
+- End-to-end ACTIVE routing needs a real CLEANED terminal record, which only a full global
+  wipe produces; it is tested in B3e's exclusive host fixture, not in shared-process tests.
+
+## B3c–B3f implementation notes (#20)
+
+- **Retained cohorts (B3c).** `PairingClaims` checks every terminal's sealed cohort in the
+  ACTIVE chain before a new room or pad enters the epoch's delta, through
+  `RetainedGuardReader.activeExclusions`. References come only from authenticated terminal
+  records (commitment-bound reads, no key creation); missing/altered guards refuse the claim.
+  Results are cached per exact commitment set, so a cache can only keep enforcing.
+- **Repeat wipe (B3d).** `OTPTERM2` (`EpochTerminalCodec`, `EpochEvidence`) uses one file and
+  one permanent HMAC key per wipe generation. A wipe of epoch E: in-process latch, INTENT
+  (key creation is the durable latch), SEALED with E's roots and its claims delta and contact
+  ledgers as a new cohort, then destruction of E's roots and index; every cohort, record and
+  ledger stays. `EpochState.wipeScope` decides what may be destroyed: boot recovery destroys an
+  epoch **only** when an `OTPTERM2` record is bound to it; an unreadable lineage destroys
+  nothing at boot (an explicit in-process request destroys every discoverable contact).
+  An interrupted INTENT finishes destruction on restart but never becomes CLEANED, so a fresh
+  start stays unavailable (same rule as `OTPTERM1`).
+- **Activation (B3e).** `FreshEnrollment.enroll` with a one-use token: verify the newest
+  terminal and every cohort, reuse a verified pending PREPARED attempt or stage a new one,
+  commit the manifest last, require ACTIVE for exactly that epoch, then release the
+  in-process latch (`reopenAfterActivation`). Staging now works against the newest terminal
+  and treats activated attempts as live epochs. Lineage results are cached by a fingerprint
+  of lifecycle record files; staging presence caches PRESENT.
+- **UI (B3f).** The global recovery screen shows **Start fresh on this phone** only when cleanup
+  is verified COMPLETE and enrollment is eligible. The Chats menu offers **Wipe all chats from
+  this phone** behind a typed `WIPE ALL`; the wipe ensures an empty claims registry first so a
+  never-used phone still produces complete evidence. Neither contacts a peer.
+- **Fixture.** `EpochCycleRestartTest` / `scripts/verify_epoch_cycle_restart.py`: two full
+  wipe→fresh cycles with cold restarts refusing every earlier secret and pad, stale owners
+  refused, manifest append before creation, interrupted activation resumed with the same
+  epoch, interrupted epoch wipe finished at boot but not enrollment-eligible, and a tampered
+  manifest frozen at boot **without** destroying the epoch, then restored intact.
+
 ## Slice plan and gates
 
 | Slice | Content | Reachable by users? |
 | --- | --- | --- |
 | **B3a (this PR)** | Design; `ActiveManifestCodec`, `EpochLineage`, `EpochScope` pure logic + JVM tests | No |
-| B3b | Sealed capability, namespace-aware `requireCurrent`, lineage-based `isFrozen`, `ChatBook` routing, manifest append; adapters read real records | No (no manifest writer) |
-| B3c | Active retained-cohort reader and `PairingClaims` enforcement | No |
-| B3d | `OTPTERM2`, per-generation evidence keys, epoch-scoped wipe and recovery | No |
-| B3e | Activation transaction; interruption tests at every boundary; two full wipe→enroll cycles refusing old material | Backend only |
-| B3f | Confirmed fresh-enrollment UI on the global recovery screen; compact-screen checks | Yes |
+| **B3b (#19)** | Sealed capability, namespace-aware `requireCurrent`, lineage-based `isFrozen`, `ChatBook` routing, manifest append; adapters read real records | No (no manifest writer) |
+| **B3c (#20)** | Active retained-cohort reader and `PairingClaims` enforcement | No |
+| **B3d (#20)** | `OTPTERM2`, per-generation evidence keys, epoch-scoped wipe and recovery | No |
+| **B3e (#20)** | Activation transaction; lineage cache; two full wipe→enroll cycles refusing old material; interruption/tamper restarts | Backend only |
+| **B3f (#20)** | Confirmed fresh-enrollment UI on the global recovery screen and a protected wipe-all action; compact-screen checks pending | Yes |
 
 Each slice needs its own tests; B3e/B3f additionally need the restart fixture matrix and
 physical two-device checks before any release. Coordinated OS/Keystore rollback remains

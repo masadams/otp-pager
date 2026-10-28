@@ -5,6 +5,56 @@ This file is sufficient to resume without the original chat. The owner requested
 integration of the completed development work, an accurate plan and a transferable
 handoff. Do not interpret merged foundations as a completed emergency-wipe feature.
 
+## Current state — 2026-10-28 (read this before anything else)
+
+Open PRs, all green on CI at the time of writing unless noted. **Merge order matters**
+for the stack; GitHub retargets each to `main` as its base merges.
+
+| PR | Branch | Content | Base |
+| --- | --- | --- | --- |
+| #18 | `feat/active-epoch-lineage` | B3a design + pure lineage core | `main` |
+| #19 | `feat/epoch-capability-routing` | B3b capability, freeze, routing wiring | #18 |
+| #20 | `feat/active-retained-cohorts` | B3c–B3f cohorts, repeat wipe, activation, Start fresh / Wipe all | #19 |
+| #22 | `feat/vault-key-rotation` | Package C: contact-vault key rotation (erasable history) | #20 |
+| #21 | `docs/own-direction-license` | Drop Jericho references; MIT license | `main` (independent) |
+| #23 | `tools/ui-preview` | Opt-in screenshot workflow | `main` (independent) |
+
+CI evidence (all three workflows green, API 29/31/35 emulators incl. every restart fixture):
+#20 at `672a9e9` (Android run 40685329719); #22 at `3ab0e38` (Android run 40688581949).
+Fixes found by the new fixtures before merge: the lineage root-reuse check compared an
+epoch's roots with its *own* later wipe record (froze the chain after a second wipe; also
+caused the "global-intent" wipe failure); recovery-screen status text regression; Clear
+history now always rotates even when the snapshot is unchanged. Throwaway branches
+`ui-preview/diag20*`, `ui-preview/diag22`, `ui-shots/diag*` can be deleted (the session
+could not delete branches).
+
+Owner decisions on 2026-10-28: go our own way (no Jericho compatibility); MIT license;
+continue through the plan, then do a full use + security assessment and UI/UX passes.
+An automated merge without review was declined by a permission check, so the owner merges.
+
+**Screenshots:** push any commit to a `ui-preview/<name>` branch (with
+`.github/workflows/ui-preview.yml` present, i.e. after #23 or merged into that branch);
+the workflow runs the UI tests on API 31 (Kompakt-sized) and API 35 and commits PNGs to
+`ui-shots/<name>`, fetchable with `git clone -b ui-shots/<name>`. CI artifact downloads are
+not reachable from the cloud editing workspace.
+
+**Local checks without an Android SDK** (used in the editing workspace): Kotlin 2.0.21
+compiler from GitHub releases, an API 35 `android.jar`, and small stubs for ZXing/AndroidX/
+androidx.test allow a type-check of main + unit + instrumentation sources and running the
+JVM unit suite. CI remains the reference for build, lint and emulator tests.
+
+**Next work, in order:**
+1. Owner review/merge of #18 → #19 → #20 → #22, plus #21 and #23.
+2. UI/UX pass using the screenshot workflow: add captures for the wipe dialogs, wipe result,
+   recovery Start fresh and Wipe all; tighten compact-screen layout.
+3. Phase 3/D peer-wipe **specification only** (control keys, command format, acks, migration,
+   vectors). Destructive peer code stays blocked until independent protocol review.
+4. Phase 4/G relay work that does not depend on D: per-device scoped access (F06), retention
+   and Docker/Nginx/Portainer hardening (pin `node:22-alpine` by digest), live-host evidence.
+5. Owner-requested **use and security assessment** of the whole app against its goals,
+   then decide additions (e.g. the "strict / online-check" per-chat option discussed on
+   2026-10-27: relay-held key share so a seized offline phone cannot open strict chats).
+
 ## Read first
 
 1. [Ordered checklist](SECURITY_CHECKLIST.md): what is implemented and what remains.
@@ -104,6 +154,9 @@ All paths below are under `app/src/main/java/org/example/otppager/`.
 | `ChatBook.kt` | Index schema 3 separates stable entryId from operational id; reload durable metadata per operation; confirmed per-contact replacement copies no old secrets |
 | `RetainedGuardReader.kt`, `RetainedGuardInventory.kt` | Exact authenticated immutable reuse metadata; strict parsing/bounds; no key creation, repair, operational-vault opening or missing-as-empty fallback |
 | `RetirementEvidenceCodec.kt`, `RetirementEvidence.kt` | `OTPTERM1`: INTENT/SEALED/CLEANED; one initial lineage, one-use pre-cleanup capture ticket. Authenticated roots must equal cleanup journal roots |
+| `EpochManifests.kt` (`EpochManifests`, `EpochState`), `VaultGeneration.kt`, `ChatBook.EpochRouting` | B3b wiring: authenticated manifest files; real-record observation; sealed `Legacy/Blocked/Active(epoch)` capability with namespace allowlist; lineage-aware `isFrozen`; default index routing. Without a manifest file all of these apply the previous rules |
+| `EpochTerminalCodec.kt`, `EpochEvidence.kt` (`EpochEvidence`, `EpochGuardInventory`) | `OTPTERM2` per-generation wipe evidence for ACTIVE epochs; epoch cohort capture/verify |
+| `FreshEnrollment.kt` | One-use-token activation transaction; manifest is the last commit; releases the freeze latch |
 | `ActiveManifestCodec.kt`, `EpochLineage.kt` | Pure B3a core: `OTPACT01` canonical codec; lineage resolution with no head pointer (any inconsistency → Frozen); ACTIVE namespace allowlist. Not yet consulted by storage |
 | `EnrollmentStageCodec.kt`, `EnrollmentStaging.kt` | `OTPSTG01`: PREPARING/PREPARED/ABANDONED only; up to 32 attempts. Auth key + record permanently reserve each attempt; new empty AES slots only |
 
@@ -121,7 +174,11 @@ are outside any claim of guaranteed erasure.
 pure, unwired decision core: `ActiveManifestCodec` (`OTPACT01`), `EpochLineage.resolve`
 and `EpochScope.permits`, with JVM tests. **Next: B3b** — sealed capability,
 namespace-aware `requireCurrent`, lineage-based `isFrozen`, `ChatBook` routing and
-manifest append, with real-record adapters (still no manifest writer).
+manifest append, with real-record adapters (still no manifest writer). **B3b is in #19**
+(stacked on #18). **B3c–B3f are in #20** (stacked on #19): retained cohorts during
+messaging, `OTPTERM2` repeat wipes, the activation transaction, Start fresh and Wipe all.
+Package B is implementation-complete pending review/CI and physical checks. **Next:
+package C** (separately erasable history and old-key migration).
 
 In parallel (documentation only, no destructive code): start the Phase 3/D peer-wipe
 specification so independent protocol review — the long-lead gate — can begin early.

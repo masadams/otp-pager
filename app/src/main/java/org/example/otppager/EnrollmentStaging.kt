@@ -21,6 +21,8 @@ import javax.crypto.spec.GCMParameterSpec
 internal object EnrollmentStaging {
     enum class Presence { NONE, PRESENT, UNAVAILABLE }
     private val none = mutableSetOf<String>()
+    /** Staging records and keys are permanent once created; a cached PRESENT can only fail closed. */
+    private val present = mutableSetOf<String>()
     private val confirmations = mutableMapOf<String, Confirmation>()
     private val epochPattern = Regex("[a-f0-9]{32}")
     private val filePattern = Regex("enrollment-stage-([a-f0-9]{32})\\.bin(?:\\.(?:bak|new))?")
@@ -49,22 +51,46 @@ internal object EnrollmentStaging {
     fun probe(directory: File): Presence = synchronized(VaultLifecycle.lock) {
         try {
             val s = sources(directory)
-            val found = s.names.any { it.startsWith(prefix) || it.startsWith("enr-") } ||
+            val found = s.names.any { it.startsWith(prefix) || it.startsWith("enr-") || it.startsWith("epoch-active-") || it.startsWith("epoch-terminal-") } ||
                 s.aliases.any { it.startsWith(keyPrefix(directory)) || it.startsWith("otp-pager-enr-") }
-            if (found) none.remove(directory.absolutePath) else none.add(directory.absolutePath)
+            if (found) { none.remove(directory.absolutePath); present.add(directory.absolutePath) }
+            else { none.add(directory.absolutePath); present.remove(directory.absolutePath) }
             if (found) Presence.PRESENT else Presence.NONE
         } catch (_: Exception) { Presence.UNAVAILABLE }
     }
     fun presence(directory: File): Presence = synchronized(VaultLifecycle.lock) {
-        if (directory.absolutePath in none) Presence.NONE else probe(directory)
+        when (directory.absolutePath) { in present -> Presence.PRESENT; in none -> Presence.NONE; else -> probe(directory) }
     }
-    fun confirmation(context: Context): Confirmation = synchronized(VaultLifecycle.lock) {
-        val record = RetirementEvidence.verifyCompleted(context)
-        readAll(context.noBackupFilesDir).also { records ->
-            check(records.none { it.phase != EnrollmentStageCodec.Phase.ABANDONED })
-            records.forEach { Vault.verifyGone(context.noBackupFilesDir, it) }
+    /** The epoch an attempt became once activated; its storage is live state, never staging. */
+    internal fun activated(directory: File, r: EnrollmentStageCodec.Record) =
+        VaultLifecycle.variants(EpochManifests.file(directory, r.epoch)).any { exists(it) }
+
+    /** The newest terminal in the lineage, verified CLEANED with every check its format defines. */
+    internal class Latest(val generation: String, val commitment: String, val priorRoots: Set<String>)
+    internal fun latestCompleted(context: Context): Latest = synchronized(VaultLifecycle.lock) {
+        val directory = context.noBackupFilesDir.absoluteFile
+        EpochState.invalidate(directory)
+        val detail = EpochState.detail(directory)
+        check(detail.state == EpochLineage.State.Frozen("awaiting-enrollment")) { "Not awaiting fresh enrollment" }
+        val terminal = detail.chain.last()
+        check(terminal.cleaned)
+        if (terminal.boundEpoch == EpochLineage.LEGACY) {
+            check(RetirementEvidence.verifyCompleted(context).generation == terminal.generation)
+            check(RetirementEvidence.commitment(directory) == terminal.commitment)
+        } else {
+            EpochEvidence.verifyCompleted(context, terminal.generation)
+            check(EpochEvidence.commitment(directory, terminal.generation) == terminal.commitment)
         }
-        Confirmation(context.noBackupFilesDir.absolutePath, record.generation, RetirementEvidence.commitment(context.noBackupFilesDir))
+        Latest(terminal.generation, terminal.commitment, detail.chain.flatMap { it.roots }.toSet())
+    }
+
+    fun confirmation(context: Context): Confirmation = synchronized(VaultLifecycle.lock) {
+        val latest = latestCompleted(context)
+        readAll(context.noBackupFilesDir).also { records ->
+            check(records.none { it.phase != EnrollmentStageCodec.Phase.ABANDONED && !activated(context.noBackupFilesDir, it) })
+            records.filter { it.phase == EnrollmentStageCodec.Phase.ABANDONED }.forEach { Vault.verifyGone(context.noBackupFilesDir, it) }
+        }
+        Confirmation(context.noBackupFilesDir.absolutePath, latest.generation, latest.commitment)
             .also { confirmations[it.directory] = it }
     }
     fun cancel(confirmation: Confirmation) = synchronized(VaultLifecycle.lock) {
@@ -76,21 +102,22 @@ internal object EnrollmentStaging {
         val directory = context.noBackupFilesDir.absoluteFile
         check(confirmation.directory == directory.path && confirmations[directory.path] === confirmation) { "Fresh local confirmation required" }
         confirmations.remove(directory.path) // One use, even if storage fails.
-        val terminal = RetirementEvidence.verifyCompleted(context)
-        check(terminal.generation == confirmation.generation && RetirementEvidence.commitment(directory) == confirmation.commitment)
+        val terminal = latestCompleted(context)
+        check(terminal.generation == confirmation.generation && terminal.commitment == confirmation.commitment)
         val previous = readAll(directory)
-        check(previous.size < EnrollmentStageCodec.MAX_ATTEMPTS && previous.all { it.phase == EnrollmentStageCodec.Phase.ABANDONED })
-        previous.forEach { Vault.verifyGone(directory, it) }
+        check(previous.size < EnrollmentStageCodec.MAX_ATTEMPTS &&
+            previous.all { it.phase == EnrollmentStageCodec.Phase.ABANDONED || activated(directory, it) })
+        previous.filter { it.phase == EnrollmentStageCodec.Phase.ABANDONED }.forEach { Vault.verifyGone(directory, it) }
         val s = sources(directory)
         var r: EnrollmentStageCodec.Record
         do {
             val epoch = PadProtocol.hex(ByteArray(16).also { SecureRandom().nextBytes(it) })
             r = EnrollmentStageCodec.Record(epoch, terminal.generation, confirmation.commitment, EnrollmentStageCodec.Phase.PREPARING)
-        } while (r.root in terminal.roots || previous.any { it.index == r.index || it.root == r.root } ||
+        } while (r.root in terminal.priorRoots || previous.any { it.index == r.index || it.root == r.root } ||
             s.names.any { it.startsWith(r.index + ".") || it.startsWith(r.index + "-") || it.startsWith(r.root + ".") || it.startsWith(r.root + "-") } ||
-            s.aliases.any { it == "otp-pager-${r.index}" || it.startsWith("otp-pager-${r.index}-") || it == "otp-pager-${r.root}" || it.startsWith("otp-pager-${r.root}-") } ||
+            s.aliases.any { it == "otp-pager-${r.index}" || it.startsWith("otp-pager-${r.index}-") || it == "otp-pager-${r.root}" || it.startsWith("otp-pager-${r.root}-") || it.startsWith("otp-pager-${r.root}~") } ||
             keyAlias(directory, r.epoch) in s.aliases)
-        none.remove(directory.path)
+        none.remove(directory.path); present.add(directory.path); EpochState.invalidate(directory)
         // The per-attempt authentication key is a permanent reservation; never recreated/deleted on recovery.
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_HMAC_SHA256, "AndroidKeyStore")
         generator.init(KeyGenParameterSpec.Builder(keyAlias(directory, r.epoch), KeyProperties.PURPOSE_SIGN or KeyProperties.PURPOSE_VERIFY)
@@ -99,8 +126,7 @@ internal object EnrollmentStaging {
         try {
             val indexHash = Vault.create(directory, r.index, Vault.index(r))
             val claimsHash = Vault.create(directory, r.claims, Vault.claims())
-            RetirementEvidence.verifyCompleted(context)
-            check(RetirementEvidence.commitment(directory) == r.terminalCommitment)
+            check(latestCompleted(context).commitment == r.terminalCommitment)
             r = r.copy(phase = EnrollmentStageCodec.Phase.PREPARED, indexHash = indexHash, claimsHash = claimsHash)
             Vault.verify(directory, r); write(directory, r)
             r
@@ -109,17 +135,18 @@ internal object EnrollmentStaging {
             throw failure
         }
     }
+    /** Attempts bound to the newest terminal; earlier activated epochs are listed but not re-verified here. */
     fun inspect(context: Context): List<EnrollmentStageCodec.Record> = synchronized(VaultLifecycle.lock) {
-        val terminal = RetirementEvidence.verifyCompleted(context)
-        val commitment = RetirementEvidence.commitment(context.noBackupFilesDir)
-        readAll(context.noBackupFilesDir).also { records -> records.forEach { r ->
-            check(r.terminalGeneration == terminal.generation && r.terminalCommitment == commitment && r.root !in terminal.roots)
+        val terminal = latestCompleted(context)
+        readAll(context.noBackupFilesDir).filterNot { activated(context.noBackupFilesDir, it) }.also { records -> records.forEach { r ->
+            check(r.terminalGeneration == terminal.generation && r.terminalCommitment == terminal.commitment && r.root !in terminal.priorRoots)
             if (r.phase == EnrollmentStageCodec.Phase.PREPARED) Vault.verify(context.noBackupFilesDir, r)
             if (r.phase == EnrollmentStageCodec.Phase.ABANDONED) Vault.verifyGone(context.noBackupFilesDir, r)
         } }
     }
     fun abandon(context: Context, epoch: String) = synchronized(VaultLifecycle.lock) {
         val record = readAll(context.noBackupFilesDir).single { it.epoch == epoch }
+        check(!activated(context.noBackupFilesDir, record)) { "An activated epoch is wiped, never abandoned" }
         abandonRecord(context.noBackupFilesDir, record)
     }
     /** Called before old global scope discovery. Never finishes PREPARING or activates PREPARED. */
@@ -129,6 +156,9 @@ internal object EnrollmentStaging {
         var failed = false
         for (r in records) {
             try {
+                // An activated epoch's index/claims delta are live state and retained guards, never
+                // abandoned staging. Epoch-scoped wipe recovery is slice B3d; until then stay blocked.
+                if (activated(context.noBackupFilesDir, r)) continue
                 if (r.phase == EnrollmentStageCodec.Phase.PREPARED) {
                     try { Vault.verify(context.noBackupFilesDir, r) } catch (_: Exception) { abandonRecord(context.noBackupFilesDir, r) }
                 } else abandonRecord(context.noBackupFilesDir, r)
@@ -144,6 +174,7 @@ internal object EnrollmentStaging {
             for (alias in listOf("otp-pager-$slot", "otp-pager-$slot-device")) try {
                 val store = keys(); store.deleteEntry(alias); check(!store.containsAlias(alias))
             } catch (_: Exception) { failed = true }
+            try { VaultKeys.deleteAll(slot) } catch (_: Exception) { failed = true } // Rotated generations too.
             for (file in VaultLifecycle.variants(File(directory, "$slot.bin"))) try {
                 if (exists(file)) check(file.delete()); check(!exists(file))
             } catch (_: Exception) { failed = true }
@@ -153,6 +184,8 @@ internal object EnrollmentStaging {
         if (r.phase != EnrollmentStageCodec.Phase.ABANDONED) write(directory, r.copy(phase = EnrollmentStageCodec.Phase.ABANDONED,
             indexHash = EnrollmentStageCodec.zeroHash, claimsHash = EnrollmentStageCodec.zeroHash))
     }
+    /** Authenticated attempt records for lineage resolution; never repairs or creates anything. */
+    fun records(directory: File): List<EnrollmentStageCodec.Record> = synchronized(VaultLifecycle.lock) { readAll(directory) }
     private fun readAll(directory: File): List<EnrollmentStageCodec.Record> {
         val s = sources(directory)
         val files = s.names.filter { it.startsWith(prefix) }.map {
@@ -163,7 +196,7 @@ internal object EnrollmentStaging {
         }.toSet()
         check(files == aliases && files.size <= EnrollmentStageCodec.MAX_ATTEMPTS) { "Missing staging file/key or capacity exceeded" }
         return files.sorted().map { read(directory, it) }.also { records ->
-            check(records.count { it.phase != EnrollmentStageCodec.Phase.ABANDONED } <= 1)
+            check(records.count { it.phase != EnrollmentStageCodec.Phase.ABANDONED && !activated(directory, it) } <= 1)
             check(records.map { it.index }.toSet().size == records.size)
             val slots = records.flatMap { listOf(it.index, it.claims) }.toSet()
             for (name in s.names.filter { it.startsWith("enr-") }) check(metadataFile.matchEntire(name)?.groupValues?.get(1) in slots)
@@ -183,8 +216,10 @@ internal object EnrollmentStaging {
     }
     private fun write(directory: File, r: EnrollmentStageCodec.Record) {
         val payload = EnrollmentStageCodec.encode(r)
-        atomic(directory, marker(directory, r.epoch), payload + mac(directory, r.epoch, payload))
-        check(read(directory, r.epoch) == r)
+        try {
+            atomic(directory, marker(directory, r.epoch), payload + mac(directory, r.epoch, payload))
+            check(read(directory, r.epoch) == r)
+        } finally { EpochState.invalidate(directory) }
     }
     private fun bytes(file: File, limit: Int): ByteArray {
         check(VaultLifecycle.variants(file).drop(1).none(::exists))
@@ -236,7 +271,8 @@ internal object EnrollmentStaging {
         fun verifyGone(directory: File, r: EnrollmentStageCodec.Record) {
             for (slot in listOf(r.index, r.claims, r.root, "${r.root}-draft", "${r.root}-pads")) {
                 check(VaultLifecycle.variants(File(directory, "$slot.bin")).none(::exists))
-                check(!keys().containsAlias("otp-pager-$slot") && !keys().containsAlias("otp-pager-$slot-device"))
+                check(!keys().containsAlias("otp-pager-$slot") && !keys().containsAlias("otp-pager-$slot-device") &&
+                    VaultKeys.all(slot, keys().aliases().toList()).isEmpty())
             }
         }
         fun verify(directory: File, r: EnrollmentStageCodec.Record) {
@@ -245,7 +281,8 @@ internal object EnrollmentStaging {
             check(!keys().containsAlias("otp-pager-${r.index}-device") && !keys().containsAlias("otp-pager-${r.claims}-device"))
             for (slot in listOf(r.root, "${r.root}-draft", "${r.root}-pads")) {
                 check(VaultLifecycle.variants(File(directory, "$slot.bin")).none(::exists))
-                check(!keys().containsAlias("otp-pager-$slot") && !keys().containsAlias("otp-pager-$slot-device"))
+                check(!keys().containsAlias("otp-pager-$slot") && !keys().containsAlias("otp-pager-$slot-device") &&
+                    VaultKeys.all(slot, keys().aliases().toList()).isEmpty())
             }
         }
     }
