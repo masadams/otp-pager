@@ -103,7 +103,7 @@ fan-out groups; remaining security/reliability/usability work.
 | 3 | **Peer wipe** | Wipe should reach the friend's phone | **Merged (#40):** implemented behind an off-by-default "Peer wipe (unreviewed)" setting; pairing protocol v6 provisions control keys; independent vector reproduction still required |
 | 4 | **Strict chats** | A seized offline phone should not open high-risk chats | **In review:** signed 60 s unlock lease plus relay check-in deadline (owner: combine both); pairing v7; see [STRICT_CHAT_PROTOCOL.md](STRICT_CHAT_PROTOCOL.md) |
 | 5 | **Fixed-size packets** | Message length should leak nothing to the relay | **Checked:** every pad packet is 5,540 base64 chars whatever it carries (test added); remaining relay-visible metadata listed in [PAD_PROTOCOL.md](PAD_PROTOCOL.md) |
-| 6 | **Relay failover** | Availability with more than one relay | Ordered relay list per chat; same capability on each |
+| 6 | **Relay failover** | Availability with more than one relay | **In review:** up to two backup relays per chat; read all, send via primary then backups; v8 copies them at pairing; see [RELAY_FAILOVER.md](RELAY_FAILOVER.md) |
 | 7 | **Group chats** | Owner request | Fan-out: each message encrypted separately per member with the existing pairwise pads; no shared pads between 3+ phones |
 | 8 | **Split-relay experiment** | Neither relay sees both phones' connections | Post via relay A, fetch via relay B, private link between them (e.g. ZeroTier); timing still links traffic without delays/cover traffic |
 | 9 | **Entropy and wording** | Pads come from SecureRandom, not a true OTP | Optional extra entropy mixed into pad generation; plainer user-facing wording |
