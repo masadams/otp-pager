@@ -135,6 +135,7 @@ class NetworkActivity : Activity() {
     private lateinit var saveButton: Button
     private lateinit var saveRelayButton: Button
     private lateinit var syncButton: Button
+    private lateinit var composeRow: LinearLayout
     private lateinit var navigation: LinearLayout
     private lateinit var trafficTab: Button
     private lateinit var linkTab: Button
@@ -160,13 +161,13 @@ class NetworkActivity : Activity() {
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun text(value: String, size: Float = 14f, color: Int = ink, mono: Boolean = false) = TextView(this).apply {
         this.text = value; textSize = size; setTextColor(color)
-        typeface = if (mono) Typeface.MONOSPACE else Typeface.create("sans-serif", Typeface.NORMAL)
+        typeface = Typeface.MONOSPACE // One typeface across the app, matching the pager screens.
         setLineSpacing(dp(3).toFloat(), 1f)
     }
     private fun column() = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     private fun row() = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-    private fun surface(color: Int, radius: Int = 8, border: Int? = null) = GradientDrawable().apply {
-        setColor(color); cornerRadius = dp(2).toFloat(); border?.let { setStroke(dp(1), it) }
+    private fun surface(color: Int, radius: Int = 8, border: Int? = null, stroke: Int = 1) = GradientDrawable().apply {
+        setColor(color); cornerRadius = dp(2).toFloat(); border?.let { setStroke(dp(stroke), it) }
     }
     private fun button(label: String, primary: Boolean = false, action: () -> Unit) = Button(this).apply {
         text = label; isAllCaps = false; textSize = 13f; typeface = Typeface.MONOSPACE
@@ -278,14 +279,16 @@ class NetworkActivity : Activity() {
         }
         chrome = column(); root.addView(chrome)
         val header = row()
-        header.addView(button("‹") { selectTab(4) }.apply { contentDescription = "Back to chats" }, LinearLayout.LayoutParams(dp(44), dp(44)))
+        header.addView(button("‹") { selectTab(4) }.apply {
+            contentDescription = "Back to chats"; textSize = 24f; background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
+        }, LinearLayout.LayoutParams(dp(44), dp(44)))
         chatButton = button("Conversation") { selectTab(6) }.apply {
             textSize = if (compact) 15f else 18f; typeface = Typeface.create("monospace", Typeface.BOLD)
             maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.START or Gravity.CENTER_VERTICAL
             setPadding(0, 0, dp(6), 0); background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
         }
         header.addView(chatButton, LinearLayout.LayoutParams(0, -2, 1f))
-        stationLabel = text("STATION —", 11f, green, true); header.addView(stationLabel)
+        stationLabel = text("STATION —", 11f, green, true).apply { setPadding(dp(4), 0, dp(8), 0); maxLines = 1 }; header.addView(stationLabel)
         receiveButton = button("⋮") { showConversationMenu() }.apply {
             textSize = 22f; minWidth = 0; minimumWidth = 0; contentDescription = "Conversation options"
             setOnClickListener { showConversationMenu() } // Not busy-gated: the menu holds the local wipe.
@@ -325,7 +328,7 @@ class NetworkActivity : Activity() {
             filters = arrayOf(android.text.InputFilter.LengthFilter(8192))
         }
         traffic.addView(composer)
-        val composeActions = row()
+        val composeActions = row().also { composeRow = it }
         count = text("0 / 2048 bytes", 10f, muted, true); composeActions.addView(count, LinearLayout.LayoutParams(0, -2, 1f))
         syncButton = button("Sync") { runTask(network = true) { syncChats() } }; composeActions.addView(syncButton)
         syncButton.visibility = View.GONE
@@ -1295,12 +1298,16 @@ class NetworkActivity : Activity() {
         val hint = when {
             view.relayRevoked -> "Access was revoked. Open friend details."
             !view.pairingComplete -> "Pairing was interrupted. Tap for help."
-            !view.setupComplete -> "Pair your devices to start this conversation."
+            // A brand-new chat's empty state already explains pairing; half-paired chats still need the hint.
+            !view.setupComplete && (view.messages.isNotEmpty() || view.padCheck != null) -> "Pair your devices to start this conversation."
             view.padRemaining == 0 -> "Message keys used up. Tap to renew."
             (view.padRemaining ?: Int.MAX_VALUE) <= 10 -> "Message keys are running low. Tap to renew."
             else -> ""
         }
         setupHint.visibility = if (hint.isEmpty()) View.GONE else View.VISIBLE
+        // Without a pad nothing can ever be sent (OTP-only); the empty state already explains pairing.
+        val writable = if (view.padCheck != null) View.VISIBLE else View.GONE
+        if (composer.visibility != writable) { composer.visibility = writable; composeRow.visibility = writable }
         if (setupHint.text.toString() != hint) setupHint.text = hint
         renderSimpleScreens()
         val verifyLabel = if (view.padVerified) "Send readiness again" else "Verify codes & announce"
@@ -1342,7 +1349,8 @@ class NetworkActivity : Activity() {
             }
             val card = column().apply {
                 setPadding(dp(14), dp(11), dp(14), dp(12))
-                background = surface(Color.WHITE, 2, lineColor)
+                // Your own messages get a heavier ink border: readable on e-ink without colour.
+                background = if (m.incoming) surface(Color.WHITE, 2, lineColor) else surface(Color.WHITE, 2, ink, stroke = 2)
             }
             val label = if (m.incoming) (if (m.unread) "New" else "Received") else when (m.status) { "queued" -> "Waiting to send"; "relayed" -> "Sent · awaiting delivery"; "delivered" -> "Delivered to device"; else -> "Expired" }
             card.addView(text(m.text, 16f, ink, true).apply { isSaveEnabled = false })
