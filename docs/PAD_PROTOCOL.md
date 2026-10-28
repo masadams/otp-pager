@@ -59,8 +59,9 @@ Unread messages remain unread while you are scrolled away from the bottom. Jump 
   whatever the text length. `PadProtocolTest.everyPadPacketHasTheSameWireLengthWhateverItCarries`
   pins this. The relay can't tell a one-letter message from a full one, or a message from a receipt.
 - **The POST body** is `{"packet":"…"}`. Android's JSON writer escapes `/` as `\/`, so the
-  body length varies by a few bytes at random with the base64 text. The variation comes from
-  ciphertext randomness, not from content, so it carries no information about the message.
+  body length varies with the slash count in the base64 text. The variation comes from
+  ciphertext randomness rather than plaintext length; fixed packet size does not hide traffic metadata.
+  `PacketSerializationTest` checks the production serializer on Android, including slash escaping.
 - **Still visible to the relay:**
   - timing and count of posts and fetches (one post per message or receipt);
   - which mailbox is used;

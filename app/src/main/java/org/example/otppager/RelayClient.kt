@@ -12,6 +12,8 @@ interface RelayTransport {
     fun request(endpoint: String, room: String, token: String, method: String, body: String? = null, cursor: Long = 0): String
 }
 object RelayClient : RelayTransport {
+    /** Shared production serializer; Android JSON may escape '/' in base64 ciphertext. */
+    internal fun packetBody(packet: String): String = org.json.JSONObject().put("packet", packet).toString()
     override fun forContact(store: SecureStore): RelayTransport = forStore(store)
     internal fun forStore(store: SecureStore, connection: (URL) -> HttpsURLConnection = ::openConnection): RelayTransport = object : RelayTransport {
         override fun scope(endpoint: String, room: String, bootstrap: String, capability: String): Boolean =

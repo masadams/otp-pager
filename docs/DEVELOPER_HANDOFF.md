@@ -280,3 +280,12 @@ main, not from an old stacked base. Do not delete history or deployment volumes 
 cleanup. Keep future work in reviewable slices; update this handoff, checklist and
 progress with actual implemented scope and exact evidence. Passing CI alone never
 replaces invariant review, independent assessment or physical two-device validation.
+
+## Packet serialization follow-up — 2026-10-28
+
+Branch `test/production-packet-serialization` stacks on open #41. The production
+POST serializer is shared with an Android instrumentation test; the misleading
+hand-built JSON length assertion is removed. Binary/base64 lengths remain fixed;
+Android JSON slash escaping can vary HTTP body size. No wire, pad reservation or
+retry behavior changes. Local build/test evidence is recorded in the PR; emulator
+execution and physical-device validation must not be inferred from compilation.

@@ -78,7 +78,6 @@ class PadProtocolTest {
         val lengths = payloads.mapIndexed { i, p -> PadProtocol.seal(pad, if (i % 2 == 0) 'A' else 'B', i + 1L, p).second.length }.toSet()
         assertEquals("Packet length depends on content: $lengths", 1, lengths.size)
         assertEquals(((26 + PadProtocol.BLOCK + 32 + 2) / 3) * 4, lengths.single()) // Base64 of header ‖ block ‖ tag.
-        val body = { packet: String -> "{\"packet\":\"$packet\"}".length } // The relay POST body (base64 needs no escaping).
-        assertEquals(1, payloads.indices.map { body(PadProtocol.seal(pad, 'A', 100L + it, payloads[it]).second) }.toSet().size)
+
     }
 }

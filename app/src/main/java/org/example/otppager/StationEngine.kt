@@ -811,7 +811,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             val pending = items(checkNotNull(state).getJSONArray("outbox")).filter { it.getString("status") == "queued" }.take(10)
             for (entry in pending) {
                 store.requireActive()
-                relay.request(s.getString("endpoint"), room, credential, "POST", JSONObject().put("packet", entry.getString("packet")).toString())
+                relay.request(s.getString("endpoint"), room, credential, "POST", RelayClient.packetBody(entry.getString("packet")))
                 transaction { next ->
                     items(next.getJSONArray("outbox")).firstOrNull { it.getString("id") == entry.getString("id") }?.put("status", "relayed")
                     prune(next)

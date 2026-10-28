@@ -242,3 +242,12 @@ Global recovery observation/retry and empty staging are merged development found
 activation remains unimplemented; v1 terminal journals cannot prove absent reuse
 registry provenance and must never authorize an empty reset. Executable design-model
 checks do not complete package B or replace Android lifecycle/physical evidence.
+
+## Packet serialization follow-up — 2026-10-28
+
+Branch `test/production-packet-serialization` stacks on open #41. The production
+POST serializer is shared with an Android instrumentation test; the misleading
+hand-built JSON length assertion is removed. Binary/base64 lengths remain fixed;
+Android JSON slash escaping can vary HTTP body size. No wire, pad reservation or
+retry behavior changes. Local build/test evidence is recorded in the PR; emulator
+execution and physical-device validation must not be inferred from compilation.
