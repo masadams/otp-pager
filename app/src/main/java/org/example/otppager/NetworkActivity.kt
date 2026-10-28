@@ -525,7 +525,7 @@ class NetworkActivity : Activity() {
             if (chrome.visibility != next) chrome.visibility = next
         }
         screens = PagerScreens(this, object : PagerScreens.Actions {
-            override fun back(destination: Int) { selectTab(destination) }
+            override fun back(destination: Int) { leavePage(destination) }
             override fun appMenu() { showAppMenu() }
             override fun addFriend() {
                 if (busy) { pendingAdd = true; pendingFriend = null; screens.opening("Opening setup…") } else editChatName(create = true)
@@ -541,6 +541,7 @@ class NetworkActivity : Activity() {
             override fun rename() { if (!busy) editChatName(false) }
             override fun retryRetirement() { retryLocalRetirement() }
             override fun freshPairing() { startFreshPairing() }
+            override fun dismissRetired() { dismissRetiredChat() }
             override fun status() { if (!busy) showStationStatus() }
             override fun wipe() { confirmWipe() }
         })
@@ -759,6 +760,22 @@ class NetworkActivity : Activity() {
             observed = VaultRetirement.inspect(this, id)
             if (result.completed) "Local cleanup completed" else "Local cleanup incomplete · retry when storage is available"
         }
+    }
+    private fun dismissRetiredChat() {
+        val id = retiredChat?.id ?: return
+        runTask(onSuccess = {
+            pendingFriend = null; pendingAdd = false
+            reopenChat(4)
+        }) {
+            checkNotNull(book).dismissRetired(id)
+            "Retired chat removed from Chats"
+        }
+    }
+    /** Leaving a completed notice acknowledges it; incomplete recovery stays in the list. */
+    private fun leavePage(destination: Int) {
+        if (tab == 7 && destination == 4 && retiredChat != null &&
+            retirementStatus?.state == VaultRetirement.LocalState.COMPLETE) dismissRetiredChat()
+        else selectTab(destination)
     }
     private fun startFreshPairing() {
         val id = retiredChat?.id ?: return
@@ -1482,7 +1499,7 @@ class NetworkActivity : Activity() {
     }
     private fun navigateBack(): Boolean {
         if (!unlocked || !::screens.isInitialized || tab == 4) return false
-        selectTab(when (tab) { 6 -> 0; 1, 2, 3 -> if (latest?.setupComplete == true) 6 else 5; else -> 4 })
+        leavePage(when (tab) { 6 -> 0; 1, 2, 3 -> if (latest?.setupComplete == true) 6 else 5; else -> 4 })
         return true
     }
     override fun onStop() {

@@ -298,3 +298,17 @@ and rejecting discovery after transfer starts or its captured operation is cance
 This is a review candidate, not a verified fix for the owner's physical regression.
 Android instrumentation, signed upgrade and two-phone/power-loss evidence remain
 separate from local compilation/JVM results recorded in the PR.
+
+## Retired chat dismissal — 2026-10-28
+
+Branch `fix/dismiss-retired-chats`, based on main after #50, implements removal of
+completed retirement notices with **Done · remove from Chats** or returning to
+Chats after viewing the notice. Incomplete/unavailable cleanup remains recoverable.
+The index operation rechecks actual local cleanup under the lifecycle lock; it
+retains pad ledgers, claims, tombstones, and queued peer-wipe delivery. Removing the
+last entry creates an unused fresh setup slot (hidden by the existing empty-list UI),
+never reviving an old pad namespace. No automatic unread-notice expiry is added.
+Android instrumentation covers cleanup guards, durable removal, last-entry handling,
+stale replacement and the Done action. See the PR for executed build/CI results;
+physical device accessibility/back-navigation and pending peer-wipe delivery after
+dismissal remain outstanding. No protocol or pad accounting changes.

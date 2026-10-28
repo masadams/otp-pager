@@ -112,6 +112,32 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
         }
         return VaultRetirement.retireContact(context, id)
     }
+    /** Dismiss only verified-complete local cleanup. Retained guards and peer dispatch survive.
+     * A stale dismissal cannot remove a fresh replacement of the same contact entry.
+     */
+    internal fun dismissRetired(id: String): Boolean = synchronized(VaultLifecycle.lock) {
+        require(VaultLifecycle.isContact(id)) { "Not a conversation" }
+        val next = JSONObject(data.toString())
+        val entries = next.getJSONArray("chats")
+        val position = (0 until entries.length()).firstOrNull { entries.getJSONObject(it).getString("id") == id }
+            ?: return@synchronized false
+        check(VaultRetirement.inspect(context, id).state == VaultRetirement.LocalState.COMPLETE) {
+            "Local cleanup must complete before removing this chat"
+        }
+        entries.remove(position)
+        if (entries.length() == 0) {
+            // Preserve the existing non-empty index contract. The UI hides this unused setup slot.
+            // Never reuse the retired namespace, even when dismissing the last conversation.
+            val fresh = freshNamespace()
+            entries.put(JSONObject().put("id", fresh).put("entryId", fresh).put("name", "Chat 1"))
+            next.put("active", fresh)
+        } else if (next.getString("active") == id) {
+            next.put("active", entries.getJSONObject(0).getString("id"))
+        }
+        save(next) // Only the index changes. No ledger, tombstone, claim or dispatch deletion.
+        summaries.remove(id)
+        true
+    }
     /** Explicit local-only replacement. Never copies credentials, pads, history or peer identity. */
     internal fun replaceRetired(id: String): Chat {
         // Recovery may dispatch cancellation; never do this while holding an outer lifecycle lock.
