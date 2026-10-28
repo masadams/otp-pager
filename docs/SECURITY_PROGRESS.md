@@ -3,7 +3,20 @@
 Read [the development plan](SECURITY_DEVELOPMENT_PLAN.md) first. This file is the
 handoff record; never infer feature completion from a plan or passing baseline CI.
 
-## Current position — updated 2026-10-27
+## Current continuation — 2026-10-28
+
+The [continuation record](CONTINUATION_2026_10_28.md) records main 9a968a8, open
+#45–49, dependency branches, exact tested heads and actual local/CI evidence.
+Local/ACTIVE lifecycle foundations, key rotation, large streamed pads and opt-in
+unreviewed peer wipe are merged. Strict end-to-end protection, failover and groups
+remain unimplemented. The strict codec in #48 is an unwired review candidate.
+
+Next implementation: finish USB physical regression evidence, then strict enrollment/
+relay authorization, vault/control separation and lifecycle/UI enforcement. Review
+#49's local-first recipient correction without waiting for strict mode. Follow
+PIPELINE.md; no PR merge, release or deployment is authorized automatically.
+
+## Historical position — 2026-10-27
 
 - PRs #9–15 are merged into `main`. Integration endpoint before this documentation
   refresh: `574576d0a39108a641386ca260788c3ef7df578e`.
@@ -483,7 +496,7 @@ generations. Tests: `VaultKeysTest`, `VaultRotationTest`, stricter restart-fixtu
 Owner decisions: drop Jericho (#21), MIT license (#21). Added the opt-in `ui-preview`
 screenshot workflow (#23); first run captured 53 screens on API 31/35.
 
-## Next task
+## Historical next-task note — superseded by the continuation record
 
 Package C: separately erasable history and crash-safe old-key migration (see LOCAL_DESTRUCTION_DESIGN.md). Completed package B wording for reference: implement reviewed ACTIVE epoch capability/namespace allowlist publication and
 current-index routing together with immutable retained-cohort checks during normal

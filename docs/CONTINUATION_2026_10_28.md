@@ -49,7 +49,7 @@ Exact-head runtime CI results, verified 2026-10-28:
 | #46 | 40766810823 | 40766810463 | 40766810460 | All success |
 | #47 | 40766885102 | 40766884836 | 40766884755 | All success |
 | #48 | 40767114914 | 40767114948 | 40767114896 | All success |
-| #49 | 40776063308 | 40776063317 | 40776063335 | In progress at this snapshot |
+| #49 | 40776063308 | 40776063317 | 40776063335 | Relay passed; Android/upgrade in progress at this snapshot |
 
 Run links use `https://github.com/masadams/otp-pager/actions/runs/<id>`.
 Recheck #49 before review; do not inherit results from main or a different PR. Physical validation and independent review remain open even
