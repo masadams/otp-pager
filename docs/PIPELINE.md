@@ -114,3 +114,15 @@ fan-out groups; remaining security/reliability/usability work.
 Already done on 2026-10-28: relay strict claims (#34, F06 first step); base image pinned (#25).
 Per-device relay credentials were considered and dropped: both phones share the pad and
 secret, so revoking one phone's relay access protects nothing extra.
+
+## Optional loss-of-contact policy — proposed, 2026-10-28
+
+Owner requests a separate off-by-default advanced option, outside normal setup,
+for mutually agreed retirement after loss of authenticated peer contact. See
+[design boundaries and remaining decisions](LOSS_OF_CONTACT_POLICY.md). This is
+not implemented and does not change ordinary strict v1's no-inactivity-deletion
+policy. Endpoint enforcement, clock/reboot rules, consent, protocol tests and
+physical-device validation remain outstanding. A relay cannot be trusted with
+arbitrary wipe authority; suppressed traffic can nevertheless trigger expiry.
+Develop this separately after the relevant strict lifecycle/protocol decisions;
+no existing USB, strict codec or diagnostics PR is superseded by this proposal.
