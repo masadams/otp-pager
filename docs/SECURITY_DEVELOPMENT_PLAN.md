@@ -242,3 +242,13 @@ Global recovery observation/retry and empty staging are merged development found
 activation remains unimplemented; v1 terminal journals cannot prove absent reuse
 registry provenance and must never authorize an empty reset. Executable design-model
 checks do not complete package B or replace Android lifecycle/physical evidence.
+
+## Strict protocol core candidate — 2026-10-28
+
+The #44 follow-up `feat/strict-chat-protocol-core` adds the unwired OTPSTR01 codec,
+signer binding and one-use unlock response guard with Python/Kotlin test fixtures.
+See [candidate contract](STRICT_CHAT_PROTOCOL.md). It preserves S01–S12 by making
+no operational pad/storage/relay changes. Strict enrollment, relay authorization,
+locked envelopes, control separation and UI are still proposed. Developer-produced
+vectors do not satisfy independent review; physical offline-lock, wipe, upgrade and
+power-loss acceptance gates remain open. No inactivity share expiry is selected.

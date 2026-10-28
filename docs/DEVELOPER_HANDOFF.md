@@ -280,3 +280,15 @@ main, not from an old stacked base. Do not delete history or deployment volumes 
 cleanup. Keep future work in reviewable slices; update this handoff, checklist and
 progress with actual implemented scope and exact evidence. Passing CI alone never
 replaces invariant review, independent assessment or physical two-device validation.
+
+## Strict protocol core follow-up — 2026-10-28
+
+Branch `feat/strict-chat-protocol-core` stacks on #44. Read
+[STRICT_CHAT_PROTOCOL.md](STRICT_CHAT_PROTOCOL.md): only the canonical frame codec,
+pinned-signer verification and one-use pending-unlock guard are implemented and
+unwired. Python fixtures are consumed by JVM tests; CI checks regeneration. This
+is not independent review. No strict relay/storage/UI feature is available.
+Next: review the candidate enrollment contract, then relay persistence/revocation,
+strict envelope plus separately accessible wipe control, and physical enrollment.
+Use one authority, no inactivity deletion, fresh physical pairings and a maximum
+60-second foreground lease. Physical/upgrade/security claims remain outstanding.
