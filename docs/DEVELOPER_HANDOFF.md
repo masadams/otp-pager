@@ -5,7 +5,56 @@ This file is sufficient to resume without the original chat. The owner requested
 integration of the completed development work, an accurate plan and a transferable
 handoff. Do not interpret merged foundations as a completed emergency-wipe feature.
 
-## Current state — 2026-10-28 (read this before anything else)
+## Current continuation state — verified 2026-10-28
+
+Baseline `main`: `9a968a8750657b438524902dbdac98429b080b46` (#40).
+The sections explicitly marked historical below preserve prior evidence, not current
+completion or merge instructions. [PIPELINE.md](PIPELINE.md) controls work order.
+
+| Work | Current status |
+| --- | --- |
+| Local/global retirement, ACTIVE epochs, fresh enrollment, vault-key rotation | Merged development functionality; physical/review limits remain |
+| Separate pad storage | #38 merged, `9ce0325689d36ab3d30343a3eef3398d93733238` |
+| Streamed 16/32/64 MiB pads | #39 merged, `d50ecd655381a0e605ddb88d1a21f59521923315` |
+| Peer wipe | #40 merged; off-by-default, unreviewed; see implemented-vs-draft notes in PEER_WIPE_PROTOCOL.md |
+| #41 packet-size audit | Open, `test/fixed-size-packets`; independent |
+| #42 pipeline/USB regression notes | Open draft, `docs/pipeline-status-and-usb-regression`; this documentation follow-up stacks here |
+| #43 USB negotiation retry | Open draft, `fix/usb-accessory-negotiation-retry`; regression follow-up stacks here |
+| #44 strict-chat contract | Open draft, `design/strict-chat-security-contract`; protocol follow-up stacks here |
+| Strict chats, relay failover, groups | Not implemented |
+
+No PR is authorized for automatic merge. #27's Node major-version update is also
+open; do not duplicate it or change the pinned deployment image as incidental cleanup.
+Recheck heads and CI before continuing; this update does not assert fresh CI results.
+
+Implementation decisions: stacked PRs; one strict-unlock authority; no inactivity
+share deletion; proposed 60-second foreground lease; new physical pairing for strict
+v1. Fixed-membership full-mesh groups are the implementation default while the owner
+has no stronger preference. Each recipient uses an independent pairwise pad.
+
+Next: USB discovery/cancellation regression coverage, then strict protocol/vectors,
+relay authorization, locked storage/control separation and physical enrollment UI.
+Failover follows with per-relay cursors/epochs and byte-identical retries; strict
+unlock does not fail over. Groups follow with authenticated roster agreement and
+per-recipient delivery state. Keep each coherent slice in a separate review PR.
+
+Critical source constraints: `CablePairActivity` owns discovery and lifecycle;
+`UsbPairChannel` already implements ZLP handling; `CableProtocol` v6 streams pads
+and provisions control keys. `SecureStore` currently decrypts using local Keystore
+keys alone, and `StationEngine.pollControl` reads control keys from that vault.
+Strict mode needs a new envelope and separately accessible control state; an online
+check around the current engine is insufficient. Preserve constructor ABIs, pad
+ledgers, retained cohorts, terminal gates and no-fallback behavior.
+
+Outstanding physical evidence: phone models/Android/builds, cable and host roles,
+permission sequence and exact regression stage; both host directions; 16/32/64 MiB;
+interrupted pairing/renewal and power loss. Never clear an owner's active app data to
+test. Emulator streams do not validate AOA hardware. Independent review, signer
+custody, live-host recovery and production readiness remain open.
+
+## Historical state and evidence — 2026-10-27/28
+
+### Historical integration snapshot — superseded by current continuation state
 
 > **Pipeline:** the ordered work list and the owner's answers now live in
 > [PIPELINE.md](PIPELINE.md). PRs #18–#26 are merged into `main` (the stacked ones via #33).
@@ -170,7 +219,7 @@ metadata. All lifecycle ownership checks use the reentrant `VaultLifecycle.lock`
 External Strings/JSON, active stack locals, OS/IME/clipboard, flash and exported pads
 are outside any claim of guaranteed erasure.
 
-## Next implementation package — finish Phase 2/B before enrollment UI
+## Historical next-package notes — Phase 2/B (since integrated)
 
 **B3 design is now written:** [ACTIVE_EPOCH_DESIGN.md](ACTIVE_EPOCH_DESIGN.md) treats steps
 1–4 below as one lineage model and splits the work into slices B3a–B3f. B3a (#18) adds the
@@ -215,7 +264,7 @@ retrospective provenance or authorize an empty reset. No supported recovery path
 clears tombstones/claims to make a failed test pass. Coordinated OS/filesystem and
 Keystore rollback remains an explicit limitation, not a solved invariant.
 
-## Remaining work after that, in order
+## Historical package order — current order is PIPELINE.md
 
 | Order | Deliverable / completion gate |
 | --- | --- |
