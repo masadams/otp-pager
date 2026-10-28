@@ -1,0 +1,5 @@
+10-28 12:02:26.570  2195  2210 I TestRunner: started: generatedBitmapAndImportedPngDecodeWithoutNetwork(org.example.otppager.PairingQrTest)
+10-28 12:02:26.595   529  1592 W InputManager-JNI: Input channel object '77b6490 org.example.otppager/org.example.otppager.PairingScannerActivity (client)' was disposed without first being removed with the input manager!
+10-28 12:02:26.602   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fe422000 0x3fe480000]
+10-28 12:02:26.635  2195  2210 D skia    : --- Failed to create image decoder with message 'unimplemented'
+10-28 12:02:26.635  2195  2210 I TestRunner: finished: generatedBitmapAndImportedPngDecodeWithoutNetwork(org.example.otppager.PairingQrTest)

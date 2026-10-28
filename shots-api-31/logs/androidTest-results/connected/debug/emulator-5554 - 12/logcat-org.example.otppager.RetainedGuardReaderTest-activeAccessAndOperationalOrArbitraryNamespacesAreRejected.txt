@@ -1,0 +1,2 @@
+10-28 12:02:56.606  2195  2210 I TestRunner: started: activeAccessAndOperationalOrArbitraryNamespacesAreRejected(org.example.otppager.RetainedGuardReaderTest)
+10-28 12:02:56.614  2195  2210 I TestRunner: finished: activeAccessAndOperationalOrArbitraryNamespacesAreRejected(org.example.otppager.RetainedGuardReaderTest)

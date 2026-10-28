@@ -1,0 +1,46 @@
+10-28 12:02:24.867  2195  2210 I TestRunner: started: damagedVaultShowsRecoveryWithoutResettingStoredData(org.example.otppager.PagerJourneyTest)
+10-28 12:02:24.867   529  2264 W OpenGLRenderer: Failed to initialize 101010-2 format, error = EGL_SUCCESS
+10-28 12:02:24.868   529  2264 D EGL_emulation: eglCreateContext: 0x708bbb085ed0: maj 3 min 0 rcv 3
+10-28 12:02:24.870   529  2264 D EGL_emulation: eglMakeCurrent: 0x708bbb085ed0: ver 3 0 (tinfo 0x708dc4877180) (first time)
+10-28 12:02:24.878  1350  2088 I Dialer  : OmtpVvmCarrierCfgHlpr - OmtpEvent:CONFIG_STATUS_SMS_TIME_OUT
+10-28 12:02:24.878  1350  1350 I Dialer  : RetryPolicy - discarding deferred status: configuration_state=4
+10-28 12:02:24.881  1350  1350 I Dialer  : VvmTaskExecutor - no more tasks, stopping service if no task are added in 5000 millis
+10-28 12:02:24.882  1350  1350 I Dialer  : VvmTaskReceiver - task received
+10-28 12:02:24.882  1350  1350 I Dialer  : VvmTaskReceiver - TaskExecutor already running
+10-28 12:02:24.882  1350  1350 I Dialer  : Task.createTask - create task:com.android.voicemail.impl.ActivationTask
+10-28 12:02:24.882  1350  1350 I Dialer  : RetryPolicy - retry #1 for com.android.voicemail.impl.ActivationTask@fa19c41 queued, executing in 5000
+10-28 12:02:24.882  1350  1350 I Dialer  : VvmTaskExecutor - com.android.voicemail.impl.ActivationTask@fa19c41 added
+10-28 12:02:24.882  1350  1350 I Dialer  : VvmTaskExecutor - minimal wait time:4999
+10-28 12:02:24.882  1350  1350 I Dialer  : VvmTaskExecutor - sleep for 4999 millis
+10-28 12:02:24.920   749   786 D SplashScreenView: Build android.window.SplashScreenView{9b5c2d1 V.E...... ......ID 0,0-0,0}
+10-28 12:02:24.920   749   786 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 12:02:24.920   749   786 D SplashScreenView: Branding: view: android.view.View{265d136 G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 12:02:24.921  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7acee02 in: PRE_ON_CREATE
+10-28 12:02:24.923  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7acee02 in: CREATED
+10-28 12:02:24.924  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7acee02 in: STARTED
+10-28 12:02:24.944   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fe636000 0x3fe7ad000]
+10-28 12:02:24.945   412   412 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:02:24.952  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7acee02 in: RESUMED
+10-28 12:02:24.955   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fea9b000 0x3fec12000]
+10-28 12:02:24.958   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3ff598000 0x3ff70f000]
+10-28 12:02:24.981   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fdee3000 0x3fe05a000]
+10-28 12:02:24.989   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fc5dc000 0x3fc753000]
+10-28 12:02:24.989   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fc753000 0x3fc8ca000]
+10-28 12:02:25.023   529  1573 W InputManager-JNI: Input channel object '9602687 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 12:02:25.027   529   539 I system_server: NativeAlloc concurrent copying GC freed 87727(3840KB) AllocSpace objects, 13(276KB) LOS objects, 49% free, 12MB/24MB, paused 29us total 151.397ms
+10-28 12:02:25.028   529   559 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +102ms
+10-28 12:02:25.060  1011  1594 W FrameTracker: Missing SF jank callback for vsyncId: 2140
+10-28 12:02:25.060  1011  1594 W FrameTracker: Missing SF jank callback for vsyncId: 2155
+10-28 12:02:25.087   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fe636000 0x3fe7ad000]
+10-28 12:02:25.089   529  2250 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 12:02:25.091   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fea9b000 0x3fec12000]
+10-28 12:02:25.094  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7acee02 in: PAUSED
+10-28 12:02:25.112   412   412 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:02:25.119   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fea9b000 0x3fec12000]
+10-28 12:02:25.120   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3ff598000 0x3ff70f000]
+10-28 12:02:25.121   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fda7e000 0x3fdbf5000]
+10-28 12:02:25.164  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7acee02 in: STOPPED
+10-28 12:02:25.165  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@7acee02 in: DESTROYED
+10-28 12:02:25.175   529  1465 W InputManager-JNI: Input channel object 'ec076d9 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 12:02:25.203   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3ff70f000 0x3ff76d000]
+10-28 12:02:25.206  2195  2210 I TestRunner: finished: damagedVaultShowsRecoveryWithoutResettingStoredData(org.example.otppager.PagerJourneyTest)

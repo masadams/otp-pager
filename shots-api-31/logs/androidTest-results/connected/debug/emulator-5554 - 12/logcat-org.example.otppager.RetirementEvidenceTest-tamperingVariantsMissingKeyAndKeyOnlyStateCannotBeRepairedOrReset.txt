@@ -1,0 +1,2 @@
+10-28 12:02:57.803  2195  2210 I TestRunner: started: tamperingVariantsMissingKeyAndKeyOnlyStateCannotBeRepairedOrReset(org.example.otppager.RetirementEvidenceTest)
+10-28 12:02:57.818  2195  2210 I TestRunner: finished: tamperingVariantsMissingKeyAndKeyOnlyStateCannotBeRepairedOrReset(org.example.otppager.RetirementEvidenceTest)

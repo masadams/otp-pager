@@ -1,0 +1,49 @@
+10-28 12:02:26.905  2195  2210 I TestRunner: started: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)
+10-28 12:02:28.310   341   919 I netd    : trafficSwapActiveStatsMap() <15.52ms>
+10-28 12:02:28.311   341   919 I netd    : tetherGetStats() -> {[]} <0.44ms>
+10-28 12:02:28.312   341   919 I netd    : bandwidthSetGlobalAlert(2097152) <0.10ms>
+10-28 12:02:28.313   341   919 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.32ms>
+10-28 12:02:28.314   341   919 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.31ms>
+10-28 12:02:28.330   341   919 I netd    : trafficSwapActiveStatsMap() <13.59ms>
+10-28 12:02:28.331   341   919 I netd    : tetherGetStats() -> {[]} <0.32ms>
+10-28 12:02:28.333   341   919 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.30ms>
+10-28 12:02:28.334   341   919 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.36ms>
+10-28 12:02:28.342   529   832 D WifiNl80211Manager: Scan result ready event
+10-28 12:02:28.343   529   832 D WifiNative: Scan result ready event
+10-28 12:02:28.588  2195  2451 W xample.otppage: Long monitor contention with owner pool-26-thread-1 (2450) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.StationEngine.transaction(kotlin.jvm.functions.Function1) for 493ms
+10-28 12:02:29.911  1350  2088 I Dialer  : VvmTaskExecutor - executing task com.android.voicemail.impl.ActivationTask@fa19c41
+10-28 12:02:29.911  1350  2088 I Dialer  : PreOMigrationHandler - ComponentInfo{com.android.phone/com.android.services.telephony.TelephonyConnectionService}, ***, UserHandle{0} already migrated
+10-28 12:02:29.919  1410  1426 I VoicemailNotifier: receivers for android.intent.action.PROVIDER_CHANGED :[]
+10-28 12:02:29.920  1350  2088 I Dialer  : VvmActivationTask - VVM content provider configured - vvm_type_cvvm
+10-28 12:02:29.920  1350  2088 I Dialer  : OmtpVvmCarrierCfgHlpr - OmtpEvent:CONFIG_ACTIVATING
+10-28 12:02:29.922  1410  1426 I VoicemailNotifier: receivers for android.intent.action.PROVIDER_CHANGED :[]
+10-28 12:02:29.927   935  1190 D SmsNumberUtils: enter filterDestAddr. destAddr="[BajqU4K5_YhSYbs-7QUn0dOwcmI]"
+10-28 12:02:29.928   935  1190 D SmsNumberUtils: destAddr is not formatted.
+10-28 12:02:29.928   935  1190 D SmsNumberUtils: leave filterDestAddr, new destAddr="[BajqU4K5_YhSYbs-7QUn0dOwcmI]"
+10-28 12:02:31.913  2195  2452 W xample.otppage: Long monitor contention with owner pool-27-thread-2 (2453) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.VaultGeneration.requireCurrent(java.io.File, org.example.otppager.VaultGeneration$Capability, java.lang.String) for 216ms
+10-28 12:02:32.436  2195  2453 W xample.otppage: Long monitor contention with owner pool-27-thread-1 (2452) at java.lang.String org.example.otppager.DeviceIdentity.card(boolean)(DeviceIdentity.kt:22) waiters=0 in void org.example.otppager.VaultGeneration.requireCurrent(java.io.File, org.example.otppager.VaultGeneration$Capability, java.lang.String) for 522ms
+10-28 12:02:32.950  2195  2452 W xample.otppage: Long monitor contention with owner pool-27-thread-2 (2453) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.VaultGeneration.requireCurrent(java.io.File, org.example.otppager.VaultGeneration$Capability, java.lang.String) for 474ms
+10-28 12:02:34.168   341   919 I netd    : trafficSwapActiveStatsMap() <6.42ms>
+10-28 12:02:34.169   341   919 I netd    : tetherGetStats() -> {[]} <0.27ms>
+10-28 12:02:34.171   341   919 I netd    : bandwidthSetGlobalAlert(2097152) <0.07ms>
+10-28 12:02:34.172   341   919 I netd    : bandwidthRemoveInterfaceQuota(eth0) <0.30ms>
+10-28 12:02:34.173   341   919 I netd    : bandwidthSetInterfaceQuota(eth0, 9223372036854775807) <0.25ms>
+10-28 12:02:34.540  2195  2452 I xample.otppage: Waiting for a blocking GC Alloc
+10-28 12:02:34.542  2195  2452 I xample.otppage: Starting a blocking GC Alloc
+10-28 12:02:34.561  2195  2453 W xample.otppage: Long monitor contention with owner pool-27-thread-1 (2452) at org.example.otppager.EnrollmentStaging$Presence org.example.otppager.EnrollmentStaging.presence(java.io.File)(EnrollmentStaging.kt:61) waiters=0 in void org.example.otppager.StationEngine.transaction(kotlin.jvm.functions.Function1) for 511ms
+10-28 12:02:35.474   341  1500 D resolv  :  Calling SSL_connect with mark 0xf0064
+10-28 12:02:35.474   341  1500 D resolv  :  SSL_connect returned -1 with mark 0xf0064
+10-28 12:02:35.474   341  1500 W resolv  : SSL_connect ssl error =5, mark 0xf0064: Connection refused
+10-28 12:02:35.474   341  1500 W resolv  : TLS Handshake failed
+10-28 12:02:35.474   341  1500 D resolv  : Initialization failed.
+10-28 12:02:35.474   341  1500 D resolv  : Destructor
+10-28 12:02:35.474   341  1500 D resolv  : Destructor completed
+10-28 12:02:35.474   341  1500 D resolv  : Failing all pending queries.
+10-28 12:02:35.474   341  1500 W resolv  : query failed
+10-28 12:02:35.474   341  1500 D resolv  : Destructor
+10-28 12:02:35.474   341  1500 D resolv  : Locked destruction procedure
+10-28 12:02:35.474   341  1500 D resolv  : Destructor completed
+10-28 12:02:35.474   341  1500 W resolv  : validateDnsTlsServer returned 0 for 10.0.2.3
+10-28 12:02:35.474   341  1500 D resolv  : Sending validation failure event on netId 100 for 10.0.2.3 with hostname {}
+10-28 12:02:35.474   341  1500 W resolv  : Validation failed
+10-28 12:02:36.131  2195  2210 I TestRunner: finished: fourMiBPairingAndRenewalOverAuthenticatedRadioPreservesIdentityAndTraffic(org.example.otppager.RadioPairTest)

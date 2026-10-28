@@ -1,0 +1,2 @@
+10-28 12:02:57.297  2195  2210 I TestRunner: started: replacementIsEmptyKeepsStableEntryAndClaimsAndCannotBeUndoneByStaleBook(org.example.otppager.RetiredContactTest)
+10-28 12:02:57.574  2195  2210 I TestRunner: finished: replacementIsEmptyKeepsStableEntryAndClaimsAndCannotBeUndoneByStaleBook(org.example.otppager.RetiredContactTest)

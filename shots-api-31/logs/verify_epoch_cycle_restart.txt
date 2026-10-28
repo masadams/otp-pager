@@ -1,0 +1,41 @@
+
+org.example.otppager.EpochCycleRestartTest:.
+
+Time: 0.553
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EpochCycleRestartTest:
+Error in freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest):
+java.lang.AssertionError: Global wipe incomplete: [global-intent, global-intent]
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.example.otppager.EpochCycleRestartTest.wipeAll(EpochCycleRestartTest.kt:49)
+	at org.example.otppager.EpochCycleRestartTest.freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(EpochCycleRestartTest.kt:106)
+
+
+Time: 0.288
+There was 1 failure:
+1) freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(org.example.otppager.EpochCycleRestartTest)
+java.lang.AssertionError: Global wipe incomplete: [global-intent, global-intent]
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.example.otppager.EpochCycleRestartTest.wipeAll(EpochCycleRestartTest.kt:49)
+	at org.example.otppager.EpochCycleRestartTest.freshEpochsRouteIsolateAndRefuseEveryEarlierPadAndPairing(EpochCycleRestartTest.kt:106)
+
+FAILURES!!!
+Tests run: 1,  Failures: 1
+
+
+
+Traceback (most recent call last):
+  File "/home/runner/work/otp-pager/otp-pager/scripts/verify_epoch_cycle_restart.py", line 27, in <module>
+    main()
+    ~~~~^^
+  File "/home/runner/work/otp-pager/otp-pager/scripts/verify_epoch_cycle_restart.py", line 20, in main
+    raise RuntimeError("Epoch lifecycle fixture failed: " + phase)
+RuntimeError: Epoch lifecycle fixture failed: cycle-verify
+exit=1

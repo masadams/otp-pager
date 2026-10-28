@@ -1,0 +1,33 @@
+10-28 12:02:25.208  2195  2210 I TestRunner: started: scanRequiresReviewThenSavesOppositeRoleWithoutAnotherManualStep(org.example.otppager.PairingInterfaceTest)
+10-28 12:02:25.218   749   786 D SplashScreenView: Build android.window.SplashScreenView{facfb09 V.E...... ......ID 0,0-0,0}
+10-28 12:02:25.218   749   786 D SplashScreenView: Icon: view: null drawable: null size: 0
+10-28 12:02:25.218   749   786 D SplashScreenView: Branding: view: android.view.View{319d10e G.ED..... ......I. 0,0-0,0 #10204a6 android:id/splashscreen_branding_view} drawable: null size w: 0 h: 0
+10-28 12:02:25.225  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1b2bb81 in: PRE_ON_CREATE
+10-28 12:02:25.229  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1b2bb81 in: CREATED
+10-28 12:02:25.229  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1b2bb81 in: STARTED
+10-28 12:02:25.243   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fdbf5000 0x3fdd6c000]
+10-28 12:02:25.244   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fdd6c000 0x3fdee3000]
+10-28 12:02:25.245   412   412 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:02:25.246   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fdee3000 0x3fe05a000]
+10-28 12:02:25.271  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1b2bb81 in: RESUMED
+10-28 12:02:25.291   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fc5dc000 0x3fc753000]
+10-28 12:02:25.293   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fc753000 0x3fc8ca000]
+10-28 12:02:25.294   365   365 D goldfish-address-space: claimShared: Ask to claim region [0x3fc8ca000 0x3fca41000]
+10-28 12:02:25.306   529   559 I ActivityTaskManager: Displayed org.example.otppager/.NetworkActivity: +90ms
+10-28 12:02:25.325   529  1465 W InputManager-JNI: Input channel object 'e96abe3 Splash Screen org.example.otppager (client)' was disposed without first being removed with the input manager!
+10-28 12:02:25.338  1011  1594 W FrameTracker: Missing SF jank callback for vsyncId: 2191
+10-28 12:02:25.641   365   365 D goldfish-address-space: claimShared: Ask to claim region [0x3fda7e000 0x3fdc2b000]
+10-28 12:02:25.644   365   365 D goldfish-address-space: claimShared: Ask to claim region [0x3fdc2b000 0x3fddd8000]
+10-28 12:02:25.648   365   365 D goldfish-address-space: claimShared: Ask to claim region [0x3fddd8000 0x3fdf85000]
+10-28 12:02:25.671   529   721 W InputManager-JNI: Input channel object '22288b1 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 12:02:25.687   749   889 D EGL_emulation: app_time_stats: avg=304.43ms min=118.31ms max=531.02ms count=4
+10-28 12:02:25.801   365   365 D goldfish-address-space: claimShared: Ask to claim region [0x3fda7e000 0x3fdc2b000]
+10-28 12:02:25.803   365   365 D goldfish-address-space: claimShared: Ask to claim region [0x3fdc2b000 0x3fddd8000]
+10-28 12:02:25.804   365   365 D goldfish-address-space: claimShared: Ask to claim region [0x3fddd8000 0x3fdf85000]
+10-28 12:02:25.869   529   892 W InputManager-JNI: Input channel object '6dbfb15 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 12:02:25.940   365   365 D goldfish-address-space: claimShared: Ask to claim region [0x3fea9b000 0x3fec12000]
+10-28 12:02:25.942   529  2250 E FrameEvents: updateAcquireFence: Did not find frame.
+10-28 12:02:25.942   365   365 D goldfish-address-space: claimShared: Ask to claim region [0x3ff598000 0x3ff70f000]
+10-28 12:02:25.956  2195  2195 D LifecycleMonitor: Lifecycle status change: org.example.otppager.NetworkActivity@1b2bb81 in: PAUSED
+10-28 12:02:25.961   412   412 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:02:25.969  2195  2210 I TestRunner: finished: scanRequiresReviewThenSavesOppositeRoleWithoutAnotherManualStep(org.example.otppager.PairingInterfaceTest)

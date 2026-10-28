@@ -1,0 +1,2 @@
+10-28 12:02:57.819  2195  2210 I TestRunner: started: authenticatedIntentRoundTripNeverGrantsEnrollmentOrReplacesAnExistingRecord(org.example.otppager.RetirementEvidenceTest)
+10-28 12:02:57.832  2195  2210 I TestRunner: finished: authenticatedIntentRoundTripNeverGrantsEnrollmentOrReplacesAnExistingRecord(org.example.otppager.RetirementEvidenceTest)

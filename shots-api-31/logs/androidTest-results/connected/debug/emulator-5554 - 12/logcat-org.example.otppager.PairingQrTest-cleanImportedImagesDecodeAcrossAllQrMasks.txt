@@ -1,0 +1,4 @@
+10-28 12:02:26.021  2195  2210 I TestRunner: started: cleanImportedImagesDecodeAcrossAllQrMasks(org.example.otppager.PairingQrTest)
+10-28 12:02:26.051   529   556 W InputManager-JNI: Input channel object 'dd22b10 org.example.otppager/org.example.otppager.NetworkActivity (client)' was disposed without first being removed with the input manager!
+10-28 12:02:26.068   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3ff2aa000 0x3ff308000]
+10-28 12:02:26.303  2195  2210 I TestRunner: finished: cleanImportedImagesDecodeAcrossAllQrMasks(org.example.otppager.PairingQrTest)

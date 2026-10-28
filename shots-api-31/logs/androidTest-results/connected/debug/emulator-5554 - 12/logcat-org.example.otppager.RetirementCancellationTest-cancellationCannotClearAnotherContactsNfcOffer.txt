@@ -1,0 +1,2 @@
+10-28 12:02:57.799  2195  2210 I TestRunner: started: cancellationCannotClearAnotherContactsNfcOffer(org.example.otppager.RetirementCancellationTest)
+10-28 12:02:57.800  2195  2210 I TestRunner: finished: cancellationCannotClearAnotherContactsNfcOffer(org.example.otppager.RetirementCancellationTest)

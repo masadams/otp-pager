@@ -1,0 +1,2 @@
+10-28 12:02:37.050  2195  2210 I TestRunner: started: receiverPersistsUnreadAndReceiptsWithoutAnActivityAndHonorsPause(org.example.otppager.ReceiveTest)
+10-28 12:02:40.689  2195  2210 I TestRunner: finished: receiverPersistsUnreadAndReceiptsWithoutAnActivityAndHonorsPause(org.example.otppager.ReceiveTest)

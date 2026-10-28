@@ -1,0 +1,6 @@
+10-28 12:01:36.193  2195  2210 I TestRunner: started: automaticPairingWorksWithServerSettingsOnEitherUsbSide(org.example.otppager.CablePairTest)
+10-28 12:01:36.413   529   621 I RoleService: Granting default roles...
+10-28 12:01:37.429   898  1050 D DhcpClient: Received packet: 02:15:b2:00:00:00 OFFER, ip /10.0.2.16, mask /255.255.255.0, DNS servers: /10.0.2.3 , gateways [/10.0.2.2], lease time 86400, domain null
+10-28 12:01:37.429   898  1050 D DhcpClient: Received packet: 02:15:b2:00:00:00 ACK: your new IP /10.0.2.16, netmask /255.255.255.0, gateways [/10.0.2.2] DNS servers: /10.0.2.3 , lease time 86400
+10-28 12:01:38.748   169   169 I BpBinder: onLastStrongRef automatically unlinking death recipients: <uncached descriptor>
+10-28 12:01:39.574  2195  2210 I TestRunner: finished: automaticPairingWorksWithServerSettingsOnEitherUsbSide(org.example.otppager.CablePairTest)

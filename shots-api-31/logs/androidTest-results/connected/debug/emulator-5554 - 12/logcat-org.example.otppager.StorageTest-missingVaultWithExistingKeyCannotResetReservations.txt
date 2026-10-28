@@ -1,0 +1,3 @@
+10-28 12:03:00.040  2195  2210 I TestRunner: started: missingVaultWithExistingKeyCannotResetReservations(org.example.otppager.StorageTest)
+10-28 12:03:00.043   365   441 D goldfish-address-space: claimShared: Ask to claim region [0x3fff7c000 0x3fffda000]
+10-28 12:03:00.049  2195  2210 I TestRunner: finished: missingVaultWithExistingKeyCannotResetReservations(org.example.otppager.StorageTest)

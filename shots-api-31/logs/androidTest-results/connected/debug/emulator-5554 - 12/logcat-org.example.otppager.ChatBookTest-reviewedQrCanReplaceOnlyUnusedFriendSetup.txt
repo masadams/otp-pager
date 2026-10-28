@@ -1,0 +1,2 @@
+10-28 12:01:44.621  2195  2210 I TestRunner: started: reviewedQrCanReplaceOnlyUnusedFriendSetup(org.example.otppager.ChatBookTest)
+10-28 12:01:44.642  2195  2210 I TestRunner: finished: reviewedQrCanReplaceOnlyUnusedFriendSetup(org.example.otppager.ChatBookTest)

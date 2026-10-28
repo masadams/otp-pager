@@ -1,0 +1,5 @@
+10-28 12:01:57.642  2195  2210 I TestRunner: started: offlineIdentityRetryCloneForgeryDowngradeAndMissingKey(org.example.otppager.DeviceIdentityTest)
+10-28 12:02:00.018   749   889 D EGL_emulation: app_time_stats: avg=9965.30ms min=1.59ms max=29837.07ms count=3
+10-28 12:02:00.035   529   686 D ConnectivityService: handleLingerComplete for [101 CELLULAR]
+10-28 12:02:00.037   341   919 I netd    : networkSetPermissionForNetwork(101, 1) <1.61ms>
+10-28 12:02:02.390  2195  2210 I TestRunner: finished: offlineIdentityRetryCloneForgeryDowngradeAndMissingKey(org.example.otppager.DeviceIdentityTest)
