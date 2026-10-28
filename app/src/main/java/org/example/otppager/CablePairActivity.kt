@@ -122,7 +122,7 @@ class CablePairActivity : Activity() {
             busy = true; note("Checking USB accessory support…")
             worker.execute {
                 try { check(!cancelled.get()); operation?.check(); UsbPairChannel.switchToAccessory(manager, device); operation?.check(); runOnUiThread { busy = false; note("USB mode changed · waiting for reconnection/permission…") } }
-                catch (_: Exception) { note("Could not establish Android accessory mode. Try reversing USB host direction or use QR setup.") }
+                catch (failure: Exception) { runOnUiThread { busy = false; note("Could not establish Android accessory mode (${failure.message ?: "USB negotiation failed"}). Try reversing USB host direction or use QR setup.") } }
             }
         }
     }
