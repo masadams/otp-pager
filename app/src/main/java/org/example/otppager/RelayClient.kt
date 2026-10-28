@@ -10,6 +10,9 @@ interface RelayTransport {
     /** False means an older relay without claims. Never downgrade a previously protected chat. */
     fun scope(endpoint: String, room: String, bootstrap: String, capability: String): Boolean = false
     fun request(endpoint: String, room: String, token: String, method: String, body: String? = null, cursor: Long = 0): String
+    /** Strict-chat share store (`/v1/share/<room>`): GET (check-in), PUT (store once), DELETE. */
+    fun share(endpoint: String, room: String, capability: String, method: String, body: String? = null): String =
+        throw IllegalStateException("This connection cannot reach strict-chat key shares")
 }
 object RelayClient : RelayTransport {
     override fun forContact(store: SecureStore): RelayTransport = forStore(store)
@@ -18,7 +21,11 @@ object RelayClient : RelayTransport {
             ContactOperations.open(store.operationKey, store::requireActive).use { scopeWith(endpoint, room, bootstrap, capability, it, connection) }
         override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String =
             ContactOperations.open(store.operationKey, store::requireActive).use { exchange(endpoint, room, token, method, body, cursor, lease = it, connection = connection) }
+        override fun share(endpoint: String, room: String, capability: String, method: String, body: String?): String =
+            ContactOperations.open(store.operationKey, store::requireActive).use { exchange(endpoint, room, capability, method, body, 0, lease = it, connection = connection, kind = "share") }
     }
+    override fun share(endpoint: String, room: String, capability: String, method: String, body: String?): String =
+        exchange(endpoint, room, capability, method, body, 0, kind = "share")
     override fun scope(endpoint: String, room: String, bootstrap: String, capability: String): Boolean =
         scopeWith(endpoint, room, bootstrap, capability, null)
     private fun scopeWith(endpoint: String, room: String, bootstrap: String, capability: String, lease: ContactOperations.Lease?, connection: (URL) -> HttpsURLConnection = ::openConnection): Boolean {
@@ -36,9 +43,10 @@ object RelayClient : RelayTransport {
     override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String =
         exchange(endpoint, room, token, method, body, cursor)
     private fun openConnection(url: URL) = url.openConnection() as HttpsURLConnection
-    private fun exchange(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long, path: String = "", lease: ContactOperations.Lease? = null, connection: (URL) -> HttpsURLConnection = ::openConnection): String {
-        val suffix = if (method == "GET") "?after=$cursor&limit=50" else ""
-        val conn = connection(URL("$endpoint/v1/mailbox/$room$path$suffix"))
+    private fun exchange(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long, path: String = "", lease: ContactOperations.Lease? = null, connection: (URL) -> HttpsURLConnection = ::openConnection, kind: String = "mailbox"): String {
+        require(kind in listOf("mailbox", "share"))
+        val suffix = if (method == "GET" && kind == "mailbox") "?after=$cursor&limit=50" else ""
+        val conn = connection(URL("$endpoint/v1/$kind/$room$path$suffix"))
         lease?.onCancel { conn.disconnect() }
         lease?.check()
         conn.instanceFollowRedirects = false

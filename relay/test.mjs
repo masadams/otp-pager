@@ -300,3 +300,36 @@ test('strict claims is off by default and reported to clients', async () => {
     assert.equal(page.access, 'shared'); assert.equal(page.strict, false);
   } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
 });
+
+test('strict-chat shares need a claimed capability, are never replaced, and expire without check-in', async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-')); let clock = 1_000_000;
+  let { server, base } = await launch({ dataDir, now: () => clock });
+  const room = 'd'.repeat(64), capability = 'c'.repeat(43), share = 's'.repeat(43);
+  const scoped = { Authorization: 'Bearer ' + capability, 'Content-Type': 'application/json' };
+  const put = (body, h = scoped) => fetch(base + '/v1/share/' + room, { method: 'PUT', headers: h, body: JSON.stringify(body) });
+  const read = (h = scoped) => fetch(base + '/v1/share/' + room, { headers: h });
+  try {
+    // The setup token alone can never store or read a share, even on an unclaimed room.
+    assert.equal((await put({ share, deadline: 3 * 86400000 }, headers)).status, 403);
+    assert.equal((await read(headers)).status, 403);
+    assert.equal((await fetch(base + '/v1/mailbox/' + room + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability }) })).status, 201);
+    assert.equal((await put({ share, deadline: 1000 })).status, 400); // Below the one-hour minimum.
+    assert.equal((await put({ share: 'short', deadline: 3600000 })).status, 400);
+    assert.equal((await put({ share, deadline: 2 * 3600000 })).status, 201);
+    assert.equal((await put({ share, deadline: 2 * 3600000 })).status, 200); // Idempotent retry.
+    assert.equal((await put({ share: 't'.repeat(43), deadline: 2 * 3600000 })).status, 409);
+    assert.equal((await read({ Authorization: 'Bearer ' + 'w'.repeat(43) })).status, 401);
+    assert.deepEqual(await (await read()).json(), { share, deadline: 2 * 3600000 });
+    assert.ok(!readFileSync(join(dataDir, 'mailboxes.json'), 'utf8').includes(capability));
+    // Check-ins keep it alive across restart; silence past the deadline discards it for good.
+    clock += 90 * 60000; assert.equal((await read()).status, 200);
+    await stop(server); ({ server, base } = await launch({ dataDir, now: () => clock }));
+    clock += 90 * 60000; assert.equal((await read()).status, 200);
+    clock += 2 * 3600000 + 1; assert.equal((await read()).status, 404);
+    assert.equal((await put({ share, deadline: 3600000 })).status, 201); // A new share, never the old one back.
+    assert.equal((await fetch(base + '/v1/share/' + room, { method: 'DELETE', headers: scoped })).status, 200);
+    assert.equal((await read()).status, 404);
+    assert.equal((await fetch(base + '/v1/share/' + room, { method: 'DELETE', headers: scoped })).status, 200);
+    assert.equal((await fetch(base + '/v1/share/' + room, { method: 'POST', headers: scoped, body: '{}' })).status, 405);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});

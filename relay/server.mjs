@@ -19,6 +19,10 @@ export function makeServer(options = {}) {
   const maxMessages = options.maxMessages ?? 2000;
   const maxRoom = options.maxRoom ?? 200;
   const maxClaims = options.maxClaims ?? 1000;
+  const maxShares = options.maxShares ?? 1000;
+  // Strict chats: a phone stores one 32-byte share per chat here. It must check in within its
+  // own deadline or the share is discarded; without it, that phone can no longer open the chat.
+  const MIN_DEADLINE = 3600000, MAX_DEADLINE = 30 * 86400000, CHECK_IN_WRITE = 60000;
   const now = options.now ?? Date.now;
   const rateLimit = options.rateLimit ?? 360;
   // Strict claims (finding F06): the setup token may only create chat claims; it can never
@@ -45,6 +49,11 @@ export function makeServer(options = {}) {
       Object.entries(state.access).some(([room, entry]) => !ROOM.test(room) || !entry ||
         typeof entry.hash !== 'string' || !/^[a-f0-9]{64}$/.test(entry.hash) || typeof entry.revoked !== 'boolean'))
     throw new Error('Invalid mailbox access state');
+  if (state.shares === undefined) state.shares = {};
+  if (!state.shares || typeof state.shares !== 'object' || Array.isArray(state.shares) ||
+      Object.entries(state.shares).some(([room, s]) => !ROOM.test(room) || !s || !/^[A-Za-z0-9_-]{43}$/.test(s.share) ||
+        !Number.isSafeInteger(s.deadline) || s.deadline < MIN_DEADLINE || s.deadline > MAX_DEADLINE || !Number.isFinite(s.checked)))
+    throw new Error('Invalid share state');
   function commit(next) {
     if (poisoned) throw new Error('Storage unavailable');
     try {
@@ -64,7 +73,9 @@ export function makeServer(options = {}) {
   if (sequences.some((seq, i) => i > 0 && seq <= sequences[i - 1])) throw new Error('Invalid stored sequence ordering');
   function clean() {
     const live = state.messages.filter(m => now() - m.time < ttl);
-    if (live.length !== state.messages.length) commit({ ...state, messages: live });
+    const shares = Object.fromEntries(Object.entries(state.shares).filter(([, s]) => now() - s.checked <= s.deadline));
+    if (live.length !== state.messages.length || Object.keys(shares).length !== Object.keys(state.shares).length)
+      commit({ ...state, messages: live, shares });
   }
   function json(res, status, body) {
     if (res.destroyed || res.writableEnded) return;
@@ -96,7 +107,8 @@ export function makeServer(options = {}) {
       // this is a shared proxy budget; configure per-public-IP limits at Nginx.
       const actual = Buffer.from(req.headers.authorization || '');
       const bootstrap = actual.length === expected.length && timingSafeEqual(actual, expected);
-      const match = /^\/v1\/mailbox\/([a-f0-9]{64})(\/claim)?$/.exec(url.pathname);
+      const shareMatch = /^\/v1\/share\/([a-f0-9]{64})$/.exec(url.pathname);
+      const match = /^\/v1\/mailbox\/([a-f0-9]{64})(\/claim)?$/.exec(url.pathname) ?? (shareMatch && [shareMatch[0], shareMatch[1], undefined]);
       const room = match?.[1];
       const claim = state.access[room];
       const bearer = /^Bearer ([A-Za-z0-9_-]{43,128})$/.exec(req.headers.authorization || '')?.[1];
@@ -140,6 +152,39 @@ export function makeServer(options = {}) {
       }
       if (!authorized) return json(res, 401, { error: 'unauthorized' });
       if (claim?.revoked) return json(res, 410, { error: 'chat revoked' });
+      if (shareMatch) {
+        // Shares are only ever reachable with a claimed capability, never the setup token.
+        if (!scoped) return json(res, 403, { error: 'chat credential required' });
+        clean();
+        const held = state.shares[room];
+        if (req.method === 'GET') {
+          if (!held) return json(res, 404, { error: 'no share' });
+          // A read is a check-in. Persist it at most once a minute per share.
+          if (time - held.checked >= CHECK_IN_WRITE) commit({ ...state, shares: { ...state.shares, [room]: { ...held, checked: time } } });
+          return json(res, 200, { share: held.share, deadline: held.deadline });
+        }
+        if (req.method === 'DELETE') {
+          if (held) { const { [room]: _, ...rest } = state.shares; commit({ ...state, shares: rest }); }
+          return json(res, 200, { share: 'deleted' });
+        }
+        if (req.method !== 'PUT') { res.setHeader('Allow', 'GET, PUT, DELETE'); return json(res, 405, { error: 'method not allowed' }); }
+        if (!/^application\/json(?:;|$)/i.test(req.headers['content-type'] || ''))
+          return json(res, 415, { error: 'JSON content type required' });
+        let data;
+        try { data = JSON.parse(await readBody(req)); }
+        catch (e) {
+          if (e?.status) { res.setHeader('Connection', 'close'); res.once('finish', () => req.destroy()); }
+          return json(res, e?.status || 400, { error: 'invalid request' });
+        }
+        if (!data || typeof data.share !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(data.share) ||
+            !Number.isSafeInteger(data.deadline) || data.deadline < MIN_DEADLINE || data.deadline > MAX_DEADLINE)
+          return json(res, 400, { error: 'invalid share' });
+        const current = state.shares[room]; // Recheck after the async body read; a share is never replaced.
+        if (current) return json(res, current.share === data.share ? 200 : 409, current.share === data.share ? { share: 'stored' } : { error: 'share exists' });
+        if (Object.keys(state.shares).length >= maxShares) return json(res, 429, { error: 'share capacity reached' });
+        commit({ ...state, shares: { ...state.shares, [room]: { share: data.share, deadline: data.deadline, checked: now() } } });
+        return json(res, 201, { share: 'stored' });
+      }
       if (req.method === 'DELETE') {
         if (!scoped) return json(res, 403, { error: 'chat credential required' });
         commit({ ...state, access: { ...state.access, [room]: { ...state.access[room], revoked: true } },

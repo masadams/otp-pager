@@ -26,7 +26,8 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             }
         }
     }
-    @Volatile private var snapshot: JSONObject? = store.load()
+    /** A strict chat's inner state, opened with the in-memory share; [StrictChat.Locked] otherwise. */
+    @Volatile private var snapshot: JSONObject? = StrictChat.open(VaultLifecycle.root(store.namespace), store.load())
     var state: JSONObject?
         get() = snapshot
         private set(value) = synchronized(VaultLifecycle.lock) {
@@ -130,7 +131,51 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         change(next); retireUsed(next); validate(next)
         // A forced rekey always rewrites: older snapshots may still hold content already removed here.
         if (!rekey && next.toString() == state!!.toString()) return
-        store.save(next, rekey); state = next; cachedView = null
+        persist(next, rekey); state = next; cachedView = null
+    }
+    private val strictRoot get() = VaultLifecycle.root(store.namespace)
+    /** Every vault write goes through here: strict chats are re-sealed under their share. */
+    private fun persist(next: JSONObject, rekey: Boolean = false) {
+        if (!next.has("strictShare")) { store.save(next, rekey); return }
+        val share = StrictChat.cached(strictRoot) ?: throw StrictChat.Locked()
+        try { store.save(StrictChat.wrap(strictRoot, next, share), rekey) } finally { share.fill(0) }
+    }
+    internal val isStrict: Boolean get() = state?.has("strictShare") == true
+    /** Pairing: mark the staged chat strict. The share is created and stored at commit. */
+    internal fun stageStrict(deadline: Long) {
+        val staged = checkNotNull(stagedCable) { "No staged pairing" }
+        if (stagedRenewal) return // Renewal keeps the chat's existing mode and share.
+        if (deadline == 0L) { staged.remove("strictPending"); return }
+        require(deadline in StrictChat.DEADLINES) { "Unknown strict deadline" }
+        check(staged.has("control")) { "Strict chats need control keys from this pairing version" }
+        staged.put("strictPending", deadline)
+    }
+    /** Creates this phone's share, claims its room, stores the share once, then seals the vault with it. */
+    private fun establishStrict(next: JSONObject) {
+        val deadline = next.optLong("strictPending", 0L).takeIf { it > 0 } ?: return
+        val c = next.getJSONObject("control")
+        val credential = unhex(c.getString("credential"))
+        val (room, capability) = try { StrictChat.room(credential, next.getString("role")) to PeerWipe.capability(credential) } finally { credential.fill(0) }
+        check(relay.scope(next.getString("endpoint"), room, next.getString("token"), capability)) { "This server does not support strict chats. Update the relay or pair a normal chat." }
+        val share = StrictChat.newShare()
+        try {
+            relay.share(next.getString("endpoint"), room, capability, "PUT", JSONObject().put("share", StrictChat.encode(share)).put("deadline", deadline).toString())
+            StrictChat.remember(strictRoot, share)
+        } finally { share.fill(0) }
+        next.remove("strictPending")
+        next.put("strictShare", JSONObject().put("room", room).put("capability", capability).put("deadline", deadline))
+    }
+    /** Check-in on every sync. A deleted share means the chat was wiped elsewhere: retire it here too. */
+    private fun checkInStrict(): String? {
+        val s = state ?: return null
+        val strict = s.optJSONObject("strictShare") ?: return null
+        val share = try { StrictChat.fetch(relay, s.getString("endpoint"), strict.getString("room"), strict.getString("capability")) }
+            catch (_: StrictChat.Gone) { null } catch (_: Exception) { return null } // Offline: the in-memory share keeps working.
+        if (share != null) { share.fill(0); return null }
+        val root = strictRoot
+        VaultRetirement.retireContact(store.context, root)
+        StrictChat.forget(root)
+        return "This strict chat's key share is gone from the server, so it was removed from this phone."
     }
     fun configure(endpoint: String, token: String, secret: String, role: String) {
         store.requireActive()
@@ -149,7 +194,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         }
         next.put("endpoint", url).put("token", access)
         claims?.room(secret, store.namespace, existing = previous != null)
-        store.save(next); state = next; cachedView = null
+        persist(next); state = next; cachedView = null
     }
     /** Explicit QR review may replace unused link settings, never pads, counters or traffic. */
     fun acceptInvite(invite: PairingInvite) {
@@ -162,7 +207,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             .put("secret", invite.secret).put("role", invite.role).put("counter", 0L).put("cursor", 0L)
             .put("high", 0L).put("seen", JSONArray()).put("outbox", JSONArray()).put("inbox", JSONArray()).put("epoch", "")
         claims?.room(invite.secret, store.namespace, existing = false)
-        validate(next); store.save(next); state = next; cachedView = null
+        validate(next); persist(next); state = next; cachedView = null
     }
     private var staged: JSONObject? = null
     private var stagedCable: JSONObject?
@@ -181,7 +226,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         val next = JSONObject().put("version", 2).put("endpoint", previous.getString("endpoint")).put("token", previous.getString("token"))
             .put("secret", secret).put("role", "A").put("counter", 0L).put("cursor", 0L).put("high", 0L)
             .put("seen", JSONArray()).put("outbox", JSONArray()).put("inbox", JSONArray()).put("epoch", "")
-        validate(next); store.save(next); state = next; stagedCable = null; cachedView = null
+        validate(next); persist(next); state = next; stagedCable = null; cachedView = null
         PadMaterial.prune(store.directory, materialRoot, emptySet())
         // The separate retirement/reservation ledger and non-exportable device key remain intact.
     }
@@ -380,7 +425,8 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     fun commitCable(complete: Boolean) {
         if (stagedRenewal) requireRenewalEligible() else requireCableEligible()
         val next = checkNotNull(stagedCable) { "No staged pairing" }.put("cableComplete", complete)
-        validate(next); store.save(next); state = next; stagedCable = null; stagedRenewal = false; cachedView = null
+        establishStrict(next)
+        validate(next); persist(next); state = next; stagedCable = null; stagedRenewal = false; cachedView = null
         PadMaterial.prune(store.directory, materialRoot, setOf(next.getString("padId"))) // Replaced pad material is never needed again.
     }
     fun finishCable() = transaction { it.put("cableComplete", true).remove("renewalPaused") }
@@ -582,7 +628,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             s.put("opened", kept).put("version", maxOf(5, s.getInt("version")))
         } finally { keys.fill(0) }
     }
-    fun forget() { store.forget(); state = null; cachedView = null; PadMaterial.deleteAll(store.directory, materialRoot) }
+    fun forget() { store.forget(); state = null; cachedView = null; PadMaterial.deleteAll(store.directory, materialRoot); StrictChat.forget(strictRoot) }
     private fun window(s: JSONObject): ReplayWindow {
         val seen = s.getJSONArray("seen")
         return ReplayWindow(s.getLong("high"), (0 until seen.length()).map { seen.getLong(it) }.toSet())
@@ -725,6 +771,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         store.requireActive()
         // Control first: a wipe request must work after pad exhaustion and relay revocation (S11).
         pollControl()?.let { return it }
+        checkInStrict()?.let { return it }
         check(state?.optBoolean("renewalPaused") != true) { "USB renewal paused; reconnect both devices to recover" }
         check(state?.optBoolean("relayRevoked") != true) { "Chat access revoked; pair a fresh chat on both devices" }
         check(state?.optBoolean("cableComplete", true) != false) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }
