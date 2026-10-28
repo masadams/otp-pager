@@ -70,14 +70,14 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         check(s.getJSONArray("outbox").length() <= 150 && s.getJSONArray("inbox").length() <= 100)
         check(!s.has("lastSentDraft") || ChatDraft.validId(s.getString("lastSentDraft")))
     }
-    private fun transaction(change: (JSONObject) -> Unit) = synchronized(VaultLifecycle.lock) {
-        store.requireActive(); transactionActive(change)
+    private fun transaction(rekey: Boolean = false, change: (JSONObject) -> Unit) = synchronized(VaultLifecycle.lock) {
+        store.requireActive(); transactionActive(rekey, change)
     }
-    private fun transactionActive(change: (JSONObject) -> Unit) {
+    private fun transactionActive(rekey: Boolean = false, change: (JSONObject) -> Unit) {
         val next = JSONObject(checkNotNull(state).toString())
         change(next); retireUsed(next); validate(next)
         if (next.toString() == state!!.toString()) return
-        store.save(next); state = next; cachedView = null
+        store.save(next, rekey); state = next; cachedView = null
     }
     fun configure(endpoint: String, token: String, secret: String, role: String) {
         store.requireActive()
@@ -156,7 +156,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     }
     fun renewalTraffic(): JSONArray {
         store.requireActive()
-        requireRenewalIdentity(); transaction(::prune)
+        requireRenewalIdentity(); transaction(change = ::prune)
         return JSONArray(items(state!!.getJSONArray("outbox")).filter { it.getString("kind") == "text" && it.getString("status") in listOf("queued", "relayed") }.map { it.getString("packet") })
     }
     /** Existing device-authenticated USB session only. No receipt/pad allocation is needed. */
@@ -502,7 +502,8 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         s.getJSONArray("outbox").put(JSONObject(saved.toString()).put("status", "queued"))
         received.put("receiptRetryAt", now)
     }
-    fun clearHistory() = transaction { s ->
+    /** Rewrites the vault under a fresh key, so copies of the removed history stop being decryptable. */
+    fun clearHistory() = transaction(rekey = true) { s ->
         s.remove("history")
         s.put("inbox", JSONArray())
         s.put("outbox", JSONArray(items(s.getJSONArray("outbox")).filter { it.getString("status") == "queued" }))
@@ -524,7 +525,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         check(state?.optBoolean("renewalPaused") != true) { "USB renewal paused; reconnect both devices to recover" }
         check(state?.optBoolean("relayRevoked") != true) { "Chat access revoked; pair a fresh chat on both devices" }
         check(state?.optBoolean("cableComplete", true) != false) { "Cable pairing incomplete; arrange a fresh pairing on both devices" }
-        if (state != null) transaction(::prune)
+        if (state != null) transaction(change = ::prune)
         val s = checkNotNull(state) { "Save your link settings first" }
         val master = Protocol.master(s.getString("secret"))
         var ignored = 0

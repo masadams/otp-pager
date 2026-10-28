@@ -269,6 +269,9 @@ verified outcomes, not just the number of successful per-contact calls.
 
 ### Independently erasable history — migration prerequisite
 
+> Implemented differently in #22: wrapping-key rotation instead of a separate history file; see
+> [VAULT_KEY_ROTATION.md](VAULT_KEY_ROTATION.md).
+
 Source review confirms two primary retained plaintext forms inside the operational
 snapshot: `opened[wire].payload` (`cacheOpened`/`retireUsed`/`retained`) and renewal's
 `history[].text` (`stageRenewal`). `view()` uses both. Current `clearHistory` removes

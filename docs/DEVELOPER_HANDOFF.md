@@ -5,6 +5,47 @@ This file is sufficient to resume without the original chat. The owner requested
 integration of the completed development work, an accurate plan and a transferable
 handoff. Do not interpret merged foundations as a completed emergency-wipe feature.
 
+## Current state — 2026-10-28 (read this before anything else)
+
+Open PRs, all green on CI at the time of writing unless noted. **Merge order matters**
+for the stack; GitHub retargets each to `main` as its base merges.
+
+| PR | Branch | Content | Base |
+| --- | --- | --- | --- |
+| #18 | `feat/active-epoch-lineage` | B3a design + pure lineage core | `main` |
+| #19 | `feat/epoch-capability-routing` | B3b capability, freeze, routing wiring | #18 |
+| #20 | `feat/active-retained-cohorts` | B3c–B3f cohorts, repeat wipe, activation, Start fresh / Wipe all | #19 |
+| #22 | `feat/vault-key-rotation` | Package C: contact-vault key rotation (erasable history) | #20 |
+| #21 | `docs/own-direction-license` | Drop Jericho references; MIT license | `main` (independent) |
+| #23 | `tools/ui-preview` | Opt-in screenshot workflow | `main` (independent) |
+
+Owner decisions on 2026-10-28: go our own way (no Jericho compatibility); MIT license;
+continue through the plan, then do a full use + security assessment and UI/UX passes.
+An automated merge without review was declined by a permission check, so the owner merges.
+
+**Screenshots:** push any commit to a `ui-preview/<name>` branch (with
+`.github/workflows/ui-preview.yml` present, i.e. after #23 or merged into that branch);
+the workflow runs the UI tests on API 31 (Kompakt-sized) and API 35 and commits PNGs to
+`ui-shots/<name>`, fetchable with `git clone -b ui-shots/<name>`. CI artifact downloads are
+not reachable from the cloud editing workspace.
+
+**Local checks without an Android SDK** (used in the editing workspace): Kotlin 2.0.21
+compiler from GitHub releases, an API 35 `android.jar`, and small stubs for ZXing/AndroidX/
+androidx.test allow a type-check of main + unit + instrumentation sources and running the
+JVM unit suite. CI remains the reference for build, lint and emulator tests.
+
+**Next work, in order:**
+1. Owner review/merge of #18 → #19 → #20 → #22, plus #21 and #23.
+2. UI/UX pass using the screenshot workflow: add captures for the wipe dialogs, wipe result,
+   recovery Start fresh and Wipe all; tighten compact-screen layout.
+3. Phase 3/D peer-wipe **specification only** (control keys, command format, acks, migration,
+   vectors). Destructive peer code stays blocked until independent protocol review.
+4. Phase 4/G relay work that does not depend on D: per-device scoped access (F06), retention
+   and Docker/Nginx/Portainer hardening (pin `node:22-alpine` by digest), live-host evidence.
+5. Owner-requested **use and security assessment** of the whole app against its goals,
+   then decide additions (e.g. the "strict / online-check" per-chat option discussed on
+   2026-10-27: relay-held key share so a seized offline phone cannot open strict chats).
+
 ## Read first
 
 1. [Ordered checklist](SECURITY_CHECKLIST.md): what is implemented and what remains.

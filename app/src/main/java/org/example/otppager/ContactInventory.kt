@@ -10,7 +10,7 @@ internal object ContactInventory {
     private const val ROOT = "(station-v2|chat-[a-f0-9]{20})"
     private val vault = Regex("^$ROOT(?:-(?:draft|pads))?\\.bin(?:\\.(?:bak|new))?$")
     private val marker = Regex("^$ROOT\\.retired(?:\\.(?:bak|new))?$")
-    private val key = Regex("^otp-pager-$ROOT(?:-(?:draft|pads))?(?:-device)?$")
+    private val key = Regex("^otp-pager-$ROOT(?:-(?:draft|pads))?(?:-device|${VaultKeys.SUFFIX})?$")
 
     /** Keep known targets when either source fails; callers must not mistake partial scope for complete. */
     fun collect(fileNames: Iterable<String>, aliases: Iterable<String>): GlobalRetirementMachine.Scope {

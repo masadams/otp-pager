@@ -115,7 +115,7 @@ internal object EnrollmentStaging {
             r = EnrollmentStageCodec.Record(epoch, terminal.generation, confirmation.commitment, EnrollmentStageCodec.Phase.PREPARING)
         } while (r.root in terminal.priorRoots || previous.any { it.index == r.index || it.root == r.root } ||
             s.names.any { it.startsWith(r.index + ".") || it.startsWith(r.index + "-") || it.startsWith(r.root + ".") || it.startsWith(r.root + "-") } ||
-            s.aliases.any { it == "otp-pager-${r.index}" || it.startsWith("otp-pager-${r.index}-") || it == "otp-pager-${r.root}" || it.startsWith("otp-pager-${r.root}-") } ||
+            s.aliases.any { it == "otp-pager-${r.index}" || it.startsWith("otp-pager-${r.index}-") || it == "otp-pager-${r.root}" || it.startsWith("otp-pager-${r.root}-") || it.startsWith("otp-pager-${r.root}~") } ||
             keyAlias(directory, r.epoch) in s.aliases)
         none.remove(directory.path); present.add(directory.path); EpochState.invalidate(directory)
         // The per-attempt authentication key is a permanent reservation; never recreated/deleted on recovery.
@@ -174,6 +174,7 @@ internal object EnrollmentStaging {
             for (alias in listOf("otp-pager-$slot", "otp-pager-$slot-device")) try {
                 val store = keys(); store.deleteEntry(alias); check(!store.containsAlias(alias))
             } catch (_: Exception) { failed = true }
+            try { VaultKeys.deleteAll(slot) } catch (_: Exception) { failed = true } // Rotated generations too.
             for (file in VaultLifecycle.variants(File(directory, "$slot.bin"))) try {
                 if (exists(file)) check(file.delete()); check(!exists(file))
             } catch (_: Exception) { failed = true }
@@ -270,7 +271,8 @@ internal object EnrollmentStaging {
         fun verifyGone(directory: File, r: EnrollmentStageCodec.Record) {
             for (slot in listOf(r.index, r.claims, r.root, "${r.root}-draft", "${r.root}-pads")) {
                 check(VaultLifecycle.variants(File(directory, "$slot.bin")).none(::exists))
-                check(!keys().containsAlias("otp-pager-$slot") && !keys().containsAlias("otp-pager-$slot-device"))
+                check(!keys().containsAlias("otp-pager-$slot") && !keys().containsAlias("otp-pager-$slot-device") &&
+                    VaultKeys.all(slot, keys().aliases().toList()).isEmpty())
             }
         }
         fun verify(directory: File, r: EnrollmentStageCodec.Record) {
@@ -279,7 +281,8 @@ internal object EnrollmentStaging {
             check(!keys().containsAlias("otp-pager-${r.index}-device") && !keys().containsAlias("otp-pager-${r.claims}-device"))
             for (slot in listOf(r.root, "${r.root}-draft", "${r.root}-pads")) {
                 check(VaultLifecycle.variants(File(directory, "$slot.bin")).none(::exists))
-                check(!keys().containsAlias("otp-pager-$slot") && !keys().containsAlias("otp-pager-$slot-device"))
+                check(!keys().containsAlias("otp-pager-$slot") && !keys().containsAlias("otp-pager-$slot-device") &&
+                    VaultKeys.all(slot, keys().aliases().toList()).isEmpty())
             }
         }
     }
