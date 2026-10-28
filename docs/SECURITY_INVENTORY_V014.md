@@ -25,7 +25,7 @@ Android source prefix: `app/src/main/java/org/example/otppager/`.
 | UI / notifications / OS | Composer, rendered text, cached views; generic message notification, receiving count/status | `WindowPrivacy.kt`, private dialogs, no view-state persistence; keyboards/accessibility/root/camera/e-ink remain outside guarantee |
 | `relay/server.mjs`, `/data/mailboxes.json` | Ciphertext, room, global sequence, time, epoch, hashed capability/revoked flag | Atomic fsynced whole-state replacement via `.tmp`; message TTL default 24h, minute cleanup plus requests; claim/revocation records permanent within this volume |
 | Relay process/config | Setup token, live bearer credentials, packet/request buffers | Token env or `RELAY_TOKEN_FILE`; no first-party request/body exception logging; host/proxy/container tooling may expose additional data |
-| Deployment / backup / updates | Persistent volume, proxy logs, snapshots, APK/signer artifacts | Host copies not inventoried remotely; Docker source pins deployment image but Dockerfile base is floating `node:22-alpine`; owner signer custody not validated here |
+| Deployment / backup / updates | Persistent volume, proxy logs, snapshots, APK/signer artifacts | Host copies not inventoried remotely; Docker source pins deployment image; Dockerfile base pinned by digest since 2026-10-28 (Dependabot updates); owner signer custody not validated here |
 
 No photo/attachment send path was found in the reviewed messaging paths. QR-image
 import is setup, not encrypted photo messaging. Future attachment storage is not covered.

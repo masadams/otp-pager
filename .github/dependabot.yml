@@ -1,0 +1,11 @@
+# Keep pinned base images and CI actions current via reviewable PRs.
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /relay
+    schedule:
+      interval: monthly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
