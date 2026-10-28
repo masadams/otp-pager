@@ -35,6 +35,7 @@ internal class GlobalRecoveryScreen(private val activity: Activity, private val 
     private val retry = button("Retry local cleanup") { refresh(retryCleanup = true) }
     private val check = button("Check status") { refresh() }
     private val fresh = button("Start fresh on this phone") { confirmFresh() }.apply { visibility = View.GONE }
+    private val freshUnavailable = label("A fresh start is not available on this phone: the wipe record is incomplete.", 14f).apply { visibility = View.GONE }
     private var pending = false
     private lateinit var scroll: ScrollView
     fun show() {
@@ -44,6 +45,7 @@ internal class GlobalRecoveryScreen(private val activity: Activity, private val 
             addView(status)
             addView(label("No remote wipe has been requested. Other devices may still hold their conversations."))
             addView(fresh, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
+            addView(freshUnavailable)
             addView(retry, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
             addView(check, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
             addView(label("Local cleanup removes conversation and draft keys, files and contact names. Minimal pad-reuse and retirement records remain. Flash, memory, backups and exported copies cannot be guaranteed erased.", 14f).apply { setPadding(0, dp(22), 0, dp(8)) })
@@ -89,8 +91,7 @@ internal class GlobalRecoveryScreen(private val activity: Activity, private val 
                 fresh.visibility = if (eligible) View.VISIBLE else View.GONE
                 fresh.isEnabled = eligible; fresh.alpha = 1f
                 if (eligible) { fresh.setTextColor(Color.WHITE); fresh.background = GradientDrawable().apply { setColor(Color.rgb(20, 20, 20)) } }
-                if (observed.state == GlobalRetirement.LocalState.COMPLETE && !eligible)
-                    status.text = "Local cleanup verified. A fresh start is not available: the wipe record is incomplete. All pairings remain disabled."
+                freshUnavailable.visibility = if (observed.state == GlobalRetirement.LocalState.COMPLETE && !eligible) View.VISIBLE else View.GONE
                 // A retry is usually tapped after scrolling. Bring its result back into view.
                 scroll.post { if (isCurrent()) scroll.scrollTo(0, 0) }
             }
