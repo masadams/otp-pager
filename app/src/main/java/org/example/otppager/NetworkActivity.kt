@@ -25,6 +25,10 @@ private const val LOCAL_WIPE_WARNING = "This permanently deletes this chat's mes
     "Your friend's phone is NOT wiped. It keeps its copy of the conversation, and nothing is sent to it.\n\n" +
     "Other chats are not affected. To talk again, you'll need to pair both phones in person.\n\nType WIPE to confirm."
 
+private const val WIPE_ALL_WARNING = "This permanently deletes every chat's messages, drafts, message keys and pairings on THIS phone. It cannot be undone.\n\n" +
+    "Your friends' phones are NOT wiped, and nothing is sent to them.\n\n" +
+    "Afterwards you can start fresh. Every friend must be paired again in person; old message keys can never be reused.\n\nType WIPE ALL to confirm."
+
 /** Isolated two-device chats with explicit receiving and physical pairing controls. */
 class NetworkActivity : Activity() {
     private val worker = StationRuntime.worker
@@ -770,10 +774,11 @@ class NetworkActivity : Activity() {
         }
     }
     private fun showAppMenu() {
-        if (busy) return
+        // Not busy-gated: the menu holds the wipe-all action; its other entries ignore busy work themselves.
         AlertDialog.Builder(this).setTitle("Field")
-            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help")) { _, which ->
+            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help", "Wipe all chats from this phone")) { _, which ->
                 when (which) {
+                    3 -> confirmWipeAll()
                     0 -> showReceiving()
                     1 -> runTask {
                         val contacts = checkNotNull(book); inboxCycle.pollOne(contacts) { active && unlocked && tab == 4 }
@@ -784,6 +789,54 @@ class NetworkActivity : Activity() {
                         .setPositiveButton("Close", null).create().also(::secureShow)
                 }
             }.setNegativeButton("Close", null).create().also(::secureShow)
+    }
+    private fun confirmWipeAll() {
+        val input = field("Type WIPE ALL").apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+            contentDescription = "Type WIPE ALL to confirm"
+        }
+        val dialog = AlertDialog.Builder(this).setTitle("Wipe all chats from this phone?")
+            .setMessage(WIPE_ALL_WARNING)
+            .setView(input).setNegativeButton("Cancel", null).setPositiveButton("Wipe all", null).create()
+        dialog.setOnShowListener {
+            val wipe = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            fun armed() = input.text.toString().trim().replace(Regex("\\s+"), " ").equals("WIPE ALL", ignoreCase = true)
+            fun refresh() { wipe.isEnabled = armed(); wipe.alpha = if (wipe.isEnabled) 1f else 0.45f }
+            refresh()
+            input.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: Editable?) { refresh() }
+            })
+            wipe.setOnClickListener { if (armed()) { dialog.dismiss(); wipeAll() } }
+        }
+        secureShow(dialog)
+    }
+    /** Same local-first order as a single-chat wipe, never behind the station worker. */
+    private fun wipeAll() {
+        val contacts = book
+        generation++
+        val wipeGeneration = generation
+        handler.removeCallbacks(poll); handler.removeCallbacks(saveDraft)
+        openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
+        pairingDialog?.dismiss(); pairingDialog = null
+        closeVisibleContact()
+        clearPrivateState()
+        engine = null; busy = true; tab = 4; updateNavigation()
+        showWipeScreen("Wiping all chats…", "Deleting every chat's keys and files on this phone. Nothing is sent to your friends.", null)
+        LocalWipe.submitAll(this, contacts) { outcome ->
+            runOnUiThread {
+                if (!active || !unlocked || isFinishing || isDestroyed || generation != wipeGeneration) return@runOnUiThread
+                busy = false
+                val result = outcome.getOrNull()
+                val (title, detail) = when {
+                    result?.completed == true -> "All chats wiped from this phone" to "Every chat's messages, drafts, message keys and pairings were deleted on this phone. Your friends' phones were not changed. Continue to check the cleanup and start fresh."
+                    result != null -> "Wipe not finished" to "All chats are disabled on this phone, but some cleanup did not finish. Continue to retry. Your friends' phones were not changed."
+                    else -> "Wipe status unknown" to "All chats are disabled on this phone. Continue to check the cleanup. Your friends' phones were not changed."
+                }
+                showWipeScreen(title, detail) { book = null; engine = null; showTerminal() }
+            }
+        }
     }
     private fun showConversationMenu() {
         // Stays available while a check is running so the local wipe is never blocked by networking.

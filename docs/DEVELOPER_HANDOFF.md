@@ -105,6 +105,8 @@ All paths below are under `app/src/main/java/org/example/otppager/`.
 | `RetainedGuardReader.kt`, `RetainedGuardInventory.kt` | Exact authenticated immutable reuse metadata; strict parsing/bounds; no key creation, repair, operational-vault opening or missing-as-empty fallback |
 | `RetirementEvidenceCodec.kt`, `RetirementEvidence.kt` | `OTPTERM1`: INTENT/SEALED/CLEANED; one initial lineage, one-use pre-cleanup capture ticket. Authenticated roots must equal cleanup journal roots |
 | `EpochManifests.kt` (`EpochManifests`, `EpochState`), `VaultGeneration.kt`, `ChatBook.EpochRouting` | B3b wiring: authenticated manifest files; real-record observation; sealed `Legacy/Blocked/Active(epoch)` capability with namespace allowlist; lineage-aware `isFrozen`; default index routing. Without a manifest file all of these apply the previous rules |
+| `EpochTerminalCodec.kt`, `EpochEvidence.kt` (`EpochEvidence`, `EpochGuardInventory`) | `OTPTERM2` per-generation wipe evidence for ACTIVE epochs; epoch cohort capture/verify |
+| `FreshEnrollment.kt` | One-use-token activation transaction; manifest is the last commit; releases the freeze latch |
 | `ActiveManifestCodec.kt`, `EpochLineage.kt` | Pure B3a core: `OTPACT01` canonical codec; lineage resolution with no head pointer (any inconsistency → Frozen); ACTIVE namespace allowlist. Not yet consulted by storage |
 | `EnrollmentStageCodec.kt`, `EnrollmentStaging.kt` | `OTPSTG01`: PREPARING/PREPARED/ABANDONED only; up to 32 attempts. Auth key + record permanently reserve each attempt; new empty AES slots only |
 
@@ -123,8 +125,10 @@ pure, unwired decision core: `ActiveManifestCodec` (`OTPACT01`), `EpochLineage.r
 and `EpochScope.permits`, with JVM tests. **Next: B3b** — sealed capability,
 namespace-aware `requireCurrent`, lineage-based `isFrozen`, `ChatBook` routing and
 manifest append, with real-record adapters (still no manifest writer). **B3b is in #19**
-(stacked on #18). **Next: B3c** — active retained-cohort reader and `PairingClaims`
-enforcement across every cohort in the chain.
+(stacked on #18). **B3c–B3f are in #20** (stacked on #19): retained cohorts during
+messaging, `OTPTERM2` repeat wipes, the activation transaction, Start fresh and Wipe all.
+Package B is implementation-complete pending review/CI and physical checks. **Next:
+package C** (separately erasable history and old-key migration).
 
 In parallel (documentation only, no destructive code): start the Phase 3/D peer-wipe
 specification so independent protocol review — the long-lead gate — can begin early.

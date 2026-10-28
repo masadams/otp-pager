@@ -462,9 +462,20 @@ append, tamper, variants, strays, missing key, manifest-alone stays frozen/block
 updated `VaultGenerationTest`. Local type-check and 66 JVM tests pass; emulator results
 belong to #19's CI.
 
+### 2026-10-28 — B3c–B3f: cohorts, repeat wipe, activation and UI (#20)
+
+Owner asked to continue through the plan; #18/#19 await owner merge, so #20 is stacked on
+#19. Implemented retained-cohort enforcement in `PairingClaims`, `OTPTERM2` repeat-wipe
+evidence and epoch-scoped wipe/recovery/inspection, `FreshEnrollment` activation, a
+fingerprint-validated lineage cache, newest-terminal staging, Start fresh on the recovery
+screen and a typed Wipe all action. Key safety rule: boot recovery destroys an epoch only
+with a durable `OTPTERM2` record bound to it. Tests: `EpochTerminalCodecTest`, new lineage
+cases, and the exclusive `EpochCycleRestartTest` matrix (added to Android CI). Local
+type-check and 70 JVM tests pass; emulator evidence belongs to #20's CI.
+
 ## Next task
 
-Slice B3c (see ACTIVE_EPOCH_DESIGN.md), then B3d–B3f. Original package wording: implement reviewed ACTIVE epoch capability/namespace allowlist publication and
+Package C: separately erasable history and crash-safe old-key migration (see LOCAL_DESTRUCTION_DESIGN.md). Completed package B wording for reference: implement reviewed ACTIVE epoch capability/namespace allowlist publication and
 current-index routing together with immutable retained-cohort checks during normal
 pairing/messaging and repeat-wipe/forward-lineage handling. Follow the staged
 acceptance tasks in [DEVELOPER_HANDOFF.md](DEVELOPER_HANDOFF.md). Do not enable fresh

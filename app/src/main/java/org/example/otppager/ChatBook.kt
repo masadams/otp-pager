@@ -145,6 +145,7 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
         refresh(id)
         return result
     }
+    internal fun ensureClaimsRegistry() = claims.ensureRegistry()
     fun forgetActive() = synchronized(VaultLifecycle.lock) { ChatDraft(SecureStore(context, active().id).sibling("draft")).clear(); SecureStore(context, active().id).forget(); refresh() }
     fun summary(id: String): Summary {
         if (VaultLifecycle.isRetired(context.noBackupFilesDir, id)) return Summary(eligible = false, retired = true)
@@ -200,6 +201,13 @@ class PairingClaims(private val store: SecureStore) {
         if (entries.has(key)) {
             require(existing && entries.getString(key) == owner) { "This pairing material was already used. Create a fresh pairing for each friend." }
         } else {
+            // In an ACTIVE epoch every earlier wipe's sealed cohort is checked before the delta grows.
+            store.activeEpoch?.let { epoch ->
+                val retained = RetainedGuardReader.activeExclusions(store.directory, epoch)
+                require(key !in (if (kind == "pads") retained.pads else retained.rooms)) {
+                    "This pairing material was already used. Create a fresh pairing for each friend."
+                }
+            }
             entries.put(key, owner)
             try { store.save(data) } catch (e: Exception) { failed = true; throw e }
         }
@@ -207,6 +215,11 @@ class PairingClaims(private val store: SecureStore) {
     fun room(secret: String, owner: String, existing: Boolean) {
         val master = Protocol.master(secret)
         try { claim("rooms", Protocol.room(master), owner, existing) } finally { master.fill(0) }
+    }
+    /** Global wipe evidence needs an authenticated registry; create the empty one if nothing was ever claimed. */
+    internal fun ensureRegistry() = synchronized(lock) {
+        check(!failed) { "Pairing registry write failed; restart the app" }
+        if (store.load() == null) store.save(JSONObject().put("version", 2).put("pads", JSONObject()).put("rooms", JSONObject()))
     }
     fun pad(id: String, owner: String) { require(Regex("[a-f0-9]{32}").matches(id)); claim("pads", id, owner, existing = true) }
     fun migrate(profile: SecureStore) {
