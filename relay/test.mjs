@@ -127,6 +127,7 @@ test('write failure refuses acknowledgement and fails health until restart', asy
   const { server, base } = await launch({ dataDir });
   try {
     mkdirSync(join(dataDir, 'mailboxes.json.tmp'));
+    rmSync(join(dataDir, 'journal.log')); mkdirSync(join(dataDir, 'journal.log')); // Journal appends fail too.
     assert.equal((await post(base, 'YQ==')).status, 503);
     assert.equal((await fetch(base + '/health')).status, 503);
     assert.equal((await fetch(base + path, { headers })).status, 503);
@@ -360,5 +361,29 @@ test('strict-chat shares: device-signed unlocks get short signed grants and laps
     assert.equal((await fetch(base + '/v1/share/' + room, { method: 'DELETE', headers: scoped })).status, 200);
     assert.equal((await unlock(frame(auth))).status, 404);
     assert.equal((await fetch(base + '/v1/share/' + room, { method: 'GET', headers: scoped })).status, 405);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});
+
+test('journal: posts append without rewriting the snapshot, survive restart and torn tails, and compact', async () => {
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-'));
+  let { server, base } = await launch({ dataDir, compactEvery: 5 });
+  const snapshot = () => JSON.parse(readFileSync(join(dataDir, 'mailboxes.json'), 'utf8'));
+  try {
+    assert.equal((await post(base, 'YQ==')).status, 201);
+    assert.equal((await post(base, 'Yg==')).status, 201);
+    assert.equal(snapshot().seq, 0); // Only the journal grew.
+    writeFileSync(join(dataDir, 'journal.log'), readFileSync(join(dataDir, 'journal.log'), 'utf8') + '{"t":"msg","m":{"room":"'); // Torn append.
+    await stop(server); ({ server, base } = await launch({ dataDir, compactEvery: 5 }));
+    assert.deepEqual((await get(base)).messages.map(m => m.seq), [1, 2]);
+    assert.equal((await post(base, 'aA==')).status, 201); await stop(server); ({ server, base } = await launch({ dataDir, compactEvery: 5 }));
+    assert.deepEqual((await get(base)).messages.map(m => m.seq), [1, 2, 3]); // Nothing appended after the torn line was lost.
+    for (const p of ['Yw==', 'ZA==', 'ZQ==', 'Zg==', 'aQ==']) assert.equal((await post(base, p)).status, 201);
+    assert.ok(snapshot().seq >= 4); // Compacted into a new snapshot generation.
+    // A journal older than the snapshot is never replayed (crash between snapshot and journal reset).
+    const stale = JSON.stringify({ gen: snapshot().journal - 1 }) + '\n' + JSON.stringify({ t: 'msg', m: { room: 'a'.repeat(64), seq: 999, packet: 'eA==', time: Date.now() } }) + '\n';
+    await stop(server); writeFileSync(join(dataDir, 'journal.log'), stale);
+    ({ server, base } = await launch({ dataDir, compactEvery: 5 }));
+    assert.ok((await get(base)).messages.every(m => m.seq !== 999));
+    assert.equal((await post(base, 'Zw==')).status, 201);
   } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
 });
