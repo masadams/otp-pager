@@ -59,7 +59,17 @@ class PeerWipeTest {
         try {
             PeerWipe.setEnabled(context, true)
             val relay = Relay()
-            val a = StationEngine(SecureStore(context, ra), relay); val b = StationEngine(SecureStore(context, rb), relay)
+            var ackPosts = 0
+            val recipientRelay = object : RelayTransport {
+                override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String {
+                    if (method == "POST") {
+                        assertTrue("Recipient posted before local retirement", VaultLifecycle.isRetired(context.noBackupFilesDir, rb))
+                        ackPosts++
+                    }
+                    return relay.request(endpoint, room, token, method, body, cursor)
+                }
+            }
+            val a = StationEngine(SecureStore(context, ra), relay); val b = StationEngine(SecureStore(context, rb), recipientRelay)
             pair(a, b)
             val ca = a.state!!.getJSONObject("control"); val cb = b.state!!.getJSONObject("control")
             assertEquals(ca.getString("generation"), cb.getString("generation")); assertEquals(ca.getString("credential"), cb.getString("credential"))
@@ -80,6 +90,7 @@ class PeerWipeTest {
             // Recipient: the next check finds the request and removes only this chat.
             val notice = b.sync()
             assertTrue(notice.contains("asked to remove this chat"))
+            assertTrue("Final acknowledgement was not dispatched", ackPosts > 0)
             assertTrue(VaultLifecycle.isRetired(context.noBackupFilesDir, rb))
             assertEquals(VaultRetirement.LocalState.COMPLETE, VaultRetirement.inspect(context, rb).state)
             assertTrue(PadMaterial.gone(context.noBackupFilesDir, rb))

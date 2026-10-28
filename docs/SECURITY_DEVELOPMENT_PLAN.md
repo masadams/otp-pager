@@ -251,3 +251,14 @@ hand-built JSON length assertion is removed. Binary/base64 lengths remain fixed;
 Android JSON slash escaping can vary HTTP body size. No wire, pad reservation or
 retry behavior changes. Local build/test evidence is recorded in the PR; emulator
 execution and physical-device validation must not be inferred from compilation.
+
+## Peer-wipe recipient ordering correction — 2026-10-28
+
+Independent branch `fix/peer-wipe-local-first` starts from main 9a968a8. A verified
+peer request previously posted RECEIVED before retirement, and ACK persistence
+failure could prevent local destruction. The recipient now attempts local retirement
+before any transport and despite ACK preparation errors (S05); final status preserves
+actual cleanup evidence (S10). JVM tests block transport and inject persistence
+failures; the end-to-end instrumentation fixture asserts POST occurs only after
+retirement. Physical peer-wipe, partial cleanup/restart and independent review remain
+open. Peer wipe stays unreviewed and off by default; see the PR for execution evidence.
