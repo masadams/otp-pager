@@ -59,6 +59,10 @@ on every save. That is slow on regular phones and can exhaust the app's memory.
 - **Retirement and wipes:** `VaultRetirement` deletes `padmaterial/<root>/` (step
   `pad-material`), and `inspect` reports COMPLETE only once it is gone. The global wipe runs the
   same contact retirement. *Forget pairing* deletes it too. The `-pads` ledger stays retained as now.
+  The wipe-all inventory still finds contacts by their vault, key and marker names. A material
+  directory whose vault is already gone (a crash in between) isn't rediscovered. It can't be
+  decrypted, because the slot keys were in that vault, but it stays until a later retirement
+  of the same root.
 
 ### Identity, check codes and export
 
