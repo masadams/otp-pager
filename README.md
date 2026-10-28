@@ -17,7 +17,7 @@ signer custody are distinct; independent review remains pending.
 The active [security and data-lifecycle development plan](docs/SECURITY_DEVELOPMENT_PLAN.md)
 tracks the next work, with an [ordered checked task list](docs/SECURITY_CHECKLIST.md),
 [developer handoff](docs/DEVELOPER_HANDOFF.md), [progress](docs/SECURITY_PROGRESS.md)
-and [v0.14 inventory/findings](docs/SECURITY_INVENTORY_V014.md). Start with the
+and [v0.14 inventory/findings](docs/SECURITY_INVENTORY_V014.md). Reviewers: start with the [community review package](docs/REVIEW_PACKAGE.md). Developers: start with the
 [2026-10-28 discussion handoff](docs/DISCUSSION_HANDOFF_2026_10_28.md) for decisions,
 open PRs and outstanding audit, development and physical-device work.
 

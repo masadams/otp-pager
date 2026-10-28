@@ -51,3 +51,27 @@ Primary sources checked:
 - https://git.zx2c4.com/wireguard-android/about/
 - https://developer.android.com/develop/connectivity/vpn
 - https://nebula.defined.net/docs/
+
+## Split-relay experiment (pipeline item 8): plan, not implemented
+
+Goal: no single relay sees both phones' connections. Phone A posts only to relay **P**; phone B
+fetches only from relay **F**. P forwards each accepted packet to F over a private link (for
+example ZeroTier between the owner's Oracle Cloud and home servers).
+
+What it would take:
+
+1. **Relay:** an optional `RELAY_FORWARD_URL` and `RELAY_FORWARD_TOKEN`. After committing a
+   post, P re-posts the exact packet to F for the same room. F accepts it with a dedicated
+   *peer* token that may only append, never read or claim. Claims stay per relay.
+2. **App:** per chat, a "post via" relay and a "fetch via" relay. Backup relays (item 6) already
+   give per-relay cursors and claims, so this is mainly a routing preference. Receipts flow
+   the same way in reverse.
+3. **Limits to state honestly:**
+   - P and F together, or anyone watching both, still link traffic by timing unless forwarding
+     adds random delay;
+   - delay costs latency;
+   - cover traffic costs pad slots;
+   - a single operator running both relays gains nothing.
+
+Owner step first: stand up a second relay and a private link between the two. The code is
+worth writing only once that exists to test against.
