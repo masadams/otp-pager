@@ -1,5 +1,8 @@
 # Security, data lifecycle and emergency destruction development plan
 
+For the current review graph, exact source heads, execution evidence and next steps,
+read [the continuation record](CONTINUATION_2026_10_28.md).
+
 Status: active development reference; security features below are requirements, not release claims.
 Owner direction: 2026-10-26. Baseline: Android v0.14, main commit
 `cfe01af255bebbd195337b9d1b0c72017e39f7c1`.
@@ -7,7 +10,30 @@ Owner direction: 2026-10-26. Baseline: Android v0.14, main commit
 For a checked task list in build order, see [the security checklist](SECURITY_CHECKLIST.md).
 For continuation without chat history, read [the developer handoff](DEVELOPER_HANDOFF.md).
 
-## Current delivery status — 2026-10-27
+## Current delivery status — 2026-10-28
+
+Verified baseline: main `9a968a8750657b438524902dbdac98429b080b46`.
+Local/global retirement, ACTIVE epochs/fresh enrollment and vault-key rotation are
+merged development functionality. #38 adds separate pad storage, #39 streamed large
+pads, and #40 peer wipe behind an off-by-default unreviewed setting. PRs #41–44
+remain open; the handoff records branches and dependencies. Strict chats, failover
+and groups are not implemented. No new physical, independent-review or release
+readiness evidence is implied by this status reconciliation.
+
+[PIPELINE.md](PIPELINE.md) supersedes older ordering and review-gate statements below:
+the owner moved independent peer-wipe review to the final community review package;
+the unreviewed label and default-off setting remain required. Per-device ordinary
+relay credentials were considered and dropped. Pairwise fan-out groups are now in
+scope; shared multi-party pads remain prohibited.
+
+Continue USB regression tests first, then strict protocol/relay/storage/UI, failover
+and groups. Strict v1 uses one authority, no inactivity share deletion and fresh
+physical enrollment. A bounded foreground lease must protect actual decryption,
+including drafts and caches; control processing and offline local wipe must remain
+available while content is locked. Transport failover cannot bypass strict revocation.
+All follow-up PRs stay unmerged and record tests, limitations and hardware gates.
+
+## Historical delivery status — 2026-10-27
 
 > 2026-10-28: owner answers and the ordered pipeline are in [PIPELINE.md](PIPELINE.md); it
 > takes precedence over the package list below where they differ.
@@ -210,7 +236,7 @@ Do not weaken a gate or invent a passing result to make progress appear complete
 No live server deployment or production-readiness claim follows from this plan alone.
 
 
-## Remaining work packages and continuation cadence
+## Historical work packages and continuing change discipline
 
 These are dependency-ordered work packages, not a fixed number of chat turns or
 required user approval prompts. Physical-device evidence and independent review
