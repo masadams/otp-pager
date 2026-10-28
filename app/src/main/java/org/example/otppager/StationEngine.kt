@@ -76,7 +76,8 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     private fun transactionActive(rekey: Boolean = false, change: (JSONObject) -> Unit) {
         val next = JSONObject(checkNotNull(state).toString())
         change(next); retireUsed(next); validate(next)
-        if (next.toString() == state!!.toString()) return
+        // A forced rekey always rewrites: older snapshots may still hold content already removed here.
+        if (!rekey && next.toString() == state!!.toString()) return
         store.save(next, rekey); state = next; cachedView = null
     }
     fun configure(endpoint: String, token: String, secret: String, role: String) {
