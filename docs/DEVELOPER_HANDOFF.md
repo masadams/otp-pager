@@ -19,6 +19,15 @@ for the stack; GitHub retargets each to `main` as its base merges.
 | #21 | `docs/own-direction-license` | Drop Jericho references; MIT license | `main` (independent) |
 | #23 | `tools/ui-preview` | Opt-in screenshot workflow | `main` (independent) |
 
+CI evidence (all three workflows green, API 29/31/35 emulators incl. every restart fixture):
+#20 at `672a9e9` (Android run 40685329719); #22 at `3ab0e38` (Android run 40688581949).
+Fixes found by the new fixtures before merge: the lineage root-reuse check compared an
+epoch's roots with its *own* later wipe record (froze the chain after a second wipe; also
+caused the "global-intent" wipe failure); recovery-screen status text regression; Clear
+history now always rotates even when the snapshot is unchanged. Throwaway branches
+`ui-preview/diag20*`, `ui-preview/diag22`, `ui-shots/diag*` can be deleted (the session
+could not delete branches).
+
 Owner decisions on 2026-10-28: go our own way (no Jericho compatibility); MIT license;
 continue through the plan, then do a full use + security assessment and UI/UX passes.
 An automated merge without review was declined by a permission check, so the owner merges.
