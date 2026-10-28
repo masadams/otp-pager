@@ -7,6 +7,9 @@ handoff. Do not interpret merged foundations as a completed emergency-wipe featu
 
 ## Current state — 2026-10-28 (read this before anything else)
 
+> **Pipeline:** the ordered work list and the owner's answers now live in
+> [PIPELINE.md](PIPELINE.md). PRs #18–#26 are merged into `main` (the stacked ones via #33).
+
 Open PRs, all green on CI at the time of writing unless noted. **Merge order matters**
 for the stack; GitHub retargets each to `main` as its base merges.
 

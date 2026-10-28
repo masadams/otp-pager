@@ -9,6 +9,9 @@ For continuation without chat history, read [the developer handoff](DEVELOPER_HA
 
 ## Current delivery status — 2026-10-27
 
+> 2026-10-28: owner answers and the ordered pipeline are in [PIPELINE.md](PIPELINE.md); it
+> takes precedence over the package list below where they differ.
+
 PRs #9–15 are merged. Phase 1's initial source audit and Phase 2's local retirement,
 global cleanup/recovery, authenticated initial evidence and empty storage staging
 are implemented/tested in their documented scope. Phase 2 remains open: no ACTIVE
