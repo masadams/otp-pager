@@ -39,7 +39,19 @@ class CablePairActivity : Activity() {
     private var renewal = false
     private var padSize = PadProtocol.MATERIAL_BYTES
     private val permissionAction get() = "$packageName.USB_PAIR_PERMISSION"
-    private fun note(value: String) { runOnUiThread { if (active && !cancelled.get() && operation?.cancelled != true) status.text = value } }
+    private fun note(value: String) { log(value); runOnUiThread { if (active && !cancelled.get() && operation?.cancelled != true) status.text = value } }
+    /** Step log for physical-device diagnosis. Never records codes, server details, keys or serial numbers. */
+    private val steps = java.util.ArrayDeque<String>()
+    private val started = android.os.SystemClock.elapsedRealtime()
+    private var details: TextView? = null
+    private var lastLogged = ""
+    private fun log(value: String) {
+        if (value == lastLogged) return
+        lastLogged = value
+        val line = "%6.1fs %s".format((android.os.SystemClock.elapsedRealtime() - started) / 1000.0, value)
+        synchronized(steps) { steps.addLast(line); while (steps.size > 80) steps.removeFirst() }
+        runOnUiThread { details?.text = synchronized(steps) { steps.joinToString("\n") } }
+    }
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action in listOf(UsbManager.ACTION_USB_DEVICE_DETACHED, UsbManager.ACTION_USB_ACCESSORY_DETACHED) && channel != null) {
@@ -47,7 +59,9 @@ class CablePairActivity : Activity() {
                 note("USB disconnected · pairing stopped")
                 return
             }
+            if (intent.action != permissionAction) log("Event: ${intent.action?.substringAfterLast('.')}")
             if (intent.action == permissionAction) {
+                log("Permission result: ${if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) "granted" else "denied"}")
                 if (discovery.permissionResult(intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false))) inspect()
                 retryPermission.isEnabled = discovery.state == UsbPairDiscovery.State.DENIED
             }
@@ -90,6 +104,18 @@ class CablePairActivity : Activity() {
             setOnClickListener { isEnabled = false; if (discovery.retryPermission()) inspect() }
         }
         body.addView(retryPermission)
+        details = label("", 11f).apply { visibility = android.view.View.GONE }
+        body.addView(Button(this).apply { text = "USB details"; setOnClickListener {
+            details?.let { it.visibility = if (it.visibility == android.view.View.VISIBLE) android.view.View.GONE else android.view.View.VISIBLE }
+        } })
+        body.addView(Button(this).apply { text = "Copy USB details"; setOnClickListener {
+            val text = synchronized(steps) { steps.joinToString("\n") }
+            getSystemService(android.content.ClipboardManager::class.java).setPrimaryClip(android.content.ClipData.newPlainText("OTP Pager USB details", text))
+            log("Details copied")
+        } })
+        body.addView(details)
+        log("Start · ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL} · Android ${android.os.Build.VERSION.RELEASE} (API ${android.os.Build.VERSION.SDK_INT}) · app ${packageManager.getPackageInfo(packageName, 0).versionName} · protocol v${CableProtocol.VERSION} · ${if (renewal) "renewal" else "pairing"} · ${padSize / PadProtocol.MATERIAL_BYTES} MiB")
+        log("USB host feature: ${packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_USB_HOST)} · accessory feature: ${packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_USB_ACCESSORY)}")
         body.addView(Button(this).apply { text = "About USB pairing"; setOnClickListener {
             val dialog = AlertDialog.Builder(this@CablePairActivity).setTitle("Physical pairing")
                 .setMessage("One device needs the server address and access token saved. Approve Android's USB permission prompts. Compare every group of the confirmation code on BOTH physical screens.\n\nAfter both approve, the encrypted connection exchanges server setup, fresh message keys and public device identities. Private signing keys remain on their own device. USB host direction selects pad size. Both devices need the same app version.\n\nA data cable and compatible Android USB host/accessory modes are required. This experimental protocol uses conventional encryption and is not independently audited or post-quantum secure. If renewal is interrupted, reconnect both devices on this screen to recover.")
@@ -110,27 +136,32 @@ class CablePairActivity : Activity() {
     @Suppress("DEPRECATION")
     private fun inspect() {
         if (!discovery.inspectable()) return
-        val accessory = manager.accessoryList?.firstOrNull { it.manufacturer == "Field" && it.model == "OTP Pager Pairing" }
+        val accessories = manager.accessoryList.orEmpty()
+        val accessory = accessories.firstOrNull { it.manufacturer == "Field" && it.model == "OTP Pager Pairing" }
+        val devices = manager.deviceList.values.toList()
+        log("Scan · accessory: ${if (accessories.isEmpty()) "none" else accessories.joinToString { "${it.manufacturer}/${it.model}" }} · devices: ${if (devices.isEmpty()) "none" else devices.joinToString(transform = UsbPairChannel::describe)}")
         if (accessory != null) {
-            if (!manager.hasPermission(accessory)) { discovery.requestPermission { manager.requestPermission(accessory, permission()) }; retryPermission.isEnabled = discovery.state == UsbPairDiscovery.State.DENIED; return }
+            if (!manager.hasPermission(accessory)) { log("Requesting accessory permission"); discovery.requestPermission { manager.requestPermission(accessory, permission()) }; retryPermission.isEnabled = discovery.state == UsbPairDiscovery.State.DENIED; return }
             startTransfer(false) { UsbPairChannel.accessory(manager, accessory) }; return
         }
-        val devices = manager.deviceList.values.toList()
         if (devices.size > 1) { note("Connect only the intended other station; disconnect other USB peripherals."); return }
         val device = devices.singleOrNull() ?: return
-        if (!manager.hasPermission(device)) { discovery.requestPermission { manager.requestPermission(device, permission()) }; retryPermission.isEnabled = discovery.state == UsbPairDiscovery.State.DENIED; return }
+        if (!manager.hasPermission(device)) { log("Requesting device permission"); discovery.requestPermission { manager.requestPermission(device, permission()) }; retryPermission.isEnabled = discovery.state == UsbPairDiscovery.State.DENIED; return }
         if (UsbPairChannel.isAccessory(device)) startTransfer(true) { UsbPairChannel.host(manager, device) }
         else {
             val lease = operation ?: return
             discovery.negotiate {
                 check(!cancelled.get()); lease.check()
-                UsbPairChannel.switchToAccessory(manager, device)
+                log("Asking the other phone to switch to accessory mode")
+                try { log("Other phone accepted accessory mode (AOA v${UsbPairChannel.switchToAccessory(manager, device)}); it should reconnect now") }
+                catch (failure: Exception) { log("Accessory mode failed: ${failure.message}"); throw failure }
                 lease.check()
             }
         }
     }
     private fun startTransfer(host: Boolean, open: () -> UsbPairChannel) {
         if (!discovery.startTransfer()) return
+        log("Opening data channel as ${if (host) "USB host" else "accessory"}")
         note("Connected by USB · exchanging setup…")
         worker.execute {
             var engine: StationEngine? = null
@@ -154,6 +185,7 @@ class CablePairActivity : Activity() {
                 }
                 runOnUiThread { if (active && !cancelled.get()) { status.text = if (renewal) "Keys renewed. Your chat is ready." else "Paired. You're ready to chat."; finish.text = "Open conversation"; confirm.isEnabled = false } }
             } catch (failure: Exception) {
+                log("Transfer stopped: ${failure.javaClass.simpleName}: ${failure.message?.take(160)}")
                 val saved = engine?.state?.let(StationEngine::hasPad) == true
                 note(if (failure is CableProtocol.UpgradeRequired) "${failure.message}. Close this screen and update both devices before retrying."
                     else if (renewal) "Renewal paused. History and identities are retained. Reopen Renew pad for this friend on BOTH devices and reconnect USB to recover. No saved message is silently discarded."
