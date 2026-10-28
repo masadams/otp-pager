@@ -1,0 +1,34 @@
+
+org.example.otppager.RetirementRestartTest:
+Error in applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened(org.example.otppager.RetirementRestartTest):
+java.lang.IllegalStateException: Storage generation changed; this owner cannot be reused
+	at org.example.otppager.VaultGeneration.requireCurrent(VaultGeneration.kt:25)
+	at org.example.otppager.SecureStore.requireActive$app_debug(SecureStore.kt:41)
+	at org.example.otppager.SecureStore.save(SecureStore.kt:70)
+	at org.example.otppager.SecureStore.save(SecureStore.kt:62)
+	at org.example.otppager.RetirementRestartTest.applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened(RetirementRestartTest.kt:24)
+
+
+Time: 0.008
+There was 1 failure:
+1) applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened(org.example.otppager.RetirementRestartTest)
+java.lang.IllegalStateException: Storage generation changed; this owner cannot be reused
+	at org.example.otppager.VaultGeneration.requireCurrent(VaultGeneration.kt:25)
+	at org.example.otppager.SecureStore.requireActive$app_debug(SecureStore.kt:41)
+	at org.example.otppager.SecureStore.save(SecureStore.kt:70)
+	at org.example.otppager.SecureStore.save(SecureStore.kt:62)
+	at org.example.otppager.RetirementRestartTest.applicationRecoversTerminalGenerationBeforeAnyVaultIsOpened(RetirementRestartTest.kt:24)
+
+FAILURES!!!
+Tests run: 1,  Failures: 1
+
+
+
+Traceback (most recent call last):
+  File "/home/runner/work/otp-pager/otp-pager/scripts/verify_retirement_restart.py", line 31, in <module>
+    main()
+    ~~~~^^
+  File "/home/runner/work/otp-pager/otp-pager/scripts/verify_retirement_restart.py", line 25, in main
+    raise RuntimeError("Retirement restart fixture failed: " + phase)
+RuntimeError: Retirement restart fixture failed: seed
+exit=1

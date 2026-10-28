@@ -1,0 +1,35 @@
+/sdcard/Download/otp-pager-preview/: 4 files pulled, 0 skipped. 28.8 MB/s (243594 bytes in 0.008s)
+
+org.example.otppager.GlobalRetirementRestartTest:
+Error in globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration(org.example.otppager.GlobalRetirementRestartTest):
+java.lang.AssertionError
+	at org.junit.Assert.fail(Assert.java:87)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.junit.Assert.assertFalse(Assert.java:65)
+	at org.junit.Assert.assertFalse(Assert.java:75)
+	at org.example.otppager.GlobalRetirementRestartTest.globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration(GlobalRetirementRestartTest.kt:109)
+
+
+Time: 0.012
+There was 1 failure:
+1) globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration(org.example.otppager.GlobalRetirementRestartTest)
+java.lang.AssertionError
+	at org.junit.Assert.fail(Assert.java:87)
+	at org.junit.Assert.assertTrue(Assert.java:42)
+	at org.junit.Assert.assertFalse(Assert.java:65)
+	at org.junit.Assert.assertFalse(Assert.java:75)
+	at org.example.otppager.GlobalRetirementRestartTest.globalRecoveryHandlesCorruptIndexOrphansBlockedWorkerAndLaterRestoration(GlobalRetirementRestartTest.kt:109)
+
+FAILURES!!!
+Tests run: 1,  Failures: 1
+
+
+
+Traceback (most recent call last):
+  File "/home/runner/work/otp-pager/otp-pager/scripts/verify_global_retirement_restart.py", line 21, in <module>
+    verify()
+    ~~~~~~^^
+  File "/home/runner/work/otp-pager/otp-pager/scripts/verify_global_retirement_restart.py", line 14, in verify
+    raise RuntimeError("Global retirement fixture failed: " + phase)
+RuntimeError: Global retirement fixture failed: seed
+exit=1

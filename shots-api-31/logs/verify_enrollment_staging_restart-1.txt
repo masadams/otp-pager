@@ -1,0 +1,137 @@
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.537
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.427
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.103
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.132
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.418
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.581
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.031
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.602
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.038
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.547
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.042
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.543
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.09
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.546
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EnrollmentStageRestartTest:.
+
+Time: 0.033
+
+OK (1 test)
+
+
+
+PASS: confirmation-bound empty staging, prepared restart, abandonment/new generation, interrupted and restored attempts, orphan/tamper/variant refusal; no activation
+exit=0

@@ -1,0 +1,20 @@
+
+org.example.otppager.RetirementRestartTest:.
+
+Time: 0.056
+
+OK (1 test)
+
+
+
+
+org.example.otppager.RetirementRestartTest:.
+
+Time: 0.03
+
+OK (1 test)
+
+
+
+PASS: cold Application startup retired keys/files before vault access; other contact and reuse metadata preserved
+exit=0

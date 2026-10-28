@@ -1,0 +1,128 @@
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.31
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.237
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.092
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.017
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.569
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.153
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.362
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.073
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.302
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.074
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.314
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.031
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.251
+
+OK (1 test)
+
+
+
+
+org.example.otppager.LifecycleEvidenceRestartTest:.
+
+Time: 0.018
+
+OK (1 test)
+
+
+
+PASS: authenticated pre-cleanup capture, sealed restart, real submit, failed/interrupted capture, old-guard refusal, key-only freeze and scope-growth cleanup
+exit=0

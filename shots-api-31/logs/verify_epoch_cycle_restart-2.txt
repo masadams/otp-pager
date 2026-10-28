@@ -1,0 +1,74 @@
+
+org.example.otppager.EpochCycleRestartTest:.
+
+Time: 0.936
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EpochCycleRestartTest:.
+
+Time: 1.308
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EpochCycleRestartTest:.
+
+Time: 0.108
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EpochCycleRestartTest:.
+
+Time: 0.149
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EpochCycleRestartTest:.
+
+Time: 0.535
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EpochCycleRestartTest:.
+
+Time: 0.401
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EpochCycleRestartTest:.
+
+Time: 1.055
+
+OK (1 test)
+
+
+
+
+org.example.otppager.EpochCycleRestartTest:.
+
+Time: 0.051
+
+OK (1 test)
+
+
+
+PASS: two full wipe/fresh-epoch cycles refusing all earlier pads and pairings, interrupted activation, interrupted epoch wipe, tampered manifest frozen without destruction
+exit=0
