@@ -177,6 +177,57 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
         return result
     }
     internal fun ensureClaimsRegistry() = claims.ensureRegistry()
+    /** A group as this phone sees it: the member chats linked to it here. */
+    data class GroupThread(val id: String, val name: String, val members: List<String>, val chats: List<Chat>)
+    data class GroupLine(val from: String, val incoming: Boolean, val text: String, val time: Long, val status: String, val unread: Boolean)
+    private fun engineOrNull(id: String) = try { if (summary(id).retired) null else engine(id) } catch (_: Exception) { null }
+    fun groups(): List<GroupThread> {
+        val found = linkedMapOf<String, Pair<StationEngine.Group, MutableList<Chat>>>()
+        for (chat in chats()) for (g in engineOrNull(chat.id)?.groups().orEmpty())
+            found.getOrPut(g.id) { g to mutableListOf() }.second.add(chat)
+        return found.values.map { (g, chats) -> GroupThread(g.id, g.name, g.members, chats) }
+    }
+    /** Creates a group from paired chats and announces it to each (one pad slot per member). */
+    fun createGroup(name: String, chatIds: List<String>): GroupThread {
+        require(chatIds.distinct().size == chatIds.size && chatIds.size in 2..StationEngine.MAX_GROUP_MEMBERS) { "Choose 2 to ${StationEngine.MAX_GROUP_MEMBERS} friends" }
+        val chosen = chatIds.map { id -> chats().first { it.id == id } }
+        val id = PadProtocol.hex(ByteArray(16).also { java.security.SecureRandom().nextBytes(it) })
+        val members = listOf("Me") + chosen.map { it.name }
+        val failed = mutableListOf<String>()
+        for (chat in chosen) try { engine(chat.id).announceGroup(id, name, members) } catch (_: Exception) { failed.add(chat.name) }
+        check(failed.size < chosen.size) { "No friend could be added: ${failed.joinToString()}" }
+        return groups().first { it.id == id }
+    }
+    /** Adds a chat to a group this phone already knows (matching a member named in the announce). */
+    fun linkToGroup(groupId: String, chatId: String) {
+        val g = groups().first { it.id == groupId }
+        engine(chatId).linkGroup(g.id, g.name, g.members)
+    }
+    /** Fan-out: one separately encrypted copy per member chat. Returns the friends it could not reach now. */
+    fun sendGroup(groupId: String, text: String): List<String> {
+        val g = groups().first { it.id == groupId }
+        val message = PadProtocol.hex(ByteArray(16).also { java.security.SecureRandom().nextBytes(it) })
+        val failed = mutableListOf<String>()
+        for (chat in g.chats) try { engine(chat.id).sendGroup(text, groupId, message) } catch (_: Exception) { failed.add(chat.name) }
+        check(failed.size < g.chats.size) { "The message could not be queued for anyone" }
+        g.chats.forEach { refresh(it.id) }
+        return failed
+    }
+    /** One row per group message: outgoing copies merge by their shared id, status is the weakest. */
+    fun groupLines(groupId: String): List<GroupLine> {
+        val g = groups().firstOrNull { it.id == groupId } ?: return emptyList()
+        val lines = mutableListOf<GroupLine>(); val outgoing = linkedMapOf<String, MutableList<Pair<String, StationEngine.Message>>>()
+        for (chat in g.chats) for (m in engineOrNull(chat.id)?.view()?.messages.orEmpty().filter { it.group == groupId }) {
+            if (m.incoming) lines.add(GroupLine(chat.name, true, m.text, m.time, m.status, m.unread))
+            else outgoing.getOrPut(m.groupMessage ?: "${chat.id}:${m.time}") { mutableListOf() }.add(chat.name to m)
+        }
+        val rank = listOf("expired", "queued", "relayed", "delivered")
+        for (copies in outgoing.values) {
+            val weakest = copies.minByOrNull { rank.indexOf(it.second.status).let { r -> if (r < 0) 0 else r } }!!.second.status
+            lines.add(GroupLine("You", false, copies.first().second.text, copies.minOf { it.second.time }, weakest, false))
+        }
+        return lines.sortedBy { it.time }
+    }
     /** Wipe all: seal one peer request per chat that has control material, before the freeze. */
     internal fun preparePeerWipes() {
         if (!PeerWipe.enabled(context)) return

@@ -12,6 +12,9 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         /** Paired with pad material, either in the vault (pre-migration "pad") or separate storage ("padKeys"). */
         internal fun hasPad(s: JSONObject) = s.has("pad") || s.has("padKeys")
         const val MAX_BACKUPS = 2
+        const val MAX_GROUPS = 16
+        const val MAX_GROUP_MEMBERS = 8
+        private val GROUP_ID = Regex("[a-f0-9]{32}")
         /** Canonical `[{endpoint, token}]`, validated; order is the fallback order. */
         internal fun parseBackups(list: JSONArray): JSONArray {
             require(list.length() <= MAX_BACKUPS) { "At most $MAX_BACKUPS backup relays" }
@@ -106,6 +109,10 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         check(s.getLong("counter") >= 0 && s.getLong("cursor") >= 0)
         window(s)
         check(!(s.has("pad") && s.has("padKeys")))
+        s.optJSONObject("groups")?.let { g ->
+            check(g.length() in 1..MAX_GROUPS && g.keys().asSequence().all { id -> GROUP_ID.matches(id) &&
+                g.getJSONObject(id).getJSONArray("members").length() in 1..MAX_GROUP_MEMBERS })
+        }
         s.optJSONArray("backups")?.let { list ->
             check(list.length() in 1..MAX_BACKUPS)
             for (i in 0 until list.length()) list.getJSONObject(i).let {
@@ -728,7 +735,45 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     fun sendDraft(text: String, draftId: String) {
         require(ChatDraft.validId(draftId)); sendText(text, draftId)
     }
-    private fun sendText(text: String, draftId: String?) {
+    /**
+     * Group chats (pipeline item 7, docs/GROUP_CHATS.md): a group is a label on ordinary pairwise
+     * messages. Sending to a group sends one separately pad-encrypted copy per member chat
+     * (ChatBook.sendGroup). Membership lives in each member chat's own vault under "groups",
+     * so wiping a chat also removes it from every group.
+     */
+    internal fun groups(): List<Group> = state?.optJSONObject("groups")?.let { g -> g.keys().asSequence().map { id -> g.getJSONObject(id).let {
+        Group(id, it.getString("name"), (0 until it.getJSONArray("members").length()).map { i -> it.getJSONArray("members").getString(i) }) } }.toList() }.orEmpty()
+    private fun putGroup(s: JSONObject, id: String, name: String, members: List<String>) {
+        require(GROUP_ID.matches(id) && name.trim().length in 1..32 && members.size in 1..MAX_GROUP_MEMBERS && members.all { it.trim().length in 1..32 })
+        val groups = s.optJSONObject("groups") ?: JSONObject().also { s.put("groups", it) }
+        check(groups.has(id) || groups.length() < MAX_GROUPS) { "Too many groups in this chat" }
+        groups.put(id, JSONObject().put("name", name.trim()).put("members", JSONArray(members.map { it.trim() })))
+    }
+    /** Links this chat to a group (creator, announce, or a member the user matched by hand). */
+    internal fun linkGroup(id: String, name: String, members: List<String>) = transaction { putGroup(it, id, name, members) }
+    internal fun leaveGroup(id: String) = transaction { s -> s.optJSONObject("groups")?.remove(id); if (s.optJSONObject("groups")?.length() == 0) s.remove("groups") }
+    /** The creator's first message to each member names the group and its members. */
+    internal fun announceGroup(id: String, name: String, members: List<String>) {
+        linkGroup(id, name, members)
+        sendText("Started the group “${name.trim()}” with ${members.joinToString(", ")}", null,
+            JSONObject().put("group", id).put("groupName", name.trim()).put("members", JSONArray(members)))
+    }
+    /** [message] is shared by every member copy, so the group thread shows one row. */
+    internal fun sendGroup(text: String, id: String, message: String) {
+        check(groups().any { it.id == id }) { "This chat is not in that group" }
+        require(GROUP_ID.matches(message))
+        sendText(text, null, JSONObject().put("group", id).put("gm", message))
+    }
+    /** Receive: an announce links its group; any other tag counts only for an already linked group. */
+    private fun learnGroup(s: JSONObject, payload: JSONObject) {
+        val id = payload.optString("group").takeIf { GROUP_ID.matches(it) } ?: return
+        val members = payload.optJSONArray("members") ?: return
+        val name = payload.optString("groupName")
+        try { putGroup(s, id, name, (0 until members.length()).map { members.getString(it) }) } catch (_: Exception) {}
+    }
+    private fun groupOf(s: JSONObject, payload: JSONObject): String? =
+        payload.optString("group").takeIf { it.isNotEmpty() && s.optJSONObject("groups")?.has(it) == true }
+    private fun sendText(text: String, draftId: String?, extra: JSONObject? = null) {
         require(text.toByteArray(Charsets.UTF_8).size in 1..2048) { "Message must be 1–2048 UTF-8 bytes" }
         transaction { s ->
             check(hasPad(s)) { "Physically pair message keys before sending" }
@@ -738,7 +783,9 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             check(!hasPad(s) || (s.optBoolean("padVerified") && s.optBoolean("peerReady"))) { "Open Pad: compare codes and wait for the other station to verify and sync" }
             check(!s.has("ownDevice") || s.has("peerDevice")) { "Finish physical device verification before sending" }
             prune(s)
-            queue(s, JSONObject().put("kind", "text").put("text", text), "text")
+            val payload = JSONObject().put("kind", "text").put("text", text)
+            extra?.let { e -> e.keys().forEach { payload.put(it, e.get(it)) } }
+            queue(s, payload, "text")
             if (draftId != null) s.put("lastSentDraft", draftId)
         }
     }
@@ -883,6 +930,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
                                 val received = JSONObject().put("packet", wire).put("id", decoded.id).put("read", false).put("time", System.currentTimeMillis())
                                 if (hasPad(next)) cacheOpened(next, wire, decoded)
                                 next.getJSONArray("inbox").put(received)
+                        learnGroup(next, payload)
                                 // Exhaustion must not prevent receiving. Last available slots can acknowledge only a finite number of messages.
                                 if (!hasPad(next) || padLedger.high(next.getString("padId")) < padCapacity(next))
                                     received.put("receipt", JSONObject(queue(next, JSONObject().put("kind", "receipt").put("for", decoded.id), "receipt").toString()))
@@ -977,7 +1025,9 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             throw e
         } finally { master.fill(0) }
     }
-    data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false)
+    /** [group] is set only for a group this chat is linked to; otherwise a group tag is shown as a normal message. */
+    data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false, val group: String? = null, val groupMessage: String? = null)
+    data class Group(val id: String, val name: String, val members: List<String>)
     data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true, val cableEligible: Boolean = true, val awaitingReceipt: Int = 0, val relayScoped: Boolean = false, val relayRevoked: Boolean = false) {
         val setupComplete: Boolean get() = pairingComplete && padCheck != null && padVerified && peerReady && peerDevice != null
         val canSend: Boolean get() = !relayRevoked && pairingComplete && role != "—" && padRemaining != null && padRemaining > 0 && padCheck != null && padVerified && peerReady && (ownDevice == null || peerDevice != null)
@@ -999,14 +1049,14 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             for (entry in items(s.getJSONArray("inbox"))) {
                 if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
                 val decoded = retained(s, master, entry.getString("packet"), peer)
-                val text = JSONObject(deviceBody(s, decoded, peer, enforce = false)).getString("text")
-                rows.add(Message(true, text, "received", entry.getLong("time"), !entry.optBoolean("read", false), IdentityProtocol.isSigned(decoded.payload)))
+                val payload = JSONObject(deviceBody(s, decoded, peer, enforce = false))
+                rows.add(Message(true, payload.getString("text"), "received", entry.getLong("time"), !entry.optBoolean("read", false), IdentityProtocol.isSigned(decoded.payload), groupOf(s, payload), payload.optString("gm").takeIf { GROUP_ID.matches(it) }))
             }
             for (entry in items(s.getJSONArray("outbox")).filter { it.getString("kind") == "text" }) {
                 if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
                 val decoded = retained(s, master, entry.getString("packet"), own)
-                val text = JSONObject(deviceBody(s, decoded, own, enforce = false)).getString("text")
-                rows.add(Message(false, text, entry.getString("status"), entry.getLong("time"), deviceVerified = IdentityProtocol.isSigned(decoded.payload)))
+                val payload = JSONObject(deviceBody(s, decoded, own, enforce = false))
+                rows.add(Message(false, payload.getString("text"), entry.getString("status"), entry.getLong("time"), deviceVerified = IdentityProtocol.isSigned(decoded.payload), group = groupOf(s, payload), groupMessage = payload.optString("gm").takeIf { GROUP_ID.matches(it) }))
             }
             cacheExpiry = rows.minOfOrNull { it.time + 86400000L } ?: Long.MAX_VALUE
             View(own.toString(), Protocol.fingerprint(master), rows.sortedBy { it.time }.takeLast(100),
