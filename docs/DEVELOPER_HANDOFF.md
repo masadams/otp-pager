@@ -104,6 +104,7 @@ All paths below are under `app/src/main/java/org/example/otppager/`.
 | `ChatBook.kt` | Index schema 3 separates stable entryId from operational id; reload durable metadata per operation; confirmed per-contact replacement copies no old secrets |
 | `RetainedGuardReader.kt`, `RetainedGuardInventory.kt` | Exact authenticated immutable reuse metadata; strict parsing/bounds; no key creation, repair, operational-vault opening or missing-as-empty fallback |
 | `RetirementEvidenceCodec.kt`, `RetirementEvidence.kt` | `OTPTERM1`: INTENT/SEALED/CLEANED; one initial lineage, one-use pre-cleanup capture ticket. Authenticated roots must equal cleanup journal roots |
+| `ActiveManifestCodec.kt`, `EpochLineage.kt` | Pure B3a core: `OTPACT01` canonical codec; lineage resolution with no head pointer (any inconsistency → Frozen); ACTIVE namespace allowlist. Not yet consulted by storage |
 | `EnrollmentStageCodec.kt`, `EnrollmentStaging.kt` | `OTPSTG01`: PREPARING/PREPARED/ABANDONED only; up to 32 attempts. Auth key + record permanently reserve each attempt; new empty AES slots only |
 
 Per-contact operational namespaces are `station-v2` and `chat-<20 lowercase hex>`.
@@ -114,6 +115,13 @@ External Strings/JSON, active stack locals, OS/IME/clipboard, flash and exported
 are outside any claim of guaranteed erasure.
 
 ## Next implementation package — finish Phase 2/B before enrollment UI
+
+**B3 design is now written:** [ACTIVE_EPOCH_DESIGN.md](ACTIVE_EPOCH_DESIGN.md) treats steps
+1–4 below as one lineage model and splits the work into slices B3a–B3f. B3a (#18) adds the
+pure, unwired decision core: `ActiveManifestCodec` (`OTPACT01`), `EpochLineage.resolve`
+and `EpochScope.permits`, with JVM tests. **Next: B3b** — sealed capability,
+namespace-aware `requireCurrent`, lineage-based `isFrozen`, `ChatBook` routing and
+manifest append, with real-record adapters (still no manifest writer).
 
 In parallel (documentation only, no destructive code): start the Phase 3/D peer-wipe
 specification so independent protocol review — the long-lead gate — can begin early.

@@ -1,5 +1,7 @@
 # Global fresh enrollment — protocol candidate (package B2)
 
+> Continued in [ACTIVE_EPOCH_DESIGN.md](ACTIVE_EPOCH_DESIGN.md) (package B3: lineage, `OTPACT01`, slices).
+
 Status: **design candidate, not implemented or independently reviewed**. The current
 v1 global journal stays terminal. The recovery screen offers observation/retry only.
 This document specifies a local storage transition, not a remote-wipe protocol.

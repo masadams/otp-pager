@@ -34,10 +34,13 @@ physical validation, deployment or production readiness. Phase 2 remains open.
 - [x] Recover/abandon interrupted staging without reusing reserved generations (#15).
 - [x] Expose a protected, local-only "wipe this chat from this phone" control on the
       existing retirement primitive (#17; emulator CI only, see [design](LOCAL_WIPE_CONTROL.md)).
-- [ ] Implement ACTIVE epoch capabilities, namespace allowlists and current-index routing.
-- [ ] Enforce immutable retained-cohort exclusions during active pairing/messaging.
-- [ ] Implement repeat-wipe/forward lineage and preserve every prior exclusion/reservation.
-- [ ] Safely enable fresh enrollment after global destruction.
+- [x] Design ACTIVE epochs as one lineage (capability, routing, cohorts, repeat wipe) and
+      implement the pure `OTPACT01` codec, lineage resolver and namespace scope (#18, B3a;
+      [design](ACTIVE_EPOCH_DESIGN.md)). Not wired to storage access.
+- [ ] Implement ACTIVE epoch capabilities, namespace allowlists and current-index routing (B3b).
+- [ ] Enforce immutable retained-cohort exclusions during active pairing/messaging (B3c).
+- [ ] Implement repeat-wipe/forward lineage and preserve every prior exclusion/reservation (B3d).
+- [ ] Safely enable fresh enrollment after global destruction (B3e activation, B3f UI).
 - [ ] Separate erasable history keys and safely migrate older storage/operational keys.
 - [ ] Complete local-protection invariant review and remaining fault/upgrade tests.
 
