@@ -1,5 +1,8 @@
 # OTP Pager developer handoff
 
+> Latest discussion snapshot: [decisions, outstanding work and PR status](DISCUSSION_HANDOFF_2026_10_28.md).
+> Read it before older status sections below; #50–52 have merged and #53/#54 remain in review.
+
 For the current review graph, exact source heads, execution evidence and next steps,
 read [the continuation record](CONTINUATION_2026_10_28.md).
 

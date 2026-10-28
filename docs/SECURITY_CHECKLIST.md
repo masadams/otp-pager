@@ -1,5 +1,8 @@
 # Security development checklist
 
+> Latest discussion snapshot: [decisions, outstanding work and PR status](DISCUSSION_HANDOFF_2026_10_28.md).
+> Read it before older status sections below; #50–52 have merged and #53/#54 remain in review.
+
 Updated 2026-10-28 against main `9a968a8`. Checked means implemented and tested in
 the stated scope, not independent review, physical validation, deployment or
 production readiness. See [continuation evidence](CONTINUATION_2026_10_28.md) for
