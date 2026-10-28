@@ -92,8 +92,9 @@ internal object EpochLineage {
             if (stage.phase != EnrollmentStageCodec.Phase.PREPARED || stage.indexHash != manifest.indexHash ||
                 stage.claimsHash != manifest.claimsHash) freeze("manifest-stage-mismatch")
             if (stages.any { it.epoch != manifest.epoch && it.phase != EnrollmentStageCodec.Phase.ABANDONED }) freeze("open-stage")
-            // A destroyed root is never re-listed by a later epoch, even if its files were removed.
-            if (manifest.roots.any { root -> o.terminals.any { root in it.roots } }) freeze("root-reuse")
+            // A root destroyed by an EARLIER wipe is never re-listed, even if its files were removed.
+            // (This epoch's own later wipe naturally lists its roots; that is not reuse.)
+            if (manifest.roots.any { root -> chain.any { root in it.roots } }) freeze("root-reuse")
             progress.current = manifest; predecessor = manifest.epoch
         }
         if (o.terminals.any { it.generation !in usedTerminals } || o.stages.any { it.epoch !in usedStages } ||

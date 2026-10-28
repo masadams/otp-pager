@@ -125,4 +125,17 @@ class EpochLineageTest {
         val distinct = firstEpoch().copy(terminals = listOf(t0.copy(roots = setOf("station-v2", "chat-" + "8".repeat(20)))))
         assertEquals(e1, active(distinct).epoch)
     }
+
+    @Test fun anEpochsOwnLaterWipeListingItsRootsIsNotReuse() {
+        val r1 = "chat-" + e1.take(20)
+        val t0r = t0.copy(roots = setOf("station-v2"))
+        val t1 = Terminal(hex32('6'), e1, hex64('b'), cleaned = true, roots = setOf(r1))
+        val second = Observation(terminals = listOf(t0r, t1),
+            stages = listOf(stage(e1, t0r, PREPARED), stage(e2, t1, PREPARED)),
+            manifests = listOf(manifest(e1, t0r), manifest(e2, t1)))
+        assertEquals(e2, active(second).epoch)
+        // But E2 may never list a root that T1 destroyed.
+        val reused = ActiveManifestCodec.appended(manifest(e2, t1), r1)
+        frozen(second.copy(manifests = listOf(manifest(e1, t0r), reused)), "root-reuse")
+    }
 }
