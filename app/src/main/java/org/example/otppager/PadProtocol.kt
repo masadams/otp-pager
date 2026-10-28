@@ -14,18 +14,26 @@ object PadProtocol {
     const val STRIDE = BLOCK + 32
     const val SLOTS = MATERIAL_BYTES / 2 / STRIDE // 127 per direction; unused tail is never allocated.
     const val BUNDLE_BYTES = 8 + 32 + MATERIAL_BYTES
-    const val MAX_MATERIAL_BYTES = 4 * MATERIAL_BYTES
-    const val MAX_BUNDLE_BYTES = 40 + MAX_MATERIAL_BYTES
+    /** Largest pad: streamed into separate storage, never held whole in memory. */
+    const val MAX_MATERIAL_BYTES = 64 * MATERIAL_BYTES
+    /** Largest pad handled as one in-memory array: the manual pad file and pre-storage vaults. */
+    const val MEMORY_MAX_BYTES = 4 * MATERIAL_BYTES
+    const val MAX_BUNDLE_BYTES = 40 + MEMORY_MAX_BYTES
     const val MAX_SLOTS = MAX_MATERIAL_BYTES / 2 / STRIDE
-    fun validSize(size: Int) = size in listOf(MATERIAL_BYTES, 2 * MATERIAL_BYTES, 4 * MATERIAL_BYTES)
-    fun slots(pad: ByteArray): Int { require(validSize(pad.size)); return pad.size / 2 / STRIDE }
-    fun bundle(pad: ByteArray, binding: ByteArray): ByteArray { require(validSize(pad.size) && binding.size == 32); return magic + binding + pad }
+    val SIZES = listOf(1, 2, 4, 16, 32, 64).map { it * MATERIAL_BYTES }
+    fun validSize(size: Int) = size in SIZES
+    fun validMemorySize(size: Int) = validSize(size) && size <= MEMORY_MAX_BYTES
+    fun slotsFor(size: Int): Int { require(validSize(size)); return size / 2 / STRIDE }
+    fun validSlots(slots: Int) = SIZES.any { it / 2 / STRIDE == slots }
+    fun sizeLabel(size: Int) = "${size / MATERIAL_BYTES} MiB · ${"%,d".format(slotsFor(size))} slots each way"
+    fun slots(pad: ByteArray): Int { require(validMemorySize(pad.size)); return pad.size / 2 / STRIDE }
+    fun bundle(pad: ByteArray, binding: ByteArray): ByteArray { require(validMemorySize(pad.size) && binding.size == 32); return magic + binding + pad }
     private val magic = "FIELDP03".toByteArray(Charsets.US_ASCII)
     private val b64 = Base64.getEncoder()
-    fun generate(binding: ByteArray, size: Int = MATERIAL_BYTES): ByteArray { require(validSize(size)); return magic + binding.also { require(it.size == 32) } + ByteArray(size).also { SecureRandom().nextBytes(it) } }
+    fun generate(binding: ByteArray, size: Int = MATERIAL_BYTES): ByteArray { require(validMemorySize(size)) { "Pads over 4 MiB are created during USB or tap pairing" }; return magic + binding.also { require(it.size == 32) } + ByteArray(size).also { SecureRandom().nextBytes(it) } }
     fun binding(master: ByteArray): ByteArray = MessageDigest.getInstance("SHA-256").digest("Field pad binding v3".toByteArray() + master)
     fun material(bundle: ByteArray, binding: ByteArray): ByteArray {
-        require(validSize(bundle.size - 40) && bundle.copyOfRange(0, 8).contentEquals(magic)) { "Invalid pad file" }
+        require(validMemorySize(bundle.size - 40) && bundle.copyOfRange(0, 8).contentEquals(magic)) { "Invalid pad file" }
         require(MessageDigest.isEqual(binding, bundle.copyOfRange(8, 40))) { "Pad file belongs to a different pairing" }
         return bundle.copyOfRange(40, bundle.size)
     }

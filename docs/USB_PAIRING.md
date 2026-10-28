@@ -52,9 +52,9 @@ Emulators can't do USB host or accessory mode, so this needs two real phones.
 3. Approve the USB permission prompts. There are usually two on the host phone,
    because it reconnects after switching the other phone into accessory mode.
 4. Compare every group of the code and tap **Codes match** on both phones.
-5. Expected result: "Paired" appears on both within a few seconds for 1 MiB, and
-   in under about 30 s for 4 MiB.
-6. Repeat with the cable reversed so the other phone is host. Repeat at 4 MiB.
+5. Expected result: "Paired" appears on both within a few seconds for 1 MiB. At 16–64 MiB,
+   "Sending/Receiving message keys · N%" counts up first. Please note how long 64 MiB takes.
+6. Repeat with the cable reversed so the other phone is host. Repeat at 64 MiB.
 7. Pull the cable mid-transfer once. Both phones should report the interruption,
    and a fresh pairing should then succeed.
 

@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 class UsbPairChannel internal constructor(private val receive: (ByteArray, Int, Int) -> Int,
     private val transmit: (ByteArray, Int, Int) -> Int, private val release: () -> Unit,
     private val clock: () -> Long = SystemClock::elapsedRealtime,
-    lifetimeMillis: Long = 180000, private val idleMillis: Long = 120000) : Closeable {
+    lifetimeMillis: Long = 300000, private val idleMillis: Long = 120000) : Closeable { // Room for a 64 MiB pad on slow phones.
     private val closed = AtomicBoolean(false)
     private val expires = clock() + lifetimeMillis
     val input: InputStream = java.io.BufferedInputStream(object : InputStream() {
