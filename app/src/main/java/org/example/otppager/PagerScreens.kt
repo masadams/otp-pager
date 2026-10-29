@@ -30,6 +30,8 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         fun dismissRetired()
         fun status()
         fun wipe()
+        fun testConnection() {}
+        fun testServer(address: String) {}
     }
     data class Friend(val id: String, val name: String, val detail: String, val paired: Boolean, val unread: Boolean)
     private val ink = UiStyle.ink
@@ -123,6 +125,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         serverStep.addView(setupAddress, LinearLayout.LayoutParams(-1, -2))
         serverStep.addView(setupToken, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
         serverStep.addView(button("Save and continue", true) { actions.saveServer(setupAddress.text.toString(), setupToken.text.toString()) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
+        serverStep.addView(button("Test server") { actions.testServer(setupAddress.text.toString()) }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
         serverStep.addView(button("Get setup from my friend") { skipServer = true; serverStep.visibility = View.GONE; pairStep.visibility = View.VISIBLE; setupIntro.text = "Open pairing on both devices. Choose the same method on each." }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
         setupBody.addView(serverStep)
         pairStep.addView(button("Use a USB cable", true) { actions.cable() }, LinearLayout.LayoutParams(-1, -2))
@@ -145,6 +148,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         body.addView(friendName.apply { setPadding(0, dp(20), 0, dp(8)) })
         body.addView(friendState.apply { setPadding(0, 0, 0, dp(24)) })
         body.addView(button("Connection details") { actions.status() }, LinearLayout.LayoutParams(-1, -2))
+        body.addView(button("Test server connection") { actions.testConnection() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
         body.addView(label("Message keys", 17f).apply { setPadding(0, dp(24), 0, dp(8)) })
         body.addView(keys)
         body.addView(button("Renew message keys") { actions.renew() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })

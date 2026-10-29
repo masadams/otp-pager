@@ -550,6 +550,8 @@ class NetworkActivity : Activity() {
             override fun dismissRetired() { dismissRetiredChat() }
             override fun status() { if (!busy) showStationStatus() }
             override fun wipe() { confirmWipe() }
+            override fun testConnection() { this@NetworkActivity.testConnection() }
+            override fun testServer(address: String) { this@NetworkActivity.testServer(address) }
         })
         for (panel in listOf(traffic, linkScroll, padScroll, deviceScroll, screens.inbox, screens.setup, screens.details, screens.retired)) root.addView(panel, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root); root.requestApplyInsets(); selectTab(tab)
@@ -1359,6 +1361,29 @@ class NetworkActivity : Activity() {
         }
         if (v.relayRevoked) builder.setPositiveButton("Pair again") { _, _ -> selectTab(1) }
         builder.create().also(::secureShow)
+    }
+    private fun testConnection() {
+        var reports = emptyList<RelayProbe.Report>()
+        runTask(onSuccess = { showConnectionTest(reports) }) {
+            reports = checkNotNull(engine) { "Open a chat first" }.testConnection()
+            if (reports.all { it.ok }) "Connection test passed" else "Connection test found a problem"
+        }
+    }
+    /** Before saving: checks the typed address only. No token or chat data leaves the phone. */
+    private fun testServer(address: String) {
+        var report: RelayProbe.Report? = null
+        runTask(onSuccess = { report?.let { showConnectionTest(listOf(it)) } }) {
+            report = RelayProbe.check("Server", Protocol.endpoint(address))
+            if (report?.ok == true) "Server reachable" else "Server test found a problem"
+        }
+    }
+    private fun showConnectionTest(reports: List<RelayProbe.Report>) {
+        if (!active || !unlocked) return
+        val summary = if (reports.all { it.ok }) "Everything checked is working." else "Something isn't working. The first ✗ shows where it stopped."
+        AlertDialog.Builder(this).setTitle("Connection test")
+            .setMessage("$summary\n\n" + reports.joinToString("\n\n") { it.describe() } +
+                "\n\nThis is a read-only check. It doesn't send messages or show whether your friend is online.")
+            .setPositiveButton("Close", null).create().also(::secureShow)
     }
     private fun showStationStatus() {
         val v = latest ?: return
