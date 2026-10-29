@@ -12,6 +12,13 @@ extract salt `OTP Pager / protocol v2`, input 32-byte pairing secret; expand inf
 `{"kind":"text","text":"..."}` or delivery `{"kind":"receipt","for":"<32 hex id>"}`.
 A shared deterministic vector is in `test-vectors/protocol-v2.properties`.
 
+Since 0.17, text payloads also carry `"at"` (the sender's clock, Unix ms) and `"n"` (a per-chat
+send sequence starting at 1). They sit inside the encrypted, authenticated payload, so the relay
+can't change them, and they are independent of pad slot allocation. The receiver shows the
+sender time, never later than arrival and at most a day earlier, and keeps each friend's messages
+in `n` order even across a clock step backwards (`MessageOrder`). Payloads without them, from
+older builds, use arrival time. Older receivers ignore the extra fields.
+
 The recipient authenticates before advancing its persisted 4,096-counter replay
 window. Inbox/cursor/replay state/receipt queue commit together in the local vault.
 Send counter allocation and wire ciphertext commit before upload; retries reuse
