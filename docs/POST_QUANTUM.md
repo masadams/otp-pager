@@ -47,9 +47,13 @@ Recorded relay traffic exposes relay tokens, mailbox IDs and timing, never messa
   **Friend details → Test server connection** shows a "Post-quantum TLS" line. It proves the
   server *accepts* the hybrid group (one extra handshake offering nothing else), not what every
   later connection negotiated.
-- Classical fallback is still allowed, so an active attacker who strips the hybrid group can
-  force X25519. That's a real-time attack, not harvest-now. Refusing classical TLS once a
-  server has proven it supports the hybrid group is a possible follow-up.
+- Downgrade protection (0.19): once a server has accepted the hybrid group (the connection
+  test, or a check at most once a day after a successful sync), the phone offers **only**
+  `X25519MLKEM768` to it, so an active attacker who strips the group gets a failed handshake
+  instead of classical TLS. The list is per `host:port` in no-backup storage (`RelayTls`). A server
+  that later stops offering it is refused, and the connection test explains why and offers
+  "Allow classical TLS" for a proxy that was changed on purpose. Until a server has been seen
+  accepting it, classical fallback is still allowed (first contact can't be protected this way).
 - `RelayTlsTest` (on the emulator) runs local TLS 1.3 servers that accept only the hybrid group
   or only X25519. It checks that both work, that the probe reports each correctly, and that
   an untrusted certificate is still refused.

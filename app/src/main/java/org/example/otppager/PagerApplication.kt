@@ -43,6 +43,7 @@ class PagerApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         registerActivityLifecycleCallbacks(AppLock)
+        RelayTls.init(noBackupFilesDir)
         RetirementStartup.recover(this)
     }
 }

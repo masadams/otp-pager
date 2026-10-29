@@ -128,6 +128,11 @@ connection. Your proxy uses it only if its OpenSSL is 3.5 or newer:
    protects tokens and metadata in transit.
 4. Verify on a phone: **Friend details → Test server connection**. The "Post-quantum TLS" line
    shows ✓ when the proxy accepts the hybrid group.
+5. **From 0.19, keep it on.** Once a phone has seen the server accept the hybrid group (that
+   test, or its own daily check), it offers only that group to it, so nobody on the network can
+   force classical TLS. If you later remove the line or move to an older proxy, those phones show
+   "Refused: this server accepted post-quantum … before" and stop connecting. Either put the line
+   back, or run **Test server connection** on each phone and tap **Allow classical TLS**.
 
 ### Plain Nginx
 
