@@ -66,7 +66,7 @@ as historical material; its debug APK is not the current installation path.
 A cryptographically secure pseudorandom stream is not an information-theoretically secure one-time pad. We will not describe Android's SecureRandom output as independently validated full-entropy OTP material. Physical pairing must authenticate peers and protect the transfer of key bytes. A genuine OTP additionally requires independent uniformly random secret key bytes, never reused.
 
 ## License
-Copyright (C) 2026 Mason Robert Adams
+Copyright (C) 2026 masadams
 
 OTP Pager is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, **version 3 only**.
 
