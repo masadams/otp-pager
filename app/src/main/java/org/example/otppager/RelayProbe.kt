@@ -63,9 +63,9 @@ internal object RelayProbe {
             steps.add(Step("Secure connection", true, "$tls · $elapsed ms"))
             val port = URI(endpoint).port.takeIf { it > 0 } ?: 443
             steps.add(when (RelayTls.serverSupportsHybrid(host, port)) {
-                true -> Step("Post-quantum TLS", true, "Hybrid ${RelayTls.HYBRID_GROUP} key exchange")
-                false -> Step("Post-quantum TLS", true, "Not offered by the server, so it used classical X25519. Messages are still OTP-protected; enable ${RelayTls.HYBRID_GROUP} on your proxy to protect tokens and metadata too.", warn = true)
-                null -> Step("Post-quantum TLS", true, "Not available on this phone; it used Android's own TLS.", warn = true)
+                true -> Step("Post-quantum TLS", true, "The server accepts hybrid ${RelayTls.HYBRID_GROUP}, and this app offers it first on every connection. A network that strips it can still force classical X25519; the app doesn't refuse that yet.")
+                false -> Step("Post-quantum TLS", true, "The server doesn't accept ${RelayTls.HYBRID_GROUP}, so connections use classical X25519. Messages are still OTP-protected; enable it on your proxy to protect tokens and metadata too.", warn = true)
+                null -> Step("Post-quantum TLS", true, "Not available on this phone; connections use Android's own TLS.", warn = true)
             })
             val body = try {
                 (if (code in 200..299) conn.inputStream else conn.errorStream)?.use { stream ->

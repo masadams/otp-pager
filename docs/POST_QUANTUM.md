@@ -44,8 +44,12 @@ Recorded relay traffic exposes relay tokens, mailbox IDs and timing, never messa
   app's network security config. User-installed CAs stay untrusted.
 - If the native library can't load on a device, the app falls back to Android's built-in TLS.
 - The hybrid exchange only happens if your proxy also supports it (next section).
-  **Friend details → Test server connection** shows a "Post-quantum TLS" line saying whether
-  it did.
+  **Friend details → Test server connection** shows a "Post-quantum TLS" line. It proves the
+  server *accepts* the hybrid group (one extra handshake offering nothing else), not what every
+  later connection negotiated.
+- Classical fallback is still allowed, so an active attacker who strips the hybrid group can
+  force X25519. That's a real-time attack, not harvest-now. Refusing classical TLS once a
+  server has proven it supports the hybrid group is a possible follow-up.
 - `RelayTlsTest` (on the emulator) runs local TLS 1.3 servers that accept only the hybrid group
   or only X25519. It checks that both work, that the probe reports each correctly, and that
   an untrusted certificate is still refused.
