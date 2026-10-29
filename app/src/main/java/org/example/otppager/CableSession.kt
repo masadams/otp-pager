@@ -72,13 +72,20 @@ internal class CableSession private constructor(
             } finally { prk.fill(0) }
         }
         fun ephemeral(): KeyPair = KeyPairGenerator.getInstance("EC").apply { initialize(ECGenParameterSpec("secp256r1")) }.generateKeyPair()
-        /** HKDF-SHA256 extract and single-block expand (RFC 5869), independently labelled directions. */
-        fun establish(host: Boolean, own: KeyPair, peerCard: String, transcript: ByteArray): CableSession {
-            require(transcript.size == 32)
+        /**
+         * Hybrid key schedule: HKDF-SHA256 (RFC 5869) extract over the ECDH secret followed by both
+         * ML-KEM-768 secrets ([postQuantum], A's encapsulation then B's), salted with the confirmed
+         * transcript, then a single-block expand per direction. An attacker must break both ECDH
+         * and ML-KEM to read the pad, so recorded USB traffic stays safe against a future quantum
+         * computer. The transcript already binds every public key and ciphertext.
+         */
+        fun establish(host: Boolean, own: KeyPair, peerCard: String, transcript: ByteArray, postQuantum: ByteArray): CableSession {
+            require(transcript.size == 32 && postQuantum.size == 2 * PostQuantum.KEM_SECRET_BYTES)
             val shared = KeyAgreement.getInstance("ECDH").run { init(own.private); doPhase(IdentityProtocol.publicKey(peerCard), true); generateSecret() }
             fun hmac(key: ByteArray, data: ByteArray): ByteArray = Mac.getInstance("HmacSHA256").run { init(SecretKeySpec(key, "HmacSHA256")); doFinal(data) }
-            val prk = try { hmac(transcript, shared) } finally { shared.fill(0) }
-            fun expand(direction: String) = hmac(prk, "Field encrypted USB v3 / $direction".toByteArray(Charsets.US_ASCII) + byteArrayOf(1))
+            val combined = shared + postQuantum
+            val prk = try { hmac(transcript, combined) } finally { shared.fill(0); combined.fill(0) }
+            fun expand(direction: String) = hmac(prk, "Field hybrid USB v4 ECDH+ML-KEM-768 / $direction".toByteArray(Charsets.US_ASCII) + byteArrayOf(1))
             try {
                 val a = expand("A to B"); val b = expand("B to A")
                 return if (host) CableSession(a, b, transcript.copyOf(), 0, 1) else CableSession(b, a, transcript.copyOf(), 1, 0)

@@ -11,7 +11,7 @@ class CableSessionTest {
     private fun card(pair: java.security.KeyPair) = Base64.getEncoder().encodeToString(pair.public.encoded)
     private fun sessions(transcriptB: ByteArray = ByteArray(32) { 7 }): Pair<CableSession, CableSession> {
         val a = CableSession.ephemeral(); val b = CableSession.ephemeral()
-        return CableSession.establish(true, a, card(b), ByteArray(32) { 7 }) to CableSession.establish(false, b, card(a), transcriptB)
+        return CableSession.establish(true, a, card(b), ByteArray(32) { 7 }, ByteArray(64) { 9 }) to CableSession.establish(false, b, card(a), transcriptB, ByteArray(64) { 9 })
     }
     private fun wire(sender: CableSession, text: ByteArray): ByteArray = ByteArrayOutputStream().also { sender.send(it, text) }.toByteArray()
     private fun rejected(block: () -> Unit) { try { block(); fail("Invalid cable frame accepted") } catch (_: Exception) {} }
@@ -45,14 +45,27 @@ class CableSessionTest {
             } }
         }
     }
-    @Test fun independentPythonEcdhHkdfAndFrameVector() {
-        val v = java.util.Properties().apply { load(CableSessionTest::class.java.getResourceAsStream("/cable-v3.properties")) }
+    @Test fun independentPythonHybridKeyScheduleAndFrameVector() {
+        val v = java.util.Properties().apply { load(CableSessionTest::class.java.getResourceAsStream("/cable-v4.properties")) }
         fun bytes(name: String) = Base64.getDecoder().decode(v.getProperty(name))
         val privateKey = java.security.KeyFactory.getInstance("EC").generatePrivate(java.security.spec.PKCS8EncodedKeySpec(bytes("privateA")))
         val own = java.security.KeyPair(IdentityProtocol.publicKey(v.getProperty("publicA")), privateKey)
-        CableSession.establish(true, own, v.getProperty("publicB"), bytes("transcript")).use {
+        CableSession.establish(true, own, v.getProperty("publicB"), bytes("transcript"), bytes("postQuantum")).use {
             assertArrayEquals(bytes("wire"), wire(it, bytes("plaintext")))
         }
+    }
+    @Test fun differentPostQuantumSecretGivesAnUnreadableChannel() {
+        val a = CableSession.ephemeral(); val b = CableSession.ephemeral(); val transcript = ByteArray(32) { 7 }
+        CableSession.establish(true, a, card(b), transcript, ByteArray(64) { 1 }).use { sender ->
+            CableSession.establish(false, b, card(a), transcript, ByteArray(64) { 2 }).use { receiver ->
+                rejected { receiver.read(ByteArrayInputStream(wire(sender, "pad".toByteArray()))) }
+            }
+        }
+    }
+    @Test fun rejectsAMissingOrShortPostQuantumSecret() {
+        val a = CableSession.ephemeral(); val b = CableSession.ephemeral()
+        rejected { CableSession.establish(true, a, card(b), ByteArray(32), ByteArray(0)) }
+        rejected { CableSession.establish(true, a, card(b), ByteArray(32), ByteArray(32)) }
     }
     @Test fun outputFailureCannotReuseSessionOrNonce() {
         val (a, b) = sessions()

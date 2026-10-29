@@ -18,8 +18,10 @@ object CableProtocol {
      * v7: both phones state the strict-chat mode; it must match and is bound into the code.
      * v8: the phone that supplies the server also supplies its backup relays (signed setup).
      * v9: both phones contribute randomness to the pad (see [mixer]).
+     * v10: post-quantum hybrid channel. Each phone also sends an ML-KEM-768 key, each
+     *      encapsulates to the other, and the session key needs ECDH and both ML-KEM secrets.
      */
-    const val VERSION = 9
+    const val VERSION = 10
     private const val CHUNK = 32768
     private const val CHUNK_TAG: Byte = 0x50
     private const val LIMIT = 4096 // Public hello/approval frames only; encrypted material has a separate bound.
@@ -35,9 +37,9 @@ object CableProtocol {
         val bytes = ByteArray(size); source.readFully(bytes)
         return try { JSONObject(String(bytes, Charsets.UTF_8)) } finally { bytes.fill(0) }
     }
-    private fun hello(engine: StationEngine, ephemeral: java.security.KeyPair, renew: Boolean, size: Int, strict: Long): JSONObject = JSONObject().put("kind", "hello").put("version", VERSION)
+    private fun hello(engine: StationEngine, ephemeral: java.security.KeyPair, kem: PostQuantum.KemKeyPair, renew: Boolean, size: Int, strict: Long): JSONObject = JSONObject().put("kind", "hello").put("version", VERSION)
         .put("purpose", if (renew) "renew" else "pair").put("padSize", size).put("strict", if (renew) 0L else strict)
-        .put("ephemeral", b64.encodeToString(ephemeral.public.encoded)).put("key", engine.cableIdentity(renew)).put("nonce", b64.encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) }))
+        .put("ephemeral", b64.encodeToString(ephemeral.public.encoded)).put("kem", b64.encodeToString(kem.public)).put("key", engine.cableIdentity(renew)).put("nonce", b64.encodeToString(ByteArray(32).also { SecureRandom().nextBytes(it) }))
         .also { h -> engine.state?.let {
             h.put("endpoint", it.getString("endpoint"))
             if (renew) {
@@ -52,14 +54,17 @@ object CableProtocol {
         if (h.getInt("version") != VERSION) throw UpgradeRequired()
         require(h.getString("purpose") in listOf("pair", "renew") && PadProtocol.validSize(h.getInt("padSize")))
         IdentityProtocol.publicKey(h.getString("ephemeral")); IdentityProtocol.publicKey(h.getString("key")); require(decoder.decode(h.getString("nonce")).size == 32)
+        PostQuantum.checkPublic(decoder.decode(h.getString("kem")))
         if (h.has("endpoint")) { Protocol.endpoint(h.getString("endpoint")) }
     }
-    private fun identityDigest(a: JSONObject, b: JSONObject, endpoint: String): ByteArray {
+    /** The compared code covers both identities, ECDH keys, ML-KEM keys and both ML-KEM ciphertexts. */
+    private fun identityDigest(a: JSONObject, b: JSONObject, endpoint: String, ciphertextA: ByteArray, ciphertextB: ByteArray): ByteArray {
         val out = java.io.ByteArrayOutputStream()
         DataOutputStream(out).use { stream ->
             fun part(bytes: ByteArray) { stream.writeInt(bytes.size); stream.write(bytes) }
-            part("Field cable identity comparison v4".toByteArray(Charsets.US_ASCII))
-            for (h in listOf(a, b)) { part(IdentityProtocol.publicKey(h.getString("key")).encoded); part(decoder.decode(h.getString("nonce"))); part(IdentityProtocol.publicKey(h.getString("ephemeral")).encoded) }
+            part("Field cable identity comparison v5 hybrid".toByteArray(Charsets.US_ASCII))
+            for (h in listOf(a, b)) { part(IdentityProtocol.publicKey(h.getString("key")).encoded); part(decoder.decode(h.getString("nonce"))); part(IdentityProtocol.publicKey(h.getString("ephemeral")).encoded); part(decoder.decode(h.getString("kem"))) }
+            part(ciphertextA); part(ciphertextB)
             part(endpoint.toByteArray(Charsets.UTF_8))
             for (h in listOf(a, b)) for (name in listOf("purpose", "padSize", "strict", "room", "role", "padId", "paused")) part(h.optString(name).toByteArray(Charsets.UTF_8))
         }
@@ -152,7 +157,8 @@ object CableProtocol {
         if (renew) engine.requireRenewalIdentity() else engine.requireCableEligible()
         require(strict == 0L || (!renew && strict in StrictChat.DEADLINES)) { "Unknown strict-chat mode" }
         val ephemeral = CableSession.ephemeral()
-        val own = hello(engine, ephemeral, renew, size, strict)
+        val kem = PostQuantum.kemKeyPair()
+        val own = hello(engine, ephemeral, kem, renew, size, strict)
         val peer: JSONObject
         if (host) { send(output, own); peer = read(input); checkHello(peer) }
         else { peer = read(input); checkHello(peer); send(output, own) }
@@ -169,23 +175,38 @@ object CableProtocol {
         val server = if (a.has("endpoint")) a else b
         check(server.has("endpoint")) { "Enter and save relay settings on either device first" }
         val endpoint = server.getString("endpoint")
-        val identityDigest = identityDigest(a, b, endpoint)
+        // Each phone encapsulates to the other's ML-KEM key. Either phone's randomness alone keeps
+        // the post-quantum secret safe; both ciphertexts go into the compared code.
+        val mine = PostQuantum.encapsulate(decoder.decode(peer.getString("kem")))
+        val outgoing = JSONObject().put("kind", "kem").put("ciphertext", b64.encodeToString(mine.ciphertext))
+        val incoming = if (host) { send(output, outgoing); read(input) } else read(input).also { send(output, outgoing) }
+        require(incoming.getString("kind") == "kem")
+        val theirCiphertext = decoder.decode(incoming.getString("ciphertext"))
+        val theirs = PostQuantum.decapsulate(kem, theirCiphertext)
+        val postQuantum = if (host) mine.secret + theirs else theirs + mine.secret
+        mine.secret.fill(0); theirs.fill(0)
+        val identityDigest = try {
+            if (host) identityDigest(a, b, endpoint, mine.ciphertext, theirCiphertext) else identityDigest(a, b, endpoint, theirCiphertext, mine.ciphertext)
+        } catch (failure: Exception) { postQuantum.fill(0); throw failure }
         val code = PadProtocol.hex(identityDigest.copyOf(16)).chunked(4).joinToString(" ")
-        // No relay token, pairing secret or pad is sent until BOTH people approve.
-        review(code, "$endpoint\nPad: ${a.getInt("padSize") / PadProtocol.MATERIAL_BYTES} MiB · ${if (recover) "recover current pad" else if (renew) "renew existing friend" else "new pairing"}" +
-            if (own.getLong("strict") > 0) " · ${StrictChat.label(own.getLong("strict"))}" else "")
-        progress("Waiting for confirmation on the other device…")
         val peerKey = peer.getString("key")
-        if (host) {
-            send(output, JSONObject().put("kind", "accepted").put("proof", proof(engine, identityDigest, "accept-A")))
-            val accepted = read(input); require(accepted.getString("kind") == "accepted")
-            verify(peerKey, identityDigest, "accept-B", accepted.getString("proof"))
-        } else {
-            val accepted = read(input); require(accepted.getString("kind") == "accepted")
-            verify(peerKey, identityDigest, "accept-A", accepted.getString("proof"))
-            send(output, JSONObject().put("kind", "accepted").put("proof", proof(engine, identityDigest, "accept-B")))
-        }
-        CableSession.establish(host, ephemeral, peer.getString("ephemeral"), identityDigest).use { channel ->
+        // No relay token, pairing secret or pad is sent until BOTH people approve.
+        val session = try {
+            review(code, "$endpoint\nPad: ${a.getInt("padSize") / PadProtocol.MATERIAL_BYTES} MiB · ${if (recover) "recover current pad" else if (renew) "renew existing friend" else "new pairing"}" +
+                if (own.getLong("strict") > 0) " · ${StrictChat.label(own.getLong("strict"))}" else "")
+            progress("Waiting for confirmation on the other device…")
+            if (host) {
+                send(output, JSONObject().put("kind", "accepted").put("proof", proof(engine, identityDigest, "accept-A")))
+                val accepted = read(input); require(accepted.getString("kind") == "accepted")
+                verify(peerKey, identityDigest, "accept-B", accepted.getString("proof"))
+            } else {
+                val accepted = read(input); require(accepted.getString("kind") == "accepted")
+                verify(peerKey, identityDigest, "accept-A", accepted.getString("proof"))
+                send(output, JSONObject().put("kind", "accepted").put("proof", proof(engine, identityDigest, "accept-B")))
+            }
+            CableSession.establish(host, ephemeral, peer.getString("ephemeral"), identityDigest, postQuantum)
+        } finally { postQuantum.fill(0) }
+        session.use { channel ->
             fun secureSend(value: JSONObject) {
                 val bytes = value.toString().toByteArray(Charsets.UTF_8)
                 try { channel.send(output, bytes) } finally { bytes.fill(0) }

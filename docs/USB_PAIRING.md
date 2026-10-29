@@ -75,3 +75,9 @@ coverage now includes 64/512/1024-byte packets, short writes, failed ZLP writes,
 disconnects and close behavior. `CablePairTest` exercises streamed 16/32/64 MiB
 pads; existing staging and renewal tests cover their distinct interrupted states.
 These are automated models/fixtures, not proof of USB hardware compatibility.
+
+## Post-quantum channel (pairing protocol v10)
+
+The encrypted channel that carries the pad is hybrid: ECDH P-256 plus ML-KEM-768 in both
+directions. The compared code covers every public key and both ML-KEM ciphertexts. See
+[POST_QUANTUM.md](POST_QUANTUM.md). Both phones need a v10 build to pair or renew.
