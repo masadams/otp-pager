@@ -22,7 +22,18 @@ key and the previous key is destroyed:
   namespace and generation (a file cannot be moved to another vault). `v2` files still open
   and move to `v3` on their next rotation.
 - Rotation happens on the first save of a vault in each process, at most every 10 minutes
-  afterwards, and always on **Clear message history**.
+  afterwards, and always when a save removes any message: **Clear message history**,
+  **Delete message history now**, a long-press delete of one message, a shorter retention,
+  and every expiry (`StationEngine.contentKeys` compares the message set before and after).
+
+## Retention (0.18)
+
+Each chat keeps messages on this phone for 1 h, 6 h, 24 h (default) or **until read**
+(`state.retention`, validated against `StationEngine.RETENTIONS` / `AFTER_READ`). "Until read"
+removes a read incoming message, and a delivered or expired outgoing one, about a minute later
+(`readAt` / `doneAt`). Queued messages always stay until sent or until the relay's 24 h
+expiry. Expiry runs on open and on every check, and removed messages are erased by the rekey
+above. Retention is local: the friend's phone keeps its own copy under its own setting.
 - Order: create key g+1 → write and fsync the new snapshot → verify readback and directory
   sync → only then delete every other generation's key. A key for an uncommitted generation
   is a leftover from an interrupted rotation and is replaced. A crash at any point leaves
@@ -36,7 +47,7 @@ key and the previous key is destroyed:
 ## Limits
 
 Erasure is cryptographic: it depends on Keystore actually destroying deleted keys. Content
-expiry (24 h) becomes erasure only after the next save in a running app. The current
+expiry becomes erasure at the next open or check (the view hides expired messages before then). The current
 snapshot still holds what the app currently shows or must retry. Copies outside the vault
 (exports, screenshots, memory, keyboards) are not covered.
 
@@ -45,5 +56,7 @@ snapshot still holds what the app currently shows or must retry. Copies outside 
 `VaultKeysTest` (JVM): alias parsing/ambiguity, discovery of rotated keys.
 `VaultRotationTest` (instrumentation): v3 envelope, clear-history rotation, an older
 snapshot copy fails to open after rotation while the current one opens; retirement removes
-every generation including a leftover from an interrupted rotation. Existing restart and
+every generation including a leftover from an interrupted rotation. `MessageDeletionTest`:
+single-message delete, retention shortening and "until read" remove the messages and rotate
+the key; an older snapshot holding a deleted message no longer opens. Existing restart and
 retirement suites assert every generation is gone.

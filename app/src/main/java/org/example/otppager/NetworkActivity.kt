@@ -524,7 +524,7 @@ class NetworkActivity : Activity() {
                 "$n SAVED MESSAGES REQUEUED · checking existing receipts"
             }
         })
-        settings.addView(text("Messages stay locally for up to 24 hours. Clear history to remove them sooner. Delivery means the other station saved the packet, not that a person read it.", 12f, muted))
+        settings.addView(text("Messages stay locally for the chat's retention (24 hours unless changed in friend details). Clear history to remove them sooner. Delivery means the other station saved the packet, not that a person read it.", 12f, muted))
         settings.addView(button("Clear message history") { confirm("Clear local messages?", "Pending messages stay queued. Saved receipt recovery is removed with history. Replay protection stays active.") {
             runTask { checkNotNull(engine).clearHistory(); "LOCAL HISTORY CLEARED" }
         } })
@@ -565,6 +565,8 @@ class NetworkActivity : Activity() {
             override fun wipe() { confirmWipe() }
             override fun testConnection() { this@NetworkActivity.testConnection() }
             override fun testServer(address: String) { this@NetworkActivity.testServer(address) }
+            override fun retention() { if (!busy) chooseRetention() }
+            override fun deleteHistory() { if (!busy) confirmDeleteHistory() }
         })
         for (panel in listOf(traffic, linkScroll, padScroll, deviceScroll, screens.inbox, screens.setup, screens.details, screens.retired)) root.addView(panel, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root); root.requestApplyInsets(); selectTab(tab)
@@ -838,8 +840,9 @@ class NetworkActivity : Activity() {
     private fun showAppMenu() {
         // Not busy-gated: the menu holds the wipe-all action; its other entries ignore busy work themselves.
         AlertDialog.Builder(this).setTitle("Field")
-            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help", "Wipe all chats from this phone", "Peer wipe (unreviewed) · ${if (PeerWipe.enabled(this)) "on" else "off"}", "Groups")) { _, which ->
+            .setItems(arrayOf("Receiving & battery", "Check for messages", "Help", "Wipe all chats from this phone", "Peer wipe (unreviewed) · ${if (PeerWipe.enabled(this)) "on" else "off"}", "Groups", "Emergency wipe (hold)")) { _, which ->
                 when (which) {
+                    6 -> confirmEmergencyWipe()
                     5 -> startActivity(android.content.Intent(this, GroupActivity::class.java))
                     3 -> confirmWipeAll()
                     4 -> showPeerWipeSetting()
@@ -875,6 +878,56 @@ class NetworkActivity : Activity() {
             wipe.setOnClickListener { if (armed()) { dialog.dismiss(); wipeAll() } }
         }
         secureShow(dialog)
+    }
+    /** The fast path to [wipeAll]: no typing, but a 3-second hold so a pocket tap can't trigger it. */
+    private fun confirmEmergencyWipe() {
+        val hold = button("Hold to wipe everything") {}.apply { contentDescription = "Press and hold for 3 seconds to wipe every chat on this phone" }
+        val dialog = AlertDialog.Builder(this).setTitle("Emergency wipe")
+            .setMessage("Press and hold the button for 3 seconds. Every chat, message, draft, message key and pairing on this phone is deleted at once. Your friends' phones are not changed.")
+            .setView(column().apply { setPadding(dp(24), dp(8), dp(24), 0); addView(hold, LinearLayout.LayoutParams(-1, dp(64))) })
+            .setNegativeButton("Cancel", null).create()
+        var remaining = 3
+        val tick = object : Runnable {
+            override fun run() {
+                if (!dialog.isShowing) return
+                if (remaining <= 0) { dialog.dismiss(); wipeAll(); return }
+                hold.text = "Keep holding · $remaining"; remaining--; handler.postDelayed(this, 1000)
+            }
+        }
+        hold.setOnTouchListener { v, event ->
+            when (event.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> { remaining = 3; handler.removeCallbacks(tick); tick.run(); true }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    handler.removeCallbacks(tick); hold.text = "Hold to wipe everything"
+                    if (event.actionMasked == android.view.MotionEvent.ACTION_UP) v.performClick(); true
+                }
+                else -> true
+            }
+        }
+        dialog.setOnDismissListener { handler.removeCallbacks(tick) }
+        secureShow(dialog)
+    }
+    private fun chooseRetention() {
+        val choices = StationEngine.RETENTIONS + StationEngine.AFTER_READ
+        val current = engine?.retention ?: StationEngine.RETENTIONS.last()
+        var selected = choices.indexOf(current).coerceAtLeast(0)
+        AlertDialog.Builder(this).setTitle("Keep messages on this phone")
+            .setSingleChoiceItems(choices.map { when (it) { StationEngine.AFTER_READ -> "Until read (about a minute after you see it or it's delivered)"; else -> PagerScreens.retentionLabel(it).replaceFirstChar(Char::uppercase) } }.toTypedArray(), selected) { _, which -> selected = which }
+            .setPositiveButton("Save") { _, _ ->
+                val millis = choices[selected]
+                runTask { checkNotNull(engine).setRetention(millis); "Messages kept ${PagerScreens.retentionLabel(millis)} · older ones erased" }
+            }
+            .setNegativeButton("Cancel", null).create().also(::secureShow)
+    }
+    private fun confirmDeleteHistory() {
+        confirm("Delete message history?", "Every sent and received message in this chat is erased from this phone. Messages still waiting to send stay queued. Your friend's phone keeps its copy.") {
+            runTask { checkNotNull(engine).clearHistory(); "Message history deleted from this phone" }
+        }
+    }
+    private fun confirmDeleteMessage(id: String) {
+        confirm("Delete this message?", "It's erased from this phone only. Your friend's phone keeps its copy.") {
+            runTask { checkNotNull(engine).deleteMessage(id); "Message deleted from this phone" }
+        }
     }
     /** Same local-first order as a single-chat wipe, never behind the station worker. */
     private fun wipeAll() {
@@ -1500,6 +1553,7 @@ class NetworkActivity : Activity() {
                 background = if (m.incoming) surface(Color.WHITE, UiStyle.BUBBLE_RADIUS, lineColor) else surface(ink, UiStyle.BUBBLE_RADIUS, ink)
             }
             val label = if (m.incoming) (if (m.unread) "New" else "Received") else when (m.status) { "queued" -> "Waiting to send"; "relayed" -> "Sent · awaiting delivery"; "delivered" -> "Delivered to device"; else -> "Expired" }
+            m.id?.let { id -> card.setOnLongClickListener { if (!busy) confirmDeleteMessage(id); true } }
             card.addView(text(m.text, 16f, if (m.incoming) ink else Color.WHITE).apply { isSaveEnabled = false })
             card.addView(text("${timeFormat.format(java.util.Date(m.time))} · $label${if (m.deviceVerified) "" else " · Unverified device"}", 11f, if (m.incoming) muted else UiStyle.onInkMuted).apply { setPadding(0, dp(4), 0, 0) })
             messages.addView(card, LinearLayout.LayoutParams(-2, -2).apply {

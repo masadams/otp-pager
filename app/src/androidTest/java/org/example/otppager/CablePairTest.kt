@@ -56,7 +56,7 @@ class CablePairTest {
                 val wire = a.state!!.getJSONArray("outbox").getJSONObject(0).getString("packet")
                 // The snapshot has used slots zeroed, so name the pad by its stored id rather than re-hashing it.
                 val stable = a.state!!.getString("padId").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-                assertTrue(IdentityProtocol.isSigned(PadProtocol.open(pad, wire, 'A', stable).payload)); pad.fill(0)
+                assertTrue(IdentityProtocol.isSigned(PadProtocol.open(pad, wire, 'A', stable, oneTime = true).payload)); pad.fill(0)
                 val packets = mutableListOf<String>()
                 val relay = object : RelayTransport {
                     override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String {

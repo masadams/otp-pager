@@ -122,15 +122,15 @@ object PadProtocol {
         if (((bytes.size == 26 + BLOCK + 32 && bytes[0] == 3.toByte()) || (bytes.size == 26 + BLOCK + 16 && bytes[0] == 4.toByte())) &&
             bytes[1].toInt().toChar() in listOf('A', 'B')) bytes[1].toInt().toChar() else null
     } catch (_: Exception) { null }
-    fun open(pad: ByteArray, wire: String, role: Char, stableId: ByteArray = id(pad)): Protocol.Opened {
+    fun open(pad: ByteArray, wire: String, role: Char, stableId: ByteArray = id(pad), oneTime: Boolean = false): Protocol.Opened {
         require(validSize(pad.size) && stableId.size == 16)
         require(wire.length <= 5600)
         val bytes = Base64.getDecoder().decode(wire)
-        require(bytes.size == 26 + BLOCK + 32 && bytes[0] == 3.toByte() && bytes[1] == role.code.toByte())
+        require(bytes.size == 26 + BLOCK + tagBytes(oneTime) && bytes[0] == wireVersion(oneTime) && bytes[1] == role.code.toByte())
         require(MessageDigest.isEqual(stableId, bytes.copyOfRange(10, 26))) { "Wrong pad" }
         val counter = ByteBuffer.wrap(bytes, 2, 8).long
         val at = offset(pad, role, counter); requireAvailable(pad, at); val key = pad.copyOfRange(at + BLOCK, at + STRIDE)
-        try { require(MessageDigest.isEqual(authenticate(key, bytes.copyOfRange(0, 26 + BLOCK)), bytes.copyOfRange(26 + BLOCK, bytes.size))) { "Invalid pad authentication" } }
+        try { require(MessageDigest.isEqual(tag(oneTime, key, bytes.copyOfRange(0, 26 + BLOCK)), bytes.copyOfRange(26 + BLOCK, bytes.size))) { "Invalid pad authentication" } }
         finally { key.fill(0) }
         val clear = ByteArray(BLOCK) { (bytes[26 + it].toInt() xor pad[at + it].toInt()).toByte() }
         return try {
