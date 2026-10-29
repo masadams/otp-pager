@@ -35,7 +35,7 @@ Update **both clients first**, then pull/redeploy the existing Portainer stack u
 The stack now pins this tested amd64/arm64 relay:
 
 ```text
-ghcr.io/masadams/otp-pager-relay@sha256:7e90cc527e1150e448b70c36bac1bb33ce4f7131a56dd4d367fda2480df85c51
+ghcr.io/masadams/otp-pager-relay@sha256:3d6f1416e2cbf0ca791bc148e33ff11539b2ed048c5b842bcb1f3169917019b9
 ```
 
 An existing `RELAY_IMAGE` override must be updated explicitly. See
