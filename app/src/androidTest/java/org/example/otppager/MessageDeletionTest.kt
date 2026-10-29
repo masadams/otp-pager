@@ -24,6 +24,8 @@ class MessageDeletionTest {
         }
     }
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
+    /** Contact vault namespace: only these rotate their key (docs/VAULT_KEY_ROTATION.md). */
+    private fun root() = "chat-" + java.util.UUID.randomUUID().toString().replace("-", "").take(20)
     private fun keys(id: String) = VaultKeys.all(id, KeyStore.getInstance("AndroidKeyStore").apply { load(null) }.aliases().toList())
     /** Moves every stored message timestamp (and read time) back by [millis], as if time had passed. */
     private fun age(store: SecureStore, millis: Long) {
@@ -36,7 +38,8 @@ class MessageDeletionTest {
     }
 
     @Test fun deleteOneRetentionAndAfterReadEraseFromThisPhone() {
-        val aStore = SecureStore(context, "del-test-a"); val bStore = SecureStore(context, "del-test-b")
+        val aId = root(); val bId = root()
+        val aStore = SecureStore(context, aId); val bStore = SecureStore(context, bId)
         aStore.forget(); bStore.forget()
         val relay = Relay()
         try {
@@ -52,13 +55,13 @@ class MessageDeletionTest {
             assertEquals(setOf("ONE", "TWO", "THREE"), b.view().messages.map { it.text }.toSet())
 
             // Delete one: gone from the view and the vault, and the old snapshot no longer opens.
-            val file = File(context.noBackupFilesDir, "del-test-b.bin")
-            val before = file.readBytes(); val beforeKeys = keys("del-test-b")
+            val file = File(context.noBackupFilesDir, "$bId.bin")
+            val before = file.readBytes(); val beforeKeys = keys(bId)
             b.deleteMessage(b.view().messages.first { it.text == "ONE" }.id!!)
             assertEquals(setOf("TWO", "THREE"), b.view().messages.map { it.text }.toSet())
-            assertNotEquals(beforeKeys, keys("del-test-b"))
+            assertNotEquals(beforeKeys, keys(bId))
             val current = file.readBytes(); file.writeBytes(before)
-            try { SecureStore(context, "del-test-b").load(); fail("Snapshot holding the deleted message reopened") } catch (_: Exception) {}
+            try { SecureStore(context, bId).load(); fail("Snapshot holding the deleted message reopened") } catch (_: Exception) {}
             file.writeBytes(current)
             b = StationEngine(bStore, relay)
             assertEquals(2, b.state!!.getJSONArray("inbox").length())
@@ -68,11 +71,11 @@ class MessageDeletionTest {
             age(bStore, 2 * 3_600_000L); b = StationEngine(bStore, relay)
             b.setRetention(21_600_000L)
             assertEquals(2, b.view().messages.size) // 2 h old, kept for 6 h.
-            val sixHourKeys = keys("del-test-b")
+            val sixHourKeys = keys(bId)
             b.setRetention(3_600_000L)
             assertTrue(b.view().messages.isEmpty())
             assertEquals(0, b.state!!.getJSONArray("inbox").length())
-            assertNotEquals(sixHourKeys, keys("del-test-b"))
+            assertNotEquals(sixHourKeys, keys(bId))
             assertEquals(3_600_000L, StationEngine(bStore, relay).retention)
             assertFalse(b.expire()) // Nothing left to expire: no needless rewrite.
 
@@ -85,6 +88,9 @@ class MessageDeletionTest {
             val a2 = StationEngine(aStore, relay) // Opening runs expiry, as every check does.
             assertTrue(a2.view().messages.isEmpty())
             assertEquals(0, a2.state!!.getJSONArray("outbox").length())
-        } finally { aStore.forget(); bStore.forget() }
+        } finally {
+            aStore.forget(); bStore.forget()
+            for (id in listOf(aId, bId)) { VaultKeys.deleteAll(id); VaultLifecycle.variants(File(context.noBackupFilesDir, "$id.bin")).forEach { it.delete() } }
+        }
     }
 }
