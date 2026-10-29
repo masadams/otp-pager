@@ -198,15 +198,19 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         val (room, capability) = try { StrictChat.room(credential, next.getString("role")) to PeerWipe.capability(credential) } finally { credential.fill(0) }
         check(relay.scope(next.getString("endpoint"), room, next.getString("token"), capability)) { "This server does not support strict chats. Update the relay or pair a normal chat." }
         val authority = relay.authority(next.getString("endpoint"))
+        val authorityPq = StrictChat.pinnablePq(authority, relay.pqAuthority(next.getString("endpoint")))
+        val pqSeed = PqSignature.newSeed()
         val share = StrictChat.newShare()
         try {
             relay.share(next.getString("endpoint"), room, capability, "PUT", JSONObject().put("share", StrictChat.encode(share))
-                .put("deadline", deadline).put("device", identity.card(create = true)).toString())
+                .put("deadline", deadline).put("device", identity.card(create = true))
+                .put("devicePq", b64e.encodeToString(PqSignature.publicKey(pqSeed))).toString())
             StrictChat.remember(strictRoot, share, StrictChatProtocol.MAX_LEASE_MS, store.operationKey)
         } finally { share.fill(0) }
         next.remove("strictPending")
         val peerRoom = unhex(c.getString("credential")).let { try { StrictChat.room(it, if (next.getString("role") == "A") "B" else "A") } finally { it.fill(0) } }
-        next.put("strictShare", JSONObject().put("room", room).put("peerRoom", peerRoom).put("capability", capability).put("deadline", deadline).put("authority", authority))
+        next.put("strictShare", JSONObject().put("room", room).put("peerRoom", peerRoom).put("capability", capability).put("deadline", deadline).put("authority", authority)
+            .put("devicePqSeed", b64e.encodeToString(pqSeed).also { pqSeed.fill(0) }).apply { authorityPq?.let { put("authorityPq", it) } })
     }
     /**
      * Every foreground check renews the lease with a fresh signed unlock (which is also the
@@ -215,9 +219,11 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
      */
     private fun checkInStrict(): String? {
         val s = state ?: return null
-        val strict = s.optJSONObject("strictShare") ?: return null
-        val route = StrictChat.Route(s.getString("endpoint"), strict.getString("room"), strict.getString("capability"),
-            strict.getString("authority"), s.getString("role").single(), unhex(s.getJSONObject("control").getString("generation")))
+        if (s.optJSONObject("strictShare") == null) return null
+        try { upgradeStrictPq() } catch (_: Exception) {} // Never blocks the check-in; retried next time.
+        val current = checkNotNull(state)
+        val route = StrictChat.route(current.getJSONObject("strictShare"), current.getString("endpoint"), current.getString("role"),
+            current.getJSONObject("control").getString("generation"))
         try {
             val epoch = StrictChat.epoch()
             val (share, millis) = StrictChat.grant(relay, route, identity)
@@ -229,6 +235,25 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         StrictChat.forget(root)
         VaultRetirement.retireContact(store.context, root)
         return "This strict chat's key share is gone from the server, so it was removed from this phone."
+    }
+    private var pqProbedAt = 0L
+    /**
+     * Strict chats paired before 0.19 get an ML-DSA device key (the relay pins it on the next
+     * unlock) and pin the relay's ML-DSA authority once it offers one bound to the pinned P-256
+     * key. Older relays are asked again at most every 6 hours.
+     */
+    private fun upgradeStrictPq() {
+        val strict = state?.optJSONObject("strictShare") ?: return
+        val now = android.os.SystemClock.elapsedRealtime()
+        val pq = if (strict.has("authorityPq") || (pqProbedAt != 0L && now - pqProbedAt < 6 * 3600_000L)) null else {
+            pqProbedAt = now
+            try { StrictChat.pinnablePq(strict.getString("authority"), relay.pqAuthority(state!!.getString("endpoint"))) } catch (_: Exception) { null }
+        }
+        if (strict.has("devicePqSeed") && pq == null) return
+        transaction { next -> next.getJSONObject("strictShare").apply {
+            if (!has("devicePqSeed")) put("devicePqSeed", PqSignature.newSeed().let { seed -> b64e.encodeToString(seed).also { seed.fill(0) } })
+            if (pq != null && !has("authorityPq")) put("authorityPq", pq)
+        } }
     }
     fun configure(endpoint: String, token: String, secret: String, role: String) {
         store.requireActive()

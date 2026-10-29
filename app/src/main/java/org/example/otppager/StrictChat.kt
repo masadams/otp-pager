@@ -86,7 +86,8 @@ internal object StrictChat {
                 .put("endpoint", state.getString("endpoint")).put("room", s.getString("room")).put("capability", s.getString("capability"))
                 .put("authority", s.getString("authority")).put("role", state.getString("role")).put("peerRoom", s.getString("peerRoom"))
                 .put("generation", state.getJSONObject("control").getString("generation"))
-                .put("iv", b64e.encodeToString(iv)).put("ct", Base64.getEncoder().encodeToString(sealed)))
+                .put("iv", b64e.encodeToString(iv)).put("ct", Base64.getEncoder().encodeToString(sealed))
+                .apply { for (k in listOf("authorityPq", "devicePqSeed")) if (s.has(k)) put(k, s.getString(k)) })
         } finally { key.fill(0) }
     }
     fun unwrap(root: String, stored: JSONObject, share: ByteArray): JSONObject {
@@ -107,10 +108,32 @@ internal object StrictChat {
         return try { unwrap(root, stored!!, share) } finally { share.fill(0) }
     }
 
-    class Route(val endpoint: String, val room: String, val capability: String, val authority: String, val role: Char, val generation: ByteArray)
-    fun route(wrapper: JSONObject): Route = wrapper.getJSONObject("strict").let { w ->
-        Route(w.getString("endpoint"), w.getString("room"), w.getString("capability"), w.getString("authority"),
-            w.getString("role").single(), PadProtocol.hexBytes(w.getString("generation")))
+    /** [authorityPq]: the relay's pinned ML-DSA key; [devicePqSeed]: this phone's ML-DSA key for this chat. */
+    class Route(val endpoint: String, val room: String, val capability: String, val authority: String, val role: Char, val generation: ByteArray,
+        val authorityPq: String? = null, val devicePqSeed: String? = null)
+    fun route(wrapper: JSONObject): Route = wrapper.getJSONObject("strict").let { w -> route(w, w.getString("endpoint"), w.getString("role"), w.getString("generation")) }
+    /** From a `strictShare` object (inner state) or the wrapper, which carry the same key names. */
+    fun route(strict: JSONObject, endpoint: String, role: String, generation: String) = Route(endpoint, strict.getString("room"),
+        strict.getString("capability"), strict.getString("authority"), role.single(), PadProtocol.hexBytes(generation),
+        strict.optString("authorityPq").takeIf { it.isNotEmpty() }, strict.optString("devicePqSeed").takeIf { it.isNotEmpty() })
+
+    private val PQ_BINDING = "OTP Pager PQ authority v1\u0000".toByteArray(Charsets.ISO_8859_1)
+    /**
+     * The relay's ML-DSA key, accepted only with a binding signed by the already-pinned P-256
+     * authority (so an upgrade can't be swapped in by someone without that key). Null if none.
+     */
+    fun pinnablePq(authority: String, offered: Pair<String, String>?): String? {
+        offered ?: return null
+        val spki = Base64.getDecoder().decode(offered.first)
+        require(PqSignature.validKey(spki)) { "Relay offered an invalid post-quantum key" }
+        require(IdentityProtocol.verify(authority, PQ_BINDING + spki, Base64.getDecoder().decode(offered.second))) { "Relay's post-quantum key isn't bound to its authority" }
+        return offered.first
+    }
+    /** Once an ML-DSA authority key is pinned, every response needs its signature too: no downgrade. */
+    private fun requirePq(route: Route, reply: JSONObject) {
+        val key = route.authorityPq ?: return
+        val signature = try { Base64.getDecoder().decode(reply.optString("pqSignature")) } catch (_: IllegalArgumentException) { ByteArray(0) }
+        require(PqSignature.verify(Base64.getDecoder().decode(key), Base64.getDecoder().decode(reply.getString("frame")), signature)) { "Strict post-quantum signature rejected" }
     }
     /**
      * One signed unlock round trip. Returns the share and how long it may be held. The grant must
@@ -125,16 +148,22 @@ internal object StrictChat {
         val bytes = StrictChatProtocol.encode(request)
         val pending = StrictChatProtocol.PendingUnlock(request, started)
         val body = JSONObject().put("frame", Base64.getEncoder().encodeToString(bytes))
-            .put("signature", Base64.getEncoder().encodeToString(identity.sign(bytes))).toString()
+            .put("signature", Base64.getEncoder().encodeToString(identity.sign(bytes)))
+            .apply { route.devicePqSeed?.let { Base64.getDecoder().decode(it) }?.let { seed ->
+                try { put("devicePq", Base64.getEncoder().encodeToString(PqSignature.publicKey(seed))).put("pqSignature", Base64.getEncoder().encodeToString(PqSignature.sign(seed, bytes))) }
+                finally { seed.fill(0) }
+            } }.toString()
         val reply = try { JSONObject(relay.share(route.endpoint, route.room, route.capability, "POST", body, unlock = true)) }
             catch (e: RelayHttpException) {
                 if (e.status == 404) throw Unavailable()
                 val revoked = if (e.status == 410) e.body?.let { runCatching { JSONObject(it) }.getOrNull() }?.takeIf { it.has("frame") } else null
                 if (revoked == null) throw e
+                requirePq(route, revoked)
                 pending.acceptRevoked(Base64.getDecoder().decode(revoked.getString("frame")), Base64.getDecoder().decode(revoked.getString("signature")),
                     route.authority, android.os.SystemClock.elapsedRealtime())
                 throw Gone()
             }
+        requirePq(route, reply)
         val elapsed = android.os.SystemClock.elapsedRealtime()
         val share = pending.accept(Base64.getDecoder().decode(reply.getString("frame")), Base64.getDecoder().decode(reply.getString("signature")),
             route.authority, System.currentTimeMillis(), elapsed)

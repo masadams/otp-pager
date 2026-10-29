@@ -17,8 +17,23 @@ tested on two physical phones. Normal chats are unchanged.
     (`PUT /v1/share/<room>`, stored once, never replaced);
   - seals its vault under an inner AES-256-GCM layer keyed by HMAC(share, chat root).
   Outside that layer only routing and public keys remain: endpoint, share rooms, control
-  capability, authority key, role and generation. A relay without share support fails the
+  capability, authority key, role and generation, plus (0.19) the chat's ML-DSA device seed,
+  which is still inside the Keystore-encrypted vault file. A relay without share support fails the
   pairing rather than creating a normal chat.
+- **Hybrid post-quantum signatures (0.19):** every UNLOCK also carries an ML-DSA-65 signature by
+  a per-chat device key, and every GRANT and REVOKED one by the relay's ML-DSA-65 authority key
+  (`authority-pq-key.pem`, Node 26 / OpenSSL 3.5). Pinning:
+  - the relay pins the device key at enrollment, or on the first valid unlock from a phone
+    paired before 0.19 (that unlock's P-256 signature covers the frame, and the key travels
+    with it). From then on an unlock needs both signatures, REVOKED answers included;
+  - the phone pins the authority's ML-DSA key at pairing, or later from `GET /v1/strict/authority`.
+    It accepts the key only with a `binding` signed by the already-pinned P-256 authority over
+    `"OTP Pager PQ authority v1\0" ‖ SPKI`. From then on a response without a valid ML-DSA
+    signature is refused (no downgrade), even if its P-256 signature is valid;
+  - until both sides are pinned (older relay, or before the first check after updating) the
+    chat runs on P-256 alone, as before.
+  `test-vectors/mldsa65.properties` checks Bouncy Castle (phone) against OpenSSL (relay) in both
+  directions.
 - **Opening the chat:** the phone signs an `OTPSTR01` UNLOCK with its device key and sends it to
   `POST /v1/share/<room>/unlock`.
   - The relay verifies the signature against the enrolled device key, then checks the
@@ -79,7 +94,9 @@ tested on two physical phones. Normal chats are unchanged.
 - A seized phone that is put online before the deadline (or before a wipe deletes the share)
   can still be unlocked by whoever can operate the phone. The device key never leaves the phone,
   but a stolen storage image alone can't sign an unlock.
-- The authority key is trusted on first use at pairing.
+- The authority key is trusted on first use at pairing. A chat paired before 0.19 takes the
+  ML-DSA keys on trust from its P-256 keys, so an attacker who could already forge P-256 then
+  (a quantum computer, before the upgrade) could plant their own.
 - Relay backups may retain shares.
 
 The candidate notes below are kept from #48 for review history. Where they say "no inactivity

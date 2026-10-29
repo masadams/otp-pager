@@ -54,12 +54,31 @@ Recorded relay traffic exposes relay tokens, mailbox IDs and timing, never messa
   or only X25519. It checks that both work, that the probe reports each correctly, and that
   an untrusted certificate is still refused.
 
+### Strict-chat unlocks and grants: hybrid ECDSA P-256 + ML-DSA-65 (0.19)
+
+A quantum attacker who could forge P-256 could otherwise forge an unlock grant (relay to phone)
+or an unlock request (phone to relay) in real time.
+
+- The relay has an ML-DSA-65 (FIPS 204) authority key next to its P-256 key, and each strict
+  chat has an ML-DSA-65 device key next to the Keystore P-256 key. Every unlock, grant and
+  REVOKED answer carries both signatures, and once a key is pinned both must verify. Forging
+  one needs both algorithms broken.
+- Phones paired before 0.19 upgrade on their next check: they pin the relay's ML-DSA key
+  only if the pinned P-256 authority signed it, and the relay pins the phone's ML-DSA key from
+  its next P-256-signed unlock. See [STRICT_CHAT_PROTOCOL.md](STRICT_CHAT_PROTOCOL.md).
+- The relay needs Node 26 (OpenSSL 3.5); the release image has it, and CI fails the image if
+  ML-DSA is missing. On an older Node the relay runs classical-only.
+- Phone side: Bouncy Castle `MLDSASigner`. `test-vectors/mldsa65.properties` holds an OpenSSL
+  key and signature that Bouncy Castle must verify, and a Bouncy Castle signature that the relay
+  test must verify (`PqSignatureTest`, `relay/test.mjs`).
+- The ML-DSA device seed is a software key in the Keystore-encrypted vault file (Android
+  Keystore has no ML-DSA). Taking it needs the same access to the phone as using its P-256 key.
+
 ## Not yet post-quantum
 
 | Use | Today | Quantum risk | Plan |
 |---|---|---|---|
-| Device identity: signs messages, receipts and pairing approvals | ECDSA P-256, non-exportable Android Keystore key | Real-time forgery only; nothing recorded becomes readable. Each message is inside the OTP layer and carries the pad's HMAC, so forging a message needs the pad, not just the signature. | Per-message ML-DSA signatures don't fit: every message must fit one 4 KiB pad block, and an ML-DSA-65 signature alone is 3.3 KB. The useful place is the pairing approvals and the pinned identity (hybrid ECDSA + ML-DSA, with the ML-DSA key in the encrypted vault because Android Keystore has no ML-DSA). |
-| Strict-chat unlock requests and grants | ECDSA P-256: device key on the phone, authority key on the relay | Real-time forgery of a grant or unlock | Hybrid signatures as above, plus the relay authority (Node: ML-DSA via `node:crypto` once the base image's OpenSSL supports it, or a vetted library). |
+| Device identity: signs messages, receipts and pairing approvals | ECDSA P-256, non-exportable Android Keystore key | Real-time forgery only; nothing recorded becomes readable. Each message is inside the OTP layer and carries the pad's MAC (one-time Poly1305 for pairings since 0.18), so forging a message needs the pad, not just the signature. The device public keys themselves are exchanged inside the hybrid USB channel and covered by the compared code. | Per-message ML-DSA signatures don't fit: every message must fit one 4 KiB pad block, and an ML-DSA-65 signature alone is 3.3 KB. The useful place is the pairing approvals and the pinned identity (hybrid ECDSA + ML-DSA, with the ML-DSA key in the encrypted vault because Android Keystore has no ML-DSA). |
 | Relay HTTPS, server side | Your Nginx/proxy decides | As above, until the proxy offers the hybrid group | Enable `X25519MLKEM768` on the proxy (below), then check the connection test. |
 | APK signature | RSA-3072 | Future forgery of an update, which would need the attacker to also get the APK onto your phone | Android only accepts RSA/EC/DSA APK signatures. Nothing to do until Android supports a post-quantum scheme. |
 

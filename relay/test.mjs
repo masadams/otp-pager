@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import * as nodeCrypto from 'node:crypto';
 import { createCipheriv, createDecipheriv, randomBytes, createHash, createHmac } from 'node:crypto';
 import { makeServer } from './server.mjs';
 
@@ -435,5 +436,111 @@ test('strict-chat shares: deletion retires for good, replay protection never evi
     assert.equal((await fetch(base + '/v1/mailbox/' + other + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability: 'g'.repeat(43) }) })).status, 201);
     assert.equal((await fetch(base + '/v1/share/' + other + '/unlock', { method: 'POST', headers: { ...scoped, Authorization: 'Bearer ' + 'g'.repeat(43) },
       body: JSON.stringify({ frame: frame().toString('base64'), signature: 'AAAAAAAAAAA=' }) })).status, 404);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});
+
+const mlDsa = (() => { try { return !!nodeCrypto.generateKeyPairSync('ml-dsa-65'); } catch { return false; } })();
+// The release image must have ML-DSA (CI sets this for the run on the image's own Node).
+if (process.env.REQUIRE_MLDSA && !mlDsa) throw new Error('This Node has no ML-DSA-65; the relay image needs OpenSSL 3.5');
+
+test('ML-DSA-65 matches Bouncy Castle both ways (test-vectors/mldsa65.properties)', { skip: !mlDsa && 'this Node has no ML-DSA' }, async () => {
+  const { verify: verifyWith, createPrivateKey, createPublicKey } = await import('node:crypto');
+  const v = Object.fromEntries(readFileSync(new URL('../test-vectors/mldsa65.properties', import.meta.url), 'utf8').split('\n')
+    .filter(l => l && !l.startsWith('#')).map(l => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]));
+  const seedDer = Buffer.concat([Buffer.from('3034020100300b060960864801650304031204228020', 'hex'), Buffer.from(v.seed, 'hex')]);
+  const spki = createPublicKey(createPrivateKey({ key: seedDer, format: 'der', type: 'pkcs8' })).export({ format: 'der', type: 'spki' });
+  assert.equal(spki.toString('base64'), v.spki); // Same seed, same public key.
+  const key = createPublicKey({ key: spki, format: 'der', type: 'spki' }), message = Buffer.from(v.message, 'hex');
+  assert.ok(verifyWith(null, message, key, Buffer.from(v.node_signature, 'base64')));
+  assert.ok(verifyWith(null, message, key, Buffer.from(v.bc_signature, 'base64')));
+});
+
+test('strict-chat shares: hybrid ML-DSA authority and device signatures, pinned and never downgraded', { skip: !mlDsa && 'this Node has no ML-DSA' }, async () => {
+  const { generateKeyPairSync, sign: signWith, verify: verifyWith, createPublicKey } = await import('node:crypto');
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-')); let clock = 1_800_000_000_000;
+  let { server, base } = await launch({ dataDir, now: () => clock });
+  const sha = b => createHash('sha256').update(b).digest();
+  const spkiOf = k => k.publicKey.export({ type: 'spki', format: 'der' });
+  try {
+    // The authority publishes its ML-DSA key with a binding signed by its P-256 key.
+    const body = await (await fetch(base + '/v1/strict/authority')).json();
+    const auth = Buffer.from(body.key, 'base64'), pq = Buffer.from(body.pq, 'base64');
+    const authKey = createPublicKey({ key: auth, format: 'der', type: 'spki' }), pqKey = createPublicKey({ key: pq, format: 'der', type: 'spki' });
+    assert.equal(pqKey.asymmetricKeyType, 'ml-dsa-65');
+    assert.ok(verifyWith('sha256', Buffer.concat([Buffer.from('OTP Pager PQ authority v1\0', 'latin1'), pq]), authKey, Buffer.from(body.binding, 'base64')));
+
+    const setup = async (room, capability, enrollPq) => {
+      const ec = generateKeyPairSync('ec', { namedCurve: 'P-256' }), ml = generateKeyPairSync('ml-dsa-65');
+      const scoped = { Authorization: 'Bearer ' + capability, 'Content-Type': 'application/json' };
+      assert.equal((await fetch(base + '/v1/mailbox/' + room + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability }) })).status, 201);
+      const enrollment = { share: Buffer.alloc(32, 5).toString('base64url'), deadline: 2 * 3600000, device: spkiOf(ec).toString('base64'),
+        ...(enrollPq && { devicePq: spkiOf(ml).toString('base64') }) };
+      const enroll = extra => fetch(base + '/v1/share/' + room, { method: 'PUT', headers: scoped, body: JSON.stringify({ ...enrollment, ...extra }) });
+      const frame = () => {
+        const f = Buffer.alloc(178); f.write('OTPSTR01', 0, 'latin1'); f[8] = 2; f[9] = 66; randomBytes(16).copy(f, 10);
+        sha(spkiOf(ec)).copy(f, 26); sha(auth).copy(f, 58); f.writeBigInt64BE(1n, 90); randomBytes(32).copy(f, 98);
+        f.writeBigInt64BE(BigInt(clock), 130); f.writeBigInt64BE(BigInt(clock + 60000), 138); return f;
+      };
+      const unlock = (f, { pqSignature, devicePq } = {}) => fetch(base + '/v1/share/' + room + '/unlock', { method: 'POST', headers: scoped,
+        body: JSON.stringify({ frame: f.toString('base64'), signature: signWith('sha256', f, ec.privateKey).toString('base64'), devicePq, pqSignature }) });
+      const both = f => unlock(f, { devicePq: spkiOf(ml).toString('base64'), pqSignature: signWith(null, f, ml.privateKey).toString('base64') });
+      return { ml, enroll, frame, unlock, both, scoped };
+    };
+
+    // Enrolled with an ML-DSA key: every unlock needs both signatures.
+    const a = await setup('1'.repeat(64), 'h'.repeat(43), true);
+    assert.equal((await a.enroll({ devicePq: spkiOf(generateKeyPairSync('ec', { namedCurve: 'P-256' })).toString('base64') })).status, 400);
+    assert.equal((await a.enroll()).status, 201);
+    assert.equal((await a.unlock(a.frame())).status, 403); // ECDSA alone is refused.
+    const other = generateKeyPairSync('ml-dsa-65'), f1 = a.frame();
+    assert.equal((await a.unlock(f1, { pqSignature: signWith(null, f1, other.privateKey).toString('base64') })).status, 403);
+    const f2 = a.frame(), reply = await a.both(f2); assert.equal(reply.status, 200);
+    const grant = await reply.json(), gf = Buffer.from(grant.frame, 'base64');
+    assert.ok(verifyWith('sha256', gf, authKey, Buffer.from(grant.signature, 'base64')));
+    assert.ok(verifyWith(null, gf, pqKey, Buffer.from(grant.pqSignature, 'base64')));
+
+    // Enrolled before the upgrade: the first valid hybrid unlock pins the key, which then sticks (also across restart).
+    const b = await setup('2'.repeat(64), 'i'.repeat(43), false);
+    assert.equal((await b.enroll()).status, 201);
+    assert.equal((await b.unlock(b.frame())).status, 200); // Classical still works before pinning.
+    const bad = b.frame();
+    assert.equal((await b.unlock(bad, { devicePq: spkiOf(b.ml).toString('base64'), pqSignature: 'AAAA' })).status, 403);
+    assert.equal((await b.both(b.frame())).status, 200);
+    assert.equal((await b.unlock(b.frame())).status, 403);
+    await stop(server); ({ server, base } = await launch({ dataDir, now: () => clock }));
+    assert.equal((await b.unlock(b.frame())).status, 403);
+    assert.equal((await b.both(b.frame())).status, 200);
+
+    // Retired: REVOKED carries both authority signatures and still needs the pinned device key.
+    assert.equal((await fetch(base + '/v1/share/' + '2'.repeat(64), { method: 'DELETE', headers: b.scoped })).status, 200);
+    assert.equal((await b.unlock(b.frame())).status, 403);
+    const gone = await b.both(b.frame()); assert.equal(gone.status, 410);
+    const revoked = await gone.json(), rf = Buffer.from(revoked.frame, 'base64');
+    assert.equal(rf[8], 5);
+    assert.ok(verifyWith(null, rf, pqKey, Buffer.from(revoked.pqSignature, 'base64')));
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});
+
+test('a relay without ML-DSA ignores device ML-DSA keys and stays classical', { skip: mlDsa && 'this Node has ML-DSA' }, async () => {
+  const { generateKeyPairSync, sign: signWith } = await import('node:crypto');
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-')); const clock = 1_800_000_000_000;
+  const { server, base } = await launch({ dataDir, now: () => clock });
+  const room = '3'.repeat(64), capability = 'j'.repeat(43);
+  const scoped = { Authorization: 'Bearer ' + capability, 'Content-Type': 'application/json' };
+  const ec = generateKeyPairSync('ec', { namedCurve: 'P-256' }), device = ec.publicKey.export({ type: 'spki', format: 'der' });
+  try {
+    const body = await (await fetch(base + '/v1/strict/authority')).json();
+    assert.equal(body.pq, undefined);
+    const auth = Buffer.from(body.key, 'base64'), sha = b => createHash('sha256').update(b).digest();
+    assert.equal((await fetch(base + '/v1/mailbox/' + room + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability }) })).status, 201);
+    assert.equal((await fetch(base + '/v1/share/' + room, { method: 'PUT', headers: scoped, body: JSON.stringify({ share: Buffer.alloc(32, 1).toString('base64url'),
+      deadline: 2 * 3600000, device: device.toString('base64'), devicePq: 'not checked here' }) })).status, 201);
+    const f = Buffer.alloc(178); f.write('OTPSTR01', 0, 'latin1'); f[8] = 2; f[9] = 65; randomBytes(16).copy(f, 10);
+    sha(device).copy(f, 26); sha(auth).copy(f, 58); f.writeBigInt64BE(1n, 90); randomBytes(32).copy(f, 98);
+    f.writeBigInt64BE(BigInt(clock), 130); f.writeBigInt64BE(BigInt(clock + 60000), 138);
+    const reply = await fetch(base + '/v1/share/' + room + '/unlock', { method: 'POST', headers: scoped, body: JSON.stringify({ frame: f.toString('base64'),
+      signature: signWith('sha256', f, ec.privateKey).toString('base64'), devicePq: 'ignored', pqSignature: 'ignored' }) });
+    assert.equal(reply.status, 200);
+    assert.equal((await reply.json()).pqSignature, undefined);
   } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
 });
