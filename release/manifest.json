@@ -5,6 +5,6 @@
   "relay_run": 40791087919,
   "signed_android_run": 40795955627,
   "artifact": "otp-pager-signed-release",
-  "signing_cert_sha256": "FINGERPRINT_PENDING",
+  "signing_cert_sha256": "ef7f03e9b7cdec5ec310c32100238e445bdc0ae78ece5b491a605f4ea6b60dbd",
   "initial_signed_release": true
 }
