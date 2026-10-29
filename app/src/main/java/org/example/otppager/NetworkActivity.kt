@@ -141,11 +141,11 @@ class NetworkActivity : Activity() {
     private lateinit var navigation: LinearLayout
     private lateinit var trafficTab: Button
     private lateinit var linkTab: Button
-    private val paper = Color.WHITE
-    private val ink = Color.rgb(20, 20, 20)
-    private val muted = Color.rgb(70, 70, 70)
-    private val green = Color.rgb(30, 30, 30)
-    private val lineColor = Color.rgb(215, 217, 205)
+    private val paper = UiStyle.paper
+    private val ink = UiStyle.ink
+    private val muted = UiStyle.muted
+    private val green = UiStyle.muted
+    private val lineColor = UiStyle.line
     private val poll = object : Runnable {
         override fun run() {
             if (active && unlocked) updateIndicators()
@@ -163,22 +163,23 @@ class NetworkActivity : Activity() {
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun text(value: String, size: Float = 14f, color: Int = ink, mono: Boolean = false) = TextView(this).apply {
         this.text = value; textSize = size; setTextColor(color)
-        typeface = Typeface.MONOSPACE // One typeface across the app, matching the pager screens.
+        typeface = if (mono) Typeface.MONOSPACE else UiStyle.body // Monospace only for codes and technical values.
         setLineSpacing(dp(3).toFloat(), 1f)
     }
     private fun column() = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
     private fun row() = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     private fun surface(color: Int, radius: Int = 8, border: Int? = null, stroke: Int = 1) = GradientDrawable().apply {
-        setColor(color); cornerRadius = dp(2).toFloat(); border?.let { setStroke(dp(stroke), it) }
+        setColor(color); cornerRadius = dp(radius).toFloat(); border?.let { setStroke(dp(stroke), it) }
     }
     private fun button(label: String, primary: Boolean = false, action: () -> Unit) = Button(this).apply {
-        text = label; isAllCaps = false; textSize = 13f; typeface = Typeface.MONOSPACE
-        minHeight = dp(44); minimumHeight = dp(44); setTextColor(if (primary) Color.WHITE else ink)
-        stateListAnimator = null; elevation = 0f; setPadding(dp(8), 0, dp(8), 0)
-        background = android.graphics.drawable.StateListDrawable().apply {
-            addState(intArrayOf(-android.R.attr.state_enabled), surface(paper, 2, lineColor))
-            addState(intArrayOf(), surface(if (primary) ink else paper, 2, if (primary) ink else lineColor))
-        }
+        text = label; isAllCaps = false; textSize = 14f; typeface = UiStyle.medium; letterSpacing = 0.01f
+        minHeight = dp(46); minimumHeight = dp(46); setTextColor(if (primary) Color.WHITE else ink)
+        stateListAnimator = null; elevation = 0f; setPadding(dp(14), 0, dp(14), 0)
+        val radius = UiStyle.BUTTON_RADIUS
+        background = UiStyle.pressable(android.graphics.drawable.StateListDrawable().apply {
+            addState(intArrayOf(-android.R.attr.state_enabled), surface(paper, radius, lineColor))
+            addState(intArrayOf(), surface(if (primary) ink else paper, radius, if (primary) ink else lineColor))
+        }, dp(radius).toFloat())
         setTextColor(ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf()), intArrayOf(muted, if (primary) Color.WHITE else ink)))
         filterTouchesWhenObscured = true
         isSaveEnabled = false
@@ -186,19 +187,19 @@ class NetworkActivity : Activity() {
     }
     private fun field(hint: String, password: Boolean = false) = EditText(this).apply {
         this.hint = hint; textSize = 15f; setTextColor(ink); setHintTextColor(muted)
-        typeface = Typeface.MONOSPACE
+        typeface = UiStyle.body
         inputType = InputType.TYPE_CLASS_TEXT or if (password) InputType.TYPE_TEXT_VARIATION_PASSWORD else InputType.TYPE_TEXT_VARIATION_URI
         setSingleLine(true)
         // setSingleLine installs a transformation; restore password masking afterward.
         if (password) transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()
-        setPadding(dp(12), dp(12), dp(12), dp(12))
-        background = surface(Color.WHITE, 6, lineColor)
+        setPadding(dp(14), dp(12), dp(14), dp(12))
+        background = surface(Color.WHITE, UiStyle.BUTTON_RADIUS, lineColor)
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
         imeOptions = imeOptions or android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING or android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
         isSaveEnabled = false; filterTouchesWhenObscured = true
     }
     private fun section(parent: LinearLayout, label: String, field: View) {
-        parent.addView(text(label, 11f, muted, true).apply { setPadding(0, dp(18), 0, dp(7)) })
+        parent.addView(text(label, 11f, muted).apply { setPadding(0, dp(18), 0, dp(7)) })
         parent.addView(field, LinearLayout.LayoutParams(-1, -2))
     }
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -214,20 +215,23 @@ class NetworkActivity : Activity() {
         super.onResume(); active = true; StationRuntime.uiVisible = true
         if (!unlocked) {
             val guard = getSystemService(KeyguardManager::class.java)
-            if (guard.isDeviceSecure) showUnlock() else { unlocked = true; showTerminal() }
+            if (AppLock.unlocked || !guard.isDeviceSecure) { unlocked = true; AppLock.unlock(); showTerminal() } else showUnlock()
         } else if (needsTerminal) showTerminal() else schedule()
+    }
+    private var promptedEpoch = -1
+    private fun requestUnlock() {
+        val intent = getSystemService(KeyguardManager::class.java).createConfirmDeviceCredentialIntent("Unlock Field", "Use your device screen lock")
+        if (intent != null) startActivityForResult(intent, 71) else { unlocked = true; AppLock.unlock(); showTerminal() }
     }
     private fun showUnlock() {
         busy = false
-        val lock = column().apply { setBackgroundColor(paper); setPadding(dp(28), dp(80), dp(28), dp(24)) }
-        lock.addView(text("Field", 28f, ink, true))
-        lock.addView(text("Unlock your chats.", 18f).apply { setPadding(0, dp(20), 0, dp(20)) })
-        lock.addView(button("Unlock", true) {
-            val guard = getSystemService(KeyguardManager::class.java)
-            val intent = guard.createConfirmDeviceCredentialIntent("Unlock Field", "Use your device screen lock")
-            if (intent != null) startActivityForResult(intent, 71)
-        })
+        val lock = column().apply { setBackgroundColor(paper); gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(28), dp(120), dp(28), dp(24)) }
+        lock.addView(text("Field", 34f, ink).apply { typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); gravity = Gravity.CENTER })
+        lock.addView(text("Your chats are locked.", 16f, muted).apply { gravity = Gravity.CENTER; setPadding(0, dp(12), 0, dp(32)) })
+        lock.addView(button("Unlock", true) { requestUnlock() }, LinearLayout.LayoutParams(-1, -2))
         setContentView(lock)
+        // Open the system prompt straight away: one confirmation to get in. Cancel leaves this screen.
+        if (promptedEpoch != AppLock.epoch) { promptedEpoch = AppLock.epoch; requestUnlock() }
     }
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent); setIntent(intent)
@@ -245,15 +249,15 @@ class NetworkActivity : Activity() {
             val result = com.google.zxing.integration.android.IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
             val contents = result?.contents?.takeIf { it.length <= 1024 }
             if (identityScan) pendingDeviceScan = contents else pendingScan = contents
-            unlocked = true; needsTerminal = true; tab = if (identityScan) 3 else 1
+            unlocked = AppLock.unlocked; needsTerminal = true; tab = if (identityScan) 3 else 1
             identityScan = false
         }
         if (requestCode in listOf(81, 82, 83, 84, 85) && resultCode == RESULT_OK && data?.data != null) {
-            pendingDocument = requestCode to data.data!!; unlocked = true; needsTerminal = true
+            pendingDocument = requestCode to data.data!!; unlocked = AppLock.unlocked; needsTerminal = true
             if (requestCode in listOf(83, 84)) tab = 3
             if (requestCode == 85) tab = 1
         }
-        if (requestCode == 71 && resultCode == RESULT_OK) { unlocked = true; needsTerminal = true }
+        if (requestCode == 71 && resultCode == RESULT_OK) { AppLock.unlock(); unlocked = true; needsTerminal = true }
     }
     private fun showTerminal() {
         if (GlobalRetirement.isFrozen(noBackupFilesDir)) {
@@ -285,18 +289,18 @@ class NetworkActivity : Activity() {
             contentDescription = "Back to chats"; textSize = 24f; background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
         }, LinearLayout.LayoutParams(dp(44), dp(44)))
         chatButton = button("Conversation") { selectTab(6) }.apply {
-            textSize = if (compact) 15f else 18f; typeface = Typeface.create("monospace", Typeface.BOLD)
+            textSize = if (compact) 16f else 19f; typeface = UiStyle.bold
             maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; gravity = Gravity.START or Gravity.CENTER_VERTICAL
             setPadding(0, 0, dp(6), 0); background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
         }
         header.addView(chatButton, LinearLayout.LayoutParams(0, -2, 1f))
-        stationLabel = text("STATION —", 11f, green, true).apply { setPadding(dp(4), 0, dp(8), 0); maxLines = 1 }; header.addView(stationLabel)
+        stationLabel = text("STATION —", 11f, green).apply { setPadding(dp(4), 0, dp(8), 0); maxLines = 1 }; header.addView(stationLabel)
         receiveButton = button("⋮") { showConversationMenu() }.apply {
             textSize = 22f; minWidth = 0; minimumWidth = 0; contentDescription = "Conversation options"
             setOnClickListener { showConversationMenu() } // Not busy-gated: the menu holds the local wipe.
         }
         header.addView(receiveButton); chrome.addView(header)
-        indicators = text("○ Not checked yet", 11f, ink, true).apply {
+        indicators = text("○ Not checked yet", 11f, ink).apply {
             setPadding(dp(4), dp(2), dp(4), dp(6))
             contentDescription = "Station status. Tap for connection, delivery and security details."
             setOnClickListener { showStationStatus() }
@@ -310,9 +314,9 @@ class NetworkActivity : Activity() {
             item.textSize = 11f; item.minWidth = 0; item.minimumWidth = 0; item.setPadding(dp(3), 0, dp(3), 0)
         }
         tabs.addView(trafficTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(linkTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(padTab, LinearLayout.LayoutParams(0, -2, 1f)); tabs.addView(deviceTab, LinearLayout.LayoutParams(0, -2, 1f)); chrome.addView(tabs)
-        status = text("Opening station…", 11f, muted, true).apply { setPadding(dp(2), dp(2), 0, dp(4)); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setOnClickListener { showStationStatus() } }; chrome.addView(status)
+        status = text("Opening station…", 11f, muted).apply { setPadding(dp(2), dp(2), 0, dp(4)); maxLines = 2; ellipsize = android.text.TextUtils.TruncateAt.END; setOnClickListener { showStationStatus() } }; chrome.addView(status)
         traffic = column()
-        setupHint = text("", 12f, ink, true).apply { setPadding(dp(10), dp(8), dp(10), dp(8)); background = surface(paper, 2, lineColor); setOnClickListener { selectTab(if (latest?.setupComplete == true) 6 else 5) } }; traffic.addView(setupHint)
+        setupHint = text("", 12f, ink).apply { setPadding(dp(14), dp(10), dp(14), dp(10)); background = surface(paper, UiStyle.CARD_RADIUS, lineColor); setOnClickListener { selectTab(if (latest?.setupComplete == true) 6 else 5) } }; traffic.addView(setupHint)
         newMessagesButton = button("New messages · Jump to latest") {
             messageScroll.fullScroll(View.FOCUS_DOWN)
             ackVisibleMessages()
@@ -331,7 +335,7 @@ class NetworkActivity : Activity() {
         }
         traffic.addView(composer)
         val composeActions = row().also { composeRow = it }
-        count = text("0 / 2048 bytes", 10f, muted, true); composeActions.addView(count, LinearLayout.LayoutParams(0, -2, 1f))
+        count = text("0 / 2048 bytes", 10f, muted); composeActions.addView(count, LinearLayout.LayoutParams(0, -2, 1f))
         syncButton = button("Sync") { runTask(network = true) { syncChats() } }; composeActions.addView(syncButton)
         syncButton.visibility = View.GONE
         sendButton = button("Send", true) {
@@ -366,7 +370,7 @@ class NetworkActivity : Activity() {
         pairedOptions.addView(button("Receiving & battery") { showReceiving() })
         renewButton = button("Renew pad · USB") { choosePadSize(renew = true) }
         pairedOptions.addView(renewButton)
-        pairedOptions.addView(button("Renew nearby · NFC + Wi-Fi") { beginRadioPairing(true) })
+        pairedOptions.addView(button(if (NEARBY_PAIRING_AVAILABLE) "Renew nearby · NFC + Wi-Fi" else "Renew nearby · Coming soon") { beginRadioPairing(true) }.apply { isEnabled = NEARBY_PAIRING_AVAILABLE })
         pairedOptions.addView(button("Pad size for pairing") { choosePadSize(renew = false, launch = false) })
         settings.addView(button("Chat relay access") { showRelayAccess() })
         settingsIntro = text("Save server details on one device, then pair by cable. QR is available as a fallback.", 14f, muted); settings.addView(settingsIntro)
@@ -374,7 +378,7 @@ class NetworkActivity : Activity() {
             if (latest?.cableEligible == false) confirm("Replace this pairing?", "This removes the current conversation and queued messages on THIS station. The server address and token stay saved. A fresh secret and pad will be created; the old pad cannot be reused. Start the new pairing on both intended devices.") { beginCablePairing(true) }
             else choosePadSize(renew = false)
         }; settings.addView(pairButton)
-        radioPairButton = button("Pair nearby · NFC + Wi-Fi") { beginRadioPairing(false) }; settings.addView(radioPairButton)
+        radioPairButton = button(if (NEARBY_PAIRING_AVAILABLE) "Pair nearby · NFC + Wi-Fi" else "Pair nearby · Coming soon") { beginRadioPairing(false) }.apply { isEnabled = NEARBY_PAIRING_AVAILABLE }; settings.addView(radioPairButton)
         pairingHelp = text("Open Pair devices on both and connect a USB data cable. Setup, pad transfer and identity verification happen together.", 12f, muted); settings.addView(pairingHelp)
         settings.addView(button("Advanced connection setup") {
             advancedShown = !advancedShown
@@ -386,11 +390,11 @@ class NetworkActivity : Activity() {
             updateNavigation()
         })
         advancedSetup = column(); settings.addView(advancedSetup)
-        advancedSetup.addView(button("Tap setup · NFC") {
+        advancedSetup.addView(button(if (NEARBY_PAIRING_AVAILABLE) "Tap setup · NFC" else "Tap setup · NFC · Coming soon") {
             runTask(onSuccess = { startActivity(Intent(this, NfcSetupActivity::class.java).putExtra("chat", checkNotNull(book).active().id)) }) {
                 checkNotNull(engine).requireCableEligible(); "Open NFC setup on the other device"
             }
-        })
+        }.apply { isEnabled = NEARBY_PAIRING_AVAILABLE })
         val qrActions = row()
         showQrButton = button("Show setup QR") {
             confirm("Share this station's setup?", "This QR contains your relay token and pairing secret. Show it only to your other physical station. Anyone photographing it gets those secrets. It does not include the pad or private device key. Never use it to clone an existing paired device; replacement devices need a fresh secret and pad.") {
@@ -535,7 +539,7 @@ class NetworkActivity : Activity() {
             override fun openFriend(id: String, paired: Boolean) { this@NetworkActivity.openFriend(id, if (paired) 0 else 5) }
             override fun saveServer(address: String, token: String) { saveGuidedServer(address, token) }
             override fun cable() { if (!busy) beginCablePairing(false) }
-            override fun nearby() { if (!busy) launchNearbyPairing(false) }
+            override fun nearby() { if (!busy) { if (NEARBY_PAIRING_AVAILABLE) launchNearbyPairing(false) else report("Tap + Wi-Fi pairing is coming soon. Use a USB cable for now.") } }
             override fun padSize() { if (!busy) choosePadSize(false, launch = false) }
             override fun advanced() { advancedShown = true; selectTab(1); latest?.let(::render) }
             override fun renew() { showRenewalMethods() }
@@ -698,6 +702,7 @@ class NetworkActivity : Activity() {
         }
     }
     private fun beginRadioPairing(renew: Boolean) {
+        if (!NEARBY_PAIRING_AVAILABLE) { report("Tap + Wi-Fi pairing is coming soon. Use a USB cable for now."); return }
         confirm(if (renew) "Renew over local Wi-Fi?" else "Pair over local Wi-Fi?",
             "Both devices need the same app version, NFC and the same private Wi-Fi. Tap to share a temporary secret, then compare codes before the encrypted pad transfer. No pad goes to the relay. Keep the tap private; use USB if you prefer a cable. Existing pairings are preserved. Pad size on this device: ${selectedPadSize / PadProtocol.MATERIAL_BYTES} MiB.") {
             if (renew) launchNearbyPairing(true) else chooseChatType { launchNearbyPairing(false) }
@@ -989,7 +994,7 @@ class NetworkActivity : Activity() {
     }
     private fun showWipeScreen(title: String, detail: String, next: (() -> Unit)?) {
         val screen = column().apply { setPadding(dp(24), dp(48), dp(24), dp(24)) }
-        screen.addView(text(title, 24f, ink, true))
+        screen.addView(text(title, 24f, ink))
         screen.addView(text(detail, 15f).apply { setPadding(0, dp(16), 0, dp(16)) })
         screen.addView(text("Exported pad files, screenshots, backups and the other phone are outside this wipe. Minimal records of used pads stay so old keys can never be reused.", 12f, muted))
         if (next != null) screen.addView(button("Continue", true) { next() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(24) })
@@ -1006,7 +1011,7 @@ class NetworkActivity : Activity() {
         AlertDialog.Builder(this).setTitle("Renew message keys")
             .setMessage("Your friend's identity and saved history stay in place. Open renewal for this conversation on both devices.")
             .setPositiveButton("USB cable") { _, _ -> choosePadSize(true) }
-            .setNeutralButton("Tap + Wi-Fi") { _, _ -> beginRadioPairing(true) }
+            .apply { if (NEARBY_PAIRING_AVAILABLE) setNeutralButton("Tap + Wi-Fi") { _, _ -> beginRadioPairing(true) } }
             .setNegativeButton("Cancel", null).create().also(::secureShow)
     }
     /** New pairings only: normal, or strict with a relay check-in deadline. Both phones must match. */
@@ -1442,20 +1447,21 @@ class NetworkActivity : Activity() {
         for (m in view.messages) {
             val day = dayFormat.format(java.util.Date(m.time))
             if (day != previousDay) {
-                messages.addView(text(when (day) { today -> "Today"; yesterday -> "Yesterday"; else -> java.text.SimpleDateFormat("d MMM", java.util.Locale.getDefault()).format(java.util.Date(m.time)) }, 11f, muted, true)
-                    .apply { gravity = Gravity.CENTER; setPadding(0, dp(12), 0, dp(2)) })
+                messages.addView(text(when (day) { today -> "Today"; yesterday -> "Yesterday"; else -> java.text.SimpleDateFormat("d MMM", java.util.Locale.getDefault()).format(java.util.Date(m.time)) }, 11f, muted)
+                    .apply { gravity = Gravity.CENTER; typeface = UiStyle.medium; setPadding(0, dp(14), 0, dp(4)) })
                 previousDay = day
             }
             val card = column().apply {
-                setPadding(dp(14), dp(11), dp(14), dp(12))
-                // Your own messages get a heavier ink border: readable on e-ink without colour.
-                background = if (m.incoming) surface(Color.WHITE, 2, lineColor) else surface(Color.WHITE, 2, ink, stroke = 2)
+                setPadding(dp(14), dp(10), dp(14), dp(10))
+                // Your own messages are solid ink with white text: clear on e-ink without colour.
+                background = if (m.incoming) surface(Color.WHITE, UiStyle.BUBBLE_RADIUS, lineColor) else surface(ink, UiStyle.BUBBLE_RADIUS, ink)
             }
             val label = if (m.incoming) (if (m.unread) "New" else "Received") else when (m.status) { "queued" -> "Waiting to send"; "relayed" -> "Sent · awaiting delivery"; "delivered" -> "Delivered to device"; else -> "Expired" }
-            card.addView(text(m.text, 16f, ink, true).apply { isSaveEnabled = false })
-            card.addView(text("${timeFormat.format(java.util.Date(m.time))} · $label${if (m.deviceVerified) "" else " · Unverified device"}", 10f, muted, true).apply { setPadding(0, dp(6), 0, 0) })
-            messages.addView(card, LinearLayout.LayoutParams(-1, -2).apply {
-                topMargin = dp(10); if (m.incoming) rightMargin = dp(24) else leftMargin = dp(24)
+            card.addView(text(m.text, 16f, if (m.incoming) ink else Color.WHITE).apply { isSaveEnabled = false })
+            card.addView(text("${timeFormat.format(java.util.Date(m.time))} · $label${if (m.deviceVerified) "" else " · Unverified device"}", 11f, if (m.incoming) muted else UiStyle.onInkMuted).apply { setPadding(0, dp(4), 0, 0) })
+            messages.addView(card, LinearLayout.LayoutParams(-2, -2).apply {
+                topMargin = dp(8); gravity = if (m.incoming) Gravity.START else Gravity.END
+                if (m.incoming) rightMargin = dp(48) else leftMargin = dp(48)
             })
         }
         if (wasAtBottom) messageScroll.post { messageScroll.fullScroll(View.FOCUS_DOWN) }

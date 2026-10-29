@@ -3,7 +3,6 @@ package org.example.otppager
 import android.app.Activity
 import android.graphics.Color
 import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
@@ -33,20 +32,25 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         fun wipe()
     }
     data class Friend(val id: String, val name: String, val detail: String, val paired: Boolean, val unread: Boolean)
-    private val ink = Color.rgb(20, 20, 20)
-    private val muted = Color.rgb(85, 85, 85)
+    private val ink = UiStyle.ink
+    private val muted = UiStyle.muted
     private fun dp(value: Int) = (value * activity.resources.displayMetrics.density).toInt()
     private fun column() = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL }
     private fun row() = LinearLayout(activity).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
     private fun label(value: String, sp: Float = 15f, quiet: Boolean = false) = TextView(activity).apply {
         text = value; textSize = sp; setTextColor(if (quiet) muted else ink)
-        typeface = Typeface.MONOSPACE; setLineSpacing(dp(2).toFloat(), 1f); isSaveEnabled = false
+        typeface = UiStyle.body; setLineSpacing(dp(2).toFloat(), 1f); isSaveEnabled = false
     }
     private fun button(value: String, primary: Boolean = false, action: () -> Unit) = Button(activity).apply {
-        text = value; isAllCaps = false; textSize = 15f; typeface = Typeface.MONOSPACE
-        minHeight = dp(48); minimumHeight = dp(48); stateListAnimator = null; elevation = 0f
-        setPadding(dp(14), dp(8), dp(14), dp(8)); setTextColor(if (primary) Color.WHITE else ink)
-        background = GradientDrawable().apply { setColor(if (primary) ink else Color.WHITE); cornerRadius = dp(2).toFloat(); if (!primary) setStroke(dp(1), Color.rgb(215, 215, 215)) }
+        text = value; isAllCaps = false; textSize = 15f; typeface = UiStyle.medium; letterSpacing = 0.01f
+        minHeight = dp(50); minimumHeight = dp(50); stateListAnimator = null; elevation = 0f
+        setPadding(dp(16), dp(8), dp(16), dp(8))
+        setTextColor(android.content.res.ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf()), intArrayOf(muted, if (primary) Color.WHITE else ink)))
+        val radius = dp(UiStyle.BUTTON_RADIUS).toFloat()
+        background = UiStyle.pressable(android.graphics.drawable.StateListDrawable().apply {
+            addState(intArrayOf(-android.R.attr.state_enabled), UiStyle.shape(Color.WHITE, radius, UiStyle.line, dp(1)))
+            addState(intArrayOf(), if (primary) UiStyle.shape(ink, radius) else UiStyle.shape(Color.WHITE, radius, UiStyle.line, dp(1)))
+        }, radius)
         filterTouchesWhenObscured = true; setOnClickListener { action() }
         isSaveEnabled = false
     }
@@ -55,7 +59,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
             contentDescription = "Back"; textSize = 24f; background = android.graphics.drawable.ColorDrawable(Color.TRANSPARENT)
         }, LinearLayout.LayoutParams(dp(44), dp(44)))
         addView(label(title, 24f).apply {
-            setPadding(dp(if (back == null) 0 else 4), 0, 0, 0); typeface = Typeface.create("monospace", Typeface.BOLD)
+            setPadding(dp(if (back == null) 0 else 4), 0, 0, 0); typeface = UiStyle.bold
             gravity = Gravity.CENTER_VERTICAL; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
         }, LinearLayout.LayoutParams(0, dp(60), 1f))
         if (menu) addView(button("⋮") { actions.appMenu() }.apply { contentDescription = "App options" }, LinearLayout.LayoutParams(dp(44), dp(44)))
@@ -122,8 +126,8 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         serverStep.addView(button("Get setup from my friend") { skipServer = true; serverStep.visibility = View.GONE; pairStep.visibility = View.VISIBLE; setupIntro.text = "Open pairing on both devices. Choose the same method on each." }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
         setupBody.addView(serverStep)
         pairStep.addView(button("Use a USB cable", true) { actions.cable() }, LinearLayout.LayoutParams(-1, -2))
-        pairStep.addView(button("Tap + Wi-Fi") { actions.nearby() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
-        pairStep.addView(label("USB is the preferred physical exchange. Wireless pairing is experimental; keep the NFC tap private.", 13f, true).apply { setPadding(0, dp(12), 0, dp(18)) })
+        pairStep.addView(button(if (NEARBY_PAIRING_AVAILABLE) "Tap + Wi-Fi" else "Tap + Wi-Fi · Coming soon") { actions.nearby() }.apply { isEnabled = NEARBY_PAIRING_AVAILABLE; if (!isEnabled) alpha = 0.6f }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
+        pairStep.addView(label(if (NEARBY_PAIRING_AVAILABLE) "USB is the preferred physical exchange. Wireless pairing is experimental; keep the NFC tap private." else "Connect both phones with a USB data cable to pair. Wireless pairing is coming soon.", 13f, true).apply { setPadding(0, dp(12), 0, dp(18)) })
         pairStep.addView(sizeButton, LinearLayout.LayoutParams(-1, -2))
         pairStep.addView(button("Enter server details") { skipServer = false; serverStep.visibility = View.VISIBLE; pairStep.visibility = View.GONE; setupIntro.text = "Only one device needs server details." }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
         setupBody.addView(pairStep)
@@ -154,10 +158,11 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8); bottomMargin = dp(16) })
     }
     private fun field(hint: String, secret: Boolean) = EditText(activity).apply {
-        this.hint = hint; textSize = 16f; typeface = Typeface.MONOSPACE; setSingleLine(true)
+        this.hint = hint; textSize = 16f; typeface = UiStyle.body; setSingleLine(true)
+        background = UiStyle.shape(Color.WHITE, dp(UiStyle.BUTTON_RADIUS).toFloat(), UiStyle.line, dp(1))
         inputType = InputType.TYPE_CLASS_TEXT or if (secret) InputType.TYPE_TEXT_VARIATION_PASSWORD else InputType.TYPE_TEXT_VARIATION_URI
         if (secret) transformationMethod = android.text.method.PasswordTransformationMethod.getInstance()
-        setPadding(dp(12), dp(12), dp(12), dp(12)); setTextColor(ink); setHintTextColor(muted)
+        setPadding(dp(14), dp(13), dp(14), dp(13)); setTextColor(ink); setHintTextColor(muted)
         importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
         imeOptions = imeOptions or android.view.inputmethod.EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING or android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI
         isSaveEnabled = false; filterTouchesWhenObscured = true
@@ -173,8 +178,18 @@ internal class PagerScreens(private val activity: Activity, private val actions:
             inboxRows.addView(label("Add a friend, pair your devices, then just write.", 16f, true))
         }
         for (friend in friends) {
-            inboxRows.addView(button("${if (friend.unread) "● " else ""}${friend.name}\n${friend.detail}") { actions.openFriend(friend.id, friend.paired) }.apply {
-                gravity = Gravity.START or Gravity.CENTER_VERTICAL; textSize = 16f; minHeight = dp(80)
+            val title = "${if (friend.unread) "● " else ""}${friend.name}"
+            val rowText = android.text.SpannableString("$title\n${friend.detail}").apply {
+                setSpan(android.text.style.StyleSpan(Typeface.BOLD), 0, title.length, 0)
+                setSpan(android.text.style.RelativeSizeSpan(0.82f), title.length, length, 0)
+                setSpan(android.text.style.ForegroundColorSpan(muted), title.length, length, 0)
+            }
+            inboxRows.addView(button("") { actions.openFriend(friend.id, friend.paired) }.apply {
+                text = rowText; typeface = UiStyle.body; setLineSpacing(dp(4).toFloat(), 1f)
+                val radius = dp(UiStyle.CARD_RADIUS).toFloat()
+                background = UiStyle.pressable(UiStyle.shape(Color.WHITE, radius, if (friend.unread) ink else UiStyle.line, dp(if (friend.unread) 2 else 1)), radius)
+                setPadding(dp(18), dp(14), dp(18), dp(14))
+                gravity = Gravity.START or Gravity.CENTER_VERTICAL; textSize = 16f; minHeight = dp(76)
                 contentDescription = "${friend.name}. ${friend.detail}"
             }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(12) })
         }

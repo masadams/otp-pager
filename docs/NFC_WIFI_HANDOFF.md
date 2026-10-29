@@ -1,5 +1,19 @@
 # Experimental NFC-assisted Wi-Fi pairing (v0.12)
 
+> **Status: paused, shown as "Coming soon".** Field testing could not complete a pairing, so every
+> entry point (Pair nearby, Renew nearby, Tap + Wi-Fi, Tap setup · NFC) is disabled behind
+> `NEARBY_PAIRING_AVAILABLE` in `RadioPairActivity.kt`. Pair by USB cable. The screens and protocol
+> below are unchanged and can be re-enabled by flipping that flag once these are addressed:
+>
+> - **Phone-to-phone NFC.** The sharing phone emulates a card (HCE) while its own NFC controller keeps
+>   polling, which many phones handle poorly when two phones touch. It does not ask Android to prefer
+>   its card service while in the foreground (`CardEmulation.setPreferredService`), so another
+>   wallet or "other" service can take the tap. Android 15's `NfcAdapter.setDiscoveryTechnology` can
+>   also stop the sharer polling during the tap.
+> - **Wi-Fi reachability.** Many home, mesh and ISP routers isolate Wi-Fi clients from each other,
+>   so the reader's connection to the sharer's local port times out even on the same network. The
+>   error shown is a raw socket timeout rather than an explanation.
+
 Optional local wireless pad transfer; USB remains available. Both devices need v0.12, NFC, and the same private IPv4 Wi-Fi. One must support Android host card emulation. Guest access-point isolation, IPv6-only Wi-Fi, VPN policies, or device firmware can prevent connections. Bluetooth, Wi-Fi Direct, automatic hotspot, Internet pad relay, and background listeners are not implemented.
 
 ## Use
