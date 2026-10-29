@@ -42,6 +42,27 @@ class StrictChatTest {
             val held = claims.getOrPut(room) { capability }; check(held == capability); return true
         }
         override fun authority(endpoint: String) = card
+        /** Post-quantum half, as relay/server.mjs on Node with ML-DSA; off models an older relay. */
+        var pqSeed: ByteArray? = null
+        /** Drops the ML-DSA signature from responses (a downgrade attempt). */
+        var stripPq = false
+        fun enablePq() { pqSeed = PqSignature.newSeed() }
+        override fun pqAuthority(endpoint: String): Pair<String, String>? = pqSeed?.let { seed ->
+            val spki = PqSignature.publicKey(seed)
+            val binding = Signature.getInstance("SHA256withECDSA").run { initSign(authority.private); update("OTP Pager PQ authority v1\u0000".toByteArray(Charsets.ISO_8859_1) + spki); sign() }
+            Base64.getEncoder().encodeToString(spki) to Base64.getEncoder().encodeToString(binding)
+        }
+        private fun signed(frame: ByteArray): JSONObject = JSONObject().put("frame", Base64.getEncoder().encodeToString(frame))
+            .put("signature", Base64.getEncoder().encodeToString(Signature.getInstance("SHA256withECDSA").run { initSign(authority.private); update(frame); sign() }))
+            .apply { val seed = pqSeed; if (seed != null && !stripPq) put("pqSignature", Base64.getEncoder().encodeToString(PqSignature.sign(seed, frame))) }
+        /** Like the relay: a pinned device ML-DSA key must sign; an offered one is pinned on first use. */
+        private fun devicePq(held: JSONObject?, request: JSONObject, frame: ByteArray) {
+            if (pqSeed == null) return
+            val pinned = held?.optString("devicePq")?.takeIf { it.isNotEmpty() }
+            val key = pinned ?: request.optString("devicePq").takeIf { it.isNotEmpty() } ?: return
+            if (!PqSignature.verify(Base64.getDecoder().decode(key), frame, Base64.getDecoder().decode(request.optString("pqSignature")))) throw RelayHttpException(403)
+            if (pinned == null) held?.put("devicePq", key)
+        }
         @Synchronized override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String {
             val list = rooms.getOrPut(room) { mutableListOf() }
             if (method == "POST") { list.add(JSONObject(body!!).getString("packet")); return "{}" }
@@ -61,17 +82,16 @@ class StrictChatTest {
                 val device = retired[room] ?: throw RelayHttpException(404)
                 if (!IdentityProtocol.verify(device, frame, Base64.getDecoder().decode(request.getString("signature")))) throw RelayHttpException(403)
                 val revoked = StrictChatProtocol.encode(StrictChatProtocol.decode(frame).copy(kind = StrictChatProtocol.Kind.REVOKED, issued = 0, expires = 0))
-                val signature = Signature.getInstance("SHA256withECDSA").run { initSign(authority.private); update(revoked); sign() }
-                throw RelayHttpException(410, JSONObject().put("frame", Base64.getEncoder().encodeToString(revoked)).put("signature", Base64.getEncoder().encodeToString(signature)).toString())
+                throw RelayHttpException(410, signed(revoked).toString())
             }
             if (!IdentityProtocol.verify(held.getString("device"), frame, Base64.getDecoder().decode(request.getString("signature")))) throw RelayHttpException(403)
+            devicePq(held, request, frame)
             val decoded = StrictChatProtocol.decode(frame)
             check(decoded.kind == StrictChatProtocol.Kind.UNLOCK && nonces.add(PadProtocol.hex(decoded.nonce))) { "Replay" }
             unlocks++
             val share = Base64.getUrlDecoder().decode(held.getString("share"))
             val grant = StrictChatProtocol.encode(decoded.copy(kind = StrictChatProtocol.Kind.GRANT, share = share))
-            val signature = Signature.getInstance("SHA256withECDSA").run { initSign(authority.private); update(grant); sign() }
-            return JSONObject().put("frame", Base64.getEncoder().encodeToString(grant)).put("signature", Base64.getEncoder().encodeToString(signature)).toString()
+            return signed(grant).toString()
         }
     }
     private fun pair(a: StationEngine, b: StationEngine, strictA: Long, strictB: Long = strictA) {
@@ -161,6 +181,43 @@ class StrictChatTest {
             PeerWipe.pump(context, relay)
             assertTrue(relay.shares.isEmpty())
         } finally { cleanup(listOf(ra, rb)) }
+    }
+
+    @Test fun hybridMlDsaGrantsArePinnedAtPairingOrLaterAndNeverDowngraded() {
+        val ra = root(); val rb = root(); val pqRelay = Relay().apply { enablePq() }
+        val rc = root(); val rd = root(); val oldRelay = Relay()
+        try {
+            // Paired against a relay with ML-DSA: both keys pinned at pairing, both signatures on every grant.
+            val a = StationEngine(SecureStore(context, ra), pqRelay); val b = StationEngine(SecureStore(context, rb), pqRelay)
+            a.configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "B")
+            pair(a, b, StrictChat.DEADLINES[1])
+            val route = StrictChat.route(SecureStore(context, ra).load()!!)
+            assertNotNull(route.authorityPq); assertNotNull(route.devicePqSeed)
+            assertTrue(pqRelay.shares.values.all { it.has("devicePq") })
+            StrictChat.lockAll()
+            pqRelay.stripPq = true
+            try { StrictChat.unlock(context, ra, pqRelay); fail("Accepted a grant without its ML-DSA signature") } catch (_: IllegalArgumentException) {}
+            try { StationEngine(SecureStore(context, ra), pqRelay); fail("Downgraded grant opened the chat") } catch (_: StrictChat.Locked) {}
+            pqRelay.stripPq = false
+            StrictChat.unlock(context, ra, pqRelay)
+            assertNotNull(StationEngine(SecureStore(context, ra), pqRelay).state)
+
+            // Paired against an older relay: classical only, until the relay gains ML-DSA. The next
+            // check pins it (bound by the pinned P-256 key) and from then on requires it.
+            val c = StationEngine(SecureStore(context, rc), oldRelay); val d = StationEngine(SecureStore(context, rd), oldRelay)
+            c.configure("https://pager.example.com", "t".repeat(43), Protocol.randomSecret(), "A")
+            pair(c, d, StrictChat.DEADLINES[1])
+            assertNull(StrictChat.route(SecureStore(context, rc).load()!!).authorityPq)
+            oldRelay.enablePq()
+            try { c.sync() } catch (_: Exception) {}
+            assertNotNull(c.state!!.getJSONObject("strictShare").optString("authorityPq").takeIf { it.isNotEmpty() })
+            assertNotNull(StrictChat.route(SecureStore(context, rc).load()!!).authorityPq)
+            StrictChat.lockAll()
+            oldRelay.stripPq = true
+            try { StrictChat.unlock(context, rc, oldRelay); fail("Accepted a downgraded grant after pinning") } catch (_: IllegalArgumentException) {}
+            oldRelay.stripPq = false
+            StrictChat.unlock(context, rc, oldRelay)
+        } finally { cleanup(listOf(ra, rb, rc, rd)) }
     }
 
     @Test fun bothPhonesMustChooseTheSameChatType() {

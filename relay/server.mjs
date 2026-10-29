@@ -51,6 +51,40 @@ export function makeServer(options = {}) {
   }
   const authoritySpki = createPublicKey(authorityKey).export({ type: 'spki', format: 'der' });
   const authorityFingerprint = createHash('sha256').update(authoritySpki).digest();
+  // Post-quantum half of the authority (docs/POST_QUANTUM.md): an ML-DSA-65 key next to the P-256
+  // one, needing Node with OpenSSL 3.5. Grants carry both signatures; a phone that pinned this key
+  // requires both. The P-256 key signs a binding so already-paired phones can pin it safely.
+  const pqAuthority = (() => {
+    const pqFile = join(dataDir, 'authority-pq-key.pem');
+    try { return createPrivateKey(readFileSync(pqFile, 'utf8')); }
+    catch (e) { if (e.code !== 'ENOENT') throw e; }
+    let pem;
+    try { pem = generateKeyPairSync('ml-dsa-65').privateKey.export({ type: 'pkcs8', format: 'pem' }); }
+    catch { return null; } // This Node has no ML-DSA: classical grants only.
+    const fd = openSync(pqFile + '.tmp', 'w', 0o600);
+    try { writeFileSync(fd, pem); fsyncSync(fd); } finally { closeSync(fd); }
+    renameSync(pqFile + '.tmp', pqFile);
+    return createPrivateKey(pem);
+  })();
+  const pqSpki = pqAuthority && createPublicKey(pqAuthority).export({ type: 'spki', format: 'der' });
+  const PQ_BINDING = Buffer.from('OTP Pager PQ authority v1\0', 'latin1');
+  const authorityBody = { key: authoritySpki.toString('base64'),
+    ...(pqSpki && { pq: pqSpki.toString('base64'), binding: sign('sha256', Buffer.concat([PQ_BINDING, pqSpki]), authorityKey).toString('base64') }) };
+  const PQ_SIGNATURE = 3309;
+  const pqKey = text => { // An ML-DSA-65 SubjectPublicKeyInfo, or null.
+    if (typeof text !== 'string' || text.length > 2700) return null;
+    try { const key = createPublicKey({ key: Buffer.from(text, 'base64'), format: 'der', type: 'spki' }); return key.asymmetricKeyType === 'ml-dsa-65' ? key : null; }
+    catch { return null; }
+  };
+  const pqVerify = (key, data, text) => {
+    if (typeof text !== 'string') return false;
+    const signature = Buffer.from(text, 'base64');
+    if (signature.length !== PQ_SIGNATURE) return false;
+    try { return verify(null, data, key, signature); } catch { return false; }
+  };
+  /** Both authority signatures on a response frame (the ML-DSA one when this relay has the key). */
+  const authoritySigned = frame => ({ frame: frame.toString('base64'), signature: sign('sha256', frame, authorityKey).toString('base64'),
+    ...(pqAuthority && { pqSignature: sign(null, frame, pqAuthority).toString('base64') }) });
   let state = { version: 1, seq: 0, messages: [] };
   try { state = JSON.parse(readFileSync(file, 'utf8')); }
   catch (e) { if (e.code !== 'ENOENT') throw e; }
@@ -145,7 +179,8 @@ export function makeServer(options = {}) {
   function retiredState(base, rooms) {
     const gone = new Set(rooms), at = now();
     return { ...base, shares: Object.fromEntries(Object.entries(base.shares).filter(([room]) => !gone.has(room))),
-      retired: { ...base.retired, ...Object.fromEntries(rooms.map(room => [room, { device: base.shares[room].device, at }])) } };
+      retired: { ...base.retired, ...Object.fromEntries(rooms.map(room => [room, { device: base.shares[room].device,
+        ...(base.shares[room].devicePq && { devicePq: base.shares[room].devicePq }), at }])) } };
   }
   function clean() {
     const live = state.messages.filter(m => now() - m.time < ttl);
@@ -187,7 +222,7 @@ export function makeServer(options = {}) {
       const actual = Buffer.from(req.headers.authorization || '');
       const bootstrap = actual.length === expected.length && timingSafeEqual(actual, expected);
       if (url.pathname === '/v1/strict/authority' && req.method === 'GET')
-        return json(res, 200, { key: authoritySpki.toString('base64') });
+        return json(res, 200, authorityBody);
       const shareMatch = /^\/v1\/share\/([a-f0-9]{64})(\/unlock)?$/.exec(url.pathname);
       const match = /^\/v1\/mailbox\/([a-f0-9]{64})(\/claim)?$/.exec(url.pathname) ?? (shareMatch && [shareMatch[0], shareMatch[1], undefined]);
       const room = match?.[1];
@@ -264,6 +299,21 @@ export function makeServer(options = {}) {
           let signed = false;
           try { signed = verify('sha256', frame, { key: device, format: 'der', type: 'spki' }, signature); } catch { signed = false; }
           if (!signed) return json(res, 403, { error: 'unlock signature rejected' });
+          // Hybrid device signature: required once this share has an ML-DSA key pinned; an
+          // upgraded phone's first valid unlock pins the key it sends (its P-256 signature covers it).
+          const pinnedPq = (current ?? retired).devicePq;
+          // A relay without ML-DSA ignores offered keys, like a relay from before 0.19.
+          const offers = pqAuthority && data.devicePq !== undefined;
+          const offered = offers ? pqKey(data.devicePq) : null;
+          if (offers && !offered) return json(res, 400, { error: 'invalid device key' });
+          let pinPq = null;
+          if (pinnedPq) {
+            const key = pqKey(pinnedPq);
+            if (!key || !pqVerify(key, frame, data.pqSignature)) return json(res, 403, { error: 'unlock signature rejected' });
+          } else if (offered) {
+            if (!pqVerify(offered, frame, data.pqSignature)) return json(res, 403, { error: 'unlock signature rejected' });
+            pinPq = data.devicePq;
+          }
           const issued = Number(frame.readBigInt64BE(130)), expires = Number(frame.readBigInt64BE(138));
           const nonce = frame.subarray(98, 130).toString('hex');
           if (frame.subarray(0, 8).toString('latin1') !== 'OTPSTR01' || frame[8] !== 2 || ![65, 66].includes(frame[9]) ||
@@ -275,7 +325,7 @@ export function makeServer(options = {}) {
           if (!current) {
             // Retired: a signed REVOKED echoing this exact request (fresh nonce), with zero times and share.
             const revoked = Buffer.from(frame); revoked[8] = 5; revoked.fill(0, 130, 178);
-            return json(res, 410, { error: 'share retired', frame: revoked.toString('base64'), signature: sign('sha256', revoked, authorityKey).toString('base64') });
+            return json(res, 410, { error: 'share retired', ...authoritySigned(revoked) });
           }
           if (current.nonces.some(n => n.nonce === nonce)) return json(res, 409, { error: 'unlock replayed' });
           // Replay protection must cover every nonce until its request window closes, so a full
@@ -283,28 +333,31 @@ export function makeServer(options = {}) {
           const unexpired = current.nonces.filter(n => n.until > time);
           if (unexpired.length >= MAX_NONCES) { res.setHeader('Retry-After', '60'); return json(res, 429, { error: 'too many unlocks' }); }
           const nonces = [...unexpired, { nonce, until: expires + MAX_SKEW }];
-          const value = { ...current, checked: time, nonces };
+          const value = { ...current, checked: time, nonces, ...(pinPq && { devicePq: pinPq }) };
           commit({ ...state, shares: { ...state.shares, [room]: value } }, { t: 'share', room, value });
           const grant = Buffer.from(frame); grant[8] = 3; Buffer.from(current.share, 'base64url').copy(grant, 146);
-          const response = { frame: grant.toString('base64'), signature: sign('sha256', grant, authorityKey).toString('base64') };
+          const response = authoritySigned(grant);
           grant.fill(0);
           return json(res, 200, response);
         }
         // Enrollment: store a share once, bound to the device key that may unlock it.
         if (!data || typeof data.share !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(data.share) ||
             !Number.isSafeInteger(data.deadline) || data.deadline < MIN_DEADLINE || data.deadline > MAX_DEADLINE ||
-            typeof data.device !== 'string' || data.device.length > 200)
+            typeof data.device !== 'string' || data.device.length > 200 || (pqAuthority && data.devicePq !== undefined && !pqKey(data.devicePq)))
           return json(res, 400, { error: 'invalid share' });
+        const devicePq = pqAuthority ? data.devicePq : undefined;
         try { createPublicKey({ key: Buffer.from(data.device, 'base64'), format: 'der', type: 'spki' }); }
         catch { return json(res, 400, { error: 'invalid device key' }); }
         if (state.retired[room]) return json(res, 410, { error: 'share retired' }); // Never re-enrolled.
         const current = state.shares[room]; // Recheck after the async body read; a share is never replaced.
         if (current) {
-          const same = current.share === data.share && current.device === data.device && current.deadline === data.deadline;
+          const same = current.share === data.share && current.device === data.device && current.deadline === data.deadline &&
+            current.devicePq === devicePq;
           return json(res, same ? 200 : 409, same ? { share: 'stored' } : { error: 'share exists' });
         }
         if (Object.keys(state.shares).length >= maxShares) return json(res, 429, { error: 'share capacity reached' });
-        commit({ ...state, shares: { ...state.shares, [room]: { share: data.share, deadline: data.deadline, checked: now(), device: data.device, nonces: [] } } });
+        commit({ ...state, shares: { ...state.shares, [room]: { share: data.share, deadline: data.deadline, checked: now(), device: data.device,
+          ...(devicePq && { devicePq }), nonces: [] } } });
         return json(res, 201, { share: 'stored' });
       }
       if (req.method === 'DELETE') {

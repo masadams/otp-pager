@@ -1,4 +1,4 @@
-# Pinned multi-arch index digest (node v22.23.4, resolved 2026-10-28). Dependabot proposes updates.
+# Pinned multi-arch index digest (Node 26, bumped by Dependabot). Node 26 ships OpenSSL 3.5, which the ML-DSA authority needs.
 FROM node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797
 ENV NODE_ENV=production PORT=8080 DATA_DIR=/data
 WORKDIR /app

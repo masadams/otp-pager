@@ -16,6 +16,11 @@ interface RelayTransport {
         throw IllegalStateException("This connection cannot reach strict-chat key shares")
     /** The relay's strict-chat authority public key (base64 SPKI), pinned at pairing. */
     fun authority(endpoint: String): String = throw IllegalStateException("This connection cannot reach the strict-chat authority")
+    /**
+     * The authority's ML-DSA-65 key and the binding its P-256 key signed over it (both base64), or
+     * null from a relay without one. The caller checks the binding against the pinned P-256 key.
+     */
+    fun pqAuthority(endpoint: String): Pair<String, String>? = null
 }
 object RelayClient : RelayTransport {
     /** Shared production serializer; Android JSON may escape '/' in base64 ciphertext. */
@@ -29,17 +34,22 @@ object RelayClient : RelayTransport {
         override fun share(endpoint: String, room: String, capability: String, method: String, body: String?, unlock: Boolean): String =
             ContactOperations.open(store.operationKey, store::requireActive).use { exchange(endpoint, room, capability, method, body, 0, if (unlock) "/unlock" else "", lease = it, connection = connection, kind = "share") }
         override fun authority(endpoint: String): String = this@RelayClient.authority(endpoint)
+        override fun pqAuthority(endpoint: String): Pair<String, String>? = this@RelayClient.pqAuthority(endpoint)
     }
     override fun share(endpoint: String, room: String, capability: String, method: String, body: String?, unlock: Boolean): String =
         exchange(endpoint, room, capability, method, body, 0, if (unlock) "/unlock" else "", kind = "share")
-    override fun authority(endpoint: String): String {
+    private fun authorityDocument(endpoint: String): org.json.JSONObject {
         val conn = openConnection(URL("${Protocol.endpoint(endpoint)}/v1/strict/authority"))
         conn.instanceFollowRedirects = false; conn.connectTimeout = 8000; conn.readTimeout = 10000
         try {
             if (conn.responseCode != 200) throw RelayHttpException(conn.responseCode)
             val text = conn.inputStream.use { String(it.readBytes(), Charsets.UTF_8) }
-            return org.json.JSONObject(text).getString("key").also { IdentityProtocol.publicKey(it) }
+            return org.json.JSONObject(text)
         } finally { conn.disconnect() }
+    }
+    override fun authority(endpoint: String): String = authorityDocument(endpoint).getString("key").also { IdentityProtocol.publicKey(it) }
+    override fun pqAuthority(endpoint: String): Pair<String, String>? = authorityDocument(endpoint).let { d ->
+        if (!d.has("pq")) null else d.getString("pq") to d.getString("binding")
     }
     override fun scope(endpoint: String, room: String, bootstrap: String, capability: String): Boolean =
         scopeWith(endpoint, room, bootstrap, capability, null)

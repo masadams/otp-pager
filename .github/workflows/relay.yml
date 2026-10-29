@@ -25,7 +25,7 @@ jobs:
           docker build -t otp-pager-relay:local ./relay
       - name: Unit tests on the image's own Node runtime
         run: |
-          docker run --rm --user node -v "$PWD:/src:ro" -w /tmp otp-pager-relay:local \
+          docker run --rm --user node -e REQUIRE_MLDSA=1 -v "$PWD:/src:ro" -w /tmp otp-pager-relay:local \
             sh -c 'mkdir /tmp/repo && cp -r /src/relay /src/test-vectors /tmp/repo/ && cd /tmp/repo/relay && node --version && node --test test.mjs'
       - name: Container smoke test with persistent volume
         shell: bash
