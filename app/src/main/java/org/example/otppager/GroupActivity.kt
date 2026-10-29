@@ -22,6 +22,9 @@ class GroupActivity : Activity() {
     private var open: String? = null
     private var active = false
     private var generation = 0
+    /** Text not yet queued for everyone, kept for the composer and Retry. Memory only, cleared on leave. */
+    private class Pending(val group: String, val text: String, val message: String?, val missed: List<ChatBook.Chat>)
+    private var pending: Pending? = null
 
     private fun label(value: String, size: Float = 16f, muted: Boolean = false) = TextView(this).apply {
         text = value; textSize = size; setTextColor(if (muted) Color.DKGRAY else Color.BLACK); typeface = Typeface.MONOSPACE; setPadding(0, 10, 0, 10)
@@ -52,6 +55,7 @@ class GroupActivity : Activity() {
     }
     override fun onResume() { super.onResume(); if (!AppLock.gate(this)) return; active = true; render() }
     override fun onStop() { active = false; generation++; body.removeAllViews(); super.onStop() }
+    override fun onDestroy() { pending = null; super.onDestroy() }
     @Deprecated("Back returns from a thread to the group list")
     override fun onBackPressed() { if (open != null) { open = null; render() } else super.onBackPressed() }
 
@@ -106,15 +110,35 @@ class GroupActivity : Activity() {
             for (line in lines.takeLast(100)) body.addView(label((if (line.unread) "● " else "") + "${line.from}: ${line.text}" +
                 if (!line.incoming) "\n· ${line.status}" else "", 15f).apply { if (!line.incoming) setPadding(60, 10, 0, 10) })
             val composer = EditText(this).apply { hint = "Message to ${g.name}"; inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS }
+            val waiting = pending?.takeIf { it.group == id }
+            if (waiting != null && waiting.missed.isEmpty()) composer.setText(waiting.text) // Nothing queued yet: keep the text.
             body.addView(composer)
+            /** Queue (or retry for [missed] only), then check each chat; report what actually happened. */
+            fun send(text: String, message: String?, missed: List<ChatBook.Chat>?) {
+                pending = Pending(id, text, message, missed.orEmpty())
+                var result: ChatBook.GroupSend? = null
+                task(network = true, work = { book ->
+                    val sent = book.queueGroup(id, text, message, missed?.map { it.id }?.toSet()); result = sent
+                    val unreachable = g.chats.filter { c -> sent.missed.none { it.id == c.id } }
+                        .mapNotNull { chat -> try { book.engine(chat.id).sync(); null } catch (_: Exception) { chat.name } }
+                    when {
+                        sent.missed.isNotEmpty() -> "Not queued for ${sent.missed.joinToString { it.name }} (pair again or renew keys), then tap Retry. Everyone else has it queued."
+                        unreachable.isNotEmpty() -> "Queued for everyone. Couldn't reach the server for ${unreachable.joinToString()} yet; it retries automatically."
+                        else -> "Sent to the server for everyone · delivery shows below"
+                    }
+                }) {
+                    // Only a fully queued message leaves the composer; otherwise keep what's needed to retry.
+                    val r = result
+                    pending = when { r == null -> pending; r.missed.isEmpty() -> null; else -> Pending(id, text, r.message, r.missed) }
+                    render()
+                }
+            }
             body.addView(button("Send to everyone") {
                 val text = composer.text.toString().trim(); if (text.isEmpty()) return@button
-                composer.text.clear()
-                task(network = true, work = { book ->
-                    val missed = book.sendGroup(id, text)
-                    g.chats.forEach { chat -> try { book.engine(chat.id).sync() } catch (_: Exception) {} }
-                    if (missed.isEmpty()) "Sent to everyone" else "Not queued for: ${missed.joinToString()} (pair again or renew keys)"
-                }) { render() }
+                send(text, null, null)
+            })
+            if (waiting != null && waiting.missed.isNotEmpty()) body.addView(button("Retry for ${waiting.missed.joinToString { it.name }}") {
+                send(waiting.text, waiting.message, waiting.missed)
             })
             body.addView(button("Check now") {
                 task(network = true, work = { book -> g.chats.forEach { chat -> try { book.engine(chat.id).sync() } catch (_: Exception) {} }; "Checked" }) { render() }
