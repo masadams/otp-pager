@@ -2,6 +2,12 @@
 
 ## Active security work — v0.14 baseline
 
+**Current status (0.17.0, 2026-10-29):** strict chats, relay failover, groups, post-quantum
+USB pairing and relay TLS are implemented and merged; NFC + Wi-Fi pairing is paused ("Coming
+soon"). Still open: independent review, physical two-phone USB/e-ink/battery/power-loss
+validation, and post-quantum pairing signatures. See [PIPELINE.md](PIPELINE.md) and
+[POST_QUANTUM.md](POST_QUANTUM.md).
+
 PRs #9–15 are merged development foundations. See the [ordered checklist](SECURITY_CHECKLIST.md)
 and [developer handoff](DEVELOPER_HANDOFF.md) for current completion, evidence and blockers.
 Phase 2 remains open; remote wiping is not implemented.

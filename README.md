@@ -192,7 +192,7 @@ pads transfer only after both devices approve. Both devices need 0.8 for a **new
 pairing; there is no plaintext compatibility fallback. Existing paired chat state and
 relay/message formats are unchanged. This is conventional, unaudited encryption, not
 post-quantum provisioning. See [the security review](docs/SECURITY_REVIEW.md) for open risks.
-Historical release assets remain unchanged. The current Portainer default is the tested v0.10 relay digest above.
+Historical release assets remain unchanged. For the current release and relay update steps see [Deploy](docs/DEPLOYMENT.md).
 
 ### Signing and update verification
 

@@ -19,9 +19,10 @@ Verified baseline: main `9a968a8750657b438524902dbdac98429b080b46`.
 Local/global retirement, ACTIVE epochs/fresh enrollment and vault-key rotation are
 merged development functionality. #38 adds separate pad storage, #39 streamed large
 pads, and #40 peer wipe behind an off-by-default unreviewed setting. PRs #41–44
-remain open; the handoff records branches and dependencies. Strict chats, failover
-and groups are not implemented. No new physical, independent-review or release
-readiness evidence is implied by this status reconciliation.
+remain open; the handoff records branches and dependencies. At that baseline strict chats, failover
+and groups were not implemented; all three have since merged (see [PIPELINE.md](PIPELINE.md)
+for current status). No new physical, independent-review or release readiness evidence is
+implied by this status reconciliation.
 
 [PIPELINE.md](PIPELINE.md) supersedes older ordering and review-gate statements below:
 the owner moved independent peer-wipe review to the final community review package;
