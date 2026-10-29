@@ -102,8 +102,10 @@ class CablePairTest {
             val af = pool.submit { CableProtocol.run(true, ain, aout, a, review, { progress.add(it) }, false, size) }
             val bf = pool.submit { CableProtocol.run(false, bin, bout, b, review, { progress.add(it) }, false, size) }
             af.get(240, TimeUnit.SECONDS); bf.get(240, TimeUnit.SECONDS)
-            assertTrue(progress.any { it.startsWith("Sending message keys") } && progress.any { it == "Receiving message keys · 100%" })
+            // v11: both phones mix full streams, and the pairing authenticates with one-time Poly1305.
+            assertTrue(progress.count { it == "Mixing message keys from both phones · 100%" } == 2)
             for (engine in listOf(a, b)) {
+                assertEquals("poly1305", engine.state!!.getString("mac"))
                 assertEquals(slots, engine.view().padRemaining)
                 assertFalse(engine.state!!.has("pad")); assertTrue(engine.view().canSend)
             }

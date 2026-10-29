@@ -7,6 +7,8 @@
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Pairing only: ~1.5 s of microphone noise, kept in memory, as extra randomness for message keys. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.NFC"/>
     <uses-feature android:name="android.hardware.nfc" android:required="false"/>
     <uses-feature android:name="android.hardware.nfc.hce" android:required="false"/>

@@ -109,6 +109,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         check(s.getLong("counter") >= 0 && s.getLong("cursor") >= 0)
         window(s)
         check(!(s.has("pad") && s.has("padKeys")))
+        check(!s.has("mac") || (s.getString("mac") == "poly1305" && s.has("padKeys"))) // One-time MAC needs separate pad storage.
         s.optJSONObject("groups")?.let { g ->
             check(g.length() in 1..MAX_GROUPS && g.keys().asSequence().all { id -> GROUP_ID.matches(id) &&
                 g.getJSONObject(id).getJSONArray("members").length() in 1..MAX_GROUP_MEMBERS })
@@ -574,8 +575,9 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             val pad = b64d.decode(s.getString("pad"))
             return try { PadProtocol.open(pad, wire, role, id) } finally { pad.fill(0) }
         }
-        val slot = padSlot(s, role, PadProtocol.counter(wire, role, id))
-        return try { PadProtocol.openSlot(slot, wire, role, id) } finally { slot.fill(0) }
+        val oneTime = oneTimeMac(s)
+        val slot = padSlot(s, role, PadProtocol.counter(wire, role, id, oneTime))
+        return try { PadProtocol.openSlot(slot, wire, role, id, oneTime) } finally { slot.fill(0) }
     }
     private fun padSlot(s: JSONObject, role: Char, counter: Long): ByteArray {
         val keys = b64d.decode(s.getString("padKeys"))
@@ -588,8 +590,12 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             return try { PadProtocol.seal(pad, role, counter, body, id) } finally { pad.fill(0) }
         }
         val slot = padSlot(s, role, counter)
-        return try { PadProtocol.sealSlot(slot, role, counter, body, id) } finally { slot.fill(0) }
+        return try { PadProtocol.sealSlot(slot, role, counter, body, id, oneTimeMac(s)) } finally { slot.fill(0) }
     }
+    /** Chats paired with protocol v11+ authenticate with one-time Poly1305 (wire v4) and never accept HMAC. */
+    private fun oneTimeMac(s: JSONObject) = s.optString("mac") == "poly1305"
+    /** Pairing protocol v11: this pairing (or renewal) authenticates with one-time Poly1305 from now on. */
+    internal fun stageOneTimeMac() { checkNotNull(stagedCable) { "No staged pairing" }.put("mac", "poly1305") }
     /** Test and diagnostics only: the pad as the legacy layout, with every used or retired slot zeroed. */
     internal fun padSnapshot(): ByteArray {
         val s = checkNotNull(state)

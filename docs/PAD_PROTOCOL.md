@@ -1,6 +1,6 @@
 # Field finite-pad experiment (app 0.4)
 
-This is an experimental, independent Field protocol, not a claim of information-theoretic security. The app's generator uses Android SecureRandom, not a certified physical entropy source. Authentication uses conventional HMAC-SHA-256 (RFC 2104/4231), not an information-theoretic one-time MAC. No cryptographic audit has been performed. AES-GCM remains the clearly labelled no-pad test mode. Installing a pad disables that mode for the pairing; exhaustion never falls back.
+This is an experimental, independent Field protocol, not a claim of information-theoretic security. The app's generator uses Android SecureRandom, not a certified physical entropy source. Chats paired before 0.18 authenticate with conventional HMAC-SHA-256 (RFC 2104/4231); chats paired with 0.18 (protocol v11) use a one-time Poly1305 MAC (see below). No cryptographic audit has been performed. AES-GCM remains the clearly labelled no-pad test mode. Installing a pad disables that mode for the pairing; exhaustion never falls back.
 
 ## Physical setup
 
@@ -74,15 +74,53 @@ Unread messages remain unread while you are scrolled away from the bottom. Jump 
 - **Legacy pre-pad chats** only ever send receipts under AES-GCM, which have variable length.
   Text can't be sent without a pad.
 
-## Where pad randomness comes from (pipeline item 9, 2026-10-28)
+## Where pad randomness comes from (pairing protocol v11, 0.18)
 
-From pairing protocol v9, **both phones contribute randomness**:
-- the receiving phone sends a fresh 32-byte seed inside the authenticated pairing channel;
-- the host XORs its own `SecureRandom` output with an AES-256-CTR keystream keyed by
-  SHA-256("OTP Pager pad mix v1" ‖ peer seed ‖ host seed).
+The owner asked for randomness "as close to a true one-time pad as we can get". From pairing
+protocol v11:
 
-A weak, broken or backdoored random generator on one phone alone then no longer determines
-the pad (`PadMixerTest`). This is defence in depth, not a change of kind. Pads are
-computer-generated randomness, not a certified true-random one-time pad, and the app says so
-in plain words. The manual plaintext pad file (Advanced setup, ≤ 4 MiB) still comes from one
-phone only.
+- **Two full streams.** Each phone draws a full-length stream from its own generator. The pad is
+  the byte-wise XOR of both, exchanged in 32 KiB lockstep chunks over the post-quantum USB
+  channel (`CableProtocol.mixPad` / `contributePad`). Nothing short is stretched (the v9 AES
+  mixer is gone), so the pad is at least as unpredictable as the *better* of the two
+  generators. The contributing phone checks every returned chunk differs from what it sent,
+  which proves the host mixed in its own stream.
+- **Health tests on every byte** (`PadEntropy.OutputMonitor`), in the style of NIST SP 800-90B
+  §4.4. Cutoffs keep the false-alarm chance below about 2⁻³⁰ per 64 MiB pad:
+  - repetition count: the same byte 8 times in a row;
+  - adaptive proportion: one value 18 times in a 512-byte window;
+  - a repeated 32-byte block.
+
+  Any failure stops the pairing.
+- **Hardware noise (optional).** **Add microphone noise** on the pairing screen records about
+  1.5 s of raw audio (the unprocessed source where the phone offers it) into memory:
+  - It must pass SP 800-90B repetition (41) and adaptive-proportion (410/512) tests, assuming
+    only 1 bit of min-entropy per sample. A muted or stuck microphone fails.
+  - It's conditioned with SHA3-512 into a 64-byte seed that **supplements** the phone's
+    generator seeding.
+  - The audio is zeroed straight away and never stored or sent.
+  - Without permission, or if the tests fail, pairing continues on both generators and the
+    screen says so.
+
+**Honest limits.**
+- A phone's microphone gives kilobytes of real entropy per second; a pad is 16–64 MiB. Hardware
+  noise therefore strengthens each generator's seed but can't supply every pad byte.
+- Each pad byte still comes from a cryptographic DRBG, XORed across two independent phones.
+  That is as close to a true one-time pad as phone hardware allows, not a certified
+  true-random source.
+- The manual plaintext pad file (Advanced setup, ≤ 4 MiB) still comes from one phone only.
+
+## Message authentication (pairing protocol v11, 0.18)
+
+- **v11 chats:** packets use wire version 4 with **one-time Poly1305** (RFC 8439), keyed by the
+  slot's 32 random pad bytes.
+  - Each slot key authenticates exactly one message; retries resend identical bytes.
+  - That makes authentication information-theoretic like the encryption: a forgery succeeds with
+    probability at most about 2⁻⁹⁵ per 4 KiB message, whatever the attacker's computing power.
+  - The 16-byte tag replaces HMAC-SHA256's 32.
+- **A chat never mixes modes.** A chat marked `mac: poly1305` rejects v3 HMAC packets, and older
+  chats keep v3 and reject v4, so there's no downgrade.
+- **Existing pairings** keep HMAC until they're paired again on 0.18. Renewal over v11 switches
+  the renewed pad to the one-time MAC.
+- **Tests:** `OneTimeMacTest` covers the RFC 8439 vector, round trip, single-byte tampering and
+  cross-mode rejection.

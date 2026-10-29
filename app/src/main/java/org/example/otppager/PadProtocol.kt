@@ -7,7 +7,15 @@ import java.util.Base64
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-/** Experimental finite pad transport. HMAC authentication is computational, not a one-time MAC. */
+/**
+ * Experimental finite pad transport. Two authentication modes, fixed per chat:
+ *  - wire v3: HMAC-SHA256 (computational), chats paired before pairing protocol v11;
+ *  - wire v4: one-time Poly1305 (RFC 8439) keyed by the slot's 32 random pad bytes. Each slot
+ *    key authenticates exactly one message (retries resend identical bytes), which makes it an
+ *    information-theoretic one-time authenticator like the OTP encryption itself: any forgery
+ *    succeeds with probability at most about 2^-95 for a 4 KiB message, whatever the attacker's
+ *    computing power. A chat in one mode never accepts the other.
+ */
 object PadProtocol {
     const val MATERIAL_BYTES = 1048576
     const val BLOCK = 4096
@@ -54,6 +62,15 @@ object PadProtocol {
         require((at until at + STRIDE).any { pad[it] != 0.toByte() }) { "Pad slot retired" }
     }
     fun authenticate(key: ByteArray, bytes: ByteArray): ByteArray = Mac.getInstance("HmacSHA256").run { init(SecretKeySpec(key, "HmacSHA256")); doFinal(bytes) }
+    /** One-time Poly1305 over [bytes] with a 32-byte key (r ‖ s, RFC 8439). The key must never be reused. */
+    fun oneTimeTag(key: ByteArray, bytes: ByteArray): ByteArray {
+        require(key.size == 32)
+        val mac = org.bouncycastle.crypto.macs.Poly1305().apply { init(org.bouncycastle.crypto.params.KeyParameter(key)); update(bytes, 0, bytes.size) }
+        return ByteArray(16).also { mac.doFinal(it, 0) }
+    }
+    private fun wireVersion(oneTime: Boolean): Byte = if (oneTime) 4 else 3
+    private fun tagBytes(oneTime: Boolean) = if (oneTime) 16 else 32
+    private fun tag(oneTime: Boolean, key: ByteArray, bytes: ByteArray) = if (oneTime) oneTimeTag(key, bytes) else authenticate(key, bytes)
     fun seal(pad: ByteArray, role: Char, counter: Long, payload: String, stableId: ByteArray = id(pad)): Pair<String, String> {
         require(validSize(pad.size) && stableId.size == 16)
         val at = offset(pad, role, counter)
@@ -62,35 +79,35 @@ object PadProtocol {
         return try { sealSlot(slot, role, counter, payload, stableId) } finally { slot.fill(0) }
     }
     /** Same wire format as [seal], from one slot's STRIDE bytes (separate pad storage). */
-    fun sealSlot(slot: ByteArray, role: Char, counter: Long, payload: String, stableId: ByteArray): Pair<String, String> {
+    fun sealSlot(slot: ByteArray, role: Char, counter: Long, payload: String, stableId: ByteArray, oneTime: Boolean = false): Pair<String, String> {
         require(slot.size == STRIDE && stableId.size == 16 && (role == 'A' || role == 'B') && counter in 1..MAX_SLOTS.toLong())
         require((0 until STRIDE).any { slot[it] != 0.toByte() }) { "Pad slot retired" }
         val data = payload.toByteArray(Charsets.UTF_8)
         require(data.size <= BLOCK - 2) { "Encoded message too large for a pad slot" }
-        val header = ByteBuffer.allocate(26).put(3).put(role.code.toByte()).putLong(counter).put(stableId).array()
+        val header = ByteBuffer.allocate(26).put(wireVersion(oneTime)).put(role.code.toByte()).putLong(counter).put(stableId).array()
         val clear = ByteBuffer.allocate(BLOCK).putShort(data.size.toShort()).put(data).array()
         val cipher = ByteArray(BLOCK) { (clear[it].toInt() xor slot[it].toInt()).toByte() }
         val key = slot.copyOfRange(BLOCK, STRIDE)
         return try {
             val wire = header + cipher
-            messageId(slot, role, counter, stableId) to b64.encodeToString(wire + authenticate(key, wire))
+            messageId(slot, role, counter, stableId) to b64.encodeToString(wire + tag(oneTime, key, wire))
         } finally { key.fill(0); clear.fill(0); data.fill(0) }
     }
     /** Format and pad-id check only; returns the counter so the caller can fetch that one slot. */
-    fun counter(wire: String, role: Char, stableId: ByteArray): Long {
+    fun counter(wire: String, role: Char, stableId: ByteArray, oneTime: Boolean = false): Long {
         require(stableId.size == 16 && wire.length <= 5600)
         val bytes = Base64.getDecoder().decode(wire)
-        require(bytes.size == 26 + BLOCK + 32 && bytes[0] == 3.toByte() && bytes[1] == role.code.toByte())
+        require(bytes.size == 26 + BLOCK + tagBytes(oneTime) && bytes[0] == wireVersion(oneTime) && bytes[1] == role.code.toByte())
         require(MessageDigest.isEqual(stableId, bytes.copyOfRange(10, 26))) { "Wrong pad" }
         return ByteBuffer.wrap(bytes, 2, 8).long.also { require(it in 1..MAX_SLOTS.toLong()) { "Pad exhausted; exchange a fresh pad" } }
     }
-    fun openSlot(slot: ByteArray, wire: String, role: Char, stableId: ByteArray): Protocol.Opened {
+    fun openSlot(slot: ByteArray, wire: String, role: Char, stableId: ByteArray, oneTime: Boolean = false): Protocol.Opened {
         require(slot.size == STRIDE)
-        val counter = counter(wire, role, stableId)
+        val counter = counter(wire, role, stableId, oneTime)
         require((0 until STRIDE).any { slot[it] != 0.toByte() }) { "Pad slot retired" }
         val bytes = Base64.getDecoder().decode(wire)
         val key = slot.copyOfRange(BLOCK, STRIDE)
-        try { require(MessageDigest.isEqual(authenticate(key, bytes.copyOfRange(0, 26 + BLOCK)), bytes.copyOfRange(26 + BLOCK, bytes.size))) { "Invalid pad authentication" } }
+        try { require(MessageDigest.isEqual(tag(oneTime, key, bytes.copyOfRange(0, 26 + BLOCK)), bytes.copyOfRange(26 + BLOCK, bytes.size))) { "Invalid pad authentication" } }
         finally { key.fill(0) }
         val clear = ByteArray(BLOCK) { (bytes[26 + it].toInt() xor slot[it].toInt()).toByte() }
         return try {
@@ -102,7 +119,8 @@ object PadProtocol {
     fun messageId(pad: ByteArray, role: Char, counter: Long, stableId: ByteArray = id(pad)): String = hex(MessageDigest.getInstance("SHA-256").digest(stableId + role.code.toByte() + ByteBuffer.allocate(8).putLong(counter).array()).copyOf(16))
     fun role(wire: String): Char? = try {
         val bytes = Base64.getDecoder().decode(wire)
-        if (bytes.size == 26 + BLOCK + 32 && bytes[0] == 3.toByte() && bytes[1].toInt().toChar() in listOf('A', 'B')) bytes[1].toInt().toChar() else null
+        if (((bytes.size == 26 + BLOCK + 32 && bytes[0] == 3.toByte()) || (bytes.size == 26 + BLOCK + 16 && bytes[0] == 4.toByte())) &&
+            bytes[1].toInt().toChar() in listOf('A', 'B')) bytes[1].toInt().toChar() else null
     } catch (_: Exception) { null }
     fun open(pad: ByteArray, wire: String, role: Char, stableId: ByteArray = id(pad)): Protocol.Opened {
         require(validSize(pad.size) && stableId.size == 16)
