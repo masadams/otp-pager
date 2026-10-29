@@ -1,48 +1,45 @@
-# Deploy OTP Pager v0.10
+# Deploy OTP Pager 0.17
 
-The server is an opaque mailbox relay in Docker. The client is the Android APK.
-The normal client requires physical pad pairing and supports pinned device identity.
-The relay does not receive pad material, pairing secrets or private device keys.
-This is an experimental field release; see [security review](SECURITY_REVIEW.md).
+The server is an opaque mailbox relay in Docker; the client is the Android APK. The relay never
+receives pad material, pairing secrets or private device keys. This is an experimental field
+release, not independently audited; see the [security review](SECURITY_REVIEW.md).
 
-## Current merged build: v0.10
+## Current release: 0.17.0
 
-The client changes and relay access protection are merged into `main`. Use the privately
-provided **signed v0.10 test APK on both devices**, then update the relay. Ordinary CI
-debug APKs are not compatible updates to that signed installation. See
-[Android updates](ANDROID_UPDATES.md) for signer custody and the first debug-to-signed transition.
-
-The default stack pins the already tested Linux amd64/arm64 relay:
-
-```text
-ghcr.io/masadams/otp-pager-relay@sha256:3d6f1416e2cbf0ca791bc148e33ff11539b2ed048c5b842bcb1f3169917019b9
-```
-
-This is a development field build, with temporary Android signing and no independent
-audit. A separately published production-signed Android release is still pending.
-The [v0.7 release](https://github.com/masadams/otp-pager/releases/tag/v0.7.0) is historical;
-its debug APK and old stack are not the current v0.10 installation path. `edge` is a
-moving main-build tag; use a verified digest for deployment. Publishing an image or
-merging source does not redeploy the owner's private server.
+- **Phones:** install `otp-pager-0.17.0.apk` from the GitHub release on **both** phones. It
+  updates 0.15/0.16 in place (same signing key) and keeps chats and pairings. New pairings and
+  renewals need 0.17 on both phones (pairing protocol v10, post-quantum).
+- **Relay:** the stack's default image is pinned by digest in `deploy/portainer-stack.yml`
+  (the 0.17.0 relay, also tagged `ghcr.io/masadams/otp-pager-relay:0.17.0`). Linux amd64/arm64.
+- Update the relay first or the phones first; either order works. With an older relay, a lapsed
+  strict chat shows as "unavailable" instead of being retired.
 
 ## Update an existing Portainer stack
 
-Use the EXISTING stack name, token, named data volume and proxy network. Creating a
-second stack with another name can create an empty data volume. Do not delete the
-volume or restore an old snapshot as part of a normal update.
+Use the EXISTING stack name, token, named data volume and proxy network. Creating a second stack
+with another name creates an empty data volume. Never delete the volume or restore an old snapshot
+as part of an update.
 
-1. Set the stack Git reference to `refs/heads/main` and keep compose path
-   `deploy/portainer-stack.yml` from `https://github.com/masadams/otp-pager`.
-2. Set `RELAY_IMAGE` to the tested digest above, or remove an old override to use
-   the current compose default. Environment overrides win over the compose default,
-   so a previously configured `0.7.0` or `edge` value must be updated explicitly.
-3. Keep `RELAY_TOKEN` and `PROXY_NETWORK` unchanged. Use **Pull and redeploy**, with
-   **Re-pull image** enabled. Mailbox traffic keeps its protocol; access claims
-   migrate the server disk format to schema 2 while preserving ciphertext/cursors.
-4. Verify the container is healthy and `https://YOUR_HOST/health` returns
-   `{"status":"ok"}`. Test message delivery in both directions using the paired
-   clients. Health alone does not prove authenticated access or writable storage.
-5. Reload Nginx if it cached the old upstream container address after recreation.
+1. **Stacks → otp-pager → Editor** (Git-based stack). Check:
+   - Repository URL `https://github.com/masadams/otp-pager`;
+   - Repository reference `refs/heads/main`;
+   - Compose path `deploy/portainer-stack.yml`.
+2. **Environment variables:**
+   - remove any `RELAY_IMAGE` override (for example an old `0.7.0`, `edge` or digest value), so
+     the pinned default is used. Overrides win over the compose default.
+   - keep `RELAY_TOKEN`, `PROXY_NETWORK` and `RELAY_STRICT_CLAIMS` unchanged.
+3. Click **Pull and redeploy**, with **Re-pull image and redeploy** switched on.
+4. Check:
+   - the container is running and healthy (**Containers → otp-pager-relay-1**);
+   - `https://YOUR_HOST/health` returns `{"status":"ok"}`;
+   - on a phone, **Friend details → Test server connection** shows every line as ✓ (or "!" for
+     post-quantum TLS until the proxy step below);
+   - a message and a reply go through in both directions.
+5. If Nginx Proxy Manager then answers 502, it cached the old container address: open the proxy
+   host and click **Save** without changes (this reloads it), or restart the NPM container.
+
+The data volume keeps ciphertext, cursors, the storage epoch, access records, the strict-chat
+authority key and, from 0.17, permanent tombstones for retired strict-chat shares.
 
 After the first protected chat, use a relay compatible with disk schema 2. Older
 relays reject protected state: do not roll back to 0.7 or restore old snapshots to
@@ -84,22 +81,62 @@ Protected chats require separate automatically derived capabilities. See
 The stack publishes no host port. Nginx reaches `otp-pager-relay:8080` across the
 shared proxy network. Keep Portainer/admin interfaces separately protected.
 
-## Nginx / Nginx Proxy Manager
+## Nginx Proxy Manager
 
-In NPM create a Proxy Host with your HTTPS hostname, upstream scheme `http`, forwarding
-hostname `otp-pager-relay`, port `8080`. Enable a trusted TLS certificate and Force SSL.
-WebSockets are unnecessary. Additional Basic Auth conflicts with the APK bearer token.
+### Proxy host (first installation)
 
-For ordinary Nginx adapt `deploy/nginx.conf.example`. Put its rate-limit zones in the
-`http {}` context. NPM needs the optional `deploy/npm-*.conf.example` snippets for
-similar limits; a basic proxy host alone does not install them. Test configuration
-with `nginx -t` before reloading. Do not blindly trust public X-Forwarded-For headers.
-Avoid access logs containing mailbox URIs, authorization headers or request bodies.
-The APK rejects HTTP, redirects and untrusted/self-signed certificates.
+**Hosts → Proxy Hosts → Add Proxy Host:**
+
+| Tab | Setting | Value |
+|---|---|---|
+| Details | Domain Names | your relay hostname, e.g. `pager.example.com` |
+| Details | Scheme / Forward Hostname / Port | `http` / `otp-pager-relay` / `8080` |
+| Details | Block Common Exploits | on |
+| Details | Websockets Support | off (not used) |
+| SSL | SSL Certificate | a trusted certificate (Let's Encrypt) |
+| SSL | Force SSL, HTTP/2, HSTS | on |
+| Access | Access List | none (Basic Auth breaks the app's bearer token) |
+
+NPM and the relay must share the Docker network named in `PROXY_NETWORK` (default `proxy`).
+The app refuses plain HTTP, redirects and self-signed certificates.
+
+### Rate limits (recommended)
+
+1. In the NPM data folder, append `deploy/npm-http-top.conf.example` to
+   `/data/nginx/custom/http_top.conf` (create the file if it doesn't exist).
+2. Paste `deploy/npm-proxy-advanced.conf.example` into this proxy host's **Advanced** tab →
+   Custom Nginx Configuration. **Save**.
+
+### Post-quantum TLS (0.17, optional)
+
+The app now offers the hybrid post-quantum key exchange `X25519MLKEM768` on every relay
+connection. Your proxy uses it only if its OpenSSL is 3.5 or newer:
+
+1. Check NPM's OpenSSL: `docker exec <npm-container> openssl version` (or Portainer →
+   Containers → NPM → Console → `openssl version`).
+2. **3.5 or newer:** add this line to the proxy host's **Advanced** tab (below the rate-limit
+   lines) and **Save**:
+   ```nginx
+   ssl_ecdh_curve X25519MLKEM768:X25519:prime256v1;
+   ```
+   If NPM reports the host as offline afterwards, remove the line again. That means its Nginx
+   doesn't support the group.
+3. **Older than 3.5:** don't add the line, because Nginx refuses to start with an unknown group.
+   Wait for an NPM image built on OpenSSL 3.5+. Messages stay OTP-protected either way; this only
+   protects tokens and metadata in transit.
+4. Verify on a phone: **Friend details → Test server connection**. The "Post-quantum TLS" line
+   shows ✓ when the proxy accepts the hybrid group.
+
+### Plain Nginx
+
+Adapt `deploy/nginx.conf.example` (rate-limit zones go in the `http {}` context, the same
+`ssl_ecdh_curve` rule applies). Test with `nginx -t` before reloading. Don't trust public
+X-Forwarded-For headers, and avoid access logs containing mailbox URIs, authorization headers or
+bodies.
 
 ## Android setup
 
-Install the SAME signed v0.10 test APK on both devices before upgrading the relay.
+Install the same signed release APK on both devices.
 Update a previous same-signer test installation in place, retaining app data. Moving
 from historical debug APKs or later to a different production signer requires a
 deliberate fresh-install/fresh-pairing transition; see [Android updates](ANDROID_UPDATES.md).

@@ -35,13 +35,16 @@ group chats by per-member fan-out; multi-relay ideas kept in the plan (items 6 a
 
 ## Current status and physical USB regression (2026-10-28)
 
-Items 1–3 below have now merged into `main` via PRs #38, #39 and #40. Item 5 (#41, #47), the USB negotiation retry (#43, #46), the peer-wipe recipient ordering fix (#49) and the docs and strict-chat acceptance gates (#42, #44, #45) merged together through the 2026-10-28 integration review. The strict-chat protocol direction (#48, and the parked `feat/strict-chats` branch) is awaiting an owner decision. The table below records implementation status; review and physical validation remain separate gates. Peer wipe is unreviewed and off by default; successful CI is not evidence of physical peer-wipe safety.
+Items 1–3 below have now merged into `main` via PRs #38, #39 and #40. Item 5 (#41, #47), the USB negotiation retry (#43, #46), the peer-wipe recipient ordering fix (#49) and the docs and strict-chat acceptance gates (#42, #44, #45) merged together through the 2026-10-28 integration review. The strict-chat direction was decided (combine lease and deadline) and is implemented and merged (#54, hardened in #71); #48 and the parked `feat/strict-chats` branch are superseded. The table below records implementation status; review and physical validation remain separate gates. Peer wipe is unreviewed and off by default; successful CI is not evidence of physical peer-wipe safety.
 
 **Open physical USB pairing regression:** the owner reports that transfer worked in an earlier APK but failed with the newer October 28 build. Before changing code, capture both device models, Android versions, host/accessory roles, cable, permission prompts, app versions and exact failure stage. Compare with the last known working build without uninstalling active pad material. Add a two-device physical USB check to the release gate; emulator tests do not establish compatibility. This remains unresolved.
 
 ## Strict chats — implementation gate for item 4
 
-**Status: not implemented.** A strict chat must require fresh relay authorization
+**Status (2026-10-29): implemented and merged** (#54; review fixes in #71: signed REVOKED before
+local deletion, relay tombstones, late-unlock and lease-expiry clearing, draft exclusion). Not
+independently reviewed or tested on two physical phones. The gate below is the original
+acceptance target, kept for review. A strict chat must require fresh relay authorization
 before opening locally encrypted conversation state. Merely storing a second key
 share on the relay is insufficient if the phone persists the unwrapped key.
 
@@ -94,7 +97,7 @@ fan-out groups; remaining security/reliability/usability work.
   USB negotiation flag; #44 defines strict-chat acceptance gates. All remain open.
   Dependent PRs must reuse them and name their base branch. Preserve both #42 and
   #44's additions when their overlapping PIPELINE edits are integrated.
-- Strict protocol/relay/storage/UI, failover and groups remain **unimplemented**.
+- (Historical, before #54/#57/groups) strict protocol, failover and groups were unimplemented; all have since merged (table below).
   The proposed work sequence is not release evidence.
 
 ## Ordered pipeline
@@ -118,10 +121,9 @@ Already done on 2026-10-28: relay strict claims (#34, F06 first step); base imag
 Per-device relay credentials were considered and dropped: both phones share the pad and
 secret, so revoking one phone's relay access protects nothing extra.
 
-Strict item 4 continuation: [OTPSTR01 candidate](STRICT_CHAT_PROTOCOL.md) implements
-only an unwired codec/response guard and development vectors on a follow-up to #44.
-No strict-chat relay, storage or UI is implemented. One authority, no inactivity
-share deletion, maximum 60-second foreground lease, new physical enrollment only.
+Historical (before #54): the OTPSTR01 candidate was an unwired codec. It is now wired end to
+end; see [STRICT_CHAT_PROTOCOL.md](STRICT_CHAT_PROTOCOL.md) "As built". The owner later chose to
+add the check-in deadline, so shares *are* deleted after inactivity past the chosen deadline.
 
 ## Optional loss-of-contact policy — proposed, 2026-10-28
 

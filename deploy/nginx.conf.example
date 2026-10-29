@@ -8,6 +8,8 @@ server {
     ssl_certificate /etc/letsencrypt/live/pager.example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/pager.example.com/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
+    # OpenSSL 3.5+ only: hybrid post-quantum key exchange (see docs/POST_QUANTUM.md).
+    # ssl_ecdh_curve X25519MLKEM768:X25519:prime256v1;
     server_tokens off;
     add_header Strict-Transport-Security "max-age=31536000" always;
     limit_conn otp_connections 10;
