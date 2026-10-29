@@ -1,7 +1,10 @@
 {
-  "version": "0.7.0",
-  "commit": "3632cc60d8f0a50c5dddd4032eadcbeb8e67d6c7",
-  "android_run": 39984156312,
-  "relay_run": 39984148199,
-  "artifact": "otp-pager-debug-apk-api-31"
+  "version": "0.15.0",
+  "commit": "9c2a1d7ca2a09161cddce2ee40a3455110ff1e9a",
+  "android_run": 40791087868,
+  "relay_run": 40791087919,
+  "signed_android_run": 40795955627,
+  "artifact": "otp-pager-signed-release",
+  "signing_cert_sha256": "ef7f03e9b7cdec5ec310c32100238e445bdc0ae78ece5b491a605f4ea6b60dbd",
+  "initial_signed_release": true
 }
