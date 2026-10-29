@@ -32,10 +32,10 @@ Historical sections below are not descriptions of the current interface.
 
 Update **both clients first**, then pull/redeploy the existing Portainer stack using
 `refs/heads/main` and `deploy/portainer-stack.yml`, preserving its data volume and token.
-The stack now pins this tested amd64/arm64 relay:
+The stack now pins the 0.17.0 amd64/arm64 relay:
 
 ```text
-ghcr.io/masadams/otp-pager-relay@sha256:3d6f1416e2cbf0ca791bc148e33ff11539b2ed048c5b842bcb1f3169917019b9
+ghcr.io/masadams/otp-pager-relay@sha256:1b8942062886bc6412e0539241e5632c8e28be5044d593c5b44b4f3a641ca4d6
 ```
 
 An existing `RELAY_IMAGE` override must be updated explicitly. See

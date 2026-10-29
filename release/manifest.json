@@ -1,10 +1,10 @@
 {
-  "version": "0.16.0",
-  "commit": "d54e58d8fad2a2365c6cd55b424497d03ed7262b",
-  "android_run": 40896884903,
-  "relay_run": 40896884840,
-  "signed_android_run": 40896891438,
+  "version": "0.17.0",
+  "commit": "43dd016484ae2abf7e89416a5b3e29d56190c3cb",
+  "android_run": 40921007788,
+  "relay_run": 40921007960,
+  "signed_android_run": 40921015432,
   "artifact": "otp-pager-signed-release",
   "signing_cert_sha256": "ef7f03e9b7cdec5ec310c32100238e445bdc0ae78ece5b491a605f4ea6b60dbd",
-  "previous_signed_tag": "v0.15.0"
+  "previous_signed_tag": "v0.16.0"
 }

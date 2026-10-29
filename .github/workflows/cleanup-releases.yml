@@ -1,0 +1,37 @@
+name: Remove old releases
+# Manual only. Deletes every GitHub release except the one named in `keep`. Git tags stay, so
+# the source of each version remains identifiable. The next release's update check downloads
+# the APK of its previous_signed_tag release, so always keep the latest published release.
+on:
+  workflow_dispatch:
+    inputs:
+      keep:
+        description: Release tag to keep (the latest, e.g. v0.17.0)
+        required: true
+      confirm:
+        description: Type DELETE to confirm
+        required: true
+permissions:
+  contents: read
+jobs:
+  cleanup:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Delete releases other than the kept one
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          KEEP: ${{ inputs.keep }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          [ "$CONFIRM" = "DELETE" ] || { echo "Not confirmed"; exit 1; }
+          [[ "$KEEP" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid tag"; exit 1; }
+          gh release view "$KEEP" --repo "$REPO" > /dev/null || { echo "$KEEP is not a release; refusing"; exit 1; }
+          gh release list --repo "$REPO" --limit 100 --json tagName --jq '.[].tagName' | while read -r tag; do
+            if [ "$tag" != "$KEEP" ]; then echo "Deleting release $tag (tag kept)"; gh release delete "$tag" --repo "$REPO" --yes; fi
+          done
