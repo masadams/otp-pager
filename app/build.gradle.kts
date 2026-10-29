@@ -55,6 +55,8 @@ dependencies {
     implementation("androidx.fragment:fragment:1.6.2")
     // ML-KEM-768 (FIPS 203) for the hybrid post-quantum USB pairing channel; lightweight API only.
     implementation("org.bouncycastle:bcprov-jdk18on:1.86")
+    // BoringSSL TLS for relay connections, offering hybrid X25519MLKEM768 on every Android version.
+    implementation("org.conscrypt:conscrypt-android:2.7.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")

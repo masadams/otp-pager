@@ -18,12 +18,12 @@ import javax.net.ssl.SSLException
 internal object RelayProbe {
     /** Largest cursor the relay accepts: the access read returns no messages. */
     const val PROBE_CURSOR = 9_007_199_254_740_991L
-    /** [ok] null means the step was skipped because an earlier one failed. */
-    data class Step(val name: String, val ok: Boolean?, val detail: String)
+    /** [ok] null means the step was skipped because an earlier one failed. [warn]: works, but worth fixing. */
+    data class Step(val name: String, val ok: Boolean?, val detail: String, val warn: Boolean = false)
     data class Report(val label: String, val endpoint: String, val steps: List<Step>) {
         val ok: Boolean get() = steps.none { it.ok == false }
         fun describe() = "$label\n$endpoint\n" + steps.joinToString("\n") {
-            "${when (it.ok) { true -> "✓"; false -> "✗"; null -> "–" }} ${it.name}: ${it.detail}"
+            "${when { it.ok == true && it.warn -> "!"; it.ok == true -> "✓"; it.ok == false -> "✗"; else -> "–" }} ${it.name}: ${it.detail}"
         }
     }
 
@@ -44,7 +44,7 @@ internal object RelayProbe {
         }
 
         started = SystemClock.elapsedRealtime()
-        val conn = URL("$endpoint/health").openConnection() as HttpsURLConnection
+        val conn = RelayTls.apply(URL("$endpoint/health").openConnection() as HttpsURLConnection)
         conn.instanceFollowRedirects = false; conn.connectTimeout = 8000; conn.readTimeout = 8000
         conn.setRequestProperty("Accept", "application/json")
         try {
@@ -61,6 +61,12 @@ internal object RelayProbe {
             val suite = try { conn.cipherSuite } catch (_: Exception) { "" }
             val tls = if (suite.startsWith("TLS_AES_") || suite.startsWith("TLS_CHACHA20_")) "TLS 1.3" else "TLS 1.2 or older"
             steps.add(Step("Secure connection", true, "$tls · $elapsed ms"))
+            val port = URI(endpoint).port.takeIf { it > 0 } ?: 443
+            steps.add(when (RelayTls.serverSupportsHybrid(host, port)) {
+                true -> Step("Post-quantum TLS", true, "Hybrid ${RelayTls.HYBRID_GROUP} key exchange")
+                false -> Step("Post-quantum TLS", true, "Not offered by the server, so it used classical X25519. Messages are still OTP-protected; enable ${RelayTls.HYBRID_GROUP} on your proxy to protect tokens and metadata too.", warn = true)
+                null -> Step("Post-quantum TLS", true, "Not available on this phone; it used Android's own TLS.", warn = true)
+            })
             val body = try {
                 (if (code in 200..299) conn.inputStream else conn.errorStream)?.use { stream ->
                     val buffer = ByteArray(4096); var size = 0

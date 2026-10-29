@@ -56,7 +56,7 @@ object RelayClient : RelayTransport {
     }
     override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String =
         exchange(endpoint, room, token, method, body, cursor)
-    private fun openConnection(url: URL) = url.openConnection() as HttpsURLConnection
+    private fun openConnection(url: URL) = RelayTls.apply(url.openConnection() as HttpsURLConnection)
     private fun exchange(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long, path: String = "", lease: ContactOperations.Lease? = null, connection: (URL) -> HttpsURLConnection = ::openConnection, kind: String = "mailbox"): String {
         require(kind in listOf("mailbox", "share"))
         val suffix = if (method == "GET" && kind == "mailbox") "?after=$cursor&limit=50" else ""
