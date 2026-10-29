@@ -884,7 +884,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
      * Read-only connection test for the main relay and every backup, using the credential sync
      * would use. Never claims, writes, advances cursors or changes access. Network; worker only.
      */
-    fun testConnection(): List<RelayProbe.Report> {
+    internal fun testConnection(): List<RelayProbe.Report> {
         val s = checkNotNull(state) { "Save server details first" }
         val master = Protocol.master(s.getString("secret"))
         try {
