@@ -28,18 +28,36 @@ tested on two physical phones. Normal chats are unchanged.
   - `StrictChatProtocol.PendingUnlock` accepts only the exact echo of the request, signed by the
     pinned authority.
   - The share is held **in memory only** for the rest of the lease. When the lease ends, or the
-    app leaves the foreground, live engines drop their decrypted state.
+    app leaves the foreground, live engines drop their decrypted state, and an open conversation
+    screen clears its messages and composer at once.
+  - Leaving the foreground advances a lock epoch. An unlock reply that arrives afterwards is
+    rejected and never caches the share.
+  - The relay keeps every accepted nonce until its request window closes. When 32 are live it
+    refuses new unlocks (429) rather than evicting one, so an accepted request can't be replayed.
 - **While open:** every foreground check (about every 30 s) requests a new grant, which renews
   the lease and is also the relay **check-in**.
-- **Check-in deadline:** if a share isn't unlocked within its deadline, the relay deletes it.
-  - The next check, or the next open, gets 404 and wipes that chat locally.
+- **Check-in deadline:** if a share isn't unlocked within its deadline, the relay **retires** it:
+  - The share is removed and a permanent tombstone (room plus enrolled device key) is kept.
+  - The snapshot is rewritten, which resets the journal, so no live relay file
+    (`mailboxes.json`, `journal.log`) still holds the share.
+  - A retired room is never re-enrolled (410).
+  - The next check or open gets **410 with a REVOKED frame signed by the pinned authority**,
+    echoing that exact request (its nonce, chat generation, role and device). Only that evidence
+    makes the phone wipe the chat locally (`PendingUnlock.acceptRevoked`).
+  - A plain 404 (a reset relay, a wrong proxy route, a hostile answer) means *unavailable*: the
+    chat stays locked and **nothing is deleted**. Without the share it can't be decrypted anyway.
   - A phone kept offline past the deadline can never open the chat again, even with a full
     storage copy.
+  - **Not covered:** copies of the share in relay backups or volume snapshots, replaced file
+    blocks on the server's disk, and anything an operator copied earlier. Retirement only
+    removes live files. Back up relay volumes accordingly, or not at all for strict chats.
 - **Wipes:**
   - wiping a strict chat (single or all) queues deletion of this phone's share, always, and of
     the friend's share when peer wipe is on;
   - a peer-wipe recipient also deletes its own share.
-- **What strict chats don't do:** they skip drafts and background receiving. Messages wait on
+- **What strict chats don't do:** they skip drafts and background receiving. Strict text is
+  never written to the ordinary draft store, including on Send and when a send fails. A copy an
+  earlier build left there is removed when the chat opens. Messages wait on
   the relay (24 h), so open strict chats daily.
 - **Code:**
   - `StrictChat` (inner layer, leases, unlock);

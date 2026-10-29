@@ -92,7 +92,7 @@ class NfcSetupActivity : Activity(), NfcAdapter.ReaderCallback {
         root.addView(Button(this).apply { text = "Done"; setOnClickListener { finish() } })
         setContentView(ScrollView(this).apply { addView(root) })
     }
-    override fun onResume() { super.onResume(); if (operation == null || retired || operation?.cancelled == true) { finish(); return }; active = true }
+    override fun onResume() { super.onResume(); if (!AppLock.gate(this)) return; if (operation == null || retired || operation?.cancelled == true) { finish(); return }; active = true }
     private fun share() {
         if (adapter?.isEnabled != true) { status.text = "Turn NFC on in Android settings first."; return }
         adapter?.disableReaderMode(this)

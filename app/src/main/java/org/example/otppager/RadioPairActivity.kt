@@ -110,7 +110,7 @@ class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
         setContentView(root)
         handler.postDelayed({ if (!stopped.get() && !complete) { note("Transfer timed out. Close and retry on both devices."); closeLinks(); confirm.isEnabled = false } }, 180000)
     }
-    override fun onResume() { super.onResume(); if (operation == null || stopped.get() || operation?.cancelled == true) { finish(); return }; active = true }
+    override fun onResume() { super.onResume(); if (!AppLock.gate(this)) return; if (operation == null || stopped.get() || operation?.cancelled == true) { finish(); return }; active = true }
     private fun ready(): Boolean {
         if (adapter?.isEnabled != true) { status.text = "Turn NFC on in Android settings first."; return false }
         return true

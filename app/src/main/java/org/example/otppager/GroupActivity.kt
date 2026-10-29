@@ -50,7 +50,7 @@ class GroupActivity : Activity() {
         setContentView(root)
         open = intent.getStringExtra("group")
     }
-    override fun onResume() { super.onResume(); active = true; render() }
+    override fun onResume() { super.onResume(); if (!AppLock.gate(this)) return; active = true; render() }
     override fun onStop() { active = false; generation++; body.removeAllViews(); super.onStop() }
     @Deprecated("Back returns from a thread to the group list")
     override fun onBackPressed() { if (open != null) { open = null; render() } else super.onBackPressed() }

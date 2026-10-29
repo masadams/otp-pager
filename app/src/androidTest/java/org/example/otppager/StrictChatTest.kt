@@ -31,6 +31,9 @@ class StrictChatTest {
         val authority = KeyPairGenerator.getInstance("EC").apply { initialize(ECGenParameterSpec("secp256r1")) }.generateKeyPair()
         val card: String = Base64.getEncoder().encodeToString(authority.public.encoded)
         val shares = mutableMapOf<String, JSONObject>()
+        /** Tombstones like the relay's: room -> enrolled device key. */
+        val retired = mutableMapOf<String, String>()
+        @Synchronized fun retire(room: String) { shares.remove(room)?.let { retired[room] = it.getString("device") } }
         val claims = mutableMapOf<String, String>()
         val nonces = mutableSetOf<String>()
         var unlocks = 0
@@ -48,13 +51,19 @@ class StrictChatTest {
         @Synchronized override fun share(endpoint: String, room: String, capability: String, method: String, body: String?, unlock: Boolean): String {
             if (claims[room] != capability) throw RelayHttpException(403)
             when {
-                method == "DELETE" -> { shares.remove(room); return "{}" }
-                method == "PUT" -> { check(shares.putIfAbsent(room, JSONObject(body!!)) == null); return "{}" }
+                method == "DELETE" -> { retire(room); return "{}" }
+                method == "PUT" -> { if (room in retired) throw RelayHttpException(410); check(shares.putIfAbsent(room, JSONObject(body!!)) == null); return "{}" }
             }
             check(method == "POST" && unlock)
-            val held = shares[room] ?: throw RelayHttpException(404)
             val request = JSONObject(body!!)
             val frame = Base64.getDecoder().decode(request.getString("frame"))
+            val held = shares[room] ?: run {
+                val device = retired[room] ?: throw RelayHttpException(404)
+                if (!IdentityProtocol.verify(device, frame, Base64.getDecoder().decode(request.getString("signature")))) throw RelayHttpException(403)
+                val revoked = StrictChatProtocol.encode(StrictChatProtocol.decode(frame).copy(kind = StrictChatProtocol.Kind.REVOKED, issued = 0, expires = 0))
+                val signature = Signature.getInstance("SHA256withECDSA").run { initSign(authority.private); update(revoked); sign() }
+                throw RelayHttpException(410, JSONObject().put("frame", Base64.getEncoder().encodeToString(revoked)).put("signature", Base64.getEncoder().encodeToString(signature)).toString())
+            }
             if (!IdentityProtocol.verify(held.getString("device"), frame, Base64.getDecoder().decode(request.getString("signature")))) throw RelayHttpException(403)
             val decoded = StrictChatProtocol.decode(frame)
             check(decoded.kind == StrictChatProtocol.Kind.UNLOCK && nonces.add(PadProtocol.hex(decoded.nonce))) { "Replay" }
@@ -121,10 +130,26 @@ class StrictChatTest {
             try { StrictChat.unlock(context, ra, impostor); fail("Accepted a grant from an unpinned authority") } catch (_: Exception) {}
             try { StationEngine(SecureStore(context, ra), relay); fail("Impostor grant unlocked the chat") } catch (_: StrictChat.Locked) {}
 
-            // Lapse or wipe elsewhere: the share is gone, so the next check removes the chat here.
+            // A relay that simply lacks the share (reset, wrong route, hostile) is never grounds to delete.
+            StrictChat.unlock(context, ra, relay)
+            val room = StrictChat.route(stored).room
+            val held = relay.shares.remove(room)!!
+            try { StrictChat.unlock(context, ra, relay); fail("Unlocked without a share") } catch (_: StrictChat.Unavailable) {}
+            try { StationEngine(SecureStore(context, ra), relay).sync() } catch (_: Exception) {}
+            assertFalse(VaultLifecycle.isRetired(context.noBackupFilesDir, ra))
+            relay.shares[room] = held
+
+            // A reply that lands after the app left the foreground never caches the share.
+            StrictChat.lockAll()
+            val startedAt = StrictChat.epoch(); StrictChat.lockAll()
+            try { StrictChat.remember(ra, ByteArray(32), 1000, "late", startedAt); fail("Late unlock reply cached") } catch (_: StrictChat.Locked) {}
+            try { StationEngine(SecureStore(context, ra), relay); fail("Late reply opened the chat") } catch (_: StrictChat.Locked) {}
+
+            // Lapse or wipe elsewhere: the relay retires the share and answers with a signed
+            // REVOKED, so the next check removes the chat here.
             StrictChat.unlock(context, ra, relay)
             val live = StationEngine(SecureStore(context, ra), relay)
-            relay.shares.remove(StrictChat.route(stored).room)
+            relay.retire(room)
             val notice = live.sync()
             assertTrue(notice.contains("key share is gone"))
             assertTrue(VaultLifecycle.isRetired(context.noBackupFilesDir, ra))

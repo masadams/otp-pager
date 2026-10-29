@@ -199,7 +199,8 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     }
     /**
      * Every foreground check renews the lease with a fresh signed unlock (which is also the
-     * check-in). A deleted share means the chat was wiped elsewhere or lapsed: retire it here too.
+     * check-in). An authenticated retirement (signed REVOKED: wiped elsewhere or lapsed) retires it
+     * here too; a share the relay simply doesn't have is never treated as one.
      */
     private fun checkInStrict(): String? {
         val s = state ?: return null
@@ -207,11 +208,12 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         val route = StrictChat.Route(s.getString("endpoint"), strict.getString("room"), strict.getString("capability"),
             strict.getString("authority"), s.getString("role").single(), unhex(s.getJSONObject("control").getString("generation")))
         try {
+            val epoch = StrictChat.epoch()
             val (share, millis) = StrictChat.grant(relay, route, identity)
-            try { StrictChat.remember(strictRoot, share, millis, store.operationKey) } finally { share.fill(0) }
+            try { StrictChat.remember(strictRoot, share, millis, store.operationKey, epoch) } finally { share.fill(0) }
             return null
-        } catch (_: StrictChat.Gone) {
-        } catch (_: Exception) { return null } // Offline: the current lease simply runs out.
+        } catch (_: StrictChat.Gone) { // Only a signed REVOKED for this request gets here.
+        } catch (_: Exception) { return null } // Offline, unavailable or left the app: the current lease simply runs out.
         val root = strictRoot
         StrictChat.forget(root)
         VaultRetirement.retireContact(store.context, root)

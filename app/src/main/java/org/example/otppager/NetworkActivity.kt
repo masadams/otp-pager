@@ -52,6 +52,8 @@ class NetworkActivity : Activity() {
     private var selectedStrict = 0L
     private var draftChatId: String? = null
     private var draftRoom: String? = null
+    /** Set when the open chat is strict; kept even after its lease clears the engine. */
+    private var draftStrict = false
     private var draftId = java.util.UUID.randomUUID().toString()
     private var restoringDraft = false
     private var draftSaved = false
@@ -213,6 +215,15 @@ class NetworkActivity : Activity() {
     }
     override fun onResume() {
         super.onResume(); active = true; StationRuntime.uiVisible = true
+        // A strict lease that ends while this screen is open clears its messages at once.
+        StrictChat.onLocked = { root -> runOnUiThread {
+            if (active && unlocked && !isFinishing && root == draftChatId) {
+                if (::messages.isInitialized) messages.removeAllViews()
+                rendered = null; latest = null
+                if (::composer.isInitialized) { restoringDraft = true; try { composer.text.clear() } finally { restoringDraft = false } }
+                needsTerminal = true; showTerminal()
+            }
+        } }
         if (!unlocked) {
             val guard = getSystemService(KeyguardManager::class.java)
             if (AppLock.unlocked || !guard.isDeviceSecure) { unlocked = true; AppLock.unlock(); showTerminal() } else showUnlock()
@@ -344,10 +355,12 @@ class NetworkActivity : Activity() {
             handler.removeCallbacks(saveDraft)
             runTask(clearComposer = true) {
                 check(checkNotNull(engine).view().padCheck != null) { "Pair a physical pad before sending" }
-                val draft = ChatDraft(SecureStore(this, id).sibling("draft"))
-                draft.save(room, submittedId, value) // If this fails, no message or pad slot is allocated.
+                // Strict text never touches the ordinary draft store, not even for a failed send:
+                // it stays only in the composer and the strict vault.
+                val draft = if (checkNotNull(engine).isStrict) null else ChatDraft(SecureStore(this, id).sibling("draft"))
+                draft?.save(room, submittedId, value) // If this fails, no message or pad slot is allocated.
                 checkNotNull(engine).sendDraft(value, submittedId)
-                try { draft.clear() } catch (_: Exception) {} // Durable accepted ID suppresses stale recovery.
+                try { draft?.clear() } catch (_: Exception) {} // Durable accepted ID suppresses stale recovery.
                 "Message queued · checking delivery"
             }
         }; composeActions.addView(sendButton); traffic.addView(composeActions)
@@ -562,7 +575,7 @@ class NetworkActivity : Activity() {
         var loadedRetired: ChatBook.Chat? = null
         var loadedRetirementStatus: VaultRetirement.Status? = null
         var loadedOpen: ChatBook.Chat? = null
-        var loadedChat: String? = null; var loadedRoom: String? = null; var draftProblem = false
+        var loadedChat: String? = null; var loadedRoom: String? = null; var draftProblem = false; var loadedStrict = false
         runTask(load = true, onComplete = {
             retiredChat = loadedRetired; retirementStatus = loadedRetirementStatus; openChat = loadedOpen
             if (loadedRetired != null) {
@@ -570,7 +583,7 @@ class NetworkActivity : Activity() {
                 pendingScan = null; pendingDeviceScan = null; pendingDocument = null; importedDeviceCard = null
                 if (tab != 4) selectTab(7) else renderSimpleScreens()
             } else {
-                draftChatId = loadedChat; draftRoom = loadedRoom
+                draftChatId = loadedChat; draftRoom = loadedRoom; draftStrict = loadedStrict
                 restoringDraft = true
                 try { composer.setText(restoredDraft?.text ?: ""); composer.setSelection(composer.length()) }
                 finally { restoringDraft = false }
@@ -601,8 +614,11 @@ class NetworkActivity : Activity() {
             engine?.state?.let { s ->
                 val master = Protocol.master(s.getString("secret"))
                 loadedRoom = try { Protocol.room(master) } finally { master.fill(0) }
+                loadedStrict = s.has("strictShare")
                 if (!s.has("strictShare")) try { restoredDraft = ChatDraft(SecureStore(this, loadedChat!!).sibling("draft")).read(loadedRoom!!, s.optString("lastSentDraft")) }
                 catch (_: Exception) { draftProblem = true }
+                // Earlier builds saved strict text here on Send; remove any copy a failed send left.
+                else try { ChatDraft(SecureStore(this, loadedChat!!).sibling("draft")).clear() } catch (_: Exception) {}
             }
             val scanned = scanResult
             val document = pendingDocument; pendingDocument = null
@@ -1226,7 +1242,9 @@ class NetworkActivity : Activity() {
     }
     private fun persistDraft() {
         handler.removeCallbacks(saveDraft)
-        if (engine?.isStrict == true) return // Strict chats never keep drafts outside the locked vault.
+        // Strict chats never keep drafts outside the locked vault, including after the lease has
+        // already cleared the engine.
+        if (draftStrict || engine?.isStrict == true) return
         if (visibleContact?.cancelled == true) return
         val id = draftChatId ?: return; val room = draftRoom ?: return
         val value = composer.text.toString(); val revision = draftId; val visibleGeneration = generation
@@ -1568,7 +1586,8 @@ class NetworkActivity : Activity() {
     }
     private fun friendly(e: Exception): String = when (e) {
         is StrictChat.Locked -> "STRICT CHAT LOCKED // connect to the server to open it"
-        is StrictChat.Gone -> "STRICT CHAT REMOVED // its key share is gone from the server, so it was wiped here"
+        is StrictChat.Gone -> "STRICT CHAT REMOVED // the server confirmed with a signed answer that its key share is retired, so it was wiped here"
+        is StrictChat.Unavailable -> "STRICT CHAT UNAVAILABLE // the server has no key share for it. If the server was reset or the address is wrong, fix that. Nothing was deleted."
         is RelayHttpException -> when (e.status) {
             401, 403 -> "ACCESS DENIED // check chat access or the setup token in Settings"
             410 -> "CHAT ACCESS REVOKED // pair a fresh chat on both devices"
@@ -1598,6 +1617,7 @@ class NetworkActivity : Activity() {
     }
     override fun onStop() {
         if (::composer.isInitialized) persistDraft()
+        StrictChat.onLocked = null
         StrictChat.lockAll() // Leaving the app ends every strict lease at once.
         openDialogs.toList().forEach { it.dismiss() }; openDialogs.clear()
         pairingDialog?.dismiss(); pairingDialog = null

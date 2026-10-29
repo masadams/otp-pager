@@ -66,7 +66,9 @@ export function makeServer(options = {}) {
     if (op.t === 'clean') {
       const drop = new Set(op.seqs), gone = new Set(op.rooms);
       return { ...s, messages: s.messages.filter(m => !drop.has(m.seq)),
-        shares: Object.fromEntries(Object.entries(s.shares || {}).filter(([room]) => !gone.has(room))) };
+        shares: Object.fromEntries(Object.entries(s.shares || {}).filter(([room]) => !gone.has(room))),
+        retired: { ...(s.retired || {}), ...Object.fromEntries(op.rooms.filter(room => s.shares?.[room])
+          .map(room => [room, { device: s.shares[room].device, at: 0 }])) } };
     }
     if (op.t === 'share') return { ...s, shares: { ...(s.shares || {}), [op.room]: op.value } };
     throw new Error('Unknown journal operation');
@@ -97,6 +99,12 @@ export function makeServer(options = {}) {
         !Number.isSafeInteger(s.deadline) || s.deadline < MIN_DEADLINE || s.deadline > MAX_DEADLINE || !Number.isFinite(s.checked) ||
         typeof s.device !== 'string' || !Array.isArray(s.nonces) || s.nonces.length > MAX_NONCES))
     throw new Error('Invalid share state');
+  // Retired share rooms: permanent tombstones. A retired room is never re-enrolled, and its
+  // unlock requests get a signed REVOKED answer, so a phone only wipes on authenticated evidence.
+  if (state.retired === undefined) state.retired = {};
+  if (!state.retired || typeof state.retired !== 'object' || Array.isArray(state.retired) ||
+      Object.entries(state.retired).some(([room, r]) => !ROOM.test(room) || !r || typeof r.device !== 'string' || !Number.isFinite(r.at)))
+    throw new Error('Invalid retired share state');
   function syncDir() { const dir = openSync(dataDir, 'r'); try { fsyncSync(dir); } finally { closeSync(dir); } }
   function writeJournalHead(gen) {
     const fd = openSync(journalFile + '.tmp', 'w', 0o600);
@@ -129,13 +137,23 @@ export function makeServer(options = {}) {
     throw new Error('Invalid storage epoch');
   const sequences = state.messages.map(m => m.seq);
   if (sequences.some((seq, i) => i > 0 && seq <= sequences[i - 1])) throw new Error('Invalid stored sequence ordering');
+  /**
+   * Retire share rooms: drop the shares, keep tombstones, and rewrite the snapshot (which also
+   * resets the journal), so no live relay file still holds a retired share. Copies already in
+   * backups, old disk blocks or replaced files are outside this; see docs/STRICT_CHAT_PROTOCOL.md.
+   */
+  function retiredState(base, rooms) {
+    const gone = new Set(rooms), at = now();
+    return { ...base, shares: Object.fromEntries(Object.entries(base.shares).filter(([room]) => !gone.has(room))),
+      retired: { ...base.retired, ...Object.fromEntries(rooms.map(room => [room, { device: base.shares[room].device, at }])) } };
+  }
   function clean() {
     const live = state.messages.filter(m => now() - m.time < ttl);
-    const shares = Object.fromEntries(Object.entries(state.shares).filter(([, s]) => now() - s.checked <= s.deadline));
-    if (live.length !== state.messages.length || Object.keys(shares).length !== Object.keys(state.shares).length) {
+    const expired = Object.keys(state.shares).filter(room => now() - state.shares[room].checked > state.shares[room].deadline);
+    if (expired.length) { commit({ ...retiredState(state, expired), messages: live }); return; }
+    if (live.length !== state.messages.length) {
       const kept = new Set(live.map(m => m.seq));
-      commit({ ...state, messages: live, shares }, { t: 'clean', seqs: state.messages.filter(m => !kept.has(m.seq)).map(m => m.seq),
-        rooms: Object.keys(state.shares).filter(room => !(room in shares)) });
+      commit({ ...state, messages: live }, { t: 'clean', seqs: state.messages.filter(m => !kept.has(m.seq)).map(m => m.seq), rooms: [] });
     }
   }
   function json(res, status, body) {
@@ -221,7 +239,7 @@ export function makeServer(options = {}) {
         clean();
         const held = state.shares[room];
         if (req.method === 'DELETE' && !shareMatch[2]) {
-          if (held) { const { [room]: _, ...rest } = state.shares; commit({ ...state, shares: rest }); }
+          if (held) commit(retiredState(state, [room]));
           return json(res, 200, { share: 'deleted' });
         }
         const expected = shareMatch[2] ? 'POST' : 'PUT';
@@ -236,13 +254,13 @@ export function makeServer(options = {}) {
         }
         if (shareMatch[2]) {
           // Unlock: an OTPSTR01 UNLOCK frame signed by the enrolled device key. Doubles as the check-in.
-          const current = state.shares[room];
-          if (!current) return json(res, 404, { error: 'no share' });
+          const current = state.shares[room], retired = state.retired[room];
+          if (!current && !retired) return json(res, 404, { error: 'no share' }); // Unknown: never evidence of retirement.
           if (!data || typeof data.frame !== 'string' || typeof data.signature !== 'string') return json(res, 400, { error: 'invalid unlock' });
           const frame = Buffer.from(data.frame, 'base64'), signature = Buffer.from(data.signature, 'base64');
           if (frame.length !== FRAME || frame.toString('base64') !== data.frame || signature.length < 8 || signature.length > 80)
             return json(res, 400, { error: 'invalid unlock' });
-          const device = Buffer.from(current.device, 'base64');
+          const device = Buffer.from((current ?? retired).device, 'base64');
           let signed = false;
           try { signed = verify('sha256', frame, { key: device, format: 'der', type: 'spki' }, signature); } catch { signed = false; }
           if (!signed) return json(res, 403, { error: 'unlock signature rejected' });
@@ -254,8 +272,17 @@ export function makeServer(options = {}) {
               !frame.subarray(146, 178).equals(Buffer.alloc(32)) || !(expires > issued && expires - issued <= MAX_LEASE))
             return json(res, 400, { error: 'invalid unlock' });
           if (Math.abs(time - issued) > MAX_SKEW || time >= expires + MAX_SKEW) return json(res, 409, { error: 'unlock clock mismatch' });
+          if (!current) {
+            // Retired: a signed REVOKED echoing this exact request (fresh nonce), with zero times and share.
+            const revoked = Buffer.from(frame); revoked[8] = 5; revoked.fill(0, 130, 178);
+            return json(res, 410, { error: 'share retired', frame: revoked.toString('base64'), signature: sign('sha256', revoked, authorityKey).toString('base64') });
+          }
           if (current.nonces.some(n => n.nonce === nonce)) return json(res, 409, { error: 'unlock replayed' });
-          const nonces = [...current.nonces.filter(n => n.until > time), { nonce, until: expires + MAX_SKEW }].slice(-MAX_NONCES);
+          // Replay protection must cover every nonce until its request window closes, so a full
+          // set refuses new unlocks instead of evicting a still-valid nonce.
+          const unexpired = current.nonces.filter(n => n.until > time);
+          if (unexpired.length >= MAX_NONCES) { res.setHeader('Retry-After', '60'); return json(res, 429, { error: 'too many unlocks' }); }
+          const nonces = [...unexpired, { nonce, until: expires + MAX_SKEW }];
           const value = { ...current, checked: time, nonces };
           commit({ ...state, shares: { ...state.shares, [room]: value } }, { t: 'share', room, value });
           const grant = Buffer.from(frame); grant[8] = 3; Buffer.from(current.share, 'base64url').copy(grant, 146);
@@ -270,6 +297,7 @@ export function makeServer(options = {}) {
           return json(res, 400, { error: 'invalid share' });
         try { createPublicKey({ key: Buffer.from(data.device, 'base64'), format: 'der', type: 'spki' }); }
         catch { return json(res, 400, { error: 'invalid device key' }); }
+        if (state.retired[room]) return json(res, 410, { error: 'share retired' }); // Never re-enrolled.
         const current = state.shares[room]; // Recheck after the async body read; a share is never replaced.
         if (current) {
           const same = current.share === data.share && current.device === data.device && current.deadline === data.deadline;

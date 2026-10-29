@@ -73,5 +73,20 @@ internal object StrictChatProtocol {
             terminal = true
             return grant.share.copyOf()
         }
+        /**
+         * The authority's signed REVOKED for this exact request: the only evidence that permits
+         * deleting a strict chat locally. A bare 404 or an unsigned answer never does.
+         */
+        @Synchronized fun acceptRevoked(bytes: ByteArray, signature: ByteArray, authorityCard: String, elapsed: Long) {
+            check(!terminal) { "Unlock no longer pending" }
+            val expected = decode(requestBytes)
+            val age = elapsed - started
+            require(elapsed >= started && age >= 0 && age < expected.expires - expected.issued)
+            val revoked = verified(bytes, signature, authorityCard, response = true)
+            require(revoked.kind == Kind.REVOKED && revoked.role == expected.role && revoked.epoch == expected.epoch)
+            require(revoked.generation.contentEquals(expected.generation) && revoked.device.contentEquals(expected.device))
+            require(revoked.authority.contentEquals(expected.authority) && revoked.nonce.contentEquals(expected.nonce))
+            terminal = true
+        }
     }
 }
