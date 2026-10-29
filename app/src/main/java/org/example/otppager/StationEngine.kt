@@ -880,6 +880,24 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         if (list.length() == 0) { staged.remove("backups"); return }
         staged.put("backups", JSONArray((0 until list.length()).map { list.getJSONObject(it).put("cursor", 0L).put("epoch", "") }))
     }
+    /**
+     * Read-only connection test for the main relay and every backup, using the credential sync
+     * would use. Never claims, writes, advances cursors or changes access. Network; worker only.
+     */
+    fun testConnection(): List<RelayProbe.Report> {
+        val s = checkNotNull(state) { "Save server details first" }
+        val master = Protocol.master(s.getString("secret"))
+        try {
+            val room = Protocol.room(master); val capability = Protocol.relayCapability(master)
+            val targets = listOf(Triple("Main server", s.getString("endpoint"), if (s.optBoolean("relayScoped")) capability else s.getString("token"))) +
+                items(s.optJSONArray("backups") ?: JSONArray()).mapIndexed { index, backup ->
+                    Triple("Backup ${index + 1}", backup.getString("endpoint"), if (backup.optBoolean("scoped")) capability else backup.getString("token"))
+                }
+            return targets.map { (label, url, credential) ->
+                RelayProbe.check(label, url) { relay.request(url, room, credential, "GET", cursor = RelayProbe.PROBE_CURSOR) }
+            }
+        } finally { master.fill(0) }
+    }
     internal val backups: List<String> get() = items(state?.optJSONArray("backups") ?: JSONArray()).map { it.getString("endpoint") }
     fun sync(): String {
         store.requireActive()
