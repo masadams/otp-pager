@@ -33,6 +33,11 @@ needed to talk again. **Wipe** stays disabled until the user types `WIPE`
 (case-insensitive, surrounding spaces ignored). This blocks a stray tap without
 adding a second dialog. Cancelling changes nothing.
 
+**Emergency wipe (0.18).** The app menu's *Emergency wipe (hold)* runs the same
+wipe-all as *Wipe all chats from this phone* without typing: the user presses and holds
+one button for 3 seconds (a countdown shows; releasing cancels). It exists for when typing
+`WIPE ALL` is too slow; the hold still blocks a pocket tap.
+
 ## Execution order
 
 1. Main thread, before any storage work: bump the screen generation (queued results

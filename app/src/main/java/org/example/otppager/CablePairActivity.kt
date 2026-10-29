@@ -70,6 +70,13 @@ class CablePairActivity : Activity() {
     private val poll = object : Runnable {
         override fun run() { if (active && !cancelled.get()) { inspect(); handler.postDelayed(this, 1000) } }
     }
+    /** Conditioned microphone noise for this pairing, captured on the worker; memory only, zeroed after use. */
+    @Volatile private var noise: MicNoise.Result? = null
+    private fun captureNoise() = worker.execute { if (noise?.seed == null && !cancelled.get()) noise = MicNoise.capture(this).also { log(it.note); runOnUiThread { if (active) status.text = it.note } } }
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 92) captureNoise()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         renewal = intent.getBooleanExtra("renew", false)
@@ -118,7 +125,7 @@ class CablePairActivity : Activity() {
         log("USB host feature: ${packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_USB_HOST)} · accessory feature: ${packageManager.hasSystemFeature(android.content.pm.PackageManager.FEATURE_USB_ACCESSORY)}")
         body.addView(Button(this).apply { text = "About USB pairing"; setOnClickListener {
             val dialog = AlertDialog.Builder(this@CablePairActivity).setTitle("Physical pairing")
-                .setMessage("One device needs the server address and access token saved. Approve Android's USB permission prompts. Compare every group of the confirmation code on BOTH physical screens.\n\nAfter both approve, the encrypted connection exchanges server setup, fresh message keys and public device identities. Both phones contribute randomness to the message keys; they are still computer-generated, not a certified true-random one-time pad. Private signing keys remain on their own device. USB host direction selects pad size. Both devices need the same app version.\n\nA data cable and compatible Android USB host/accessory modes are required. This experimental protocol uses conventional encryption and is not independently audited or post-quantum secure. If renewal is interrupted, reconnect both devices on this screen to recover.")
+                .setMessage("One device needs the server address and access token saved. Approve Android's USB permission prompts. Compare every group of the confirmation code on BOTH physical screens.\n\nAfter both approve, the encrypted connection exchanges server setup, fresh message keys and public device identities. Each phone generates a full-length, health-tested random stream (optionally seeded with microphone noise) and the message keys are the XOR of both, so either phone's good generator is enough. That is as close to a true one-time pad as phones allow, not a certified true-random source. Messages are authenticated with one-time Poly1305. Private signing keys remain on their own device. USB host direction selects pad size. Both devices need the same app version.\n\nA data cable and compatible Android USB host/accessory modes are required. The cable channel is post-quantum hybrid (ECDH + ML-KEM-768). This experimental protocol is not independently audited. If renewal is interrupted, reconnect both devices on this screen to recover.")
                 .setPositiveButton("Close", null).create()
             dialog.window?.protectPrivateContent(); dialog.show()
         } })
@@ -126,7 +133,13 @@ class CablePairActivity : Activity() {
             setOnClickListener { approved = true; isEnabled = false; confirmation?.countDown() } }; root.addView(confirm)
         finish = Button(this).apply { text = "Cancel"; setOnClickListener { finish() } }; root.addView(finish)
         body.addView(label("Approve Android's USB prompts. Cancel if the full codes differ.", 13f))
+        body.addView(label("For extra randomness, this screen can record about 1.5 seconds of microphone noise. It stays in memory, is health-tested and mixed into your message keys, then erased. Nothing is saved or sent.", 13f))
+        body.addView(Button(this).apply { text = "Add microphone noise"; setOnClickListener {
+            if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) captureNoise()
+            else requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 92)
+        } })
         setContentView(root)
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) captureNoise()
         val events = IntentFilter(permissionAction).apply { addAction(UsbManager.ACTION_USB_DEVICE_DETACHED); addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED) }
         androidx.core.content.ContextCompat.registerReceiver(this, receiver, events, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
     }
@@ -169,7 +182,9 @@ class CablePairActivity : Activity() {
                 operation?.check()
                 val station = ChatBook(this).engine(chatId); engine = station
                 if (renewal) station.requireRenewalIdentity() else station.requireCableEligible()
-                val link = open(); channel = link
+                val seed = (noise ?: MicNoise.capture(this).also { log(it.note) }).seed?.copyOf()
+                noise?.seed?.fill(0); noise = null // A retry on this screen records fresh noise.
+                val link = try { open() } catch (failure: Exception) { seed?.fill(0); throw failure }; channel = link
                 operation?.check()
                 if (cancelled.get()) { link.close(); error("Cancelled") }
                 link.use {
@@ -181,7 +196,7 @@ class CablePairActivity : Activity() {
                             confirm.isEnabled = true
                         } }
                         check(latch.await(90, TimeUnit.SECONDS) && approved && !cancelled.get() && operation?.cancelled != true) { "Confirmation cancelled or timed out" }
-                    }, progress = ::note, renew = renewal, size = padSize, strict = if (renewal) 0L else intent.getLongExtra("strict", 0L))
+                    }, progress = ::note, renew = renewal, size = padSize, strict = if (renewal) 0L else intent.getLongExtra("strict", 0L), noise = seed)
                 }
                 runOnUiThread { if (active && !cancelled.get()) { status.text = if (renewal) "Keys renewed. Your chat is ready." else "Paired. You're ready to chat."; finish.text = "Open conversation"; confirm.isEnabled = false } }
             } catch (failure: Exception) {
@@ -198,6 +213,7 @@ class CablePairActivity : Activity() {
     override fun onStop() {
         if (::discovery.isInitialized) discovery.stop()
         active = false; cancelled.set(true); operation?.close(); operation = null; handler.removeCallbacksAndMessages(null); confirmation?.countDown(); channel?.close()
+        noise?.seed?.fill(0); noise = null
         worker.execute { StationRuntime.pairingOpen = false }
         if (!isFinishing) finish()
         super.onStop()

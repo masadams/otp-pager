@@ -81,3 +81,10 @@ These are automated models/fixtures, not proof of USB hardware compatibility.
 The encrypted channel that carries the pad is hybrid: ECDH P-256 plus ML-KEM-768 in both
 directions. The compared code covers every public key and both ML-KEM ciphertexts. See
 [POST_QUANTUM.md](POST_QUANTUM.md). Both phones need a v10 build to pair or renew.
+
+## Two-phone randomness and one-time MAC (pairing protocol v11)
+
+The pad is the XOR of both phones' full-length, health-tested random streams, exchanged in 32 KiB
+lockstep chunks, with optional microphone noise. Messages use one-time Poly1305. See
+[PAD_PROTOCOL.md](PAD_PROTOCOL.md). Both phones need 0.18 to pair or renew. Transfer takes
+about twice as long as before, since each chunk crosses the cable twice.

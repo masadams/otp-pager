@@ -56,7 +56,7 @@ class CablePairTest {
                 val wire = a.state!!.getJSONArray("outbox").getJSONObject(0).getString("packet")
                 // The snapshot has used slots zeroed, so name the pad by its stored id rather than re-hashing it.
                 val stable = a.state!!.getString("padId").chunked(2).map { it.toInt(16).toByte() }.toByteArray()
-                assertTrue(IdentityProtocol.isSigned(PadProtocol.open(pad, wire, 'A', stable).payload)); pad.fill(0)
+                assertTrue(IdentityProtocol.isSigned(PadProtocol.open(pad, wire, 'A', stable, oneTime = true).payload)); pad.fill(0)
                 val packets = mutableListOf<String>()
                 val relay = object : RelayTransport {
                     override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String {
@@ -102,8 +102,10 @@ class CablePairTest {
             val af = pool.submit { CableProtocol.run(true, ain, aout, a, review, { progress.add(it) }, false, size) }
             val bf = pool.submit { CableProtocol.run(false, bin, bout, b, review, { progress.add(it) }, false, size) }
             af.get(240, TimeUnit.SECONDS); bf.get(240, TimeUnit.SECONDS)
-            assertTrue(progress.any { it.startsWith("Sending message keys") } && progress.any { it == "Receiving message keys · 100%" })
+            // v11: both phones mix full streams, and the pairing authenticates with one-time Poly1305.
+            assertTrue(progress.count { it == "Mixing message keys from both phones · 100%" } == 2)
             for (engine in listOf(a, b)) {
+                assertEquals("poly1305", engine.state!!.getString("mac"))
                 assertEquals(slots, engine.view().padRemaining)
                 assertFalse(engine.state!!.has("pad")); assertTrue(engine.view().canSend)
             }

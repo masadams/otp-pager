@@ -32,6 +32,8 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         fun wipe()
         fun testConnection() {}
         fun testServer(address: String) {}
+        fun retention() {}
+        fun deleteHistory() {}
     }
     data class Friend(val id: String, val name: String, val detail: String, val paired: Boolean, val unread: Boolean)
     private val ink = UiStyle.ink
@@ -89,6 +91,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
     private val friendName = label("Friend", 26f)
     private val friendState = label("Private conversation", 14f, true)
     private val keys = label("", 14f, true)
+    private val retentionButton = button("Keep messages: 24 hours · Change") { actions.retention() }
     val retired = column()
     private val retiredName = label("Retired pairing", 24f)
     private val retiredStatus = label("Local cleanup status unavailable", 18f)
@@ -154,7 +157,10 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         body.addView(button("Renew message keys") { actions.renew() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
         body.addView(button("Rename friend") { actions.rename() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(24) })
         body.addView(button("Receiving & battery") { actions.receiving() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
-        body.addView(label("Messages and drafts stay locally for up to 24 hours. Delivery means saved on the other device, not read by a person.", 13f, true).apply { setPadding(0, dp(24), 0, dp(18)) })
+        body.addView(label("Messages on this phone", 17f).apply { setPadding(0, dp(24), 0, dp(8)) })
+        body.addView(retentionButton, LinearLayout.LayoutParams(-1, -2))
+        body.addView(button("Delete message history now") { actions.deleteHistory() }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+        body.addView(label("Deleted and expired messages are crypto-erased: the vault is re-encrypted under a new key and the old key destroyed. Long-press a message to delete just that one. Delivery means saved on the other device, not read by a person. Your friend's phone keeps its own copy.", 13f, true).apply { setPadding(0, dp(12), 0, dp(18)) })
         body.addView(button("Advanced setup") { actions.advanced() }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(16) })
         // Local-only destruction stays last and visually separate from everyday options.
         body.addView(button("Wipe this chat from this phone") { actions.wipe() }.apply {
@@ -208,6 +214,7 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         pairStep.visibility = if (view.cableEligible && (view.role != "—" || skipServer)) View.VISIBLE else View.GONE
         recoveryStep.visibility = if (!view.cableEligible) View.VISIBLE else View.GONE
         sizeButton.text = "Pad size · ${padSize / PadProtocol.MATERIAL_BYTES} MiB · Change"
+        retentionButton.text = "Keep messages: ${retentionLabel(view.retention)} · Change"
     }
     /** [remote]: honest peer-wipe status (unreviewed feature), or null when none was involved. */
     fun renderRetired(name: String, status: VaultRetirement.Status, busy: Boolean, remote: String? = null) {
@@ -226,6 +233,9 @@ internal class PagerScreens(private val activity: Activity, private val actions:
         freshPairingButton.alpha = if (freshPairingButton.isEnabled) 1f else 0.45f
     }
     fun resetSetup() { skipServer = false }
+    companion object {
+        fun retentionLabel(millis: Long) = when (millis) { StationEngine.AFTER_READ -> "until read"; 3_600_000L -> "1 hour"; 21_600_000L -> "6 hours"; else -> "24 hours" }
+    }
     fun showProblem() {
         inboxStatus.text = "Saved chats need attention"
         addButton.isEnabled = false; addButton.alpha = 0.5f

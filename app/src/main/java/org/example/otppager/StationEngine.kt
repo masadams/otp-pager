@@ -13,6 +13,12 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         internal fun hasPad(s: JSONObject) = s.has("pad") || s.has("padKeys")
         const val MAX_BACKUPS = 2
         const val MAX_GROUPS = 16
+        /** How long this phone keeps messages: one of these, or [AFTER_READ]. Applies to this phone only. */
+        val RETENTIONS = listOf(3_600_000L, 21_600_000L, 86_400_000L)
+        const val AFTER_READ = 0L
+        private const val DAY = 86_400_000L
+        /** "After reading": a read incoming or delivered outgoing message goes this long afterwards. */
+        private const val READ_GRACE = 60_000L
         const val MAX_GROUP_MEMBERS = 8
         private val GROUP_ID = Regex("[a-f0-9]{32}")
         /** Canonical `[{endpoint, token}]`, validated; order is the fallback order. */
@@ -109,6 +115,8 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         check(s.getLong("counter") >= 0 && s.getLong("cursor") >= 0)
         window(s)
         check(!(s.has("pad") && s.has("padKeys")))
+        check(!s.has("mac") || (s.getString("mac") == "poly1305" && s.has("padKeys"))) // One-time MAC needs separate pad storage.
+        check(!s.has("retention") || s.getLong("retention") == AFTER_READ || s.getLong("retention") in RETENTIONS)
         s.optJSONObject("groups")?.let { g ->
             check(g.length() in 1..MAX_GROUPS && g.keys().asSequence().all { id -> GROUP_ID.matches(id) &&
                 g.getJSONObject(id).getJSONArray("members").length() in 1..MAX_GROUP_MEMBERS })
@@ -155,9 +163,12 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     private fun transactionActive(rekey: Boolean = false, change: (JSONObject) -> Unit) {
         val next = JSONObject(checkNotNull(state).toString())
         change(next); retireUsed(next); validate(next)
+        // Removing any message (expiry, delete, clear) rotates the vault key, so older snapshot
+        // copies on flash holding it can no longer be decrypted (docs/VAULT_KEY_ROTATION.md).
+        val erase = rekey || !contentKeys(next).containsAll(contentKeys(state!!))
         // A forced rekey always rewrites: older snapshots may still hold content already removed here.
-        if (!rekey && next.toString() == state!!.toString()) return
-        persist(next, rekey); state = next; cachedView = null
+        if (!erase && next.toString() == state!!.toString()) return
+        persist(next, erase); state = next; cachedView = null
     }
     private val strictRoot get() = VaultLifecycle.root(store.namespace)
     /** Every vault write goes through here: strict chats are re-sealed under their share. */
@@ -334,7 +345,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         val expected = items(state!!.getJSONArray("outbox")).filter { it.getString("kind") == "text" && it.getString("packet") in wires }.map { it.getString("id") }.toSet()
         val received = (0 until ack.length()).map { ack.getString(it) }.toSet()
         check(expected == received && ack.length() == received.size && expected.size == wires.size) { "USB message confirmation did not match" }
-        transaction { next -> items(next.getJSONArray("outbox")).filter { it.getString("id") in received && it.getString("kind") == "text" }.forEach { it.put("status", "delivered") } }
+        transaction { next -> items(next.getJSONArray("outbox")).filter { it.getString("id") in received && it.getString("kind") == "text" }.forEach { it.put("status", "delivered").put("doneAt", System.currentTimeMillis()) } }
     }
     fun beginRenewal() { requireRenewalEligible(); transaction { it.put("version", 6).put("renewalPaused", true) } }
     fun cableIdentity(renew: Boolean = false): String {
@@ -562,7 +573,9 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         }
     }
     fun markRead() { if ((state?.let { items(it.getJSONArray("inbox")).any { entry -> !entry.optBoolean("read", false) } || items(it.optJSONArray("history") ?: JSONArray()).any { entry -> entry.optBoolean("unread") } }) == true)
-        transaction { s -> items(s.getJSONArray("inbox")).forEach { it.put("read", true) }; items(s.optJSONArray("history") ?: JSONArray()).forEach { it.put("unread", false) } } }
+        transaction { s -> val now = System.currentTimeMillis()
+            items(s.getJSONArray("inbox")).filter { !it.optBoolean("read", false) }.forEach { it.put("read", true).put("readAt", now) }
+            items(s.optJSONArray("history") ?: JSONArray()).forEach { it.put("unread", false) } } }
     private fun packetRole(s: JSONObject, wire: String) = if (hasPad(s)) PadProtocol.role(wire) else Protocol.role(wire)
     private fun open(s: JSONObject, master: ByteArray, wire: String, role: Char): Protocol.Opened {
         if (!hasPad(s)) return Protocol.open(master, wire, role)
@@ -574,8 +587,9 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             val pad = b64d.decode(s.getString("pad"))
             return try { PadProtocol.open(pad, wire, role, id) } finally { pad.fill(0) }
         }
-        val slot = padSlot(s, role, PadProtocol.counter(wire, role, id))
-        return try { PadProtocol.openSlot(slot, wire, role, id) } finally { slot.fill(0) }
+        val oneTime = oneTimeMac(s)
+        val slot = padSlot(s, role, PadProtocol.counter(wire, role, id, oneTime))
+        return try { PadProtocol.openSlot(slot, wire, role, id, oneTime) } finally { slot.fill(0) }
     }
     private fun padSlot(s: JSONObject, role: Char, counter: Long): ByteArray {
         val keys = b64d.decode(s.getString("padKeys"))
@@ -588,8 +602,12 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             return try { PadProtocol.seal(pad, role, counter, body, id) } finally { pad.fill(0) }
         }
         val slot = padSlot(s, role, counter)
-        return try { PadProtocol.sealSlot(slot, role, counter, body, id) } finally { slot.fill(0) }
+        return try { PadProtocol.sealSlot(slot, role, counter, body, id, oneTimeMac(s)) } finally { slot.fill(0) }
     }
+    /** Chats paired with protocol v11+ authenticate with one-time Poly1305 (wire v4) and never accept HMAC. */
+    private fun oneTimeMac(s: JSONObject) = s.optString("mac") == "poly1305"
+    /** Pairing protocol v11: this pairing (or renewal) authenticates with one-time Poly1305 from now on. */
+    internal fun stageOneTimeMac() { checkNotNull(stagedCable) { "No staged pairing" }.put("mac", "poly1305") }
     /** Test and diagnostics only: the pad as the legacy layout, with every used or retired slot zeroed. */
     internal fun padSnapshot(): ByteArray {
         val s = checkNotNull(state)
@@ -721,16 +739,52 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         prune(s)
         return entry
     }
+    private fun keep(s: JSONObject) = s.optLong("retention", DAY).let { if (it == AFTER_READ) DAY else it }
+    private fun afterRead(s: JSONObject) = s.optLong("retention", DAY) == AFTER_READ
+    /** Messages this phone still keeps under the chat's retention (also used to hide them in the view). */
+    private fun keepsHistory(s: JSONObject, entry: JSONObject, now: Long) = now - entry.getLong("time") < keep(s) &&
+        !(afterRead(s) && entry.getBoolean("incoming") && !entry.optBoolean("unread"))
+    private fun keepsIncoming(s: JSONObject, entry: JSONObject, now: Long) = now - entry.getLong("time") < keep(s) &&
+        !(afterRead(s) && entry.optBoolean("read", false) && now - entry.optLong("readAt", 0) >= READ_GRACE)
+    private fun keepsSent(s: JSONObject, entry: JSONObject, now: Long) = now - entry.getLong("time") < keep(s) &&
+        !(afterRead(s) && entry.getString("status") in listOf("delivered", "expired") && now - entry.optLong("doneAt", 0) >= READ_GRACE)
     private fun prune(s: JSONObject) {
         val now = System.currentTimeMillis()
-        if (s.has("history")) s.put("history", JSONArray(items(s.getJSONArray("history")).filter { now - it.getLong("time") < 86400000 }.takeLast(100)))
+        if (s.has("history")) s.put("history", JSONArray(items(s.getJSONArray("history")).filter { keepsHistory(s, it, now) }.takeLast(100)))
         val out = items(s.getJSONArray("outbox"))
-        out.filter { it.getString("status") == "queued" && now - it.getLong("time") >= 86400000 }
-            .forEach { it.put("status", "expired") }
+        // The relay keeps packets for 24 h, so an unsent message expires on that clock whatever the retention.
+        out.filter { it.getString("status") == "queued" && now - it.getLong("time") >= DAY }
+            .forEach { it.put("status", "expired").put("doneAt", now) }
         val pending = out.filter { it.getString("status") == "queued" }
-        val final = out.filter { it.getString("status") != "queued" && it.getString("kind") == "text" && now - it.getLong("time") < 86400000 }.takeLast(100)
+        val final = out.filter { it.getString("status") != "queued" && it.getString("kind") == "text" && keepsSent(s, it, now) }.takeLast(100)
         s.put("outbox", JSONArray((final + pending).sortedBy { it.getLong("time") }))
-        s.put("inbox", JSONArray(items(s.getJSONArray("inbox")).filter { now - it.getLong("time") < 86400000 }.takeLast(100)))
+        s.put("inbox", JSONArray(items(s.getJSONArray("inbox")).filter { keepsIncoming(s, it, now) }.takeLast(100)))
+    }
+    /** Every stored message, by identity; a missing one after a change means content was removed. */
+    private fun contentKeys(s: JSONObject): Set<String> =
+        (items(s.getJSONArray("inbox")).map { "in:" + it.getString("id") } +
+         items(s.getJSONArray("outbox")).filter { it.getString("kind") == "text" }.map { "out:" + it.getString("id") } +
+         items(s.optJSONArray("history") ?: JSONArray()).map { "h:" + it.getLong("time") + ":" + it.getString("text").hashCode() }).toSet()
+    internal val retention: Long get() = state?.optLong("retention", DAY) ?: DAY
+    /** How long this phone keeps this chat's messages; shortening it erases older ones now. */
+    fun setRetention(millis: Long) {
+        require(millis == AFTER_READ || millis in RETENTIONS) { "Unknown retention" }
+        transaction { it.put("retention", millis); prune(it) }
+    }
+    /** Runs expiry now (normally each check does): erases and rekeys if anything expired. */
+    fun expire(): Boolean {
+        val current = state ?: return false
+        val copy = JSONObject(current.toString()); prune(copy)
+        if (contentKeys(copy).containsAll(contentKeys(current))) return false
+        transaction(change = ::prune); return true
+    }
+    /** Deletes one message from this phone (crypto-erased by the rekey). The friend's copy is unchanged. */
+    fun deleteMessage(id: String) = transaction { s ->
+        val inbox = items(s.getJSONArray("inbox")); val out = items(s.getJSONArray("outbox"))
+        check(out.none { it.getString("id") == id && it.getString("status") == "queued" }) { "This message is still being sent. Delete it once it's delivered or expired." }
+        check(inbox.any { it.getString("id") == id } || out.any { it.getString("id") == id && it.getString("kind") == "text" }) { "Message not found" }
+        s.put("inbox", JSONArray(inbox.filter { it.getString("id") != id }))
+        s.put("outbox", JSONArray(out.filter { it.getString("id") != id }))
     }
     fun send(text: String) = sendText(text, null)
     /** Accepted draft ID commits with its ciphertext, so failed draft cleanup cannot resurrect a sent draft. */
@@ -962,7 +1016,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
                                 setWindow(next, window(next).accept(decoded.counter))
                             } else if (kind == "receipt" && payload?.opt("for") is String && Regex("[a-f0-9]{32}").matches(payload.getString("for"))) {
                                 items(next.getJSONArray("outbox")).filter { it.getString("id") == payload.getString("for") && it.getString("kind") == "text" }
-                                    .forEach { it.put("status", "delivered") }
+                                    .forEach { it.put("status", "delivered").put("doneAt", System.currentTimeMillis()) }
                                 setWindow(next, window(next).accept(decoded.counter))
                             } else { ignored++ }
                         }
@@ -1049,9 +1103,9 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     }
     /** [group] is set only for a group this chat is linked to; otherwise a group tag is shown as a normal message. */
     /** [order]: the sender's authenticated send sequence for incoming text (0 when absent). */
-    data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false, val group: String? = null, val groupMessage: String? = null, val order: Long = 0)
+    data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false, val group: String? = null, val groupMessage: String? = null, val order: Long = 0, val id: String? = null)
     data class Group(val id: String, val name: String, val members: List<String>)
-    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true, val cableEligible: Boolean = true, val awaitingReceipt: Int = 0, val relayScoped: Boolean = false, val relayRevoked: Boolean = false) {
+    data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true, val cableEligible: Boolean = true, val awaitingReceipt: Int = 0, val relayScoped: Boolean = false, val relayRevoked: Boolean = false, val retention: Long = 86_400_000L) {
         val setupComplete: Boolean get() = pairingComplete && padCheck != null && padVerified && peerReady && peerDevice != null
         val canSend: Boolean get() = !relayRevoked && pairingComplete && role != "—" && padRemaining != null && padRemaining > 0 && padCheck != null && padVerified && peerReady && (ownDevice == null || peerDevice != null)
     }
@@ -1067,21 +1121,23 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         val master = Protocol.master(s.getString("secret"))
         return try {
             val own = s.getString("role")[0]; val peer = if (own == 'A') 'B' else 'A'
-            val rows = mutableListOf<Message>()
-            for (entry in items(s.optJSONArray("history") ?: JSONArray()).filter { System.currentTimeMillis() - it.getLong("time") < 86400000 }) rows.add(Message(entry.getBoolean("incoming"), entry.getString("text"), entry.getString("status"), entry.getLong("time"), entry.optBoolean("unread"), entry.optBoolean("deviceVerified")))
+            val rows = mutableListOf<Message>(); val now = System.currentTimeMillis()
+            for (entry in items(s.optJSONArray("history") ?: JSONArray()).filter { keepsHistory(s, it, now) }) rows.add(Message(entry.getBoolean("incoming"), entry.getString("text"), entry.getString("status"), entry.getLong("time"), entry.optBoolean("unread"), entry.optBoolean("deviceVerified")))
             for (entry in items(s.getJSONArray("inbox"))) {
-                if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
+                if (!keepsIncoming(s, entry, now)) continue
                 val decoded = retained(s, master, entry.getString("packet"), peer)
                 val payload = JSONObject(deviceBody(s, decoded, peer, enforce = false))
-                rows.add(Message(true, payload.getString("text"), "received", MessageOrder.sentTime(payload.optLong("at"), entry.getLong("time")), !entry.optBoolean("read", false), IdentityProtocol.isSigned(decoded.payload), groupOf(s, payload), payload.optString("gm").takeIf { GROUP_ID.matches(it) }, payload.optLong("n").coerceAtLeast(0)))
+                rows.add(Message(true, payload.getString("text"), "received", MessageOrder.sentTime(payload.optLong("at"), entry.getLong("time")), !entry.optBoolean("read", false), IdentityProtocol.isSigned(decoded.payload), groupOf(s, payload), payload.optString("gm").takeIf { GROUP_ID.matches(it) }, payload.optLong("n").coerceAtLeast(0), entry.getString("id")))
             }
             for (entry in items(s.getJSONArray("outbox")).filter { it.getString("kind") == "text" }) {
-                if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
+                if (entry.getString("status") != "queued" && !keepsSent(s, entry, now)) continue
+                if (now - entry.getLong("time") >= DAY) continue
                 val decoded = retained(s, master, entry.getString("packet"), own)
                 val payload = JSONObject(deviceBody(s, decoded, own, enforce = false))
-                rows.add(Message(false, payload.getString("text"), entry.getString("status"), entry.getLong("time"), deviceVerified = IdentityProtocol.isSigned(decoded.payload), group = groupOf(s, payload), groupMessage = payload.optString("gm").takeIf { GROUP_ID.matches(it) }))
+                rows.add(Message(false, payload.getString("text"), entry.getString("status"), entry.getLong("time"), deviceVerified = IdentityProtocol.isSigned(decoded.payload), group = groupOf(s, payload), groupMessage = payload.optString("gm").takeIf { GROUP_ID.matches(it) }, id = entry.getString("id")))
             }
-            cacheExpiry = rows.minOfOrNull { it.time + 86400000L } ?: Long.MAX_VALUE
+            // Re-render when the next message falls out: its retention, or a minute after reading.
+            cacheExpiry = minOf(rows.minOfOrNull { it.time + keep(s) } ?: Long.MAX_VALUE, if (afterRead(s)) now + READ_GRACE else Long.MAX_VALUE)
             View(own.toString(), Protocol.fingerprint(master), MessageOrder.ordered(rows).takeLast(100),
                 items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" },
                 items(s.getJSONArray("inbox")).count { !it.optBoolean("read", false) } + items(s.optJSONArray("history") ?: JSONArray()).count { it.optBoolean("unread") },
@@ -1090,7 +1146,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
                 s.optString("ownDevice").takeIf { it.isNotEmpty() }, s.optString("peerDevice").takeIf { it.isNotEmpty() },
                 if (s.has("ownDevice")) identity.protection() else null, s.optBoolean("cableComplete", true) && !s.optBoolean("renewalPaused"),
                 !hasPad(s) && s.getLong("counter") == 0L && s.getLong("high") == 0L && s.getJSONArray("outbox").length() == 0 && s.getJSONArray("inbox").length() == 0,
-                rows.count { !it.incoming && it.status == "relayed" }, s.optBoolean("relayScoped"), s.optBoolean("relayRevoked")).also { cachedView = it }
+                rows.count { !it.incoming && it.status == "relayed" }, s.optBoolean("relayScoped"), s.optBoolean("relayRevoked"), s.optLong("retention", DAY)).also { cachedView = it }
         } finally { master.fill(0) }
     }
 }
