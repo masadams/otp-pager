@@ -53,6 +53,8 @@ dependencies {
     // The scanner's published metadata does not reliably package these runtime helpers.
     implementation("androidx.core:core:1.13.1")
     implementation("androidx.fragment:fragment:1.6.2")
+    // ML-KEM-768 (FIPS 203) for the hybrid post-quantum USB pairing channel; lightweight API only.
+    implementation("org.bouncycastle:bcprov-jdk18on:1.86")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")

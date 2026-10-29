@@ -64,7 +64,7 @@ class UsbPairChannelTest {
         val a = CableSession.ephemeral(); val b = CableSession.ephemeral(); val transcript = ByteArray(32) { 3 }
         val pool = Executors.newSingleThreadExecutor()
         try {
-            CableSession.establish(true, a, card(b), transcript).use { hs -> CableSession.establish(false, b, card(a), transcript).use { asess ->
+            CableSession.establish(true, a, card(b), transcript, ByteArray(64) { 9 }).use { hs -> CableSession.establish(false, b, card(a), transcript, ByteArray(64) { 9 }).use { asess ->
                 val peer = pool.submit {
                     for (size in sizes) {
                         val got = asess.read(accessory.input)
@@ -103,9 +103,9 @@ class UsbPairChannelTest {
         val (host, accessory, _) = link(kernelZlp = false, fixed = false)
         val transcript = ByteArray(32) { 3 }; val a = CableSession.ephemeral(); val b = CableSession.ephemeral()
         try {
-            CableSession.establish(false, b, card(a), transcript).use { asess ->
+            CableSession.establish(false, b, card(a), transcript, ByteArray(64) { 9 }).use { asess ->
                 asess.send(accessory.output, ByteArray(aligned(2)))
-                try { CableSession.establish(true, a, card(b), transcript).use { it.read(host.input) }; fail("Aligned frame unexpectedly arrived") }
+                try { CableSession.establish(true, a, card(b), transcript, ByteArray(64) { 9 }).use { it.read(host.input) }; fail("Aligned frame unexpectedly arrived") }
                 catch (_: Exception) {}
             }
         } finally { host.close(); accessory.close() }
