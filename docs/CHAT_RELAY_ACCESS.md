@@ -7,7 +7,7 @@ Update **both Android apps first**, then update the relay. An old app using the 
 The chat-access changes are merged into `main`. The default Portainer stack pins this tested multi-platform image:
 
 ```text
-ghcr.io/masadams/otp-pager-relay@sha256:1b8942062886bc6412e0539241e5632c8e28be5044d593c5b44b4f3a641ca4d6
+ghcr.io/masadams/otp-pager-relay@sha256:a9d80a7bfc0606d02bae9e07fbe662cff491eba399af18b6b48a5811c1ab2e28
 ```
 
 Keep the existing stack name, token, Nginx configuration and `relay-data` volume. If `RELAY_IMAGE` is already set in Portainer, update that override to the pinned image above; otherwise the updated stack default applies. Pull/redeploy without removing or recreating the volume. Main builds also publish `edge` and commit tags after relay/container checks; prefer a verified digest for deployment. The APK remains a temporary-signer test build; this deployment pin does not declare a production Android release.
