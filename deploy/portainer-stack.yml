@@ -1,7 +1,8 @@
 # Portainer Git deployment; see docs/DEPLOYMENT.md. Docker Standalone stack.
+# Default image: the 0.17.0 relay (amd64/arm64), pinned by digest.
 services:
   relay:
-    image: ${RELAY_IMAGE:-ghcr.io/masadams/otp-pager-relay@sha256:3d6f1416e2cbf0ca791bc148e33ff11539b2ed048c5b842bcb1f3169917019b9}
+    image: ${RELAY_IMAGE:-ghcr.io/masadams/otp-pager-relay@sha256:1b8942062886bc6412e0539241e5632c8e28be5044d593c5b44b4f3a641ca4d6}
     restart: unless-stopped
     init: true
     environment:
