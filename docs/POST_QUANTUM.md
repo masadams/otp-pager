@@ -34,13 +34,33 @@ traffic and can later break the key exchange would get the whole pad.
   devices" message. Existing pairings are untouched; this only affects new pairings and
   renewals.
 
+### Relay HTTPS: hybrid X25519MLKEM768 offered first (phone side)
+
+Recorded relay traffic exposes relay tokens, mailbox IDs and timing, never message text.
+
+- Every relay connection now goes through a bundled Conscrypt (BoringSSL, `RelayTls`). Every
+  Android version therefore offers `X25519MLKEM768` first, then X25519, P-256 and P-384.
+- Certificates and hostnames are still checked by the phone's own trust manager and this
+  app's network security config. User-installed CAs stay untrusted.
+- If the native library can't load on a device, the app falls back to Android's built-in TLS.
+- The hybrid exchange only happens if your proxy also supports it (next section).
+  **Friend details → Test server connection** shows a "Post-quantum TLS" line. It proves the
+  server *accepts* the hybrid group (one extra handshake offering nothing else), not what every
+  later connection negotiated.
+- Classical fallback is still allowed, so an active attacker who strips the hybrid group can
+  force X25519. That's a real-time attack, not harvest-now. Refusing classical TLS once a
+  server has proven it supports the hybrid group is a possible follow-up.
+- `RelayTlsTest` (on the emulator) runs local TLS 1.3 servers that accept only the hybrid group
+  or only X25519. It checks that both work, that the probe reports each correctly, and that
+  an untrusted certificate is still refused.
+
 ## Not yet post-quantum
 
 | Use | Today | Quantum risk | Plan |
 |---|---|---|---|
-| Device identity: signs messages, receipts and pairing approvals | ECDSA P-256, non-exportable Android Keystore key | Real-time forgery only; nothing recorded becomes readable. Messages also carry the pad's HMAC, so a forged signature alone isn't enough. | Hybrid ECDSA + ML-DSA-65, both required. Android Keystore has no ML-DSA, so the ML-DSA key would live in the encrypted app vault. Needs a new identity-card format and a pairing protocol bump. |
+| Device identity: signs messages, receipts and pairing approvals | ECDSA P-256, non-exportable Android Keystore key | Real-time forgery only; nothing recorded becomes readable. Each message is inside the OTP layer and carries the pad's HMAC, so forging a message needs the pad, not just the signature. | Per-message ML-DSA signatures don't fit: every message must fit one 4 KiB pad block, and an ML-DSA-65 signature alone is 3.3 KB. The useful place is the pairing approvals and the pinned identity (hybrid ECDSA + ML-DSA, with the ML-DSA key in the encrypted vault because Android Keystore has no ML-DSA). |
 | Strict-chat unlock requests and grants | ECDSA P-256: device key on the phone, authority key on the relay | Real-time forgery of a grant or unlock | Hybrid signatures as above, plus the relay authority (Node: ML-DSA via `node:crypto` once the base image's OpenSSL supports it, or a vetted library). |
-| Relay HTTPS | Android platform TLS → your Nginx/proxy | Recorded traffic could later expose relay tokens, mailbox IDs and timing metadata, but not message text | Enable hybrid `X25519MLKEM768` on the proxy (below). The phone's side depends on its Android version's TLS stack. |
+| Relay HTTPS, server side | Your Nginx/proxy decides | As above, until the proxy offers the hybrid group | Enable `X25519MLKEM768` on the proxy (below), then check the connection test. |
 | APK signature | RSA-3072 | Future forgery of an update, which would need the attacker to also get the APK onto your phone | Android only accepts RSA/EC/DSA APK signatures. Nothing to do until Android supports a post-quantum scheme. |
 
 ### Relay TLS: enabling hybrid key exchange on the proxy
@@ -52,9 +72,9 @@ If your Nginx is built against OpenSSL 3.5 or newer, add this to the `server` bl
 ssl_ecdh_curve X25519MLKEM768:X25519:prime256v1;
 ```
 
-Check `nginx -V` first: older OpenSSL builds refuse to start with an unknown group. Phones whose
-TLS stack offers the hybrid group use it, and others fall back to X25519. Message contents
-never depend on TLS.
+Check `nginx -V` first: older OpenSSL builds refuse to start with an unknown group. The app
+offers the hybrid group on every Android version; clients that don't still get X25519. Message
+contents never depend on TLS.
 
 ## Limits
 
@@ -63,4 +83,4 @@ never depend on TLS.
   of the protocol (see [SECURITY_REVIEW.md](SECURITY_REVIEW.md)).
 - The comparison code and physical presence still provide authentication. A person who skips
   comparing the code isn't protected against a machine-in-the-middle, quantum or not.
-- Bouncy Castle adds roughly 7 MB to the APK.
+- Bouncy Castle adds roughly 7 MB to the APK and Conscrypt roughly 5 MB.

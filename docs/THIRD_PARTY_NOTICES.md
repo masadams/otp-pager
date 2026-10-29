@@ -19,3 +19,7 @@ Android 0.17 adds Bouncy Castle `bcprov-jdk18on` 1.86 for ML-KEM-768 (FIPS 203) 
 post-quantum USB pairing channel, under the Bouncy Castle License (MIT-style):
 https://www.bouncycastle.org/about/license/
 Only its lightweight cryptography API is used; no JCA provider is registered.
+
+Android 0.17 also adds Conscrypt (`org.conscrypt:conscrypt-android` 2.7.0, BoringSSL) for relay
+TLS with hybrid post-quantum key exchange, under the Apache License, Version 2.0:
+https://github.com/google/conscrypt (BoringSSL: https://boringssl.googlesource.com/boringssl/+/HEAD/LICENSE)

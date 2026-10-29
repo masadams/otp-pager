@@ -19,5 +19,11 @@ class RelayProbeTest {
             RelayProbe.Step("Relay health", null, "not tested")))
         assertEquals("Backup 1\nhttps://b.example\n✓ Address: 2 found\n✗ Secure connection: refused\n– Relay health: not tested", report.describe())
     }
+    @Test fun warningsShowButDoNotFail() {
+        val report = RelayProbe.Report("Main server", "https://a.example", listOf(
+            RelayProbe.Step("Post-quantum TLS", true, "classical", warn = true)))
+        assertTrue(report.ok)
+        assertEquals("Main server\nhttps://a.example\n! Post-quantum TLS: classical", report.describe())
+    }
     @Test fun probeCursorIsTheLargestSafeRelayCursor() = assertEquals((1L shl 53) - 1, RelayProbe.PROBE_CURSOR)
 }
