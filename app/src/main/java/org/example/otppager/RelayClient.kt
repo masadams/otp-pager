@@ -43,7 +43,7 @@ object RelayClient : RelayTransport {
         conn.instanceFollowRedirects = false; conn.connectTimeout = 8000; conn.readTimeout = 10000
         try {
             if (conn.responseCode != 200) throw RelayHttpException(conn.responseCode)
-            val text = conn.inputStream.use { String(it.readBytes(), Charsets.UTF_8) }
+            val text = conn.inputStream.use { readCapped(it, SMALL_BODY) }
             return org.json.JSONObject(text)
         } finally { conn.disconnect() }
     }
@@ -68,6 +68,16 @@ object RelayClient : RelayTransport {
     override fun request(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long): String =
         exchange(endpoint, room, token, method, body, cursor)
     private fun openConnection(url: URL) = RelayTls.apply(url.openConnection() as HttpsURLConnection)
+    /**
+     * Cap for small relay answers (authority keys, signed REVOKED): a hybrid answer with its
+     * ML-DSA signature is about 7 KB. Anything longer is cut off, which fails closed.
+     */
+    internal const val SMALL_BODY = 16 * 1024
+    internal fun readCapped(stream: java.io.InputStream, max: Int): String {
+        val buffer = ByteArray(max); var size = 0
+        while (size < buffer.size) { val n = stream.read(buffer, size, buffer.size - size); if (n < 0) break; size += n }
+        return String(buffer, 0, size, Charsets.UTF_8)
+    }
     private fun exchange(endpoint: String, room: String, token: String, method: String, body: String?, cursor: Long, path: String = "", lease: ContactOperations.Lease? = null, connection: (URL) -> HttpsURLConnection = ::openConnection, kind: String = "mailbox"): String {
         require(kind in listOf("mailbox", "share"))
         val suffix = if (method == "GET" && kind == "mailbox") "?after=$cursor&limit=50" else ""
@@ -90,11 +100,7 @@ object RelayClient : RelayTransport {
             lease?.check()
             val code = conn.responseCode
             lease?.check()
-            if (code !in 200..299) throw RelayHttpException(code, if (kind == "share" && code == 410) conn.errorStream?.use { stream ->
-                val buffer = ByteArray(4096); var size = 0
-                while (size < buffer.size) { val n = stream.read(buffer, size, buffer.size - size); if (n < 0) break; size += n }
-                String(buffer, 0, size, Charsets.UTF_8)
-            } else null)
+            if (code !in 200..299) throw RelayHttpException(code, if (kind == "share" && code == 410) conn.errorStream?.use { readCapped(it, SMALL_BODY) } else null)
             conn.inputStream.use { stream ->
                 val buffer = java.io.ByteArrayOutputStream()
                 val chunk = ByteArray(8192)
