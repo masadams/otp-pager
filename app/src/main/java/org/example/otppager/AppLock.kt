@@ -2,6 +2,8 @@ package org.example.otppager
 
 import android.app.Activity
 import android.app.Application
+import android.app.KeyguardManager
+import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 
@@ -21,6 +23,16 @@ internal object AppLock : Application.ActivityLifecycleCallbacks {
         private set
     fun unlock() { unlocked = true }
     fun lock() { if (unlocked) epoch++; unlocked = false }
+    /**
+     * Every screen except the main one calls this first in onResume. While locked it closes the
+     * screen and hands over to the main screen's unlock prompt, so nothing private renders.
+     */
+    fun gate(activity: Activity): Boolean {
+        if (unlocked || activity.getSystemService(KeyguardManager::class.java)?.isDeviceSecure != true) return true
+        activity.startActivity(Intent(activity, NetworkActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP))
+        activity.finish()
+        return false
+    }
     override fun onActivityStarted(activity: Activity) {
         if (started++ == 0 && hiddenAt != 0L && SystemClock.elapsedRealtime() - hiddenAt >= GRACE_MS) lock()
         hiddenAt = 0L

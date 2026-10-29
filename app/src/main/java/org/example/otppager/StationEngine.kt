@@ -199,7 +199,8 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
     }
     /**
      * Every foreground check renews the lease with a fresh signed unlock (which is also the
-     * check-in). A deleted share means the chat was wiped elsewhere or lapsed: retire it here too.
+     * check-in). An authenticated retirement (signed REVOKED: wiped elsewhere or lapsed) retires it
+     * here too; a share the relay simply doesn't have is never treated as one.
      */
     private fun checkInStrict(): String? {
         val s = state ?: return null
@@ -207,11 +208,12 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         val route = StrictChat.Route(s.getString("endpoint"), strict.getString("room"), strict.getString("capability"),
             strict.getString("authority"), s.getString("role").single(), unhex(s.getJSONObject("control").getString("generation")))
         try {
+            val epoch = StrictChat.epoch()
             val (share, millis) = StrictChat.grant(relay, route, identity)
-            try { StrictChat.remember(strictRoot, share, millis, store.operationKey) } finally { share.fill(0) }
+            try { StrictChat.remember(strictRoot, share, millis, store.operationKey, epoch) } finally { share.fill(0) }
             return null
-        } catch (_: StrictChat.Gone) {
-        } catch (_: Exception) { return null } // Offline: the current lease simply runs out.
+        } catch (_: StrictChat.Gone) { // Only a signed REVOKED for this request gets here.
+        } catch (_: Exception) { return null } // Offline, unavailable or left the app: the current lease simply runs out.
         val root = strictRoot
         StrictChat.forget(root)
         VaultRetirement.retireContact(store.context, root)
@@ -783,7 +785,9 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
             check(!hasPad(s) || (s.optBoolean("padVerified") && s.optBoolean("peerReady"))) { "Open Pad: compare codes and wait for the other station to verify and sync" }
             check(!s.has("ownDevice") || s.has("peerDevice")) { "Finish physical device verification before sending" }
             prune(s)
-            val payload = JSONObject().put("kind", "text").put("text", text)
+            // Sender clock and send sequence ride inside the OTP layer (see MessageOrder).
+            val sequence = s.optLong("textSequence") + 1; s.put("textSequence", sequence)
+            val payload = JSONObject().put("kind", "text").put("text", text).put("at", System.currentTimeMillis()).put("n", sequence)
             extra?.let { e -> e.keys().forEach { payload.put(it, e.get(it)) } }
             queue(s, payload, "text")
             if (draftId != null) s.put("lastSentDraft", draftId)
@@ -1044,7 +1048,8 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
         } finally { master.fill(0) }
     }
     /** [group] is set only for a group this chat is linked to; otherwise a group tag is shown as a normal message. */
-    data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false, val group: String? = null, val groupMessage: String? = null)
+    /** [order]: the sender's authenticated send sequence for incoming text (0 when absent). */
+    data class Message(val incoming: Boolean, val text: String, val status: String, val time: Long, val unread: Boolean = false, val deviceVerified: Boolean = false, val group: String? = null, val groupMessage: String? = null, val order: Long = 0)
     data class Group(val id: String, val name: String, val members: List<String>)
     data class View(val role: String, val fingerprint: String, val messages: List<Message>, val pending: Int, val unread: Int = 0, val padRemaining: Int? = null, val padCheck: String? = null, val padVerified: Boolean = false, val peerReady: Boolean = false, val ownDevice: String? = null, val peerDevice: String? = null, val keyProtection: String? = null, val pairingComplete: Boolean = true, val cableEligible: Boolean = true, val awaitingReceipt: Int = 0, val relayScoped: Boolean = false, val relayRevoked: Boolean = false) {
         val setupComplete: Boolean get() = pairingComplete && padCheck != null && padVerified && peerReady && peerDevice != null
@@ -1068,7 +1073,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
                 if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
                 val decoded = retained(s, master, entry.getString("packet"), peer)
                 val payload = JSONObject(deviceBody(s, decoded, peer, enforce = false))
-                rows.add(Message(true, payload.getString("text"), "received", entry.getLong("time"), !entry.optBoolean("read", false), IdentityProtocol.isSigned(decoded.payload), groupOf(s, payload), payload.optString("gm").takeIf { GROUP_ID.matches(it) }))
+                rows.add(Message(true, payload.getString("text"), "received", MessageOrder.sentTime(payload.optLong("at"), entry.getLong("time")), !entry.optBoolean("read", false), IdentityProtocol.isSigned(decoded.payload), groupOf(s, payload), payload.optString("gm").takeIf { GROUP_ID.matches(it) }, payload.optLong("n").coerceAtLeast(0)))
             }
             for (entry in items(s.getJSONArray("outbox")).filter { it.getString("kind") == "text" }) {
                 if (System.currentTimeMillis() - entry.getLong("time") >= 86400000) continue
@@ -1077,7 +1082,7 @@ class StationEngine(private val store: SecureStore, relay: RelayTransport = Rela
                 rows.add(Message(false, payload.getString("text"), entry.getString("status"), entry.getLong("time"), deviceVerified = IdentityProtocol.isSigned(decoded.payload), group = groupOf(s, payload), groupMessage = payload.optString("gm").takeIf { GROUP_ID.matches(it) }))
             }
             cacheExpiry = rows.minOfOrNull { it.time + 86400000L } ?: Long.MAX_VALUE
-            View(own.toString(), Protocol.fingerprint(master), rows.sortedBy { it.time }.takeLast(100),
+            View(own.toString(), Protocol.fingerprint(master), MessageOrder.ordered(rows).takeLast(100),
                 items(s.getJSONArray("outbox")).count { it.getString("status") == "queued" },
                 items(s.getJSONArray("inbox")).count { !it.optBoolean("read", false) } + items(s.optJSONArray("history") ?: JSONArray()).count { it.optBoolean("unread") },
                 if (hasPad(s)) padCapacity(s) - padLedger.high(s.getString("padId")).toInt() else null,

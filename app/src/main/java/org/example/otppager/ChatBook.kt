@@ -204,14 +204,25 @@ class ChatBook(context: Context, indexNamespace: String = EpochRouting.index(con
         engine(chatId).linkGroup(g.id, g.name, g.members)
     }
     /** Fan-out: one separately encrypted copy per member chat. Returns the friends it could not reach now. */
-    fun sendGroup(groupId: String, text: String): List<String> {
+    fun sendGroup(groupId: String, text: String): List<String> = queueGroup(groupId, text).missed.map { it.name }
+    /** [missed]: members this message could not be queued for at all (no keys, revoked, locked). */
+    class GroupSend(val message: String, val missed: List<Chat>)
+    /**
+     * Queues one pad-encrypted copy per linked member. A retry passes the same [message] id and
+     * [only] the members that missed it, so the copies still merge into one line and nobody
+     * receives it twice. Each queued copy is durable in that chat's outbox and resent by later
+     * checks; only a copy that couldn't be queued needs a retry.
+     */
+    fun queueGroup(groupId: String, text: String, message: String? = null, only: Set<String>? = null): GroupSend {
         val g = groups().first { it.id == groupId }
-        val message = PadProtocol.hex(ByteArray(16).also { java.security.SecureRandom().nextBytes(it) })
-        val failed = mutableListOf<String>()
-        for (chat in g.chats) try { engine(chat.id).sendGroup(text, groupId, message) } catch (_: Exception) { failed.add(chat.name) }
-        check(failed.size < g.chats.size) { "The message could not be queued for anyone" }
-        g.chats.forEach { refresh(it.id) }
-        return failed
+        val id = message ?: PadProtocol.hex(ByteArray(16).also { java.security.SecureRandom().nextBytes(it) })
+        val targets = g.chats.filter { only == null || it.id in only }
+        check(targets.isNotEmpty()) { "Nobody left to send this to" }
+        val failed = mutableListOf<Chat>()
+        for (chat in targets) try { engine(chat.id).sendGroup(text, groupId, id) } catch (_: Exception) { failed.add(chat) }
+        check(failed.size < targets.size) { "The message could not be queued for anyone" }
+        targets.forEach { refresh(it.id) }
+        return GroupSend(id, failed)
     }
     /** One row per group message: outgoing copies merge by their shared id, status is the weakest. */
     fun groupLines(groupId: String): List<GroupLine> {

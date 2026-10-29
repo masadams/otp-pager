@@ -3,7 +3,8 @@ package org.example.otppager
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
-class RelayHttpException(val status: Int) : java.io.IOException("HTTP $status")
+/** [body] is kept only for strict-share 410 answers, which carry a signed REVOKED frame. */
+class RelayHttpException(val status: Int, val body: String? = null) : java.io.IOException("HTTP $status")
 interface RelayTransport {
     /** Preserve per-contact cancellation through wrappers, including background receiving. */
     fun forContact(store: SecureStore): RelayTransport = this
@@ -79,7 +80,11 @@ object RelayClient : RelayTransport {
             lease?.check()
             val code = conn.responseCode
             lease?.check()
-            if (code !in 200..299) throw RelayHttpException(code)
+            if (code !in 200..299) throw RelayHttpException(code, if (kind == "share" && code == 410) conn.errorStream?.use { stream ->
+                val buffer = ByteArray(4096); var size = 0
+                while (size < buffer.size) { val n = stream.read(buffer, size, buffer.size - size); if (n < 0) break; size += n }
+                String(buffer, 0, size, Charsets.UTF_8)
+            } else null)
             conn.inputStream.use { stream ->
                 val buffer = java.io.ByteArrayOutputStream()
                 val chunk = ByteArray(8192)

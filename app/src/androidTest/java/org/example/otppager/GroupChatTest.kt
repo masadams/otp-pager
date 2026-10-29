@@ -85,6 +85,16 @@ class GroupChatTest {
             assertTrue(lines.any { it.incoming && it.from == "Bob" && it.text == "Bring water" })
             assertTrue(lines.none { it.text.startsWith("Started the group") && it.incoming })
 
+            // A retry for one member reuses the message id: only that member gets a new copy and the
+            // sender still sees one merged row.
+            val queued = book.queueGroup(group.id, "Retry me")
+            val carolOutbox = { book.engine(carol.id, relay).state!!.getJSONArray("outbox").length() }
+            val firstOutbox = { book.engine(first, relay).state!!.getJSONArray("outbox").length() }
+            val (carolBefore, firstBefore) = carolOutbox() to firstOutbox()
+            assertTrue(book.queueGroup(group.id, "Retry me", queued.message, setOf(carol.id)).missed.isEmpty())
+            assertEquals(carolBefore + 1, carolOutbox()); assertEquals(firstBefore, firstOutbox())
+            assertEquals(1, book.groupLines(group.id).count { !it.incoming && it.text == "Retry me" })
+
             // A tag for a group this chat is not linked to stays an ordinary pairwise message.
             c.leaveGroup(group.id)
             book.sendGroup(group.id, "Only linked chats see this in the group"); listOf(first, carol.id).forEach { book.engine(it, relay).sync() }

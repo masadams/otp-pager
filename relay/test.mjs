@@ -356,10 +356,20 @@ test('strict-chat shares: device-signed unlocks get short signed grants and laps
     await stop(server); ({ server, base } = await launch({ dataDir, now: () => clock }));
     assert.deepEqual(await authority(), auth);
     clock += 90 * 60000; assert.equal((await unlock(frame(auth))).status, 200);
-    clock += 2 * 3600000 + 1; assert.equal((await unlock(frame(auth))).status, 404);
-    assert.equal((await enroll(body)).status, 201);
-    assert.equal((await fetch(base + '/v1/share/' + room, { method: 'DELETE', headers: scoped })).status, 200);
-    assert.equal((await unlock(frame(auth))).status, 404);
+    // Silence past the deadline retires the share: gone from every live relay file, answered with
+    // a signed REVOKED that echoes the request, and never re-enrolled.
+    clock += 2 * 3600000 + 1;
+    const late = frame(auth); const gone = await unlock(late); assert.equal(gone.status, 410);
+    const revoked = await gone.json(); const rf = Buffer.from(revoked.frame, 'base64');
+    assert.ok(verifyWith('sha256', rf, createPublicKey({ key: auth, format: 'der', type: 'spki' }), Buffer.from(revoked.signature, 'base64')));
+    assert.equal(rf[8], 5); assert.deepEqual(rf.subarray(9, 130), late.subarray(9, 130)); assert.deepEqual(rf.subarray(130), Buffer.alloc(48));
+    const files = () => readFileSync(join(dataDir, 'mailboxes.json'), 'utf8') + readFileSync(join(dataDir, 'journal.log'), 'utf8');
+    assert.ok(!files().includes(share), 'expired share still in a live relay file');
+    assert.equal((await enroll(body)).status, 410);
+    assert.equal((await unlock(frame(auth), generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey)).status, 403); // REVOKED only for the enrolled device.
+    await stop(server); ({ server, base } = await launch({ dataDir, now: () => clock }));
+    assert.equal((await unlock(frame(auth))).status, 410); // The tombstone survives restart.
+    assert.equal((await enroll(body)).status, 410);
     assert.equal((await fetch(base + '/v1/share/' + room, { method: 'GET', headers: scoped })).status, 405);
   } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
 });
@@ -385,5 +395,45 @@ test('journal: posts append without rewriting the snapshot, survive restart and 
     ({ server, base } = await launch({ dataDir, compactEvery: 5 }));
     assert.ok((await get(base)).messages.every(m => m.seq !== 999));
     assert.equal((await post(base, 'Zw==')).status, 201);
+  } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
+});
+
+test('strict-chat shares: deletion retires for good, replay protection never evicts a live nonce, unknown rooms stay 404', async () => {
+  const { generateKeyPairSync, sign: signWith } = await import('node:crypto');
+  const dataDir = mkdtempSync(join(tmpdir(), 'pager-')); let clock = 1_800_000_000_000;
+  const { server, base } = await launch({ dataDir, now: () => clock });
+  const room = 'e'.repeat(64), capability = 'f'.repeat(43), share = Buffer.alloc(32, 9).toString('base64url');
+  const scoped = { Authorization: 'Bearer ' + capability, 'Content-Type': 'application/json' };
+  const keys = generateKeyPairSync('ec', { namedCurve: 'P-256' }); const device = keys.publicKey.export({ type: 'spki', format: 'der' });
+  const sha = b => createHash('sha256').update(b).digest();
+  const auth = Buffer.from((await (await fetch(base + '/v1/strict/authority')).json()).key, 'base64');
+  const frame = (nonce = randomBytes(32)) => {
+    const f = Buffer.alloc(178); f.write('OTPSTR01', 0, 'latin1'); f[8] = 2; f[9] = 65; randomBytes(16).copy(f, 10);
+    sha(device).copy(f, 26); sha(auth).copy(f, 58); f.writeBigInt64BE(1n, 90); nonce.copy(f, 98);
+    f.writeBigInt64BE(BigInt(clock), 130); f.writeBigInt64BE(BigInt(clock + 60000), 138); return f;
+  };
+  const unlock = (f, r = room) => fetch(base + '/v1/share/' + r + '/unlock', { method: 'POST', headers: scoped,
+    body: JSON.stringify({ frame: f.toString('base64'), signature: signWith('sha256', f, keys.privateKey).toString('base64') }) });
+  const enroll = () => fetch(base + '/v1/share/' + room, { method: 'PUT', headers: scoped, body: JSON.stringify({ share, deadline: 2 * 3600000, device: device.toString('base64') }) });
+  try {
+    assert.equal((await fetch(base + '/v1/mailbox/' + room + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability }) })).status, 201);
+    assert.equal((await enroll()).status, 201);
+    // 32 live nonces fill the window; the 33rd is refused rather than evicting the first, so the
+    // first accepted request still can't be replayed.
+    const first = frame(); assert.equal((await unlock(first)).status, 200);
+    for (let i = 0; i < 31; i++) assert.equal((await unlock(frame())).status, 200);
+    assert.equal((await unlock(frame())).status, 429);
+    assert.equal((await unlock(first)).status, 409);
+    clock += 6 * 60000; assert.equal((await unlock(frame())).status, 200); // Expired nonces free the window.
+    // Deleting retires the room: no share left in live files, signed REVOKED, no re-enrollment.
+    assert.equal((await fetch(base + '/v1/share/' + room, { method: 'DELETE', headers: scoped })).status, 200);
+    assert.ok(!(readFileSync(join(dataDir, 'mailboxes.json'), 'utf8') + readFileSync(join(dataDir, 'journal.log'), 'utf8')).includes(share));
+    assert.equal((await unlock(frame())).status, 410);
+    assert.equal((await enroll()).status, 410);
+    // A room the relay never knew is 404, which phones must not treat as retirement.
+    const other = 'b'.repeat(64);
+    assert.equal((await fetch(base + '/v1/mailbox/' + other + '/claim', { method: 'POST', headers, body: JSON.stringify({ capability: 'g'.repeat(43) }) })).status, 201);
+    assert.equal((await fetch(base + '/v1/share/' + other + '/unlock', { method: 'POST', headers: { ...scoped, Authorization: 'Bearer ' + 'g'.repeat(43) },
+      body: JSON.stringify({ frame: frame().toString('base64'), signature: 'AAAAAAAAAAA=' }) })).status, 404);
   } finally { await stop(server); rmSync(dataDir, { recursive: true }); }
 });

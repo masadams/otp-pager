@@ -130,7 +130,7 @@ class CablePairActivity : Activity() {
         val events = IntentFilter(permissionAction).apply { addAction(UsbManager.ACTION_USB_DEVICE_DETACHED); addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED) }
         androidx.core.content.ContextCompat.registerReceiver(this, receiver, events, androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
     }
-    override fun onResume() { super.onResume(); if (operation == null || cancelled.get() || operation?.cancelled == true) { finish(); return }; active = true; handler.post(poll) }
+    override fun onResume() { super.onResume(); if (!AppLock.gate(this)) return; if (operation == null || cancelled.get() || operation?.cancelled == true) { finish(); return }; active = true; handler.post(poll) }
     private fun permission(): PendingIntent = PendingIntent.getBroadcast(this, 90, Intent(permissionAction).setPackage(packageName),
         PendingIntent.FLAG_UPDATE_CURRENT or if (android.os.Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
     @Suppress("DEPRECATION")

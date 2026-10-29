@@ -88,4 +88,22 @@ class StrictChatProtocolTest {
         r.nonce.fill(0)
         assertArrayEquals(ByteArray(32) { 99 }, pending.accept(bytes, signature, card(authority), now + 1, 101))
     }
+    @Test fun onlyAnAuthoritySignedRevokedForThisExactRequestIsAccepted() {
+        val device = key(); val authority = key(); val r = request(device, authority)
+        fun revoked(f: StrictChatProtocol.Frame) = StrictChatProtocol.encode(f.copy(kind = StrictChatProtocol.Kind.REVOKED, issued = 0, expires = 0))
+        val good = revoked(r)
+        StrictChatProtocol.PendingUnlock(r, 100).acceptRevoked(good, sign(authority, good), card(authority), 101)
+        // Signed by anyone else (including the device itself), a different nonce, a grant, or too late: refused.
+        rejects { StrictChatProtocol.PendingUnlock(r, 100).acceptRevoked(good, sign(key(), good), card(authority), 101) }
+        rejects { StrictChatProtocol.PendingUnlock(r, 100).acceptRevoked(good, sign(device, good), card(authority), 101) }
+        val otherNonce = revoked(r.copy(nonce = ByteArray(32) { 1 }))
+        rejects { StrictChatProtocol.PendingUnlock(r, 100).acceptRevoked(otherNonce, sign(authority, otherNonce), card(authority), 101) }
+        val otherChat = revoked(r.copy(generation = ByteArray(16) { 9 }))
+        rejects { StrictChatProtocol.PendingUnlock(r, 100).acceptRevoked(otherChat, sign(authority, otherChat), card(authority), 101) }
+        val g = StrictChatProtocol.encode(grant(r))
+        rejects { StrictChatProtocol.PendingUnlock(r, 100).acceptRevoked(g, sign(authority, g), card(authority), 101) }
+        rejects { StrictChatProtocol.PendingUnlock(r, 100).acceptRevoked(good, sign(authority, good), card(authority), 100 + 60_000) }
+        val used = StrictChatProtocol.PendingUnlock(r, 100); used.cancel()
+        rejects { used.acceptRevoked(good, sign(authority, good), card(authority), 101) }
+    }
 }

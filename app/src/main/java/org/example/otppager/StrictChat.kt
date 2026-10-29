@@ -27,6 +27,8 @@ import javax.crypto.spec.SecretKeySpec
 internal object StrictChat {
     class Locked : IllegalStateException("This strict chat is locked. Connect to the server to open it.")
     class Gone : IllegalStateException("This strict chat can no longer be opened: the server no longer holds its key share.")
+    /** No share and no signed retirement: maybe a reset relay or a wrong route. Never a reason to delete. */
+    class Unavailable : IllegalStateException("The server doesn't have this strict chat's key share. If the server was reset or its address is wrong, fix that and try again. Nothing was deleted.")
     val DEADLINES = listOf(12 * 3600_000L, 3 * 86_400_000L, 14 * 86_400_000L)
     fun label(deadline: Long) = when (deadline) { 0L -> "Normal chat (works offline)"; 12 * 3600_000L -> "Strict · check in every 12 hours"
         else -> "Strict · check in every ${deadline / 86_400_000L} days" }
@@ -34,19 +36,25 @@ internal object StrictChat {
 
     private class Lease(val share: ByteArray, val key: String, val expiry: ScheduledFuture<*>)
     private val leases = mutableMapOf<String, Lease>()
+    /** Bumped by [lockAll] (leaving the app). An unlock started before then can't cache its share. */
+    private var lockEpoch = 0L
+    @Synchronized fun epoch() = lockEpoch
+    /** UI hook, any thread: a lease for this chat ended, so clear anything it shows. */
+    @Volatile var onLocked: ((String) -> Unit)? = null
     private val timer = Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "pager-strict-lease").apply { isDaemon = true } }
     @Synchronized fun cached(root: String): ByteArray? = leases[root]?.share?.copyOf()
     /** Keep [share] for [millis] (≤ 60 s). [key] names the live engines to lock when it ends. */
-    @Synchronized fun remember(root: String, share: ByteArray, millis: Long, key: String) {
+    @Synchronized fun remember(root: String, share: ByteArray, millis: Long, key: String, epoch: Long = lockEpoch) {
         require(share.size == 32 && millis in 1..StrictChatProtocol.MAX_LEASE_MS)
+        if (epoch != lockEpoch) throw Locked() // The reply arrived after the app left the foreground.
         drop(root)
         val expiry = timer.schedule({ lock(root) }, millis, TimeUnit.MILLISECONDS)
         leases[root] = Lease(share.copyOf(), key, expiry)
     }
     @Synchronized private fun drop(root: String): String? = leases.remove(root)?.let { it.share.fill(0); it.expiry.cancel(false); it.key }
     /** Lease ended, app backgrounded, wipe or forget: zero the share and clear decrypted engine state. */
-    fun lock(root: String) { drop(root)?.let(StationEngine::lockStrict) }
-    fun lockAll() { synchronized(this) { leases.keys.toList() }.forEach(::lock) }
+    fun lock(root: String) { drop(root)?.let { StationEngine.lockStrict(it); onLocked?.invoke(root) } }
+    fun lockAll() { synchronized(this) { lockEpoch++; leases.keys.toList() }.forEach(::lock) }
     fun forget(root: String) = lock(root)
 
     private fun hmac(key: ByteArray, data: ByteArray) = Mac.getInstance("HmacSHA256").run { init(SecretKeySpec(key, "HmacSHA256")); doFinal(data) }
@@ -119,7 +127,14 @@ internal object StrictChat {
         val body = JSONObject().put("frame", Base64.getEncoder().encodeToString(bytes))
             .put("signature", Base64.getEncoder().encodeToString(identity.sign(bytes))).toString()
         val reply = try { JSONObject(relay.share(route.endpoint, route.room, route.capability, "POST", body, unlock = true)) }
-            catch (e: RelayHttpException) { if (e.status == 404) throw Gone() else throw e }
+            catch (e: RelayHttpException) {
+                if (e.status == 404) throw Unavailable()
+                val revoked = if (e.status == 410) e.body?.let { runCatching { JSONObject(it) }.getOrNull() }?.takeIf { it.has("frame") } else null
+                if (revoked == null) throw e
+                pending.acceptRevoked(Base64.getDecoder().decode(revoked.getString("frame")), Base64.getDecoder().decode(revoked.getString("signature")),
+                    route.authority, android.os.SystemClock.elapsedRealtime())
+                throw Gone()
+            }
         val elapsed = android.os.SystemClock.elapsedRealtime()
         val share = pending.accept(Base64.getDecoder().decode(reply.getString("frame")), Base64.getDecoder().decode(reply.getString("signature")),
             route.authority, System.currentTimeMillis(), elapsed)
@@ -129,7 +144,8 @@ internal object StrictChat {
     fun unlock(context: Context, root: String, relay: RelayTransport = RelayClient) {
         val store = SecureStore(context, root)
         val stored = checkNotNull(store.load()) { "Unknown chat" }
+        val epoch = epoch()
         val (share, millis) = grant(relay, route(stored), store.identity())
-        try { unwrap(root, stored, share); remember(root, share, millis, store.operationKey) } finally { share.fill(0) }
+        try { unwrap(root, stored, share); remember(root, share, millis, store.operationKey, epoch) } finally { share.fill(0) }
     }
 }
