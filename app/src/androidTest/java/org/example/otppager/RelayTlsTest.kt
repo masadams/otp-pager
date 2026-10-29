@@ -1,6 +1,7 @@
 package org.example.otppager
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -63,6 +64,38 @@ class RelayTlsTest {
     @Test fun fallsBackToClassicalAndReportsIt() = withServer("X25519") { port ->
         assertEquals(200, get(port))
         assertEquals(false, RelayTls.serverSupportsHybrid("localhost", port, trust()))
+    }
+
+    @Test fun aServerThatProvedHybridSupportCannotBeDowngraded() {
+        fun hybridOnlyGet(port: Int): Int {
+            val conn = URL("https://localhost:$port/health").openConnection() as HttpsURLConnection
+            conn.sslSocketFactory = checkNotNull(RelayTls.factory(trust(), hybridOnly = true)); conn.connectTimeout = 5000; conn.readTimeout = 5000
+            return try { conn.responseCode } finally { conn.disconnect() }
+        }
+        withServer(RelayTls.HYBRID_GROUP) { port -> assertEquals(200, hybridOnlyGet(port)) }
+        withServer("X25519") { port ->
+            try { hybridOnlyGet(port); fail("Fell back to classical TLS for a hybrid-only server") } catch (_: javax.net.ssl.SSLException) {}
+        }
+    }
+
+    @Test fun theRequiredListPersistsAndCanBeUndone() {
+        val dir = java.nio.file.Files.createTempDirectory("pq-tls").toFile()
+        try {
+            RelayTls.init(dir)
+            assertFalse(RelayTls.isRequired("Relay.Example.com", 443))
+            RelayTls.requireHybrid("Relay.Example.com", 443)
+            RelayTls.init(dir) // As after a restart.
+            assertTrue(RelayTls.isRequired("relay.example.com", -1)) // Case and default port normalised.
+            assertFalse(RelayTls.isRequired("relay.example.com", 8443))
+            val conn = RelayTls.apply(URL("https://relay.example.com/health").openConnection() as HttpsURLConnection)
+            assertNotNull(conn.sslSocketFactory)
+            RelayTls.allowClassical("relay.example.com", 443)
+            RelayTls.init(dir)
+            assertFalse(RelayTls.isRequired("relay.example.com", 443))
+        } finally {
+            dir.deleteRecursively()
+            RelayTls.init(InstrumentationRegistry.getInstrumentation().targetContext.noBackupFilesDir)
+        }
     }
 
     /**

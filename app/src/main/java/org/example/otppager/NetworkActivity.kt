@@ -1356,8 +1356,14 @@ class NetworkActivity : Activity() {
         if (::screens.isInitialized && tab == 4) renderSimpleScreens()
     }
     private fun syncChats(): String {
-        try { return checkNotNull(engine).sync() }
+        try { return checkNotNull(engine).sync().also { learnPostQuantumTls() } }
         finally { book?.refresh(); book?.syncAnother() }
+    }
+    /** After a good sync, servers that accept hybrid TLS become hybrid-only (at most a daily check each). */
+    private fun learnPostQuantumTls() {
+        val e = engine ?: return
+        val endpoint = e.state?.optString("endpoint")?.takeIf { it.isNotEmpty() } ?: return
+        for (url in listOf(endpoint) + e.backups) try { RelayTls.learn(url) } catch (_: Exception) {}
     }
     private fun editChatName(create: Boolean) {
         val input = field("Friend's name").apply {
@@ -1451,10 +1457,17 @@ class NetworkActivity : Activity() {
     private fun showConnectionTest(reports: List<RelayProbe.Report>) {
         if (!active || !unlocked) return
         val summary = if (reports.all { it.ok }) "Everything checked is working." else "Something isn't working. The first ✗ shows where it stopped."
+        val downgraded = reports.mapNotNull { it.downgraded }.distinct()
         AlertDialog.Builder(this).setTitle("Connection test")
             .setMessage("$summary\n\n" + reports.joinToString("\n\n") { it.describe() } +
                 "\n\nThis is a read-only check. It doesn't send messages or show whether your friend is online.")
-            .setPositiveButton("Close", null).create().also(::secureShow)
+            .setPositiveButton("Close", null)
+            .apply { if (downgraded.isNotEmpty()) setNeutralButton("Allow classical TLS") { _, _ ->
+                confirm("Allow classical TLS?", "Only do this if you changed the server's proxy on purpose. Otherwise someone on the network may be stripping post-quantum TLS. Messages stay OTP-protected either way; tokens and metadata lose post-quantum protection. This phone requires it again once the server accepts it.") {
+                    downgraded.forEach { (host, port) -> RelayTls.allowClassical(host, port) }
+                    report("Classical TLS allowed for ${downgraded.joinToString { it.first }}")
+                }
+            } }.create().also(::secureShow)
     }
     private fun showStationStatus() {
         val v = latest ?: return

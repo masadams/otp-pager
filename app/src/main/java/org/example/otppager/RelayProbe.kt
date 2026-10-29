@@ -20,7 +20,8 @@ internal object RelayProbe {
     const val PROBE_CURSOR = 9_007_199_254_740_991L
     /** [ok] null means the step was skipped because an earlier one failed. [warn]: works, but worth fixing. */
     data class Step(val name: String, val ok: Boolean?, val detail: String, val warn: Boolean = false)
-    data class Report(val label: String, val endpoint: String, val steps: List<Step>) {
+    /** [downgraded]: this server proved hybrid support before and now refuses it (host to port). */
+    data class Report(val label: String, val endpoint: String, val steps: List<Step>, val downgraded: Pair<String, Int>? = null) {
         val ok: Boolean get() = steps.none { it.ok == false }
         fun describe() = "$label\n$endpoint\n" + steps.joinToString("\n") {
             "${when { it.ok == true && it.warn -> "!"; it.ok == true -> "✓"; it.ok == false -> "✗"; else -> "–" }} ${it.name}: ${it.detail}"
@@ -44,11 +45,16 @@ internal object RelayProbe {
         }
 
         started = SystemClock.elapsedRealtime()
+        val port = URI(endpoint).port.takeIf { it > 0 } ?: 443
         val conn = RelayTls.apply(URL("$endpoint/health").openConnection() as HttpsURLConnection)
         conn.instanceFollowRedirects = false; conn.connectTimeout = 8000; conn.readTimeout = 8000
         conn.setRequestProperty("Accept", "application/json")
         try {
             val code = try { conn.responseCode } catch (e: Exception) {
+                if (e is SSLException && RelayTls.isRequired(host, port) && RelayTls.serverSupportsHybrid(host, port) == false) {
+                    steps.add(Step("Secure connection", false, "Refused: this server accepted post-quantum ${RelayTls.HYBRID_GROUP} before and doesn't now, so this phone won't fall back to classical TLS. Re-enable it on your proxy, or if you changed the proxy on purpose, tap Allow classical TLS."))
+                    skipRest(*later); return Report(label, endpoint, steps, downgraded = host to port)
+                }
                 steps.add(Step("Secure connection", false, when (e) {
                     is SocketTimeoutException -> "No answer within 8 seconds. The server or its proxy may be down, or a firewall is blocking it."
                     is ConnectException -> "Connection refused. Nothing is accepting HTTPS on this address and port."
@@ -61,9 +67,11 @@ internal object RelayProbe {
             val suite = try { conn.cipherSuite } catch (_: Exception) { "" }
             val tls = if (suite.startsWith("TLS_AES_") || suite.startsWith("TLS_CHACHA20_")) "TLS 1.3" else "TLS 1.2 or older"
             steps.add(Step("Secure connection", true, "$tls · $elapsed ms"))
-            val port = URI(endpoint).port.takeIf { it > 0 } ?: 443
             steps.add(when (RelayTls.serverSupportsHybrid(host, port)) {
-                true -> Step("Post-quantum TLS", true, "The server accepts hybrid ${RelayTls.HYBRID_GROUP}, and this app offers it first on every connection. A network that strips it can still force classical X25519; the app doesn't refuse that yet.")
+                true -> {
+                    RelayTls.requireHybrid(host, port)
+                    Step("Post-quantum TLS", true, "The server accepts hybrid ${RelayTls.HYBRID_GROUP}. This phone now requires it for this server, so a network can't force classical TLS.")
+                }
                 false -> Step("Post-quantum TLS", true, "The server doesn't accept ${RelayTls.HYBRID_GROUP}, so connections use classical X25519. Messages are still OTP-protected; enable it on your proxy to protect tokens and metadata too.", warn = true)
                 null -> Step("Post-quantum TLS", true, "Not available on this phone; connections use Android's own TLS.", warn = true)
             })
