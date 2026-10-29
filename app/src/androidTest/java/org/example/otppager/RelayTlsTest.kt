@@ -29,7 +29,8 @@ class RelayTlsTest {
     private fun withServer(group: String, block: (Int) -> Unit) {
         val keys = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm()).apply { init(serverStore(), "test".toCharArray()) }
         val context = SSLContext.getInstance("TLS", org.conscrypt.Conscrypt.newProvider()).apply { init(keys.keyManagers, null, null) }
-        val server = context.serverSocketFactory.createServerSocket(0, 8, InetAddress.getLoopbackAddress()) as SSLServerSocket
+        // IPv4 explicitly: Android's getLoopbackAddress() is ::1, while "localhost" resolves to 127.0.0.1.
+        val server = context.serverSocketFactory.createServerSocket(0, 8, InetAddress.getByName("127.0.0.1")) as SSLServerSocket
         val pool = Executors.newSingleThreadExecutor()
         pool.execute {
             while (!server.isClosed) try {
