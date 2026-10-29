@@ -26,6 +26,12 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
+/**
+ * Off until phone-to-phone NFC tapping works reliably on real devices. Entry points show
+ * "Coming soon" instead; this screen and its protocol stay in place for when it returns.
+ */
+internal const val NEARBY_PAIRING_AVAILABLE = false
+
 /** Explicit foreground-only local Wi-Fi transfer, bootstrapped by a secret NFC tap. */
 class RadioPairActivity : Activity(), NfcAdapter.ReaderCallback {
     private val handler = Handler(Looper.getMainLooper())

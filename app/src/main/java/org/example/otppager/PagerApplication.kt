@@ -42,6 +42,7 @@ internal object RetirementStartup {
 class PagerApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        registerActivityLifecycleCallbacks(AppLock)
         RetirementStartup.recover(this)
     }
 }
