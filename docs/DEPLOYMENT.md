@@ -4,12 +4,12 @@ The server is an opaque mailbox relay in Docker; the client is the Android APK. 
 receives pad material, pairing secrets or private device keys. This is an experimental field
 release, not independently audited; see the [security review](SECURITY_REVIEW.md).
 
-## Current release: 0.19.0
+## Current release: 0.19.1
 
-- **Phones:** install `otp-pager-0.19.0.apk` from the GitHub release on **both** phones. It
-  updates 0.15–0.18 in place (same signing key) and keeps chats and pairings. New pairings and
+- **Phones:** install `otp-pager-0.19.1.apk` from the GitHub release on **both** phones. It
+  updates 0.15–0.19.0 in place (same signing key) and keeps chats and pairings. New pairings and
   renewals need 0.18 or newer on both phones (pairing protocol v11).
-- **Relay:** **redeploy** (below). 0.19 adds the post-quantum (ML-DSA-65) strict-chat
+- **Relay:** **redeploy** if you haven't since 0.19.0 (0.19.1 has no relay changes). 0.19 adds the post-quantum (ML-DSA-65) strict-chat
   authority. The stack's default image is pinned by digest in `deploy/portainer-stack.yml`
   (the 0.19.0 relay, also tagged `ghcr.io/masadams/otp-pager-relay:0.19.0`). Linux amd64/arm64.
 - Update the relay first or the phones first; either order works. With an older relay, a lapsed

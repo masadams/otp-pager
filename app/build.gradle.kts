@@ -9,8 +9,8 @@ android {
         applicationId = "org.example.otppager"
         minSdk = 26
         targetSdk = 35
-        versionCode = 19
-        versionName = "0.19.0"
+        versionCode = 20
+        versionName = "0.19.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     val upgradeVerification = providers.gradleProperty("upgradeVerification").isPresent
