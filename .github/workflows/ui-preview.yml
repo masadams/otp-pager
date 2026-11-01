@@ -55,7 +55,7 @@ jobs:
           script: |
             bash -c 'gradle --no-daemon :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.example.otppager.InterfaceTest,org.example.otppager.PagerJourneyTest,org.example.otppager.RetirementRecoveryTest,org.example.otppager.LocalWipeTest || true'
             adb pull /sdcard/Download/otp-pager-preview shots || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: shots-api-${{ matrix.api }}
           path: shots/
