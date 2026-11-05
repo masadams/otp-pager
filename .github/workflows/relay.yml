@@ -54,7 +54,7 @@ jobs:
           assert.deepEqual((await response.json()).messages, [{seq:1, packet:'YQ=='}]);
           JS
       - run: docker save -o relay-image.tar otp-pager-relay:local
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: otp-pager-relay-image
           path: relay-image.tar

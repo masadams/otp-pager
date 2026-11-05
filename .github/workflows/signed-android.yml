@@ -35,7 +35,7 @@ jobs:
           OTP_SIGNING_PASSWORD: ${{ secrets.ANDROID_SIGNING_PASSWORD }}
           OTP_SIGNING_CERT_SHA256: ${{ vars.ANDROID_SIGNING_CERT_SHA256 }}
         run: python3 scripts/android_signing.py build
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: otp-pager-signed-release
           path: app/build/field-release/
